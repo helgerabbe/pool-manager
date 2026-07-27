@@ -24,6 +24,22 @@
       "description": "Konfigurierte Feldwerte f\u00fcr diese Aktivit\u00e4t (manueller Modus). Bei erstellungs_modus='ki' typischerweise leer / null.",
       "additionalProperties": true
     },
+    "material_urls": {
+      "type": "array",
+      "description": "Aufgabeneditor Etappe 1 (2026-07-27): An dieser Aktivit\u00e4t hinterlegte Materialien (Bilder, Texte, PDFs etc.). Werden bei der KI-Aufgabenerstellung als Kontext/Vorlage ber\u00fccksichtigt und k\u00f6nnen direkt im Aufgabeneditor hochgeladen werden.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
     "is_complete": {
       "type": "boolean",
       "default": false,

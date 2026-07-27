@@ -1,17 +1,21 @@
 /**
  * components/workspace/lernpaketWizard/LernpaketWizardModal.jsx
  *
- * Lernpaket-Wizard (Tab 3, Konzept v0.4 §4.1 – §4.7) — UX-Redesign 2026-07-26:
- * klarer Schritt-für-Schritt-Ablauf statt Informationsflut.
+ * "Aufgabeneditor" (Etappe 1, 2026-07-27) — vormals Lernpaket-Wizard.
  *
- * Ablauf:
+ * Aufbau:
  *   Kontext-Anker (Lernpaket + Lernziele) direkt unter dem Titel.
- *   Schritt 1 (nur bei Bestand): Ausgangslage & Vorgehen — einklappbar.
- *   Schritt 2: "Was ist dir wichtig?" → Ideen generieren (stage=ideen).
- *   Schritt 3: Ideen auswählen (Kreativ-Zwischenstopp).
- *   Schritt 4: Umsetzungsvorschlag prüfen → Übernehmen (stage=mapping,
- *              dann applyLernpaketWizardProposal).
- *   Danach: Inhalte-Generator für leere Aktivitäten.
+ *   Freigabe-Prüfung: freigegebene Lernpakete sind nicht bearbeitbar.
+ *   Aktivitäten-Übersicht (Tabelle): Beschreibung / Material / Status
+ *   pro Aktivität, inkl. aller Master-Aufgaben; Material-Upload pro Zeile.
+ *   Button "Neue/weitere Aufgabenvorschläge erstellen" öffnet den
+ *   KI-Vorschlags-Flow (Vorgehen → Wünsche → Ideen → Umsetzung).
+ *   Inhalte-Generator für leere Aktivitäten.
+ *
+ * Speichern/Abbrechen-Semantik: Alle in DIESER Sitzung neu angelegten
+ * Aktivitäten werden getrackt (sessionCreatedIds). "Speichern & schließen"
+ * behält sie; "Abbrechen & verwerfen" löscht sie via
+ * discardWizardActivities wieder (nur nie-exportierte Entwurfs-Hüllen).
  *
  * Voraussetzung: Aufrufer hat bereits einen aktiven Lernpaket-Lock
  * (sichergestellt durch den Trigger-Button in `LernpaketPanel`).
@@ -24,12 +28,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Sparkles, Loader2, Wand2, Package, Target, ChevronDown } from 'lucide-react';
+import { Sparkles, Loader2, Wand2, Package, Target, ChevronDown, Lock, Plus } from 'lucide-react';
 import WizardProposalPreview from './WizardProposalPreview';
 import WizardIdeenAuswahl from './WizardIdeenAuswahl';
 import WizardBestandsAnalyse from './WizardBestandsAnalyse';
 import WizardInhalteGenerator from './WizardInhalteGenerator';
 import WizardStepSection from './WizardStepSection';
+import AufgabeneditorUebersicht from './AufgabeneditorUebersicht';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING_LENGTH = 5000;
@@ -52,16 +57,23 @@ export default function LernpaketWizardModal({
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [isMapping, setIsMapping] = useState(false);
 
-  // Super-Wizard Etappe 1: Wie soll die KI mit dem Bestand umgehen?
+  // Vorschlags-Flow ein-/ausblenden (Editor-Startansicht = Übersicht).
+  const [vorschlagOffen, setVorschlagOffen] = useState(false);
+
+  // Wie soll die KI mit dem Bestand umgehen?
   const [strukturModus, setStrukturModus] = useState('ergaenzen');
-  // Schritt 1 ist standardmäßig eingeklappt — die Zusammenfassungszeile
-  // zeigt Bestand + gewähltes Vorgehen kompakt an.
   const [bestandOpen, setBestandOpen] = useState(false);
   const [isApplying, setIsApplying] = useState(false);
-  // Etappe 2: true, solange die Inhalte-Generierung läuft (blockiert Schließen).
+  // Speichern/Abbrechen: in dieser Sitzung neu angelegte Aktivitäten.
+  const [sessionCreatedIds, setSessionCreatedIds] = useState([]);
+  const [isDiscarding, setIsDiscarding] = useState(false);
+  // true, solange die Inhalte-Generierung läuft (blockiert Schließen).
   const [inhalteBusy, setInhalteBusy] = useState(false);
 
-  // Bestandsanalyse: vorhandene (nicht-gelöschte) Aktivitäten dieses Pakets.
+  // Freigegebene Lernpakete sind nicht bearbeitbar.
+  const istFreigegeben = paket?.content_status === 'approved' && !!paket?.released_at;
+
+  // Bestand: vorhandene (nicht-gelöschte) Aktivitäten dieses Pakets.
   const { data: bestandAktivitaeten = [] } = useQuery({
     queryKey: ['wizard-bestand', paket?.id],
     queryFn: () => base44.entities.LernpaketPhaseAktivitaet.filter({
@@ -71,11 +83,18 @@ export default function LernpaketWizardModal({
     enabled: open && !!paket?.id,
   });
 
-  // Aktivitäten-Katalog für Namensauflösung (Bestand + Inhalte-Generator).
+  // Aktivitäten-Katalog für Namensauflösung + Masterfähigkeit.
   const { data: aktivitaetenKatalog = [] } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
     enabled: open,
+  });
+
+  // Master-Aufgaben des Pakets — für die Übersichts-Tabelle.
+  const { data: masterAufgaben = [] } = useQuery({
+    queryKey: ['masterAufgaben', 'paket', paket?.id],
+    queryFn: () => base44.entities.MasterAufgabe.filter({ lernpaket_id: paket.id }),
+    enabled: open && !!paket?.id,
   });
 
   // Lernziele zu diesem Paket — Anzeige oben im Dialog als Kontext-Anker.
@@ -96,13 +115,14 @@ export default function LernpaketWizardModal({
       setSelectedIds(new Set());
       setStrukturModus('ergaenzen');
       setBestandOpen(false);
+      setVorschlagOffen(false);
+      setSessionCreatedIds([]);
     }
   }, [open, paket?.id, paket?.kreativ_briefing]);
 
   const hatBestand = bestandAktivitaeten.length > 0;
-  const befuellteAnzahl = bestandAktivitaeten.filter((a) => a.is_complete === true).length;
 
-  // Dynamische Schritt-Nummern: ohne Bestand entfällt Schritt 1.
+  // Dynamische Schritt-Nummern im Vorschlags-Flow.
   const stepWuensche = hatBestand ? 2 : 1;
   const stepIdeen = stepWuensche + 1;
   const stepUmsetzung = stepIdeen + 1;
@@ -111,7 +131,14 @@ export default function LernpaketWizardModal({
     ? Object.values(proposal.phasen || {}).reduce((s, arr) => s + (arr?.length || 0), 0)
     : 0;
 
-  // ── Schritt 2a: Kreative Ideen sammeln (Recherche + freier Entwurf) ──
+  const refreshBestand = () => {
+    queryClient.invalidateQueries({ queryKey: ['wizard-bestand', paket.id] });
+    queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+    queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
+    queryClient.invalidateQueries({ queryKey: ['masterAufgaben', 'paket', paket.id] });
+  };
+
+  // ── Kreative Ideen sammeln (Recherche + freier Entwurf) ──────────
   const handleGenerate = async () => {
     const trimmed = briefing.trim();
     if (!trimmed) {
@@ -163,7 +190,7 @@ export default function LernpaketWizardModal({
 
   const selectedCount = selectedIds.size;
 
-  // ── Schritt 2b: Ausgewählte Ideen in Aktivitäten übersetzen ──────
+  // ── Ausgewählte Ideen in Aktivitäten übersetzen ──────────────────
   const handleMapping = async () => {
     if (!ideen || selectedCount === 0) {
       toast.error('Bitte wähle mindestens eine Idee aus.');
@@ -217,7 +244,7 @@ export default function LernpaketWizardModal({
     });
   };
 
-  // ── Schritt 4: Übernehmen — immer additiv (nicht-destruktiv) ─────
+  // ── Übernehmen — immer additiv (nicht-destruktiv) ────────────────
   const handleApplyClick = () => {
     if (totalProposalItems === 0) {
       toast.error('Vorschlag ist leer.');
@@ -253,21 +280,21 @@ export default function LernpaketWizardModal({
         toast.error(data?.error || 'Übernahme fehlgeschlagen.');
         return;
       }
+      // Sitzungs-Tracking für Speichern/Abbrechen.
+      const neueIds = (data.createdActivities || []).map((c) => c.id);
+      setSessionCreatedIds((prev) => [...prev, ...neueIds]);
       toast.success(
-        hatBestand
-          ? `${data.stats.items_created} Aktivitäten ergänzt — Bestehendes blieb unverändert. Unten kannst du jetzt Inhalte generieren.`
-          : `${data.stats.items_created} Aktivitäten angelegt. Unten kannst du jetzt Inhalte generieren.`
+        `${data.stats.items_created} Aktivität${data.stats.items_created !== 1 ? 'en' : ''} angelegt — mit "Speichern & schließen" übernehmen oder mit "Abbrechen" verwerfen.`
       );
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
+      refreshBestand();
       queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
-      queryClient.invalidateQueries({ queryKey: ['wizard-bestand', paket.id] });
-      // Modal bleibt offen — die neuen Hüllen erscheinen im Inhalte-Generator.
+      // Zurück zur Übersicht — die neuen Einträge erscheinen in der Tabelle.
       setProposal(null);
       setKorrekturen([]);
       setIdeen(null);
       setRecherche(null);
       setSelectedIds(new Set());
+      setVorschlagOffen(false);
     } catch (err) {
       console.error('[LernpaketWizardModal] apply failed', err);
       const msg = err?.response?.data?.error || 'Fehler beim Übernehmen.';
@@ -277,12 +304,42 @@ export default function LernpaketWizardModal({
     }
   };
 
+  // ── Abbrechen: in dieser Sitzung angelegte Aktivitäten verwerfen ─
+  const handleDiscard = async () => {
+    if (sessionCreatedIds.length === 0) {
+      onClose();
+      return;
+    }
+    setIsDiscarding(true);
+    try {
+      const res = await base44.functions.invoke('discardWizardActivities', {
+        lernpaketId: paket.id,
+        activityIds: sessionCreatedIds,
+      });
+      const data = res?.data || res;
+      if (!data?.success) {
+        toast.error(data?.error || 'Verwerfen fehlgeschlagen.');
+        return;
+      }
+      toast.success(`Änderungen verworfen — ${data.deleted.length} neue Aktivität${data.deleted.length !== 1 ? 'en' : ''} entfernt.`);
+      refreshBestand();
+      queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+      onClose();
+    } catch (err) {
+      console.error('[LernpaketWizardModal] discard failed', err);
+      toast.error(err?.response?.data?.error || 'Fehler beim Verwerfen.');
+    } finally {
+      setIsDiscarding(false);
+    }
+  };
+
   const handleClose = () => {
-    if (isGenerating || isMapping || isApplying || inhalteBusy) return;
+    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy) return;
     onClose();
   };
 
-  const busy = isGenerating || isMapping || isApplying;
+  const busy = isGenerating || isMapping || isApplying || isDiscarding;
+  const hatSitzungsAenderungen = sessionCreatedIds.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) handleClose(); }}>
@@ -291,10 +348,10 @@ export default function LernpaketWizardModal({
         <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Wand2 className="w-4 h-4 text-primary" />
-            Lernpaket mit KI-Assistent füllen
+            Aufgabeneditor
           </DialogTitle>
           <DialogDescription className="text-xs leading-snug">
-            In wenigen Schritten zu einem fertigen Lernpaket — die KI kennt den Einheiten-Kontext und recherchiert im Netz.
+            Überblick über alle Aufgaben dieses Lernpakets — mit KI-Unterstützung für neue Vorschläge und Inhalte.
           </DialogDescription>
         </DialogHeader>
 
@@ -325,183 +382,253 @@ export default function LernpaketWizardModal({
           </div>
         </div>
 
-        <div className="space-y-5">
-          {/* Schritt 1 (nur bei Bestand): Ausgangslage & Vorgehen — einklappbar */}
-          {hatBestand && (
-            <WizardStepSection nummer={1} titel="Ausgangslage & Vorgehen">
-              <Collapsible open={bestandOpen} onOpenChange={setBestandOpen}>
-                <CollapsibleTrigger asChild>
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs hover:bg-muted/70 transition-colors"
-                  >
-                    <span className="text-left min-w-0">
-                      <span className="font-semibold text-foreground">
-                        {bestandAktivitaeten.length} Aktivität{bestandAktivitaeten.length !== 1 ? 'en' : ''} bereits im Paket
-                      </span>
-                      <span className="text-muted-foreground"> ({befuellteAnzahl} mit Inhalt) · Vorgehen: </span>
-                      <span className="font-medium text-primary">
-                        {strukturModus === 'ergaenzen' ? 'Vorhandenes ergänzen' : 'Struktur neu denken'}
-                      </span>
-                    </span>
-                    <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${bestandOpen ? 'rotate-180' : ''}`} />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-2">
-                  <WizardBestandsAnalyse
-                    aktivitaeten={bestandAktivitaeten}
-                    katalog={aktivitaetenKatalog}
-                    strukturModus={strukturModus}
-                    onModusChange={(m) => { setStrukturModus(m); setProposal(null); setKorrekturen([]); setIdeen(null); setSelectedIds(new Set()); }}
-                    disabled={busy}
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            </WizardStepSection>
-          )}
-
-          {/* Schritt 2: Wünsche an die KI */}
-          <WizardStepSection
-            nummer={stepWuensche}
-            titel="Was ist dir wichtig?"
-            rechts={
-              <div className="flex items-center gap-3">
-                <SpeechInputButton
-                  value={briefing}
-                  onResult={(text) => setBriefing(text.slice(0, MAX_BRIEFING_LENGTH))}
-                  disabled={busy}
-                  maxSeconds={30}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {briefing.length} / {MAX_BRIEFING_LENGTH}
-                </span>
-              </div>
-            }
-          >
-            <p className="text-xs text-muted-foreground leading-snug">
-              Lernpaket und Lernziele kennt die KI bereits. Ergänze hier, worauf sie achten soll —
-              Schwerpunkte, gewünschte Methoden oder Materialien, Umfang, Besonderheiten deiner Lerngruppe.
+        {/* Freigabe-Sperre: freigegebene Lernpakete sind nicht bearbeitbar. */}
+        {istFreigegeben ? (
+          <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-6 text-center space-y-2">
+            <Lock className="w-6 h-6 text-amber-600 mx-auto" />
+            <p className="text-sm font-semibold text-foreground">Dieses Lernpaket ist freigegeben.</p>
+            <p className="text-xs text-muted-foreground">
+              Freigegebene Lernpakete können nicht bearbeitet werden. Hebe die Freigabe zuerst auf,
+              um den Aufgabeneditor zu nutzen.
             </p>
-            <Textarea
-              id="wizard-briefing"
-              value={briefing}
-              onChange={(e) => setBriefing(e.target.value)}
-              placeholder="Beispiel: Mir ist wichtig, dass viel mit konkreten Beispielwörtern gearbeitet wird. Einstieg gern über ein Video, dazwischen abwechslungsreiche Übungen, am Ende ein kleiner Test."
-              rows={4}
-              maxLength={MAX_BRIEFING_LENGTH}
-              disabled={busy}
-              className="resize-none"
-            />
-            {paket?.kreativ_briefing_updated_at && (
-              <p className="text-xs text-muted-foreground">
-                Zuletzt mit KI gefüllt: {new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}
-              </p>
-            )}
-            <div className="flex justify-end">
-              <Button
-                type="button"
-                onClick={handleGenerate}
-                disabled={busy || !briefing.trim()}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Recherchiere & sammle Ideen… (kann einige Minuten dauern)</>
-                ) : (
-                  <><Sparkles className="w-4 h-4" /> {ideen ? 'Neue Ideen generieren' : 'Ideen generieren'}</>
-                )}
-              </Button>
-            </div>
-          </WizardStepSection>
-
-          {/* Schritt 3: Kreativ-Zwischenstopp — Ideen auswählen */}
-          {ideen && !proposal && (
-            <WizardStepSection
-              nummer={stepIdeen}
-              titel="Ideen auswählen"
-              rechts={<span className="text-xs text-muted-foreground">{selectedCount} ausgewählt</span>}
-            >
-              <p className="text-xs text-muted-foreground leading-snug">
-                Diese Ideen sind bewusst frei gedacht — noch ohne Zuordnung zu einem Aufgabenformat.
-                Erst im nächsten Schritt prüft die KI für deine Auswahl, wie sie sich am besten umsetzen
-                lässt: als Standard-Aktivität, mit einer Vorlage aus der Aufgabengalerie oder als offene Aufgabe.
-              </p>
-              <WizardIdeenAuswahl
-                ideen={ideen}
-                selectedIds={selectedIds}
-                onToggle={handleToggleIdee}
-                disabled={isMapping || isApplying}
+          </div>
+        ) : (
+          <>
+            {/* Aktivitäten-Übersicht: das Herzstück des Editors */}
+            <section className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">Aktivitäten & Aufgaben in diesem Paket</h3>
+              <AufgabeneditorUebersicht
+                aktivitaeten={bestandAktivitaeten}
+                katalog={aktivitaetenKatalog}
+                masterAufgaben={masterAufgaben}
+                disabled={busy || inhalteBusy}
+                onChanged={refreshBestand}
               />
-              <div className="flex justify-end">
-                <Button
-                  type="button"
-                  onClick={handleMapping}
-                  disabled={isMapping || isApplying || selectedCount === 0}
-                  className="gap-2"
-                >
-                  {isMapping ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /> Übersetze in Aktivitäten…</>
-                  ) : (
-                    <><Sparkles className="w-4 h-4" /> {selectedCount} Idee{selectedCount !== 1 ? 'n' : ''} umsetzen</>
-                  )}
-                </Button>
-              </div>
-            </WizardStepSection>
-          )}
+              {!vorschlagOffen && (
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setVorschlagOffen(true)}
+                    disabled={busy || inhalteBusy}
+                    className="gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Neue/weitere Aufgabenvorschläge erstellen
+                  </Button>
+                </div>
+              )}
+            </section>
 
-          {/* Schritt 4: Umsetzungsvorschlag prüfen & übernehmen */}
-          {proposal && (
-            <WizardStepSection
-              nummer={stepUmsetzung}
-              titel={`Umsetzung prüfen & übernehmen (${totalProposalItems} Aktivität${totalProposalItems !== 1 ? 'en' : ''})`}
-              rechts={
-                <div className="flex items-center gap-3">
-                  {korrekturen.length > 0 && (
-                    <span className="text-xs text-amber-700">
-                      {korrekturen.length} Phase-Korrektur{korrekturen.length !== 1 ? 'en' : ''}
-                    </span>
-                  )}
+            {/* KI-Vorschlags-Flow (aufklappbar) */}
+            {vorschlagOffen && (
+              <div className="space-y-5 rounded-md border border-border bg-muted/20 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-primary" />
+                    Neue Aufgabenvorschläge mit KI
+                  </h3>
                   <button
                     type="button"
-                    onClick={() => { setProposal(null); setKorrekturen([]); }}
-                    disabled={isApplying}
-                    className="text-xs text-primary underline-offset-2 hover:underline"
+                    onClick={() => setVorschlagOffen(false)}
+                    disabled={busy}
+                    className="text-xs text-muted-foreground hover:text-foreground"
                   >
-                    ← Zurück zur Ideen-Auswahl
+                    Ausblenden
                   </button>
                 </div>
-              }
-            >
-              <WizardProposalPreview
-                proposal={proposal}
-                onRemoveItem={handleRemoveItem}
-              />
-            </WizardStepSection>
-          )}
-        </div>
 
-        {/* Danach: Inhalte-Generator für leere Aktivitäten (erscheint,
-            sobald das Paket leere Aktivitäten enthält — auch direkt nach
-            der Struktur-Übernahme). */}
-        <WizardInhalteGenerator
-          paket={paket}
-          aktivitaeten={bestandAktivitaeten}
-          katalog={aktivitaetenKatalog}
-          disabled={isGenerating || isApplying}
-          onBusyChange={setInhalteBusy}
-        />
+                {/* Schritt 1 (nur bei Bestand): Ausgangslage & Vorgehen */}
+                {hatBestand && (
+                  <WizardStepSection nummer={1} titel="Vorgehen wählen">
+                    <Collapsible open={bestandOpen} onOpenChange={setBestandOpen}>
+                      <CollapsibleTrigger asChild>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between gap-2 rounded-md border border-border bg-background px-3 py-2 text-xs hover:bg-muted/50 transition-colors"
+                        >
+                          <span className="text-left min-w-0">
+                            <span className="text-muted-foreground">Vorgehen: </span>
+                            <span className="font-medium text-primary">
+                              {strukturModus === 'ergaenzen' ? 'Vorhandenes ergänzen' : 'Struktur neu denken'}
+                            </span>
+                          </span>
+                          <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform ${bestandOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-2">
+                        <WizardBestandsAnalyse
+                          aktivitaeten={bestandAktivitaeten}
+                          katalog={aktivitaetenKatalog}
+                          strukturModus={strukturModus}
+                          onModusChange={(m) => { setStrukturModus(m); setProposal(null); setKorrekturen([]); setIdeen(null); setSelectedIds(new Set()); }}
+                          disabled={busy}
+                        />
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </WizardStepSection>
+                )}
+
+                {/* Schritt: Wünsche an die KI */}
+                <WizardStepSection
+                  nummer={stepWuensche}
+                  titel="Was ist dir wichtig?"
+                  rechts={
+                    <div className="flex items-center gap-3">
+                      <SpeechInputButton
+                        value={briefing}
+                        onResult={(text) => setBriefing(text.slice(0, MAX_BRIEFING_LENGTH))}
+                        disabled={busy}
+                        maxSeconds={30}
+                      />
+                      <span className="text-xs text-muted-foreground">
+                        {briefing.length} / {MAX_BRIEFING_LENGTH}
+                      </span>
+                    </div>
+                  }
+                >
+                  <p className="text-xs text-muted-foreground leading-snug">
+                    Lernpaket und Lernziele kennt die KI bereits. Ergänze hier, worauf sie achten soll —
+                    Schwerpunkte, gewünschte Methoden oder Materialien, Umfang, Besonderheiten deiner Lerngruppe.
+                  </p>
+                  <Textarea
+                    id="wizard-briefing"
+                    value={briefing}
+                    onChange={(e) => setBriefing(e.target.value)}
+                    placeholder="Beispiel: Mir ist wichtig, dass viel mit konkreten Beispielwörtern gearbeitet wird. Einstieg gern über ein Video, dazwischen abwechslungsreiche Übungen, am Ende ein kleiner Test."
+                    rows={4}
+                    maxLength={MAX_BRIEFING_LENGTH}
+                    disabled={busy}
+                    className="resize-none"
+                  />
+                  {paket?.kreativ_briefing_updated_at && (
+                    <p className="text-xs text-muted-foreground">
+                      Zuletzt mit KI gefüllt: {new Date(paket.kreativ_briefing_updated_at).toLocaleString('de-DE')}
+                    </p>
+                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={busy || !briefing.trim()}
+                      className="gap-2"
+                    >
+                      {isGenerating ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" /> Recherchiere & sammle Ideen… (kann einige Minuten dauern)</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> {ideen ? 'Neue Ideen generieren' : 'Ideen generieren'}</>
+                      )}
+                    </Button>
+                  </div>
+                </WizardStepSection>
+
+                {/* Schritt: Kreativ-Zwischenstopp — Ideen auswählen */}
+                {ideen && !proposal && (
+                  <WizardStepSection
+                    nummer={stepIdeen}
+                    titel="Ideen auswählen"
+                    rechts={<span className="text-xs text-muted-foreground">{selectedCount} ausgewählt</span>}
+                  >
+                    <p className="text-xs text-muted-foreground leading-snug">
+                      Diese Ideen sind bewusst frei gedacht — noch ohne Zuordnung zu einem Aufgabenformat.
+                      Erst im nächsten Schritt prüft die KI für deine Auswahl, wie sie sich am besten umsetzen
+                      lässt: als Standard-Aktivität, mit einer Vorlage aus der Aufgabengalerie oder als offene Aufgabe.
+                    </p>
+                    <WizardIdeenAuswahl
+                      ideen={ideen}
+                      selectedIds={selectedIds}
+                      onToggle={handleToggleIdee}
+                      disabled={isMapping || isApplying}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        onClick={handleMapping}
+                        disabled={isMapping || isApplying || selectedCount === 0}
+                        className="gap-2"
+                      >
+                        {isMapping ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Übersetze in Aktivitäten…</>
+                        ) : (
+                          <><Sparkles className="w-4 h-4" /> {selectedCount} Idee{selectedCount !== 1 ? 'n' : ''} umsetzen</>
+                        )}
+                      </Button>
+                    </div>
+                  </WizardStepSection>
+                )}
+
+                {/* Schritt: Umsetzungsvorschlag prüfen & übernehmen */}
+                {proposal && (
+                  <WizardStepSection
+                    nummer={stepUmsetzung}
+                    titel={`Umsetzung prüfen & übernehmen (${totalProposalItems} Aktivität${totalProposalItems !== 1 ? 'en' : ''})`}
+                    rechts={
+                      <div className="flex items-center gap-3">
+                        {korrekturen.length > 0 && (
+                          <span className="text-xs text-amber-700">
+                            {korrekturen.length} Phase-Korrektur{korrekturen.length !== 1 ? 'en' : ''}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => { setProposal(null); setKorrekturen([]); }}
+                          disabled={isApplying}
+                          className="text-xs text-primary underline-offset-2 hover:underline"
+                        >
+                          ← Zurück zur Ideen-Auswahl
+                        </button>
+                      </div>
+                    }
+                  >
+                    <WizardProposalPreview
+                      proposal={proposal}
+                      onRemoveItem={handleRemoveItem}
+                    />
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        onClick={handleApplyClick}
+                        disabled={totalProposalItems === 0 || busy}
+                        className="gap-2"
+                      >
+                        {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                        In die Übersicht übernehmen
+                      </Button>
+                    </div>
+                  </WizardStepSection>
+                )}
+              </div>
+            )}
+
+            {/* Inhalte-Generator für leere Aktivitäten */}
+            <WizardInhalteGenerator
+              paket={paket}
+              aktivitaeten={bestandAktivitaeten}
+              katalog={aktivitaetenKatalog}
+              disabled={isGenerating || isApplying || isDiscarding}
+              onBusyChange={setInhalteBusy}
+            />
+          </>
+        )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={busy || inhalteBusy}>
-            {proposal ? 'Abbrechen' : 'Schließen'}
-          </Button>
-          <Button
-            onClick={handleApplyClick}
-            disabled={!proposal || totalProposalItems === 0 || busy || inhalteBusy}
-            className="gap-2"
-          >
-            {isApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-            Übernehmen
-          </Button>
+          {istFreigegeben ? (
+            <Button variant="outline" onClick={handleClose}>Schließen</Button>
+          ) : hatSitzungsAenderungen ? (
+            <>
+              <Button variant="outline" onClick={handleDiscard} disabled={busy || inhalteBusy} className="gap-2">
+                {isDiscarding ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                Abbrechen & verwerfen
+              </Button>
+              <Button onClick={handleClose} disabled={busy || inhalteBusy}>
+                Speichern & schließen
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" onClick={handleClose} disabled={busy || inhalteBusy}>
+              Schließen
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -391,11 +391,11 @@ export default function LernpaketPanel({
             size="sm"
             onClick={handleOpenWizard}
             disabled={isAcquiringLock || canEdit || isLockedByOther || isReleased}
-            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Lernpaket mit KI-Assistent füllen'}
+            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : 'Aufgabeneditor öffnen — Überblick und KI-Unterstützung für die Aufgaben dieses Pakets'}
             className="gap-2 bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100 hover:text-blue-900"
           >
             <Wand2 className="w-3.5 h-3.5 text-blue-600" />
-            Mit KI füllen
+            Aufgabeneditor
           </Button>
 
           {/* Freigabe-Button bewusst NICHT mehr hier: Die Freigabe von
