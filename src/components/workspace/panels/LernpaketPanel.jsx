@@ -52,7 +52,7 @@ export default function LernpaketPanel({
   const [previewOpen, setPreviewOpen] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: lernpaketAktivitaeten = [] } = useQuery({
+  const { data: lernpaketAktivitaeten = [], isFetched: aktivitaetenFetched } = useQuery({
     queryKey: ['lernpaketPhaseAktivitaeten'],
     // Tombstones (sync_status='to_delete') ausblenden, sonst erscheinen
     // gelöschte Aktivitäten weiterhin in der Inhaltsseite.
@@ -113,6 +113,40 @@ export default function LernpaketPanel({
   const handleLernpaketRelease = (next) => {
     setReleaseStatus({ targetType: 'lernpaket', targetId: paket.id, release: next });
   };
+
+  // ── Sonderrolle "Kompaktwissen" (2026-07-27) ────────────────────────
+  // Jedes Lernpaket enthält verpflichtend eine Kompaktwissen-Aktivität
+  // (Wissensspeicher mit den wichtigsten Inhalten des Pakets). Fehlt sie,
+  // wird sie hier automatisch angelegt (Phase Erarbeitung, erste Position).
+  const kompaktwissenEnsuredRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!kannBearbeiten || isReleased) return;
+    if (!aktivitaetenFetched || aktivitaetenKatalog.length === 0) return;
+    if (kompaktwissenEnsuredRef.current === paket.id) return;
+    const kwEintraege = aktivitaetenKatalog.filter(k => k.name === 'Kompaktwissen');
+    if (kwEintraege.length === 0) return;
+    const kwIds = kwEintraege.map(k => k.id);
+    const vorhanden = lernpaketAktivitaeten.some(
+      a => a.lernpaket_id === paket.id && kwIds.includes(a.aktivitaet_id)
+    );
+    kompaktwissenEnsuredRef.current = paket.id;
+    if (vorhanden) return;
+    const kwKatalog = kwEintraege.find(k => k.phase === 'Input') || kwEintraege[0];
+    base44.entities.LernpaketPhaseAktivitaet.create({
+      lernpaket_id: paket.id,
+      phase: kwKatalog.phase,
+      aktivitaet_id: kwKatalog.id,
+      field_values: {},
+      is_complete: false,
+      reihenfolge: 0,
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      toast.info('Kompaktwissen wurde automatisch ergänzt — es ist in jedem Lernpaket Pflicht.');
+    }).catch(err => {
+      console.error('[LernpaketPanel] Kompaktwissen-Anlage fehlgeschlagen:', err);
+      kompaktwissenEnsuredRef.current = null;
+    });
+  }, [paket.id, kannBearbeiten, isReleased, aktivitaetenFetched, lernpaketAktivitaeten, aktivitaetenKatalog, queryClient]);
 
   // Lock-Lifecycle-Audit-Fix (2026-05-12):
   // Der Dialog wird ERST geöffnet, wenn der Lock sicher erworben ist, und der

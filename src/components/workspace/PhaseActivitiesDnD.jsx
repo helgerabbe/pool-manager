@@ -45,7 +45,7 @@ function AktivitaetenPalette({ phaseAktivitaeten, droppableId }) {
 // ────────────────────────────────────────────────────────────────────────────
 // Einzelne Aktivitätskarte in der sortierbaren Liste
 // ────────────────────────────────────────────────────────────────────────────
-function AktivitaetCard({ activity, katalog, index, canEdit, onDelete, onGoToTaskWorkshop }) {
+function AktivitaetCard({ activity, katalog, index, canEdit, onDelete, onGoToTaskWorkshop, pflicht = false }) {
   return (
     <Draggable draggableId={activity.id} index={index} isDragDisabled={!canEdit}>
       {(provided, snapshot) => (
@@ -69,6 +69,14 @@ function AktivitaetCard({ activity, katalog, index, canEdit, onDelete, onGoToTas
           {/* Name + Status */}
           <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
             <span className="text-sm font-medium truncate">{katalog?.name || '…'}</span>
+            {pflicht && (
+              <span
+                title="Kompaktwissen ist in jedem Lernpaket Pflicht und kann nicht entfernt werden."
+                className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap"
+              >
+                Pflicht
+              </span>
+            )}
             {activity.content_status === 'approved' ? (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200 whitespace-nowrap">
                 <Lock className="w-2.5 h-2.5" />Freigegeben
@@ -93,7 +101,7 @@ function AktivitaetCard({ activity, katalog, index, canEdit, onDelete, onGoToTas
                 Aufgaben
               </Button>
             )}
-            {canEdit && activity.content_status !== 'approved' && (
+            {canEdit && !pflicht && activity.content_status !== 'approved' && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -264,6 +272,7 @@ export default function PhaseActivitiesDnD({
                     katalog={katalog}
                     index={idx}
                     canEdit={canEdit}
+                    pflicht={katalog?.name === 'Kompaktwissen'}
                     onDelete={(act) => setDeleteTarget({ id: act.id, name: katalog?.name || 'Aktivität' })}
                     onGoToTaskWorkshop={onGoToTaskWorkshop}
                   />

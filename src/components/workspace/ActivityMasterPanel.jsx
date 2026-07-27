@@ -38,6 +38,7 @@ import KIQuizModal from '@/components/workspace/KIQuizModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
+import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
@@ -757,6 +758,18 @@ export default function ActivityMasterPanel({
           <>
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
+                {/* Kompaktwissen: Übersicht per KI erstellen (aus Lernzielen,
+                    Inhalten und Aufgaben des Lernpakets). */}
+                {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && (
+                  <KompaktwissenKIPanel
+                    activityId={activityRecord.id}
+                    disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || activityIsReleased || (globalEditActive && !lernpaketLockActive)}
+                    onGenerated={async (newFieldValues) => {
+                      if (newFieldValues) setFieldValues(newFieldValues);
+                      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                    }}
+                  />
+                )}
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
                 {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining')) && !catalogEntry?.name?.toLowerCase().includes('ki-quiz') && (
                   <Button
