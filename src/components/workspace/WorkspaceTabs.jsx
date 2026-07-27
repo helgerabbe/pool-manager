@@ -86,9 +86,9 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'lernpakete', label: 'Lernpakete', icon: Package, step: 4,
+    value: 'lernpakete', label: 'Lernpakete (Ebene 1)', icon: Package, step: 4,
     help: {
-      title: 'Lernpakete — Aktivitäten & Aufgaben an einem Ort',
+      title: 'Lernpakete (Ebene 1) — Aktivitäten & Aufgaben an einem Ort',
       description: 'Hier füllst du als Fachlehrkraft die Lernpakete mit Leben — alles in einem Tab. Links wählst du im Baum ein Lernpaket: Rechts legst du fest, WELCHE Aktivitäten es pro Phase (Erarbeitung · Übung · Abschluss) enthält, startest den Aufgabeneditor (KI) und gibst das Paket frei. Klickst du im Baum tiefer auf eine Aktivität, öffnet sich direkt die Aufgaben-Werkstatt: Dort arbeitest du die konkreten Inhalte aus (z. B. die Lückentext-Sätze), legst Mastervorlagen an und lässt dir KI-Klone generieren. Die Ansicht rechts folgt immer deiner Auswahl im Baum.',
       features: [
         'Lernpaket auswählen → Phasen konfigurieren, Aktivitäten aus dem Katalog zuordnen, Aufgabeneditor (KI) starten',
@@ -132,9 +132,9 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'ebene3', label: 'Anwendungs- & Projektaufgaben', icon: Target, step: 6,
+    value: 'ebene3', label: 'Projektaufgaben (Ebene 3)', icon: Target, step: 6,
     help: {
-      title: 'Anwendungs- & Projektaufgaben (Ebene 3)',
+      title: 'Projektaufgaben (Ebene 3)',
       description: 'In diesem Tab erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du die Abgabeformate, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
       features: [
         'Du wählst zwischen Anwendungsaufgabe (kürzer, fokussiert) und Projektaufgabe (umfangreicher, produktorientiert)',

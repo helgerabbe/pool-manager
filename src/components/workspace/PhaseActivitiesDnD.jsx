@@ -147,8 +147,10 @@ export default function PhaseActivitiesDnD({
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
-  // Palette: nur aktive Aktivitäten der richtigen Phase
-  const phaseAktivitaeten = aktivitaetenKatalog.filter(a => a.phase === phase && a.is_active !== false);
+  // Palette: nur aktive Aktivitäten der richtigen Phase, alphabetisch sortiert
+  const phaseAktivitaeten = aktivitaetenKatalog
+    .filter(a => a.phase === phase && a.is_active !== false)
+    .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
 
   // Sortierte Liste der bereits zugeordneten Aktivitäten
   const sortedAktivitaeten = [...aktivitaeten].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
