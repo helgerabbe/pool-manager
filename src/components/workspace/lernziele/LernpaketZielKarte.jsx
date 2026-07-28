@@ -9,7 +9,7 @@
  * der die eigentliche Persistenz im übergeordneten Tab kapselt.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Plus, Save, Loader2, PenLine, Lock, X } from 'lucide-react';
@@ -27,6 +27,8 @@ export default function LernpaketZielKarte({
   kontext,
   kannBearbeiten,
   onSave,
+  // Deep-Link aus Tab 2: Bearbeitungsmodus direkt starten (wenn möglich).
+  autoStartEdit = false,
 }) {
   // Lokaler, bearbeitbarer Entwurf der Lernziele dieses Pakets.
   const [draft, setDraft] = useState([]);
@@ -141,6 +143,18 @@ export default function LernpaketZielKarte({
       setSaving(false);
     }
   };
+
+  // Deep-Link aus dem Strukturboard: Bearbeitungsmodus automatisch starten.
+  // Ist das Paket gesperrt oder freigegeben, passiert nichts — die bestehenden
+  // Banner/Tooltips erklären den Grund.
+  const autoEditTriedRef = useRef(false);
+  useEffect(() => {
+    if (!autoStartEdit || autoEditTriedRef.current) return;
+    if (!kannBearbeiten || canEdit || isLockedByOther || lernpaketReleased) return;
+    autoEditTriedRef.current = true;
+    handleEnterEdit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStartEdit, kannBearbeiten, canEdit, isLockedByOther, lernpaketReleased]);
 
   // Sicherheitsnetz: Lock freigeben, wenn die Karte unmountet (z.B. Wechsel
   // des Lernpakets in der Sidebar), während ich noch im Edit-Modus bin.

@@ -31,7 +31,7 @@ import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/Einh
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
 
-function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
+function LernpaketDialog({ open, onOpenChange, initialData, onSave, onGotoLernziele }) {
   // isNew = true nur wenn initialData null/undefined ist (= "Neues Lernpaket" Button geklickt)
   // Hat initialData eine id oder isNew-Flag, dann ist es immer "Bearbeiten"-Modus
   const isNew = !initialData;
@@ -98,6 +98,21 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave }) {
               <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>Lernziele werden zentral im Tab <strong>„Lernziele"</strong> angelegt und bearbeitet.</span>
             </div>
+            {!isNew && initialData?.id && onGotoLernziele && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 h-7 text-xs"
+                onClick={() => {
+                  onOpenChange(false);
+                  onGotoLernziele(initialData.id);
+                }}
+              >
+                <Target className="w-3.5 h-3.5" />
+                Lernziele dieses Pakets bearbeiten
+              </Button>
+            )}
             {lernziele.length === 0 ? (
               <p className="text-xs text-muted-foreground italic">Diesem Lernpaket sind noch keine Lernziele zugeordnet.</p>
             ) : (
@@ -370,6 +385,7 @@ export default function StrukturBoardEmbedded({
   themenfelder: remoteThemenfelder,
   queryClient,
   onSaved,   // callback nach erfolgreichem Speichern
+  onGotoLernziele = null, // Deep-Link: Lernziele dieses Pakets in Tab 3 bearbeiten
   readOnly = false, // ← Structural Lock nicht aktiv
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
   isLockedByOther = false, // ← GLOBALE SPERRE: Wenn true, dann ist gesamte Einheit read-only
@@ -1055,6 +1071,7 @@ export default function StrukturBoardEmbedded({
         onOpenChange={(open) => !open && setPaketDialog({ open: false, spalteId: null, paket: null })}
         initialData={paketDialog.paket}
         onSave={handlePaketSave}
+        onGotoLernziele={onGotoLernziele}
       />
 
       {/* ── Speicher-Overlay (blocking) ── */}

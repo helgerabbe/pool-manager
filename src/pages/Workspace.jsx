@@ -66,6 +66,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const [highlightedAtomIds, setHighlightedAtomIds] = useState(new Set());
   const [taskWorkshopActivityId, setTaskWorkshopActivityId] = useState(null);
   const [initialLernpaketId, setInitialLernpaketId] = useState(null);
+  // Deep-Link Tab 2 → Tab 3: Lernziele eines Pakets direkt bearbeiten
+  const [lernzieleJump, setLernzieleJump] = useState(null);
   const [strukturCompact, setStrukturCompact] = useState(false);
   // Privat-Modus: Gesamt-Vorschau der Einheit aus Schülersicht (in jedem Tab erreichbar)
   const [vorschauOpen, setVorschauOpen] = useState(false);
@@ -933,6 +935,15 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             onReleaseStructLock={handleReleaseStructLock}
                             isAcquiringStructLock={acquiringStructLock}
                             isReleasingStructLock={releasingStructLock}
+                            onGotoLernziele={async (paketId) => {
+                              // Struktur-Lock zuerst freigeben, sonst kann in
+                              // Tab 3 kein Lernpaket-Lock erworben werden.
+                              if (isStructuralEditingActive) {
+                                await handleReleaseStructLock({ silent: true });
+                              }
+                              setLernzieleJump({ paketId, token: Date.now() });
+                              handleTabChange('lernziele');
+                            }}
                             onSaved={async () => {
                               // 🔄 PHASE 1: Key-Remount erzwingt kompletten Neustart der Komponente
                               console.log('[Workspace] 🔄 onSaved-Callback: Triggere Board-Remount via Key-Increment');
@@ -966,6 +977,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                     lernziele={zieleFuerEinheit}
                     themenfelder={themenfelder}
                     kannBearbeiten={kannDieseEinheitBearbeiten && !isLockedByOther}
+                    jumpPaketId={lernzieleJump?.paketId || null}
+                    jumpToken={lernzieleJump?.token || null}
                   />
                 </ErrorBoundary>
               </div>

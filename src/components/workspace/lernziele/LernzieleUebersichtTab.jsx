@@ -53,9 +53,21 @@ export default function LernzieleUebersichtTab({
   lernziele = [],
   themenfelder = [],
   kannBearbeiten,
+  // Deep-Link aus Tab 2 (Struktur): dieses Lernpaket auswählen und den
+  // Bearbeitungsmodus direkt starten. `jumpToken` macht wiederholte Sprünge
+  // auf dasselbe Paket erkennbar.
+  jumpPaketId = null,
+  jumpToken = null,
 }) {
   const queryClient = useQueryClient();
   const [selectedPaketId, setSelectedPaketId] = useState(null);
+  const [autoEditToken, setAutoEditToken] = useState(null);
+
+  useEffect(() => {
+    if (!jumpToken || !jumpPaketId) return;
+    setSelectedPaketId(jumpPaketId);
+    setAutoEditToken(jumpToken);
+  }, [jumpToken, jumpPaketId]);
 
   // Phase-Aktivitäten laden, damit das Lernpaket-Status-Badge ("Neu" usw.)
   // identisch zu Tab 4 berechnet werden kann (siehe getLernpaketStatus).
@@ -236,6 +248,7 @@ export default function LernzieleUebersichtTab({
               kontext={kontext}
               kannBearbeiten={kannBearbeiten}
               onSave={handleSavePaket}
+              autoStartEdit={!!autoEditToken && selectedPaket.id === jumpPaketId}
             />
             </>
           ) : (
