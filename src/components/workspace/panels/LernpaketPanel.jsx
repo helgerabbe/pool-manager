@@ -581,6 +581,14 @@ export default function LernpaketPanel({
                               >
                                 <span className="text-primary font-semibold shrink-0">▸</span>
                                 <span className="flex-1 text-foreground">{katalogEntry?.name || 'Unbekannte Aktivität'}</span>
+                                {katalogEntry?.name === 'Kompaktwissen' && (
+                                  <span
+                                    title="Kompaktwissen ist ein festes Standardelement: Es ist automatisch in jedem Lernpaket enthalten und kann nicht entfernt werden."
+                                    className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300"
+                                  >
+                                    <Lock className="w-2.5 h-2.5" />Standardelement
+                                  </span>
+                                )}
                                 {activity.content_status === 'approved' ? (
                                   <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
                                     <Lock className="w-2.5 h-2.5" />Freigegeben

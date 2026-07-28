@@ -71,10 +71,11 @@ function AktivitaetCard({ activity, katalog, index, canEdit, onDelete, onGoToTas
             <span className="text-sm font-medium truncate">{katalog?.name || '…'}</span>
             {pflicht && (
               <span
-                title="Kompaktwissen ist in jedem Lernpaket Pflicht und kann nicht entfernt werden."
-                className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 whitespace-nowrap"
+                title="Kompaktwissen ist ein festes Standardelement: Es ist automatisch in jedem Lernpaket enthalten und kann nicht entfernt werden."
+                className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-700 border border-indigo-300 whitespace-nowrap"
               >
-                Pflicht
+                <Lock className="w-2.5 h-2.5" />
+                Standardelement
               </span>
             )}
             {activity.content_status === 'approved' ? (
@@ -147,9 +148,11 @@ export default function PhaseActivitiesDnD({
     queryFn: () => base44.entities.AktivitaetenKatalog.list(),
   });
 
-  // Palette: nur aktive Aktivitäten der richtigen Phase, alphabetisch sortiert
+  // Palette: nur aktive Aktivitäten der richtigen Phase, alphabetisch sortiert.
+  // Kompaktwissen ist ein Standardelement (automatisch in jedem Lernpaket)
+  // und erscheint deshalb NICHT in der Auswahl.
   const phaseAktivitaeten = aktivitaetenKatalog
-    .filter(a => a.phase === phase && a.is_active !== false)
+    .filter(a => a.phase === phase && a.is_active !== false && a.name !== 'Kompaktwissen')
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
 
   // Sortierte Liste der bereits zugeordneten Aktivitäten
