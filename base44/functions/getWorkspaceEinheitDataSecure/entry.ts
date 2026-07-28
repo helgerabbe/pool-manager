@@ -364,6 +364,7 @@ Deno.serve(async (req) => {
           id: einheit.id,
           fach: einheit.fach,
           titel_der_einheit: einheit.titel_der_einheit,
+          cover_image_url: einheit.cover_image_url || null,
           gesamtziele: einheit.gesamtziele || [],
           jahrgangsstufe: einheit.jahrgangsstufe,
           zeit_phase_id: einheit.zeit_phase_id,
