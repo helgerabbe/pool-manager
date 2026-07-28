@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Trash2, Lock, Layers, Eye } from 'lucide-react';
+import { Trash2, Lock, Layers, Eye, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { base44 } from '@/api/base44Client';
@@ -44,6 +44,9 @@ export default function BasismodulCard({
   const [showConfirm, setShowConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showVorschau, setShowVorschau] = useState(false);
+  // Akkordeon: Inhalte sind standardmäßig eingeklappt (wie in der
+  // Gemeinschaftlichen Bibliothek).
+  const [expanded, setExpanded] = useState(false);
   const [blockiert, setBlockiert] = useState(null);
   const queryClient = useQueryClient();
   const isAdmin = rolle === ROLLEN.ADMIN;
@@ -93,7 +96,7 @@ export default function BasismodulCard({
 
   return (
     <>
-      <div className="relative group/card w-full max-w-sm">
+      <div className="relative group/card">
         <Card className="group hover:shadow-lg hover:border-primary/20 transition-all duration-300 overflow-hidden flex flex-col">
           <CardContent className="p-0 flex flex-col flex-1">
             <Link
@@ -136,18 +139,20 @@ export default function BasismodulCard({
               </h3>
             </Link>
 
-            {/* Volumen-Metriken (ohne Dashboard-Bereich) */}
-            <div className="px-4 pt-3 pb-3 border-t border-border/60">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
-                Inhalte
-              </p>
-              <EinheitMetricsRow
-                einheitId={einheit.id}
-                volume={volume}
-                indicatorKeys={['themenfelder', 'lernpakete', 'aktivitaeten']}
-                basePath="/basismodule"
-              />
-            </div>
+            {/* Volumen-Metriken (ohne Dashboard-Bereich), ausklappbar */}
+            {expanded && (
+              <div className="px-4 pt-3 pb-3 border-t border-border/60">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                  Inhalte
+                </p>
+                <EinheitMetricsRow
+                  einheitId={einheit.id}
+                  volume={volume}
+                  indicatorKeys={['themenfelder', 'lernpakete', 'aktivitaeten']}
+                  basePath="/basismodule"
+                />
+              </div>
+            )}
 
             {/* Footer */}
             <div className="px-4 py-2 bg-muted/40 flex items-center justify-between border-t shrink-0 mt-auto">
@@ -174,13 +179,14 @@ export default function BasismodulCard({
                     <Trash2 className="w-4 h-4" />
                   </button>
                 )}
-                <Link
-                  to={`/basismodule/${einheit.id}?tab=einheit`}
+                <button
+                  onClick={() => setExpanded((v) => !v)}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                  title={expanded ? 'Details einklappen' : 'Inhalte anzeigen'}
                 >
-                  Öffnen
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-all" />
-                </Link>
+                  Details
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                </button>
               </div>
             </div>
           </CardContent>

@@ -62,6 +62,36 @@ export default function BasismoduleListe() {
   const faecher = [...new Set(basismodule.map(e => e.fach).filter(Boolean))];
   const { metrics } = useEinheitenMetrics(basismodule.map((e) => e.id));
 
+  // Sortierung wie in der Gemeinschaftlichen Bibliothek: Fach-Reihenfolge aus
+  // den Einstellungen, dann Jahrgang, dann Titel — anschließend pro Fach ein
+  // eigener Block.
+  const { data: faecherLookup = [] } = useQuery({
+    queryKey: ['lookupFaecher'],
+    queryFn: () => base44.entities.LookupFaecher.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const fachOrder = new Map(
+    [...faecherLookup]
+      .sort((a, b) => (a.reihenfolge ?? 999) - (b.reihenfolge ?? 999))
+      .map((f, idx) => [f.name, idx])
+  );
+  const sortiert = [...filtered].sort((a, b) => {
+    const fa = fachOrder.has(a.fach) ? fachOrder.get(a.fach) : 999;
+    const fb = fachOrder.has(b.fach) ? fachOrder.get(b.fach) : 999;
+    if (fa !== fb) return fa - fb;
+    const ja = parseInt(a.jahrgangsstufe, 10) || 0;
+    const jb = parseInt(b.jahrgangsstufe, 10) || 0;
+    if (ja !== jb) return ja - jb;
+    return (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de');
+  });
+  const fachGruppen = sortiert.reduce((acc, e) => {
+    const key = e.fach || 'Ohne Fach';
+    const letzte = acc[acc.length - 1];
+    if (letzte && letzte.fach === key) letzte.items.push(e);
+    else acc.push({ fach: key, items: [e] });
+    return acc;
+  }, []);
+
   if (isInitialLoading) {
     return (
       <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -144,16 +174,29 @@ export default function BasismoduleListe() {
       )}
 
       {filtered.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map(einheit => (
-            <BasismodulCard
-              key={einheit.id}
-              einheit={einheit}
-              metrics={metrics[einheit.id]}
-              rolle={rolle}
-              onDeleteStart={() => setIsDeletingAny(true)}
-              onDeleteEnd={() => setIsDeletingAny(false)}
-            />
+        <div className="space-y-6">
+          {fachGruppen.map((gruppe) => (
+            <div key={gruppe.fach}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-bold text-foreground">{gruppe.fach}</h2>
+                <span className="text-xs text-muted-foreground">
+                  {gruppe.items.length} Basis-Einheit{gruppe.items.length !== 1 ? 'en' : ''}
+                </span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {gruppe.items.map(einheit => (
+                  <BasismodulCard
+                    key={einheit.id}
+                    einheit={einheit}
+                    metrics={metrics[einheit.id]}
+                    rolle={rolle}
+                    onDeleteStart={() => setIsDeletingAny(true)}
+                    onDeleteEnd={() => setIsDeletingAny(false)}
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       ) : basismodule.length === 0 ? (
