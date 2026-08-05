@@ -67,10 +67,14 @@ export default function UserInviteTab({ benutzer = [], users = [], onEdit, onDel
     }
   });
 
-  // Filter: Benutzer-Metadaten ohne echten User-Account
-  const unregisteredBenutzer = benutzer.filter(b => 
-    !users.find(u => u.email === b.user_id)
-  );
+  // Filter: Benutzer-Metadaten ohne echten User-Account,
+  // alphabetisch nach Nachname (dann Vorname) sortiert
+  const unregisteredBenutzer = benutzer
+    .filter(b => !users.find(u => u.email === b.user_id))
+    .sort((a, b) =>
+      (a.nachname || '').localeCompare(b.nachname || '', 'de', { sensitivity: 'base' }) ||
+      (a.vorname || '').localeCompare(b.vorname || '', 'de', { sensitivity: 'base' })
+    );
 
   if (unregisteredBenutzer.length === 0) {
     return (
