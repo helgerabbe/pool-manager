@@ -38,21 +38,28 @@ Deno.serve(async (req) => {
     await base44.users.inviteUser(email, platformRole);
 
     const existing = await base44.asServiceRole.entities.Benutzer.filter({ user_id: email });
+    const vorhanden = existing[0];
+
+    // WICHTIG: Beim erneuten Einladen dürfen bereits gepflegte Stammdaten
+    // (Vor-/Nachname, Fächer) NICHT gelöscht werden. Nur explizit
+    // mitgeschickte Felder werden überschrieben.
+    const uebergebeneFaecher = Array.isArray(body.fachbereich_zustaendigkeit)
+      ? body.fachbereich_zustaendigkeit
+      : Array.isArray(body.faecher)
+        ? body.faecher
+        : null;
+
     const benutzerPayload = {
       user_id: email,
-      vorname: body.vorname || '',
-      nachname: body.nachname || '',
+      vorname: body.vorname ?? vorhanden?.vorname ?? '',
+      nachname: body.nachname ?? vorhanden?.nachname ?? '',
       rolle,
-      fachbereich_zustaendigkeit: Array.isArray(body.fachbereich_zustaendigkeit)
-        ? body.fachbereich_zustaendigkeit
-        : Array.isArray(body.faecher)
-          ? body.faecher
-          : [],
+      fachbereich_zustaendigkeit: uebergebeneFaecher ?? vorhanden?.fachbereich_zustaendigkeit ?? [],
       ist_aktiv: true,
     };
 
-    const benutzer = existing[0]
-      ? await base44.asServiceRole.entities.Benutzer.update(existing[0].id, benutzerPayload)
+    const benutzer = vorhanden
+      ? await base44.asServiceRole.entities.Benutzer.update(vorhanden.id, benutzerPayload)
       : await base44.asServiceRole.entities.Benutzer.create(benutzerPayload);
 
     await base44.asServiceRole.entities.AuditLog.create({
