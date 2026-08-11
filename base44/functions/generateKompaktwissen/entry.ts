@@ -48,7 +48,7 @@ export default async function(req) {
     if (!paket) return Response.json({ error: 'Lernpaket nicht gefunden.' }, { status: 404 });
     const einheit = await base44.asServiceRole.entities.Einheiten.get(paket.einheit_id).catch(() => null);
     if (!einheit || !(await hasUnitWriteAccess(base44, user, einheit))) {
-      return Response.json({ error: 'Forbidden: keine Schreibrechte für dieses Lernpaket' }, { status: 403 });
+      return Response.json({ error: 'Keine Schreibrechte für diese Einheit. Nur Administratoren, die zuständige Fachschaftsleitung, Fachlehrkräfte des Fachs sowie eingetragene Mitglieder der Einheit können Inhalte erstellen.' }, { status: 403 });
     }
     if (paket.content_status === 'approved' && paket.released_at) {
       return Response.json({ error: 'Lernpaket ist freigegeben — Inhalte sind gesperrt.' }, { status: 400 });
