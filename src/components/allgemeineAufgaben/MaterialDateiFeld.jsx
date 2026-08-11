@@ -21,13 +21,18 @@ const ACCEPT = {
   text: '.txt,.md,.doc,.docx,.rtf,application/pdf',
 };
 
-export default function MaterialDateiFeld({ value, onChange, materialTyp = 'bild', disabled = false }) {
+export default function MaterialDateiFeld({ value, onChange, materialTyp = 'bild', disabled = false, maxMB = null }) {
   const fileInputRef = useRef(null);
   const [uploading, setUploading] = useState(false);
   const istBild = materialTyp === 'bild';
 
   const upload = async (file) => {
     if (!file) return;
+    // Optionale Größenbegrenzung (z. B. Ton- und Videodateien).
+    if (maxMB && file.size > maxMB * 1024 * 1024) {
+      toast.error(`Die Datei ist zu groß (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximal erlaubt sind ${maxMB} MB.`);
+      return;
+    }
     setUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });

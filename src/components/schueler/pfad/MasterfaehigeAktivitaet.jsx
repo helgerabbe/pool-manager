@@ -22,6 +22,7 @@ import BildBeschriftungSeite from '@/components/schueler/lesen/BildBeschriftungS
 import KICheckSeite from '@/components/schueler/lesen/KICheckSeite';
 import OffeneAufgabeSeite from '@/components/schueler/lesen/OffeneAufgabeSeite';
 import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
+import MaterialaufgabeSeite from '@/components/schueler/lesen/MaterialaufgabeSeite';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -98,7 +99,9 @@ export default function MasterfaehigeAktivitaet({
   };
 
   const katName = (kat?.name || '').toLowerCase();
-  const istTextLesen = katName.includes('text lesen');
+  // WICHTIG: „Materialaufgabe" zuerst prüfen – eigener Aktivitätstyp.
+  const istMaterialaufgabe = katName.includes('materialaufgabe');
+  const istTextLesen = !istMaterialaufgabe && katName.includes('text lesen');
   const istLinkUrl = katName.includes('link') || katName.includes('url');
   const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
   // WICHTIG: 'zuordnungstraining' VOR 'zuordn' prüfen — sonst würde das
@@ -136,6 +139,7 @@ export default function MasterfaehigeAktivitaet({
         : null,
   };
 
+  if (istMaterialaufgabe) return <MaterialaufgabeSeite {...gemeinsameProps} />;
   if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
   if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
   if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;

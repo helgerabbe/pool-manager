@@ -14,6 +14,8 @@
  * - Reine Funktionen, KEINE Side-Effects, KEINE Netzwerk-Calls.
  */
 
+import { istMaterialBefuellt, istFrageVollstaendig } from '@/lib/materialaufgabe';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -174,6 +176,27 @@ function validateTrainingPairsData(data) {
   return null;
 }
 
+/**
+ * Materialaufgabe – Material: braucht Inhalt, Datei oder Link.
+ */
+function validateMaterialData(data) {
+  if (!data || typeof data !== 'object') return 'Material fehlt';
+  return istMaterialBefuellt(data) ? null : 'Material (Text, Datei oder Link) fehlt';
+}
+
+/**
+ * Materialaufgabe – Fragen: mindestens eine eindeutig auswertbare Frage.
+ */
+function validateMaterialFragen(data) {
+  const fragen = Array.isArray(data) ? data : [];
+  if (fragen.length === 0) return 'Mindestens eine Frage erforderlich';
+  const unvollstaendig = fragen.findIndex((f) => !istFrageVollstaendig(f));
+  if (unvollstaendig >= 0) {
+    return `Frage ${unvollstaendig + 1}: Fragetext und eindeutige Lösung erforderlich`;
+  }
+  return null;
+}
+
 // JSON-Validatoren pro field_name. Wenn ein field_name hier nicht gelistet ist,
 // wird der generische „nicht leer"-Check verwendet.
 const JSON_FIELD_VALIDATORS = {
@@ -185,6 +208,8 @@ const JSON_FIELD_VALIDATORS = {
   marker_data: validateMarkerData,
   test_data: validateTestData,
   training_pairs: validateTrainingPairsData,
+  material: validateMaterialData,
+  material_fragen: validateMaterialFragen,
 };
 
 // ---------------------------------------------------------------------------
