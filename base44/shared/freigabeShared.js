@@ -95,7 +95,31 @@ function validateJsonStruct(fieldName, data) {
   }
 }
 
-export function validateActivityCompleteness(catalog, fieldValues = {}) {
+/**
+ * KI-Modus: Die Inhalte werden später von der MBK generiert, deshalb sind die
+ * manuellen Inhaltsfelder bewusst leer. Geprüft wird das Briefing
+ * (analog zu AllgemeineAufgabe im KI-Modus).
+ */
+export function validateKiBriefing(briefing) {
+  const br = briefing || {};
+  const missing = [];
+  if (!br.variant) {
+    missing.push({ fieldName: 'ki_briefing.variant', label: 'KI-Briefing', reason: 'Briefing-Variante fehlt' });
+  } else if (br.variant === 'offen') {
+    if (isEmpty(br.offen?.lernziel)) missing.push({ fieldName: 'ki_briefing.offen.lernziel', label: 'Lernziel', reason: 'Pflichtfeld leer' });
+    if (isEmpty(br.offen?.funktionsweise)) missing.push({ fieldName: 'ki_briefing.offen.funktionsweise', label: 'Funktionsweise', reason: 'Pflichtfeld leer' });
+  } else if (br.variant === 'standard') {
+    if (isEmpty(br.standard?.schwerpunkt)) missing.push({ fieldName: 'ki_briefing.standard.schwerpunkt', label: 'Schwerpunkt', reason: 'Pflichtfeld leer' });
+  }
+  return { isComplete: missing.length === 0, missingFields: missing };
+}
+
+export function validateActivityCompleteness(catalog, fieldValues = {}, activity = null) {
+  // KI-Aktivitäten werden über ihr Briefing validiert, nicht über die
+  // (absichtlich leeren) manuellen Inhaltsfelder.
+  if (activity && activity.erstellungs_modus === 'ki') {
+    return validateKiBriefing(activity.ki_briefing);
+  }
   if (!catalog || !Array.isArray(catalog.form_schema)) return { isComplete: true, missingFields: [] };
 
   // ── Sonderfall Bildbeschriftung ──────────────────────────────────────────

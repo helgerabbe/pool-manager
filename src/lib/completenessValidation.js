@@ -198,7 +198,25 @@ const JSON_FIELD_VALIDATORS = {
  * @param {object} fieldValues    LernpaketPhaseAktivitaet.field_values
  * @returns {{ isComplete: boolean, missingFields: Array<{fieldName,label,reason}> }}
  */
-export function validateActivity(catalogEntry, fieldValues = {}) {
+export function validateActivity(catalogEntry, fieldValues = {}, activity = null) {
+  // ── KI-Modus ─────────────────────────────────────────────────────────────
+  // Die Inhalte werden später von der MBK generiert; die manuellen
+  // Inhaltsfelder sind bewusst leer. Geprüft wird daher das Briefing
+  // (identisch zur Logik bei Allgemeinen Aufgaben im KI-Modus).
+  if (activity && activity.erstellungs_modus === 'ki') {
+    const briefing = activity.ki_briefing || {};
+    const missing = [];
+    if (!briefing.variant) {
+      missing.push(miss('ki_briefing.variant', 'KI-Briefing', 'Briefing-Variante fehlt'));
+    } else if (briefing.variant === 'offen') {
+      if (isEmptyValue(briefing.offen?.lernziel)) missing.push(miss('ki_briefing.offen.lernziel', 'Lernziel', 'Pflichtfeld leer'));
+      if (isEmptyValue(briefing.offen?.funktionsweise)) missing.push(miss('ki_briefing.offen.funktionsweise', 'Funktionsweise', 'Pflichtfeld leer'));
+    } else if (briefing.variant === 'standard') {
+      if (isEmptyValue(briefing.standard?.schwerpunkt)) missing.push(miss('ki_briefing.standard.schwerpunkt', 'Schwerpunkt', 'Pflichtfeld leer'));
+    }
+    return { isComplete: missing.length === 0, missingFields: missing };
+  }
+
   if (!catalogEntry || !Array.isArray(catalogEntry.form_schema)) {
     return { isComplete: true, missingFields: [] };
   }

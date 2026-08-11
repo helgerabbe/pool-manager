@@ -161,7 +161,7 @@ Deno.serve(async (req) => {
     if (release === true) {
       // Vollständigkeitscheck (ehrlich)
       if (targetType === 'activity') {
-        const v = validateActivityCompleteness(catalog, target.field_values || {});
+        const v = validateActivityCompleteness(catalog, target.field_values || {}, target);
         if (!v.isComplete) {
           return Response.json(
             {

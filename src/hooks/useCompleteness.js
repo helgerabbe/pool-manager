@@ -23,10 +23,10 @@ import {
  * @param {object} catalogEntry  AktivitaetenKatalog-Record
  * @param {object} fieldValues   Aktueller (noch nicht gespeicherter) State
  */
-export function useActivityCompleteness(catalogEntry, fieldValues) {
+export function useActivityCompleteness(catalogEntry, fieldValues, activity = null) {
   return useMemo(
-    () => validateActivity(catalogEntry, fieldValues || {}),
-    [catalogEntry, fieldValues]
+    () => validateActivity(catalogEntry, fieldValues || {}, activity),
+    [catalogEntry, fieldValues, activity]
   );
 }
 

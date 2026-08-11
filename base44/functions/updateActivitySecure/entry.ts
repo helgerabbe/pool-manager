@@ -160,6 +160,20 @@ function _validateJsonStruct(fieldName, data) {
   }
 }
 
+// KI-Modus: Geprüft wird das Briefing, nicht die (leeren) Inhaltsfelder.
+function _validateKiBriefingInline(briefing) {
+  const br = briefing || {};
+  const missing = [];
+  if (!br.variant) missing.push({ fieldName: 'ki_briefing.variant', reason: 'Briefing-Variante fehlt' });
+  else if (br.variant === 'offen') {
+    if (_isEmpty(br.offen?.lernziel)) missing.push({ fieldName: 'ki_briefing.offen.lernziel', reason: 'Pflichtfeld leer' });
+    if (_isEmpty(br.offen?.funktionsweise)) missing.push({ fieldName: 'ki_briefing.offen.funktionsweise', reason: 'Pflichtfeld leer' });
+  } else if (br.variant === 'standard') {
+    if (_isEmpty(br.standard?.schwerpunkt)) missing.push({ fieldName: 'ki_briefing.standard.schwerpunkt', reason: 'Pflichtfeld leer' });
+  }
+  return { isComplete: missing.length === 0, missingFields: missing };
+}
+
 function validateActivityCompletenessInline(catalog, fieldValues = {}) {
   if (!catalog || !Array.isArray(catalog.form_schema)) return { isComplete: true, missingFields: [] };
   const missing = [];
@@ -501,11 +515,18 @@ Deno.serve(async (req) => {
       // Wir prüfen gegen den TATSÄCHLICH gespeicherten Endzustand der
       // Aktivität nach diesem Save. Im KI-Modus zählt das Briefing, sonst
       // die field_values.
-      const effectiveValues = erstellungsModus === 'ki'
-        ? {} // Wir validieren KI-Aktivitäten nicht über field_values, sondern über ki_briefing (separater Pfad — nicht in dieser Function).
-        : (erstellungsModus === 'manuell' ? fieldValues : fieldValues);
-      const v = validateActivityCompletenessInline(catalog, effectiveValues);
-      isCompleteHonest = v.isComplete;
+      // KI-Modus: Die Inhalte werden später von der MBK generiert, die
+      // manuellen field_values sind bewusst leer. Vollständig = Briefing
+      // vollständig (synchron zu shared/freigabeShared.js).
+      const istKiModus = erstellungsModus === 'ki'
+        || (erstellungsModus === undefined && aktivitaet.erstellungs_modus === 'ki');
+      if (istKiModus) {
+        const br = (erstellungsModus === 'ki' ? kiBriefing : aktivitaet.ki_briefing) || {};
+        isCompleteHonest = _validateKiBriefingInline(br).isComplete;
+      } else {
+        const v = validateActivityCompletenessInline(catalog, fieldValues);
+        isCompleteHonest = v.isComplete;
+      }
     } catch (e) {
       console.warn('[updateActivitySecure] Completeness check failed, defaulting to false:', e?.message);
       isCompleteHonest = false;
