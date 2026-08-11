@@ -19,6 +19,7 @@ import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
+import KompaktwissenGrafikFeld from '@/components/workspace/KompaktwissenGrafikFeld';
 import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
 
 // Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
@@ -279,8 +280,12 @@ export default function TextLesenModal({
             const isVideoUploadMode = medientyp === 'upload';
             const isAudioUploadMode = medientyp === 'audio_upload';
             const isUploadMode = isVideoUploadMode || isAudioUploadMode;
+            const isKompaktwissen = (catalogEntry?.name || '').toLowerCase().includes('kompaktwissen');
             const isFieldVisible = (f) => {
               if (f.field_name === 'aufgabentext') return false; // schon oben gerendert
+              // Kompaktwissen: Die Übersichtsgrafik erhält einen eigenen Block
+              // mit KI-Erstellung (siehe unten) statt des Standard-Uploads.
+              if (isKompaktwissen && f.field_name === 'bild_url') return false;
               if (f.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return false;
               if (f.field_name === 'dokument_url' && inhaltTyp !== 'datei') return false;
               // Im Upload-Modus zeigen wir kein URL-Textfeld mehr — der
@@ -426,6 +431,20 @@ export default function TextLesenModal({
                   key="__bilder_uploader__"
                   value={fieldValues.bilder || []}
                   onChange={(val) => handleFieldChange('bilder', val)}
+                  disabled={isSaving || exportLocked}
+                />
+              );
+            }
+
+            // Kompaktwissen: optionale Übersichtsgrafik – hochladen, einfügen
+            // oder per KI aus dem Kompaktwissen-Text erstellen lassen.
+            if (isKompaktwissen) {
+              out.push(
+                <KompaktwissenGrafikFeld
+                  key="__kompaktwissen_grafik__"
+                  value={fieldValues.bild_url || ''}
+                  kompaktwissenText={fieldValues.text || ''}
+                  onChange={(val) => handleFieldChange('bild_url', val)}
                   disabled={isSaving || exportLocked}
                 />
               );

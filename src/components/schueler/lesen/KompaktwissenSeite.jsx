@@ -1,7 +1,7 @@
 import { CheckCircle2, Loader2, ArrowLeft, Lightbulb, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
-import KompaktwissenText from './KompaktwissenText';
+import KompaktwissenSektionen from './KompaktwissenSektionen';
 
 /**
  * Schüler-Aktivität „Kompaktwissen".
@@ -50,16 +50,16 @@ export default function KompaktwissenSeite({ aktivitaet, busy, onErledigt, onBac
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl border border-border bg-card p-5">
-            <div className="flex items-start gap-3 mb-4">
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
               <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700 shrink-0">
                 <Lightbulb className="w-4 h-4" />
               </span>
-              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700/80 pt-0.5">
+              <p className="text-[11px] font-bold uppercase tracking-wide text-amber-700/80">
                 Kompaktwissen
               </p>
             </div>
-            <KompaktwissenText text={text} />
+            <KompaktwissenSektionen text={text} />
           </div>
         )}
       </div>

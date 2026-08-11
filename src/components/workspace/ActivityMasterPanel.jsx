@@ -34,7 +34,7 @@ import ZuordnungstrainingPreviewModal from '@/components/workspace/preview/Zuord
 import MaterialaufgabePreviewModal from '@/components/workspace/preview/MaterialaufgabePreviewModal';
 import MaterialaufgabeModal from '@/components/workspace/MaterialaufgabeModal';
 import MaterialaufgabeReadOnly from '@/components/workspace/materialaufgabe/MaterialaufgabeReadOnly';
-import KompaktwissenText from '@/components/schueler/lesen/KompaktwissenText';
+import KompaktwissenSektionen from '@/components/schueler/lesen/KompaktwissenSektionen';
 import SprechaufgabeModal from '@/components/workspace/SprechaufgabeModal';
 import SprechaufgabeReadOnly from '@/components/workspace/sprechaufgabe/SprechaufgabeReadOnly';
 import SprechaufgabePreviewModal from '@/components/workspace/preview/SprechaufgabePreviewModal';
@@ -765,7 +765,7 @@ export default function ActivityMasterPanel({
           // Kompaktwissen: Der Text ist Markdown-strukturiert (Überschriften,
           // Listen) – deshalb strukturiert rendern statt als Rohtext.
           if (field.field_name === 'text' && catalogEntry?.name?.toLowerCase().includes('kompaktwissen')) {
-            return <KompaktwissenText text={val} />;
+            return <KompaktwissenSektionen text={val} />;
           }
           return <p className="whitespace-pre-wrap leading-relaxed">{val}</p>;
         };
@@ -1267,6 +1267,10 @@ export default function ActivityMasterPanel({
                   if (field.field_name === 'inhalt_typ' || field.field_name === 'medientyp') return null;
                   if (field.field_name === 'bilder') return null;
                   if (field.field_name === 'url') return null;
+                  // Optionale Bild-Felder (z. B. Übersichtsgrafik beim
+                  // Kompaktwissen) nur zeigen, wenn wirklich ein Bild
+                  // hinterlegt ist — sonst wirkt es wie eine Pflichtangabe.
+                  if (['image', 'file', 'audio'].includes(field.type) && !field.required && !fieldValues[field.field_name]) return null;
                   if ((field.field_name === 'titel' || field.field_name === 'inhalt') && (!inhaltTyp || inhaltTyp === 'text')) return null;
                   if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
                   if (field.field_name === 'dokument_url' && inhaltTyp !== 'datei') return null;
