@@ -1,6 +1,7 @@
 import { CheckCircle2, Loader2, ArrowLeft, Lightbulb, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import KompaktwissenText from './KompaktwissenText';
 
 /**
  * Schüler-Aktivität „Kompaktwissen".
@@ -58,9 +59,7 @@ export default function KompaktwissenSeite({ aktivitaet, busy, onErledigt, onBac
                 Kompaktwissen
               </p>
             </div>
-            <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
-              {text}
-            </div>
+            <KompaktwissenText text={text} />
           </div>
         )}
       </div>

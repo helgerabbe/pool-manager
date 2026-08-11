@@ -34,6 +34,7 @@ import ZuordnungstrainingPreviewModal from '@/components/workspace/preview/Zuord
 import MaterialaufgabePreviewModal from '@/components/workspace/preview/MaterialaufgabePreviewModal';
 import MaterialaufgabeModal from '@/components/workspace/MaterialaufgabeModal';
 import MaterialaufgabeReadOnly from '@/components/workspace/materialaufgabe/MaterialaufgabeReadOnly';
+import KompaktwissenText from '@/components/schueler/lesen/KompaktwissenText';
 import ZuordnungstrainingModal from '@/components/workspace/ZuordnungstrainingModal';
 import ZuordnungstrainingReadOnly from '@/components/workspace/zuordnungstraining/ZuordnungstrainingReadOnly';
 import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
@@ -755,6 +756,11 @@ export default function ActivityMasterPanel({
           }
           if (['file', 'image', 'audio'].includes(field.type)) {
             return <a href={val} target="_blank" rel="noopener noreferrer" className="text-primary underline text-xs break-all">{val}</a>;
+          }
+          // Kompaktwissen: Der Text ist Markdown-strukturiert (Überschriften,
+          // Listen) – deshalb strukturiert rendern statt als Rohtext.
+          if (field.field_name === 'text' && catalogEntry?.name?.toLowerCase().includes('kompaktwissen')) {
+            return <KompaktwissenText text={val} />;
           }
           return <p className="whitespace-pre-wrap leading-relaxed">{val}</p>;
         };
