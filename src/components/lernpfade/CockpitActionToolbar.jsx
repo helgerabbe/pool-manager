@@ -42,10 +42,10 @@ export default function CockpitActionToolbar({
         <>
           <span
             className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5"
-            title={`Dashboard „${lerntypLabel}" als geprüft markiert – die Aufgaben bleiben bearbeitbar. Erst die finale Einheits-Freigabe sperrt alles.`}
+            title={`Dashboard „${lerntypLabel}" ist freigegeben – die Lernpaket-Freigaben darin können erst nach Rücknahme dieser Dashboard-Freigabe zurückgenommen werden.`}
           >
             <CheckCircle2 className="w-3 h-3" />
-            {lerntypLabel} · geprüft
+            {lerntypLabel} · freigegeben
           </span>
           {darfEntsperren && (
             <Button
@@ -54,10 +54,10 @@ export default function CockpitActionToolbar({
               onClick={onUnlockPath}
               disabled={statusBusy}
               className="ml-auto gap-1.5 h-6 text-[11px] px-2 border-amber-300 text-amber-700 hover:bg-amber-50"
-              title={`Das Dashboard „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben. Hier nimmst du nur die Prüf-Markierung zurück.`}
+              title={`Nimmt die Freigabe des Dashboards „${lerntypLabel}" zurück. Solange ein Dashboard freigegeben ist, kann die Freigabe der darin enthaltenen Lernpakete nicht zurückgenommen werden – die Aufgaben selbst bleiben aber bearbeitbar. Erst „Einheit final freigeben" sperrt alles.`}
             >
               {statusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
-              Prüfung zurücknehmen
+              Dashboard-Freigabe zurücknehmen
             </Button>
           )}
         </>
