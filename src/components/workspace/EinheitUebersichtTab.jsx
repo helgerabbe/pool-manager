@@ -49,6 +49,7 @@ import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/Einh
 import EinheitCoverImageSection from '@/components/workspace/EinheitCoverImageSection';
 import MoodleCodeSection from '@/components/einheiten/MoodleCodeSection';
 import BasismodulVerwendungSection from '@/components/basismodule/BasismodulVerwendungSection';
+import LernpaketIntegrationEingang from '@/components/workspace/integration/LernpaketIntegrationEingang';
 import { getBasismodulVerwendung } from '@/lib/basismodulVerknuepfung';
 
 /**
@@ -883,6 +884,9 @@ export default function EinheitUebersichtTab({
              ))
            )}
           </div>
+
+          {/* ── Lernpakete zur Integration (Angebote aus Privatbereichen) ─────── */}
+          <LernpaketIntegrationEingang einheit={einheit} />
           </>)}
           </section>
 

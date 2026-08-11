@@ -36,6 +36,37 @@
       "additionalProperties": true,
       "default": {}
     },
+    "integration_status": {
+      "type": "string",
+      "enum": [
+        "keine",
+        "angeboten"
+      ],
+      "default": "keine",
+      "description": "Lernpaket-Integration (2026-08-11): 'angeboten' = der Besitzer dieses PRIVATEN Lernpakets hat es einer gemeinschaftlichen Poolzeit-Einheit zur Integration angeboten. Es erscheint dort im ersten Tab im Bereich 'Lernpakete zur Integration'. Die Fachschaftsleitung kann es dann als KOPIE in ein Themenfeld \u00fcbernehmen (integrateLernpaketSecure) oder ablehnen. 'keine' = normales Lernpaket. Wechsel ausschlie\u00dflich \u00fcber offerLernpaketIntegrationSecure."
+    },
+    "integration_ziel_einheit_id": {
+      "type": "string",
+      "description": "FK zur Poolzeit-Einheit, der dieses Lernpaket zur Integration angeboten wurde."
+    },
+    "integration_angeboten_von": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die das Lernpaket zur Integration angeboten hat."
+    },
+    "integration_angeboten_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel des Integrations-Angebots."
+    },
+    "integration_herkunft": {
+      "type": "string",
+      "description": "Herkunftsvermerk einer integrierten Kopie (z. B. 'Aus privatem Lernpaket von name@schule.de, Einheit X'). Nur bei Paketen gesetzt, die \u00fcber die Lernpaket-Integration in diese Einheit gekommen sind."
+    },
+    "integration_uebernommen_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der \u00dcbernahme in die Poolzeit-Einheit."
+    },
     "is_locked": {
       "type": "boolean",
       "default": false,

@@ -10,6 +10,7 @@ import LernpaketLebenszyklusBadge from './LernpaketLebenszyklusBadge';
 import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
+import LernpaketAnbietenButton from '@/components/workspace/integration/LernpaketAnbietenButton';
 
 
 import { Button } from '@/components/ui/button';
@@ -380,6 +381,10 @@ export default function LernpaketPanel({
         >
           <Eye className="w-3.5 h-3.5" /> Vorschau
         </Button>
+        {/* Privatbereich: fertiges Lernpaket einer gemeinschaftlichen Einheit anbieten */}
+        {einheit?.sichtbarkeit === 'privat' && kannBearbeiten && (
+          <LernpaketAnbietenButton paket={paket} einheit={einheit} />
+        )}
         {kannBearbeiten && (
           <>
           {canEdit ? (
