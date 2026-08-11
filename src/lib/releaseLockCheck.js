@@ -59,11 +59,13 @@ export function isLernpaketReleased(lernpaket) {
 }
 
 /**
- * Ist die Aktivität freigegeben? (Manuelle Lehrer-Freigabe)
+ * Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten haben KEINE eigene
+ * Freigabe mehr. Sie sind vollständig oder unvollständig; freigegeben wird nur
+ * das Lernpaket. Die Funktion bleibt für Altaufrufer erhalten und liefert
+ * konstant false, damit keine Bearbeitungssperre auf Aktivitätsebene entsteht.
  */
-export function isActivityReleased(activity) {
-  if (!activity) return false;
-  return activity.content_status === 'approved';
+export function isActivityReleased() {
+  return false;
 }
 
 /**

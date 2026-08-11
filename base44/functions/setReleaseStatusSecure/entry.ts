@@ -172,20 +172,22 @@ Deno.serve(async (req) => {
           );
         }
       } else if (targetType === 'lernpaket') {
-        // Alle aktiven Activities müssen freigegeben sein. Die inhaltliche Vollständigkeit
-        // wurde bereits beim Freigeben der einzelnen Aktivität bzw. Master-Aufgabe geprüft.
+        // Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten haben keine
+        // eigene Freigabe mehr — alle aktiven Aktivitäten müssen lediglich
+        // VOLLSTÄNDIG sein. Die Güteentscheidung trifft die Lehrkraft bewusst
+        // mit dieser Lernpaket-Freigabe.
         const acts = await listAllByFilter(base44.asServiceRole.entities.LernpaketPhaseAktivitaet, {
           lernpaket_id: target.id,
         });
         const phasenConf = target.phasen_konfiguration || {};
         const active = acts.filter(a => a.sync_status !== 'to_delete' && !(phasenConf[a.phase]?.disabled === true));
-        const blocking = active.filter(a => a.content_status !== 'approved');
+        const blocking = active.filter(a => a.is_complete !== true);
         if (active.length === 0 || blocking.length > 0) {
           return Response.json(
             {
-              error: 'Lernpaket kann nicht freigegeben werden: nicht alle Aktivitäten sind freigegeben',
-              code: 'CHILDREN_NOT_RELEASED',
-              missingFields: blocking.map(a => ({ fieldName: `activity:${a.id}`, label: a.titel || a.id, reason: 'Aktivität nicht freigegeben' })),
+              error: 'Lernpaket kann nicht freigegeben werden: nicht alle Aktivitäten sind vollständig',
+              code: 'CHILDREN_NOT_COMPLETE',
+              missingFields: blocking.map(a => ({ fieldName: `activity:${a.id}`, label: a.titel || a.id, reason: 'Aktivität nicht vollständig' })),
               totalActive: active.length,
               blockingCount: blocking.length,
             },

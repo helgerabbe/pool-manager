@@ -437,12 +437,14 @@ export function validateLernpaketReleaseReadiness(lernpaket, activities = []) {
     return !(conf && conf.disabled === true);
   });
 
+  // Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten werden nicht mehr
+  // einzeln freigegeben. Entscheidend ist allein ihre Vollständigkeit.
   const blockingActivities = activeActivities.filter(
-    a => a.content_status !== 'approved'
+    a => a.is_complete !== true
   );
 
   const missingFields = blockingActivities.map(a =>
-    miss(`activity:${a.id}`, a.titel || a.id, 'Aktivität noch nicht freigegeben')
+    miss(`activity:${a.id}`, a.titel || a.id, 'Aktivität noch nicht vollständig')
   );
 
   return {

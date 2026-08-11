@@ -19,7 +19,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
-  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight, CheckCircle2, Eye
+  Lock, Plus, Edit, Trash2, Clock, AlertTriangle, PenLine, Loader2, ChevronRight, Menu, Target, Save, Wand2, ArrowRight, CheckCircle2, Eye, PencilRuler
 } from 'lucide-react';
 import { useLernpaketReleaseReadiness } from '@/hooks/useCompleteness';
 import { useCanToggleLernpaketRelease } from '@/hooks/useReleaseLock';
@@ -83,9 +83,11 @@ export default function LernpaketPanel({
   const activeAktivitaetenForRelease = paketAktivitaetenForRelease.filter(
     a => (phasenCfgForRelease[a.phase] || {}).disabled !== true
   );
+  // Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten werden nicht mehr
+  // einzeln freigegeben — sie müssen nur vollständig sein.
   const canReleaseLernpaket =
     activeAktivitaetenForRelease.length > 0 &&
-    activeAktivitaetenForRelease.every(a => a.content_status === 'approved');
+    activeAktivitaetenForRelease.every(a => a.is_complete === true);
   // Status-Badge: mit Aktivitäten berechnen, damit inhaltliche
   // Unvollständigkeit (is_complete=false) das Paket ehrlich rot zeigt.
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail, [], lernpaketAktivitaeten);
@@ -559,11 +561,15 @@ export default function LernpaketPanel({
                                     <Lock className="w-2.5 h-2.5" />Standardelement
                                   </span>
                                 )}
-                                {activity.content_status === 'approved' ? (
-                                  <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-300">
-                                    <Lock className="w-2.5 h-2.5" />Freigegeben
+                                {activity.braucht_nacharbeit === true && (
+                                  <span
+                                    title={activity.nacharbeit_notiz || 'Für Nacharbeit vorgemerkt'}
+                                    className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300"
+                                  >
+                                    <PencilRuler className="w-2.5 h-2.5" />Nacharbeit
                                   </span>
-                                ) : isComplete ? (
+                                )}
+                                {isComplete ? (
                                   <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700 border border-green-200">Vollständig</span>
                                 ) : (
                                   <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">

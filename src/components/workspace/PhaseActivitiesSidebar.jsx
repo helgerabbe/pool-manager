@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu, Lock, Info, Eye } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, GripVertical, ArrowRight, ArrowUp, ArrowDown, X, Menu, Lock, Info, Eye, PencilRuler } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import DeleteActivityConfirmDialog from '@/components/workspace/DeleteActivityConfirmDialog';
@@ -272,12 +272,13 @@ export default function PhaseActivitiesSidebar({
                               >
                                 <Info className="w-3.5 h-3.5" />
                               </button>
-                              {activity.content_status === 'approved' ? (
-                                <span title="Aktivität ist freigegeben und gesperrt" className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-300">
-                                  <Lock className="w-3 h-3" />
-                                  Freigegeben
+                              {activity.braucht_nacharbeit === true && (
+                                <span title={activity.nacharbeit_notiz || 'Für Nacharbeit vorgemerkt'} className="flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
+                                  <PencilRuler className="w-3 h-3" />
+                                  Nacharbeit
                                 </span>
-                              ) : !activity.is_complete && (
+                              )}
+                              {!activity.is_complete && (
                                 <span title="Inhalt unvollständig" className="flex items-center gap-1 text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full border border-amber-200">
                                   <AlertTriangle className="w-3 h-3" />
                                   Unvollständig
@@ -322,22 +323,20 @@ export default function PhaseActivitiesSidebar({
                                     Aufgaben
                                   </Button>
                                 )}
-                                {activity.content_status !== 'approved' && (
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    title="Aktivität löschen"
-                                    onClick={() =>
-                                      setDeleteTarget({
-                                        id: activity.id,
-                                        name: katalog?.name || 'Aktivität',
-                                      })
-                                    }
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                                  </Button>
-                                )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7"
+                                  title="Aktivität löschen"
+                                  onClick={() =>
+                                    setDeleteTarget({
+                                      id: activity.id,
+                                      name: katalog?.name || 'Aktivität',
+                                    })
+                                  }
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                </Button>
                               </>
                             )}
                           </div>

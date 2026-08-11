@@ -15,7 +15,8 @@ import { base44 } from '@/api/base44Client';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor, Bot } from 'lucide-react';
+import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor, Bot, PencilRuler } from 'lucide-react';
+import NacharbeitToggle from '@/components/release/NacharbeitToggle';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -54,8 +55,6 @@ import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
 import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
 import VideoThumbnailPreview from '@/components/workspace/VideoThumbnailPreview';
-import ReleaseToggleSection from '@/components/release/ReleaseToggleSection';
-import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 import { toast } from 'sonner';
 
 // Inline-editierbares Aufgabentext-Feld — gleicher Stil wie read-only (blauer Kasten, nicht kursiv)
@@ -443,12 +442,6 @@ export default function ActivityMasterPanel({
     toast.success('Vorschau-Vorlage gespeichert.');
   };
 
-  // Freigabe / Veröffentlichen der Offenen Aufgabe (Activity-Freigabe).
-  const { setReleaseStatus: setOffeneRelease, isPending: offeneReleasePending } = useSetReleaseStatus();
-  const handleOffeneRelease = (next) => {
-    setOffeneRelease({ targetType: 'activity', targetId: activityRecord.id, release: next });
-  };
-
   // Alle MasterAufgaben für diese Aktivität
   const { data: masterAufgaben = [] } = useQuery({
     queryKey: ['masterAufgaben', activityRecord.id],
@@ -456,9 +449,10 @@ export default function ActivityMasterPanel({
     select: (data) => data.sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)),
   });
 
-  // Freigabe-Status kommt aus der Datenbank. Bei masterfähigen Aktivitäten
-  // wird dieser serverseitig aus den Masteraufgaben aggregiert.
-  const activityIsReleased = activityRecord?.content_status === 'approved';
+  // Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten haben KEINE
+  // eigene Freigabe mehr — sie sind vollständig oder unvollständig. Ergänzend
+  // kann die Lehrkraft sie selbst für Nacharbeit vormerken (rein informativ).
+  const brauchtNacharbeit = activityRecord?.braucht_nacharbeit === true;
 
   // Anzeige-Modus für mehrere Master-Aufgaben (shuffle | alle). Default 'shuffle'.
   // Haupteinstellung auf Aktivitäts-Ebene; pro Karte nur als Badge gespiegelt.
@@ -732,16 +726,28 @@ export default function ActivityMasterPanel({
           <SyncStatusBadge
             status={activityRecord?.moodle_sync_status || activityRecord?.sync_status || 'new'}
           />
-          {activityIsReleased
-            ? <span className="inline-flex items-center gap-1 text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">
-                <Lock className="w-3 h-3" /> Freigegeben
-              </span>
-            : effectivelyComplete
+          {brauchtNacharbeit && (
+            <span
+              title={activityRecord?.nacharbeit_notiz || 'Für Nacharbeit vorgemerkt'}
+              className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full"
+            >
+              <PencilRuler className="w-3 h-3" /> Nacharbeit
+            </span>
+          )}
+          {effectivelyComplete
             ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
             : <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Noch unvollständig</span>
           }
         </div>
       </div>
+
+      {/* Nacharbeits-Merker der Lehrkraft (ersetzt die frühere Aktivitäts-Freigabe) */}
+      {kannBearbeiten && (
+        <NacharbeitToggle
+          activity={activityRecord}
+          disabled={lernpaketReleased || isParentPaketLockedByOther}
+        />
+      )}
 
       {/* ── Read-Only-Ansicht für Aktivitäten ohne Masteraufgaben (z.B. "Text lesen") ── */}
       {!supportsMaster && (() => {
@@ -779,7 +785,7 @@ export default function ActivityMasterPanel({
                 {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && (
                   <KompaktwissenKIPanel
                     activityId={activityRecord.id}
-                    disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || activityIsReleased || (globalEditActive && !lernpaketLockActive)}
+                    disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive)}
                     onGenerated={async (newFieldValues) => {
                       if (newFieldValues) setFieldValues(newFieldValues);
                       await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
@@ -1102,20 +1108,7 @@ export default function ActivityMasterPanel({
                     )}
                   </div>
                 )}
-                {/* Freigabe / Veröffentlichen der Offenen Aufgabe */}
-                {!editModalOpen && kannBearbeiten && (
-                  <ReleaseToggleSection
-                    isReleased={activityIsReleased}
-                    canRelease={effectivelyComplete}
-                    hierarchyLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (lernpaket?.content_status === 'approved' && !!lernpaket?.released_at)}
-                    hierarchyLockMessage={'Freigabe gesperrt (Export läuft oder Lernpaket ist freigegeben).'}
-                    onToggle={handleOffeneRelease}
-                    disabled={offeneReleasePending}
-                    releasedAt={activityRecord?.released_at}
-                    releasedBy={activityRecord?.released_by}
-                  />
-                )}
-                {/* Offene Aufgabe Modal — Freigabe-Toggle wird im Footer gespiegelt */}
+                {/* Offene Aufgabe Modal */}
                 <OffeneAufgabeModal
                   open={editModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
@@ -1125,18 +1118,6 @@ export default function ActivityMasterPanel({
                   onCancel={handleModalCancel}
                   onReset={handleModalReset}
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-                  footerExtra={kannBearbeiten ? (
-                    <ReleaseToggleSection
-                      isReleased={activityIsReleased}
-                      canRelease={effectivelyComplete}
-                      hierarchyLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked || (lernpaket?.content_status === 'approved' && !!lernpaket?.released_at)}
-                      hierarchyLockMessage={'Freigabe gesperrt (Export läuft oder Lernpaket ist freigegeben).'}
-                      onToggle={handleOffeneRelease}
-                      disabled={offeneReleasePending}
-                      releasedAt={activityRecord?.released_at}
-                      releasedBy={activityRecord?.released_by}
-                    />
-                  ) : null}
                 />
                 {/* Schüler-Vorschau (Sandbox-Snapshot) */}
                 <OffeneAufgabePreviewModal
@@ -1147,8 +1128,8 @@ export default function ActivityMasterPanel({
                   catalogName={catalogEntry?.name}
                   phase={activityRecord?.phase}
                   existingSnapshotHtml={fieldValues.approved_snapshot_html || ''}
-                  canApprove={kannBearbeiten && !activityIsReleased}
-                  isReleased={activityIsReleased}
+                  canApprove={kannBearbeiten && !lernpaketReleased}
+                  isReleased={lernpaketReleased}
                   onApproveSnapshot={persistOffeneSnapshot}
                 />
               </>

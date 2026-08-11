@@ -43,7 +43,16 @@
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Alle Pflichtfelder ausgef\u00fcllt? Wird seit Phase 3 des Freigabe-Konzepts (2026-05-14) vom Backend ehrlich auf Basis von `lib/completenessValidation.js` berechnet und NICHT mehr blind auf true gesetzt."
+      "description": "Alle Pflichtfelder ausgef\u00fcllt? Wird vom Backend ehrlich auf Basis von `lib/completenessValidation.js` berechnet. Seit der Vereinfachung des Freigabe-Workflows (2026-08-11) ist dies das ALLEIN entscheidende Kriterium einer Aktivit\u00e4t: sind alle aktiven Aktivit\u00e4ten vollst\u00e4ndig, kann das Lernpaket freigegeben werden. Eine eigene Aktivit\u00e4ts-Freigabe existiert nicht mehr."
+    },
+    "braucht_nacharbeit": {
+      "type": "boolean",
+      "default": false,
+      "description": "Vereinfachter Freigabe-Workflow (2026-08-11): Selbst gesetzter Merker der Lehrkraft \u2014 'inhaltlich vollst\u00e4ndig, aber ich m\u00f6chte hier sp\u00e4ter noch einmal nachsch\u00e4rfen'. Rein informativ: blockiert WEDER die Bearbeitung NOCH die Freigabe des Lernpakets oder der Einheit. Wird in der Aktivit\u00e4ts-Ansicht, der Lernpaket-\u00dcbersicht und der Seitenleiste als Pille 'Nacharbeit' angezeigt."
+    },
+    "nacharbeit_notiz": {
+      "type": "string",
+      "description": "Optionale kurze Notiz der Lehrkraft an sich selbst, was an dieser Aktivit\u00e4t noch nachgearbeitet werden soll. Nur relevant, wenn braucht_nacharbeit=true."
     },
     "is_master": {
       "type": "boolean",
@@ -130,16 +139,16 @@
         "approved"
       ],
       "default": "draft",
-      "description": "Freigabe-Status (Phase 3 des Freigabe-Konzepts vom 2026-05-14): 'approved' = Lehrkraft hat die Aktivit\u00e4t bewusst und aktiv freigegeben \u2192 Bearbeitung gesperrt (siehe `lib/releaseLockCheck.js`). 'draft' = noch in Bearbeitung. Wechsel ausschlie\u00dflich \u00fcber `setReleaseStatusSecure`."
+      "description": "@legacy (seit 2026-08-11 ohne Wirkung): Fr\u00fcher die eigene Freigabe der Aktivit\u00e4t. Der Freigabe-Workflow wurde vereinfacht \u2014 Aktivit\u00e4ten sind nur noch 'vollst\u00e4ndig' oder 'unvollst\u00e4ndig', freigegeben wird ausschlie\u00dflich das Lernpaket. Bestandswerte bleiben erhalten, werden aber weder als Sperre noch als Freigabe-Voraussetzung gelesen."
     },
     "released_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel der manuellen Freigabe durch die Lehrkraft. Null wenn die Aktivit\u00e4t im Draft-Modus ist. Wird ausschlie\u00dflich von `setReleaseStatusSecure` gesetzt."
+      "description": "@legacy: Zeitstempel der fr\u00fcheren Aktivit\u00e4ts-Freigabe. Wird nicht mehr geschrieben."
     },
     "released_by": {
       "type": "string",
-      "description": "E-Mail der Lehrkraft, die die Aktivit\u00e4t freigegeben hat. Null wenn Draft. Wird ausschlie\u00dflich von `setReleaseStatusSecure` gesetzt."
+      "description": "@legacy: E-Mail der Lehrkraft der fr\u00fcheren Aktivit\u00e4ts-Freigabe. Wird nicht mehr geschrieben."
     },
     "sync_status": {
       "type": "string",

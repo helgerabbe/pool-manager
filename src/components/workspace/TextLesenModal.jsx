@@ -22,12 +22,9 @@ import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
 import KompaktwissenGrafikFeld from '@/components/workspace/KompaktwissenGrafikFeld';
 import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
 
-// Phase 6 (Freigabe-Konzept 2026-05-14): Pilot-Integration.
-import CompactReleaseRow from '@/components/release/CompactReleaseRow';
 import ReleasedLockedBanner from '@/components/release/ReleasedLockedBanner';
 import { useActivityCompleteness } from '@/hooks/useCompleteness';
-import { useActivityLockState, useCanToggleActivityRelease } from '@/hooks/useReleaseLock';
-import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
+import { useActivityLockState } from '@/hooks/useReleaseLock';
 
 /** Feste Aufgabenstellung der Kompaktwissen-Aktivität (nicht bearbeitbar). */
 const KOMPAKTWISSEN_AUFGABENTEXT = 'Hier siehst du die wichtigsten Informationen zu diesem Lernpaket.';
@@ -57,27 +54,21 @@ export default function TextLesenModal({
   const [fieldValues, setFieldValues] = useState(initialFieldValues);
   const [exportLockedWasEnabled, setExportLockedWasEnabled] = useState(exportLocked);
   const [localActivity, setLocalActivity] = useState(activity);
-  // Lokaler Freigabe-State: null = unverändert, true = soll freigegeben werden, false = soll zurückgenommen werden
-  const [pendingRelease, setPendingRelease] = useState(null);
 
   useEffect(() => {
     setLocalActivity(activity);
   }, [activity?.id, activity?.content_status, activity?.released_at, activity?.released_by]);
 
-  // Phase 6: Live-Vollständigkeit + Sperrlogik
+  // Live-Vollständigkeit + Sperrlogik (Sperre nur noch über Lernpaket/Einheit —
+  // Aktivitäten haben seit 2026-08-11 keine eigene Freigabe mehr).
   const completeness = useActivityCompleteness(catalogEntry, fieldValues);
   const lockState = useActivityLockState(localActivity, parentLernpaket, parentEinheit);
-  const canToggle = useCanToggleActivityRelease(localActivity, parentLernpaket, parentEinheit);
-  const isReleased = localActivity?.content_status === 'approved';
-  const { setReleaseStatusAsync, isPending: isReleasePending } = useSetReleaseStatus();
-  const [isReleasingFromToggle, setIsReleasingFromToggle] = useState(false);
 
   // Nur beim ÖFFNEN des Modals Initialwerte laden (nicht bei jedem Re-render)
   // initialFieldValues NICHT als Dependency — das ist ein neues Objekt bei jedem Parent-Render
   const prevOpenRef = useRef(false);
   useEffect(() => {
     if (open && !prevOpenRef.current) {
-      setPendingRelease(null); // Reset beim Öffnen
       // Modal wurde gerade geöffnet → Werte initialisieren.
       // UX-Defaults für "Text lesen": leere Pflichtfelder werden mit
       // sinnvollen Vorbelegungen vorausgefüllt (Lehrkraft kann sie jederzeit
@@ -130,80 +121,16 @@ export default function TextLesenModal({
       payload.is_dirty_since_export = true;
     }
 
-    // Wenn der Toggle auf "freigeben" gestellt ist
-    if (pendingRelease === true && localActivity?.id) {
-      setIsReleasingFromToggle(true);
-      try {
-        // Erst Inhalte via onSave persistieren (inkl. Lock-Release + Cache)
-        await onSave?.(payload);
-        // Dann Freigabe setzen — DB hat jetzt die aktuellen field_values
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: true });
-      } catch (err) {
-        console.error('[TextLesenModal] Release fehlgeschlagen:', err);
-        // Fehler werden durch Toast im Hook sichtbar, Modal bereits geschlossen durch onSave
-      } finally {
-        setIsReleasingFromToggle(false);
-      }
-      return;
-    }
-
-    // Wenn Toggle auf "zurücknehmen" gestellt ist
-    if (pendingRelease === false && localActivity?.id && isReleased) {
-      setIsReleasingFromToggle(true);
-      try {
-        await onSave?.(payload);
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: false });
-        setLocalActivity(prev => prev ? { ...prev, content_status: 'draft', released_at: null, released_by: null } : prev);
-      } catch (err) {
-        console.error('[TextLesenModal] Unrelease fehlgeschlagen:', err);
-      } finally {
-        setIsReleasingFromToggle(false);
-      }
-      return;
-    }
-
-    // Normales Speichern ohne Freigabe-Änderung
     onSave?.(payload);
-  };
-
-  // Toggle: Freigabe zurücknehmen muss im Sperr-Banner sofort wirken, weil
-  // dort kein Speicherbutton sichtbar ist. Freigeben bleibt bewusst lokal bis „Speichern & Freigeben“.
-  const handleToggleRelease = async (next) => {
-    if (!localActivity?.id) return;
-    if (next === false && isReleased) {
-      setIsReleasingFromToggle(true);
-      try {
-        await setReleaseStatusAsync({ targetType: 'activity', targetId: localActivity.id, release: false });
-        setLocalActivity(prev => prev ? { ...prev, content_status: 'draft', released_at: null, released_by: null } : prev);
-        setPendingRelease(null);
-      } finally {
-        setIsReleasingFromToggle(false);
-      }
-      return;
-    }
-    setPendingRelease(next);
   };
 
   const formSchema = catalogEntry?.form_schema || [];
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      // Während die Freigabe läuft, blockieren wir das implizite Schließen
-      // (Escape, Backdrop-Klick) — sonst läuft der Vorgang im Hintergrund
-      // weiter und die Lehrkraft sieht 10–15 s lang nichts.
-      if (!isOpen && !isReleasingFromToggle) handleCancel();
+      if (!isOpen) handleCancel();
     }}>
       <DialogContent className="max-w-2xl max-h-[90dvh] min-h-[400px] flex flex-col p-0 gap-0 relative">
-        {/* UX-Overlay während Toggle-Release (Speichern + Freigabe + Refresh) */}
-        {isReleasingFromToggle && (
-          <div className="absolute inset-0 z-50 bg-white/85 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-7 h-7 animate-spin text-primary" />
-            <p className="text-sm font-semibold text-foreground">{isReleased ? 'Freigabe wird zurückgenommen…' : 'Aufgabe wird freigegeben…'}</p>
-            <p className="text-xs text-muted-foreground max-w-xs text-center">
-              {isReleased ? 'Der Dialog wird gleich wieder zur Bearbeitung freigegeben.' : 'Inhalte werden gespeichert und gesperrt. Das kann bei großen Videos einen Moment dauern.'}
-            </p>
-          </div>
-        )}
         {/* Header */}
         <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
           <DialogTitle className="text-lg font-semibold">
@@ -233,15 +160,11 @@ export default function TextLesenModal({
             reason={lockState.reason}
             releasedAt={localActivity?.released_at}
             releasedBy={localActivity?.released_by}
-            // Rücknahme nur erlaubt, wenn der Sperrgrund die Aktivität selbst
-            // ist UND die Hierarchie offen ist (canToggle).
-            onUnrelease={
-              lockState.reason === 'activity_released' && canToggle.allowed && !isReleasePending
-                ? () => handleToggleRelease(false)
-                : null
-            }
-            isUnreleasing={isReleasePending}
-            hardLocked={!canToggle.allowed}
+            /* Sperrgrund liegt immer bei Lernpaket oder Einheit — dort wird die
+               Freigabe zurückgenommen, nicht hier. */
+            onUnrelease={null}
+            isUnreleasing={false}
+            hardLocked
           />
         )}
 
@@ -495,36 +418,22 @@ export default function TextLesenModal({
 
             {/* Footer */}
             <div className="px-6 py-5 border-t border-border shrink-0 space-y-3">
-          {/* UX-Iteration 2026-05-14: Vollständigkeit + Freigabe-Toggle in
-              EINER kompakten Zeile. Welche Pflichtfelder fehlen, sieht die
-              Lehrkraft oben an den roten Sternchen — wir wiederholen das
-              hier bewusst nicht mehr. */}
+          {/* Vollständigkeits-Hinweis. Eine eigene Aktivitäts-Freigabe gibt es
+              nicht mehr — freigegeben wird das Lernpaket. */}
           {!lockState.locked && (
-            <CompactReleaseRow
-              isReleased={isReleased}
-              pendingRelease={pendingRelease}
-              canRelease={completeness.isComplete}
-              missingCount={completeness?.missingFields?.length || 0}
-              missingFields={completeness?.missingFields || []}
-              hierarchyLocked={!canToggle.allowed}
-              hierarchyLockMessage={
-                canToggle.reason === 'einheit_final'
-                  ? 'Einheit ist final freigegeben — Freigaben gesperrt'
-                  : canToggle.reason === 'lernpaket_released'
-                  ? 'Lernpaket ist freigegeben — erst dort Freigabe zurücknehmen'
-                  : null
-              }
-              onToggle={handleToggleRelease}
-              releasedAt={activity?.released_at}
-              releasedBy={activity?.released_by}
-              disabled={isSaving || isReleasingFromToggle || exportLocked}
-            />
+            completeness.isComplete ? (
+              <p className="text-xs text-green-700 font-medium">✓ Vollständig — dieses Lernpaket kann freigegeben werden, sobald alle Aktivitäten vollständig sind.</p>
+            ) : (
+              <p className="text-xs text-amber-700 font-medium">
+                Noch unvollständig: {completeness.missingFields.length} Pflichtangabe{completeness.missingFields.length !== 1 ? 'n' : ''} fehlt.
+              </p>
+            )
           )}
 
           {/* Action Buttons */}
            <div className="flex items-center justify-between gap-3 flex-wrap">
              <div className="flex items-center gap-2">
-               {onReset && !isReleased && !lockState.locked && (
+               {onReset && !lockState.locked && (
                  <ActivityResetButton
                    onReset={onReset}
                    disabled={isSaving || exportLocked}
@@ -538,13 +447,13 @@ export default function TextLesenModal({
               {!lockState.locked && (
                 <Button
                   onClick={handleSave}
-                  disabled={isSaving || isReleasingFromToggle || exportLocked}
+                  disabled={isSaving || exportLocked}
                   title={exportLocked ? 'Einheit ist zur Moodle-Synchronisation gesperrt' : ''}
                   className="gap-2"
                 >
-                  {(isSaving || isReleasingFromToggle)
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> {pendingRelease === true ? 'Freigeben…' : 'Speichern…'}</>
-                    : pendingRelease === true ? 'Speichern & Freigeben' : 'Speichern'}
+                  {isSaving
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</>
+                    : 'Speichern'}
                 </Button>
               )}
              </div>
