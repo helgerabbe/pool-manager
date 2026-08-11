@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
+import LernpaketLoeschWarnDialog from '@/components/workspace/struktur/LernpaketLoeschWarnDialog';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
@@ -426,6 +427,8 @@ export default function StrukturBoardEmbedded({
   const [initialized, setInitialized] = useState(false);
   const [isDirty, setIsDirty]         = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  // Warnung vor dem Entfernen eines Lernpakets (zeigt betroffene Arbeitspläne).
+  const [paketDeleteConfirm, setPaketDeleteConfirm] = useState(null);
   const [paketDialog, setPaketDialog] = useState({ open: false, spalteId: null, paket: null });
   const [originalSpaltenIds, setOriginalSpaltenIds] = useState(new Set());
   const [originalPaketIds, setOriginalPaketIds] = useState(new Set());
@@ -648,6 +651,14 @@ export default function StrukturBoardEmbedded({
      }));
    }
    setPaketDialog({ open: false, spalteId: null, paket: null });
+  };
+
+  // Schritt 1: Warndialog öffnen (statt direkt zu entfernen).
+  const handleDeletePaketRequest = (paketId) => {
+    if (istLesemodus) return;
+    const paket = Object.values(paketeMap).flat().find(p => p.id === paketId);
+    if (!paket) return;
+    setPaketDeleteConfirm(paket);
   };
 
   const handleDeletePaket = (paketId) => {
@@ -1013,7 +1024,7 @@ export default function StrukturBoardEmbedded({
                   titel="Nicht zugeordnet"
                   pakete={sammelbeckenPakete}
                   onAddPaket={(spalteId) => openPaketDialog(spalteId)}
-                  onDeletePaket={handleDeletePaket}
+                  onDeletePaket={handleDeletePaketRequest}
                   onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
                   isSammelbecken
                   compact={compact}
@@ -1034,7 +1045,7 @@ export default function StrukturBoardEmbedded({
                 titel={spalte.titel}
                 pakete={paketeMap[spalte.id] || []}
                 onAddPaket={(spalteId) => openPaketDialog(spalteId)}
-                onDeletePaket={handleDeletePaket}
+                onDeletePaket={handleDeletePaketRequest}
                 onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
                 onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
                 onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
@@ -1089,6 +1100,18 @@ export default function StrukturBoardEmbedded({
           </div>
         </div>
       )}
+
+      {/* Lernpaket-Löschwarnung inkl. betroffener Arbeitspläne */}
+      <LernpaketLoeschWarnDialog
+        open={!!paketDeleteConfirm}
+        paket={paketDeleteConfirm}
+        einheitId={einheitId}
+        onClose={() => setPaketDeleteConfirm(null)}
+        onConfirm={() => {
+          handleDeletePaket(paketDeleteConfirm.id);
+          setPaketDeleteConfirm(null);
+        }}
+      />
 
       {/* Versionskonflikt-Dialog (Phase 3) */}
       <VersionConflictDialog {...versionConflict.dialogProps} />
