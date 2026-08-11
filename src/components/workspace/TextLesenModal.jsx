@@ -29,6 +29,9 @@ import { useActivityCompleteness } from '@/hooks/useCompleteness';
 import { useActivityLockState, useCanToggleActivityRelease } from '@/hooks/useReleaseLock';
 import useSetReleaseStatus from '@/hooks/useSetReleaseStatus';
 
+/** Feste Aufgabenstellung der Kompaktwissen-Aktivität (nicht bearbeitbar). */
+const KOMPAKTWISSEN_AUFGABENTEXT = 'Hier siehst du die wichtigsten Informationen zu diesem Lernpaket.';
+
 export default function TextLesenModal({
   open,
   onOpenChange,
@@ -90,6 +93,11 @@ export default function TextLesenModal({
         if (!seeded.titel && parentLernpaketName) {
           seeded.titel = parentLernpaketName;
         }
+      }
+      // Kompaktwissen: Die Aufgabenstellung ist immer dieselbe und wird
+      // deshalb fest gesetzt (kein Eingabefeld im Editor).
+      if (nameLower.includes('kompaktwissen')) {
+        seeded.aufgabentext = KOMPAKTWISSEN_AUFGABENTEXT;
       }
       if (isVideoAudio && !seeded.aufgabentext) {
         seeded.aufgabentext = 'Schaue dir das Lernvideo aufmerksam an.';
@@ -257,7 +265,7 @@ export default function TextLesenModal({
            {!catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') && (
              <>
            {/* Aufgabenstellung zuerst */}
-          {formSchema.find(f => f.field_name === 'aufgabentext') && (
+          {formSchema.find(f => f.field_name === 'aufgabentext') && !(catalogEntry?.name || '').toLowerCase().includes('kompaktwissen') && (
             <div className="space-y-1.5">
               <Label>Aufgabenstellung</Label>
               <textarea
