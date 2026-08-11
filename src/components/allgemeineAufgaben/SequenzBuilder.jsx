@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { Save, Loader2, Plus, Trash2, GripVertical, FileText, ListChecks, ChevronUp, ChevronDown, Eye, Bot, BookOpen } from 'lucide-react';
 import { toast } from 'sonner';
+import MaterialDateiFeld from './MaterialDateiFeld';
+import AufgabePreviewModal from './AufgabePreviewModal';
 
 // Generiere eine einfache ID ohne externe Abhaengigkeit.
 function uid() {
@@ -102,7 +104,7 @@ function SchrittEditor({ schritt, onChange }) {
 
         {brauchtUrl && (
           <div className="space-y-2">
-            <Label>URL</Label>
+            <Label>{mat.material_typ === 'link' ? 'Link' : 'Link (z. B. YouTube, Vimeo, Studyflix)'}</Label>
             <Input
               value={mat.url || ''}
               onChange={(e) => setMat('url', e.target.value)}
@@ -111,13 +113,36 @@ function SchrittEditor({ schritt, onChange }) {
           </div>
         )}
 
+        {/* Video/Audio können alternativ als Datei hochgeladen werden. */}
+        {(mat.material_typ === 'video' || mat.material_typ === 'audio') && (
+          <div className="space-y-2">
+            <Label>… oder {mat.material_typ === 'video' ? 'Videodatei' : 'Audiodatei'} hochladen</Label>
+            <MaterialDateiFeld
+              value={mat.datei_url || ''}
+              onChange={(url) => setMat('datei_url', url)}
+              materialTyp={mat.material_typ}
+            />
+          </div>
+        )}
+
         {brauchtDatei && (
           <div className="space-y-2">
-            <Label>Datei-URL (nach Upload)</Label>
-            <Input
+            <Label>{mat.material_typ === 'bild' ? 'Bild' : 'PDF-Dokument'}</Label>
+            <MaterialDateiFeld
               value={mat.datei_url || ''}
-              onChange={(e) => setMat('datei_url', e.target.value)}
-              placeholder="URL der hochgeladenen Datei..."
+              onChange={(url) => setMat('datei_url', url)}
+              materialTyp={mat.material_typ}
+            />
+          </div>
+        )}
+
+        {mat.material_typ === 'text' && (
+          <div className="space-y-2">
+            <Label>… oder Textdokument hochladen (optional)</Label>
+            <MaterialDateiFeld
+              value={mat.datei_url || ''}
+              onChange={(url) => setMat('datei_url', url)}
+              materialTyp="text"
             />
           </div>
         )}
@@ -281,6 +306,7 @@ export default function SequenzBuilder({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [titel, setTitel] = useState('');
   const [themenfeldId, setThemenfeldId] = useState(null);
+  const [vorschauOffen, setVorschauOffen] = useState(false);
 
   // Form bei Oeffnen initialisieren
   useEffect(() => {
@@ -338,8 +364,9 @@ export default function SequenzBuilder({
   const isComplete = schritte.length > 0 && schritte.every((s) => {
     if (s.typ === 'material') {
       const m = s.material || {};
-      if (m.material_typ === 'text') return !!m.inhalt?.trim();
-      if (m.material_typ === 'video' || m.material_typ === 'audio' || m.material_typ === 'link') return !!m.url?.trim();
+      if (m.material_typ === 'text') return !!(m.inhalt?.trim() || m.datei_url?.trim());
+      if (m.material_typ === 'link') return !!m.url?.trim();
+      if (m.material_typ === 'video' || m.material_typ === 'audio') return !!(m.url?.trim() || m.datei_url?.trim());
       if (m.material_typ === 'bild' || m.material_typ === 'pdf') return !!m.datei_url?.trim();
       return false;
     }
@@ -506,6 +533,15 @@ export default function SequenzBuilder({
 
         {/* Footer */}
         <DialogFooter className="gap-2 px-6 py-4 border-t shrink-0">
+          {/* Vorschau jederzeit möglich — auch bei halb fertiger Sequenz. */}
+          <Button
+            variant="outline"
+            onClick={() => setVorschauOffen(true)}
+            disabled={schritte.length === 0}
+            className="gap-2 mr-auto"
+          >
+            <Eye className="w-4 h-4" /> Vorschau
+          </Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Abbrechen
           </Button>
@@ -522,6 +558,17 @@ export default function SequenzBuilder({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AufgabePreviewModal
+        open={vorschauOffen}
+        onOpenChange={setVorschauOffen}
+        aufgabe={{
+          titel: titel || 'Aufgabensequenz',
+          aufgaben_modus: 'sequenz',
+          sequenz_schritte: schritte,
+          aufgabenstellung: initialData?.aufgabenstellung || '',
+        }}
+      />
     </Dialog>
   );
 }

@@ -31,8 +31,10 @@ function MaterialIcon({ typ }) {
 /** Material-Block (Text, Bild, Video, Audio, PDF, Link) */
 function MaterialBlock({ material }) {
   const mt = material?.material_typ || 'text';
-  const yt = mt === 'video' ? youtubeEmbed(material.url) : null;
-  const vm = mt === 'video' ? vimeoEmbed(material.url) : null;
+  const yt = mt === 'video' ? youtubeEmbed(material.url || '') : null;
+  const vm = mt === 'video' ? vimeoEmbed(material.url || '') : null;
+  // Video/Audio können als Link ODER als hochgeladene Datei hinterlegt sein.
+  const medienUrl = material.url || material.datei_url || '';
 
   return (
     <div className="space-y-3">
@@ -64,16 +66,32 @@ function MaterialBlock({ material }) {
         </div>
       )}
 
-      {mt === 'video' && material.url && !yt && !vm && (
+      {mt === 'video' && medienUrl && !yt && !vm && (
         <div className="rounded-xl overflow-hidden border border-border bg-black">
-          <video src={material.url} controls className="w-full h-auto max-h-72" />
+          {material.datei_url && !material.url ? (
+            <video src={material.datei_url} controls className="w-full h-auto max-h-72" />
+          ) : (
+            <div className="bg-card p-4 text-center">
+              <a href={medienUrl} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm break-all">
+                Video öffnen
+              </a>
+            </div>
+          )}
         </div>
       )}
 
-      {mt === 'audio' && material.url && (
+      {mt === 'audio' && medienUrl && (
         <div className="rounded-xl border border-border bg-card p-4">
           <p className="text-sm font-medium mb-2">Tondatei anhören</p>
-          <audio src={material.url} controls className="w-full" />
+          <audio src={medienUrl} controls className="w-full" />
+        </div>
+      )}
+
+      {mt === 'text' && material.datei_url && (
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <a href={material.datei_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+            Dokument öffnen
+          </a>
         </div>
       )}
 

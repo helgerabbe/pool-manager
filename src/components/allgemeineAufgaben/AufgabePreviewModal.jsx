@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Eye, Sparkles, MessageCircle, ExternalLink, Package, Tag, FileType2 } from 'lucide-react';
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
 import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
+import AufgabensequenzSeite from '@/components/schueler/lesen/AufgabensequenzSeite';
 
 const BRIAN_LOGO_URL = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/829f1dcc1_image.png';
 
@@ -108,6 +109,9 @@ function AufgabeBody({ aufgabe }) {
 export default function AufgabePreviewModal({ open, onOpenChange, aufgabe }) {
   const titel = aufgabe?.titel || 'Aufgabe';
   const isHtml = aufgabe?.aufgaben_typ === 'externe_html_seite';
+  // Aufgabensequenzen werden mit der echten Schüler-Ansicht gezeigt — auch
+  // wenn die Sequenz erst teilweise ausgearbeitet ist.
+  const isSequenz = aufgabe?.aufgaben_modus === 'sequenz';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -126,7 +130,20 @@ export default function AufgabePreviewModal({ open, onOpenChange, aufgabe }) {
         <div className="pt-3">
           <IPadFrame lernpaketTitel={titel} phaseLabel="Aufgabe">
             <div className="bg-background h-full flex flex-col">
-              {isHtml ? (
+              {isSequenz ? (
+                <AufgabensequenzSeite
+                  aktivitaet={{
+                    field_values: {
+                      sequenz_schritte: Array.isArray(aufgabe?.sequenz_schritte) ? aufgabe.sequenz_schritte : [],
+                      aufgabentext: aufgabe?.aufgabenstellung || '',
+                    },
+                    phase: 'Übung',
+                  }}
+                  busy={false}
+                  onErledigt={() => {}}
+                  onBack={() => {}}
+                />
+              ) : isHtml ? (
                 <HtmlSeite
                   aktivitaet={{
                     field_values: {
