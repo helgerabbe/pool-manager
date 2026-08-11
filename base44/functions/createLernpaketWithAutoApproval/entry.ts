@@ -12,6 +12,7 @@
  *   structural_locks geschützt werden.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { findDuplicate, listLernpaketeOfEinheit } from '../../shared/lernpaketDedupe.js';
 
 const STRUCTURAL_LOCK_TIMEOUT_MS = 5 * 60 * 1000;
 
@@ -73,6 +74,31 @@ Deno.serve(async (req) => {
         error: 'Insufficient permissions to create Lernpakete in this Einheit',
         code: 'INSUFFICIENT_PERMISSIONS',
       }, { status: 403 });
+    }
+
+    // ── Duplikat-Schutz ──────────────────────────────────────────────────
+    // Verhindert verdoppelte Lernpakete (Doppelklick, Retry, KI-Vorschlag mit
+    // bestehendem Titel). Existiert im selben Themenfeld bereits ein Paket mit
+    // gleichem Titel, wird KEIN neues erstellt, sondern das bestehende
+    // zurückgegeben.
+    const existingPakete = await listLernpaketeOfEinheit(
+      base44.asServiceRole.entities.Lernpakete,
+      einheit_id
+    );
+    const duplicate = findDuplicate(existingPakete, {
+      titel: title,
+      themenfeld_id: themenfeld_id || null,
+    });
+    if (duplicate) {
+      console.warn(
+        `[createLernpaketWithAutoApproval] Duplikat verhindert: "${title}" existiert bereits (${duplicate.id}) in Einheit ${einheit_id}`
+      );
+      return Response.json({
+        success: true,
+        duplicate: true,
+        lernpaket: duplicate,
+        message: 'Ein Lernpaket mit diesem Titel existiert in diesem Themenfeld bereits — es wurde kein Duplikat erstellt.',
+      });
     }
 
     // Erstelle das Lernpaket mit Auto-Grün

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { findDuplicate } from '../../shared/lernpaketDedupe.js';
 
 /**
  * saveEinheitStruktur
@@ -183,6 +184,23 @@ Deno.serve(async (req) => {
         const paket = pakete[i];
 
         if (paket.isNew) {
+          // ── Duplikat-Schutz ────────────────────────────────────────────
+          // Existiert im Zielthemenfeld bereits ein Lernpaket mit gleichem
+          // Titel, wird kein zweites angelegt (verhindert verdoppelte
+          // Datensätze bei Retry/Doppel-Speichern).
+          const vorhanden = findDuplicate(existingPackets, {
+            titel: paket.titel_des_pakets,
+            themenfeld_id: themenfeldId,
+          });
+          if (vorhanden) {
+            processedPacketIds.add(vorhanden.id);
+            const ordnung = i + 1;
+            packetUpdates.push(() => base44.entities.Lernpakete.update(vorhanden.id, {
+              themenfeld_id: themenfeldId,
+              reihenfolge_nummer: ordnung,
+            }));
+            continue;
+          }
           packetCreates.push(() => base44.entities.Lernpakete.create({
             einheit_id,
             themenfeld_id: themenfeldId,
