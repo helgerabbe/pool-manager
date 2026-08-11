@@ -42,6 +42,7 @@
     },
     "sequenz_schritte": {
       "type": "array",
+      "description": "Schritte einer Aufgabensequenz (Material/Aufgabe in fester Reihenfolge). Der eigentliche Schritt-Inhalt liegt je nach Typ in `material` bzw. `aufgabe`.",
       "items": {
         "type": "object",
         "properties": {
@@ -60,6 +61,64 @@
           },
           "titel": {
             "type": "string"
+          },
+          "material": {
+            "type": "object",
+            "description": "Inhalt eines Material-Schritts.",
+            "properties": {
+              "material_typ": {
+                "type": "string",
+                "enum": [
+                  "text",
+                  "video",
+                  "audio",
+                  "bild",
+                  "pdf",
+                  "link"
+                ]
+              },
+              "inhalt": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              },
+              "datei_url": {
+                "type": "string"
+              },
+              "beschreibung": {
+                "type": "string"
+              },
+              "transkript": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
+          },
+          "aufgabe": {
+            "type": "object",
+            "description": "Inhalt eines Aufgaben-Schritts.",
+            "properties": {
+              "aufgabenstellung": {
+                "type": "string"
+              },
+              "input_erforderlich": {
+                "type": "boolean",
+                "default": true
+              },
+              "musterloesung": {
+                "type": "string"
+              },
+              "feedback_modus": {
+                "type": "string",
+                "enum": [
+                  "musterloesung",
+                  "ki"
+                ],
+                "default": "musterloesung"
+              }
+            },
+            "additionalProperties": true
           }
         }
       },
@@ -141,11 +200,11 @@
     },
     "aufgabenstellung_datei_url": {
       "type": "string",
-      "description": "Optionale, hochgeladene Datei der Aufgabenstellung (PDF, Doc oder Bild). Nur bei Handlungsaufgaben relevant: Damit der Sch\u00fcler die Aufgabenstellung auch digital nachlesen kann, falls der analoge Zettel beim Material fehlt. Ersetzt NICHT die Abgabe (Handlungsaufgaben sind reine Best\u00e4tigungsaufgaben)."
+      "description": "Optionale, hochgeladene Datei der Aufgabenstellung (PDF, Doc oder Bild). Nur bei Handlungsaufgaben relevant."
     },
     "aufgabenstellung_datei_name": {
       "type": "string",
-      "description": "Urspr\u00fcnglicher Dateiname der hochgeladenen Aufgabenstellungs-Datei (f\u00fcr die Anzeige)."
+      "description": "Urspruenglicher Dateiname der hochgeladenen Aufgabenstellungs-Datei."
     },
     "schwierigkeitsgrad": {
       "type": "integer",
@@ -245,11 +304,11 @@
     },
     "brian_dialog_id": {
       "type": "string",
-      "description": "ID/Kennung der Aufgabe in Brian.study (R\u00fcckkanal des manuellen Exports, 2026-07-25). Wird beim Best\u00e4tigen 'In Brian \u00fcbertragen' im Brian-Export-Cockpit eingetragen und in den Moodle-Export-Payload durchgereicht, damit Moodle-HTML-Seiten direkt auf die richtige Brian-Aufgabe verlinken k\u00f6nnen."
+      "description": "ID/Kennung der Aufgabe in Brian.study (Rueckkanal des manuellen Exports)."
     },
     "brian_url": {
       "type": "string",
-      "description": "Optionale direkte URL (Deep-Link) zur Aufgabe in Brian.study. Wird zusammen mit brian_dialog_id beim Export-Best\u00e4tigen erfasst."
+      "description": "Optionale direkte URL (Deep-Link) zur Aufgabe in Brian.study."
     },
     "prioritaete_lernziele": {
       "type": "array",
