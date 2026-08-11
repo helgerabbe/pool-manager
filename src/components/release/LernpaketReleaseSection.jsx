@@ -11,8 +11,6 @@
  */
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
 import { Lock, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useLernpaketReleaseReadiness } from '@/hooks/useCompleteness';
@@ -29,19 +27,10 @@ export default function LernpaketReleaseSection({
   const readiness = useLernpaketReleaseReadiness(lernpaket, activities);
   const lockState = useLernpaketLockState(lernpaket, einheit);
   const canToggle = useCanToggleLernpaketRelease(lernpaket, einheit);
-  const { data: lockedDashboardMemberships = [] } = useQuery({
-    queryKey: ['lernpaket-dashboard-locks', lernpaket?.id],
-    queryFn: () => base44.entities.LernpfadAufgabeMembership.filter({
-      aufgabe_id: lernpaket.id,
-      pfad_status: 'locked_for_export',
-    }),
-    enabled: !!lernpaket?.id,
-  });
-  const isDashboardLocked = lockedDashboardMemberships.length > 0;
-  const canToggleLernpaketRelease = canToggle.allowed && !isDashboardLocked;
-  const releaseLockMessage = isDashboardLocked
-    ? 'Dashboard ist freigegeben — Lernpaket-Freigabe kann nicht zurückgenommen werden.'
-    : 'Einheit ist final freigegeben — Lernpaket-Freigabe kann nicht zurückgenommen werden.';
+  // Entkopplung (2026-08-11): Dashboard-Freigaben sperren die Inhalte NICHT
+  // mehr — nur die finale Einheits-Freigabe tut das.
+  const canToggleLernpaketRelease = canToggle.allowed;
+  const releaseLockMessage = 'Einheit ist final freigegeben — Lernpaket-Freigabe kann nicht zurückgenommen werden.';
   const { setReleaseStatus, isPending } = useSetReleaseStatus();
 
   if (!lernpaket) return null;

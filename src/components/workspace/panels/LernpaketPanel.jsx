@@ -91,21 +91,14 @@ export default function LernpaketPanel({
   const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail, [], lernpaketAktivitaeten);
   const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaetenForRelease);
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
-  const { data: lockedDashboardMemberships = [] } = useQuery({
-    queryKey: ['lernpaket-dashboard-locks', paket.id],
-    queryFn: () => base44.entities.LernpfadAufgabeMembership.filter({
-      aufgabe_id: paket.id,
-      pfad_status: 'locked_for_export',
-    }),
-    enabled: !!paket?.id,
-  });
-  const isDashboardLocked = lockedDashboardMemberships.length > 0;
-  const canToggleLernpaketRelease = canToggleRelease.allowed && !isDashboardLocked;
-  const releaseLockTitle = isDashboardLocked
-    ? 'Lernpaket liegt in einem freigegebenen Dashboard — bitte erst das Dashboard entsperren'
-    : !canToggleRelease.allowed
-      ? 'Einheit ist final freigegeben — Freigabe gesperrt'
-      : '';
+  // Entkopplung (2026-08-11): Die Freigabe eines Arbeitsplans/Dashboards
+  // bezieht sich nur noch auf seine STRUKTUR. Inhaltliche Freigaben von
+  // Lernpaketen sind davon unabhängig und werden ausschließlich durch die
+  // finale Einheits-Freigabe gesperrt.
+  const canToggleLernpaketRelease = canToggleRelease.allowed;
+  const releaseLockTitle = !canToggleRelease.allowed
+    ? 'Einheit ist final freigegeben — Freigabe gesperrt'
+    : '';
   const { setReleaseStatus, isPending: isReleasePending } = useSetReleaseStatus();
   const isReleased = paket.content_status === 'approved' && !!paket.released_at;
   // Freigegebenes Lernpaket → Inhalte gesperrt, Bearbeiten/KI-Füllen deaktiviert.

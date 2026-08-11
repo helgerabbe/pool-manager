@@ -118,14 +118,12 @@ export function useDashboardRelease({
       return;
     }
 
-    const found = collectBlockers();
-    if (found.length > 0) {
-      setBlockers(found);
-      setBlockerOpen(true);
-      return;
-    }
+    // Entkopplung (2026-08-11): Die Dashboard-Freigabe bezieht sich nur auf
+    // die STRUKTUR des Arbeitsplans. Noch nicht freigegebene Inhalte sind
+    // deshalb kein Hindernis mehr — sie werden erst bei der finalen
+    // Einheits-Freigabe geprüft.
 
-    // 2. Pre-Flight ok → Confirm-Dialog mit Prüfergebnis öffnen.
+    // 2. Confirm-Dialog mit Prüfergebnis öffnen.
     let aufgabenCount = 0;
     let itemCount = 0;
     sektoren.forEach((s) => {
@@ -216,7 +214,7 @@ export function useDashboardRelease({
     }
     const label = lerntypLabel || activeLernTyp;
     const ok = window.confirm(
-      `Lernpfad „${label}" wirklich entsperren? Aufgaben werden in Tab 5 wieder bearbeitbar.`
+      `Freigabe des Arbeitsplans „${label}" wirklich zurücknehmen? Danach kann die Struktur wieder verändert werden.`
     );
     if (!ok) return;
 
