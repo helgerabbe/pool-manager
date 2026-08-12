@@ -207,7 +207,7 @@ Am Ende des Dialogs gibst du dem Schüler eine Bewertung und konkrete Verbesseru
 ${erwartungshorizont ? `Erwartungshorizont der Lehrkraft (interne Vergleichsgrundlage, dem Schüler NICHT vorlesen):\n${erwartungshorizont}` : '(Kein Erwartungshorizont hinterlegt – orientiere dich an Aufgabenstellung, Lernzielen und Rubriken.)'}
 Formuliere die Rückmeldung wertschätzend, benenne konkret Stärken und nenne 2–3 umsetzbare Verbesserungsvorschläge.`;
 
-    const systemInstructionAuto = `Du bist ein motivierender, geduldiger GEP-Lerncoach.
+    const systemInstructionAuto = `Du bist ein motivierender, geduldiger Lerncoach und begleitest Schülerinnen und Schüler bei dieser Aufgabe.
 
 RAHMENINFORMATIONEN:
 - Fach: ${fach}
