@@ -152,7 +152,22 @@ Deno.serve(async (req) => {
       .map(r => `- ${r.title} (${r.points} Pkt.): ${r.criteria_text}`)
       .join('\n') || '';
 
-    const outputFormatsStr = (Array.isArray(task.output_formats) ? task.output_formats : []).join(', ') || 'keine spezifischen Formate';
+    const alleFormate = [
+      ...(Array.isArray(task.output_formats) ? task.output_formats : []),
+      ...(task.custom_format ? [task.custom_format] : []),
+    ];
+    const outputFormatsStr = alleFormate.join(', ') || 'keine spezifischen Formate';
+
+    // Tutor-Persona: Betreuungsstil als Baustein der internen Anweisung.
+    const PERSONA_BESCHREIBUNGEN = {
+      standard: 'Standard-Tutor: ausgewogenes Scaffolding – führe den Schüler schrittweise zur Lösung.',
+      unterstuetzend: 'Unterstützender Tutor: sei besonders einfühlsam und geduldig – gib mehr Hilfestellungen und Zwischenschritte.',
+      streng: 'Strenger Tutor: fordere präzise Antworten – gib wenig Hilfestellungen und verlange eigenständiges Denken.',
+      restriktiv: 'Restriktiver Tutor: gib keinerlei Hinweise – der Schüler muss die Aufgabe vollständig selbstständig lösen.',
+    };
+    const personaZusatz = (task.tutor_persona_zusatz || '').trim();
+    const personaStr = (PERSONA_BESCHREIBUNGEN[task.tutor_persona] || PERSONA_BESCHREIBUNGEN.standard)
+      + (personaZusatz ? `\nErgänzende Hinweise der Lehrkraft zum Betreuungsstil: ${personaZusatz}` : '');
 
     // Aufgabensequenz: Schritte (Material ⇄ Aufgabe) in den Prompt einweben,
     // damit Brian den mehrstufigen Ablauf kennt und moderieren kann.
@@ -176,7 +191,19 @@ Deno.serve(async (req) => {
     const ablaufBlock = projektAblauf
       ? `\n\nGEPLANTER PROJEKT-ABLAUF (interne Anweisung der Lehrkraft, dem Schüler NICHT wörtlich vorlesen):\n${projektAblauf}\n\nBegleite den Schüler entlang dieser Zwischenschritte in der vorgegebenen Reihenfolge: Erst wenn ein Schritt erkennbar abgeschlossen ist, leite zum nächsten Schritt über. Springe nicht voraus und hilf dem Schüler einzuordnen, an welchem Schritt er gerade arbeitet.`
       : '';
+
+    // Abgabe & Gütekriterien: Formate, Fokus und Rubriken gehören VOLLSTÄNDIG
+    // in die interne Anweisung, damit Brian die Schüler gezielt dorthin lenkt.
+    const abgabeBlock = `\n\nABGABE & GÜTEKRITERIEN:
+- Geforderte Abgabeformate: ${outputFormatsStr}
+${task.quality_focus ? `- Besonderer Fokus der Lehrkraft: ${task.quality_focus}\n` : ''}${rubrikenStr ? `- Bewertungsrubriken (lenke die Schüler gezielt in diese Richtung und rege sie zur Reflexion an, ob sie die Aspekte schon gut umgesetzt haben):\n${rubrikenStr}` : '- (noch keine Bewertungsrubriken hinterlegt)'}
+
+Du bewertest das fertige Abgabeformat NICHT selbst – du begleitest die Schüler bei dessen Erstellung, erinnerst sie an das geforderte Format und berätst sie auf dem Weg dorthin.`;
+
     const systemInstructionAuto = `Du bist ein motivierender, geduldiger GEP-Lerncoach für Jahrgangsstufe ${jahrgang} im Fach ${fach}.
+
+DEIN BETREUUNGSSTIL (Tutor-Persona):
+${personaStr}
 
 Pädagogische Regel: Du darfst NIEMALS die Lösung direkt verraten. Nutze stattdessen Scaffolding – stelle Denkanstöße und gezielte Rückfragen, die den Schüler zum eigenständigen Nachdenken anregen.
 
@@ -191,7 +218,7 @@ Lernziele, auf die du dich beziehst:
 ${lernzieleStr}
 
 Verknüpfte Lernziele und zugehörige Lernpakete (Verweis-Logik):
-${lernzieleMitLpStr}${sequenzBlock}${ablaufBlock}
+${lernzieleMitLpStr}${sequenzBlock}${ablaufBlock}${abgabeBlock}
 
 WICHTIG für deine Begleitung: Wenn du merkst, dass der Schüler ein bestimmtes Lernziel noch nicht beherrscht, verweise ihn konkret auf das oben genannte zugehörige Lernpaket ("Schau dir dafür nochmal das Lernpaket … an"). Gibt es zu einem Lernziel KEIN zugeordnetes Lernpaket, sage dem Schüler freundlich, dass es dafür aktuell kein Lernpaket gibt, und ermutige ihn, mit seiner Lehrkraft zu besprechen, wie er dieses Ziel erreichen kann.
 
@@ -213,7 +240,7 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollst�
           rules: {
             brian_dialog_name: 'Prägnanter Dialogname, maximal 60 Zeichen.',
             brian_learner_instruction: 'Für Schüler sichtbar, klar, Du-Form, maximal 3-4 Sätze.',
-            brian_system_instruction: 'Interne Tutor-Persona; nutze die Vorlage und optimiere nur minimal.',
+            brian_system_instruction: 'Vollständige interne Anweisung für den Chatbot (für Lernende unsichtbar). Nutze die Vorlage als Basis und stelle sicher, dass Aufgabenstellung, geforderte Abgabeformate, Gütekriterien/Rubriken, ggf. der Projekt-Ablauf mit Zwischenschritten sowie die Tutor-Persona vollständig enthalten sind.',
             brian_completion_rule: 'Nutze die Vorlage als Abbruchbedingung.',
             rubric_criteria: rubrikenStr
               ? 'Vorhandene Rubriken behalten; gib ein leeres Array zurück.'
@@ -235,6 +262,9 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollst�
               : (isEbene3 ? 'Projekt-/Anwendungsaufgabe (Ebene 3)' : 'Transfer-Aufgabe (Ebene 2)'),
             sequenz_schritte: sequenzStr || null,
             projekt_ablauf_interne_beschreibung: projektAblauf || null,
+            abgabeformate: outputFormatsStr,
+            besonderer_fokus: task.quality_focus || null,
+            tutor_persona: personaStr,
             system_instruction_vorlage: systemInstructionAuto,
             completion_rule_vorlage: completionRuleAuto,
           },

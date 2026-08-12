@@ -46,8 +46,8 @@ function TutorPersonaSection({ personaValue, personaZusatz, onPersonaChange, onZ
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">3 · Tutor-Persona</p>
-        <p className="text-xs text-muted-foreground mt-0.5">Legt das Verhalten und den Betreuungsstil des KI-Tutors fest</p>
+        <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Tutor-Persona <span className="font-normal normal-case text-muted-foreground">(Baustein der internen Anweisung)</span></p>
+        <p className="text-xs text-muted-foreground mt-0.5">Legt den Betreuungsstil fest und fließt beim Generieren in die interne Anweisung ein</p>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -226,12 +226,13 @@ export default function AITutorPromptPanel({
       const result = response.data?.segments;
       if (!result) throw new Error('Keine Segmente erhalten');
 
-      setSegments({
+      setSegments(prev => ({
+        ...prev,
         brian_dialog_name: result.brian_dialog_name || '',
         brian_learner_instruction: result.brian_learner_instruction || '',
         brian_system_instruction: result.brian_system_instruction || '',
         brian_completion_rule: result.brian_completion_rule || '',
-      });
+      }));
 
       // Rubriken nur übernehmen wenn noch keine vorhanden
       const updates = {
@@ -347,7 +348,18 @@ export default function AITutorPromptPanel({
           kannBearbeiten={kannBearbeiten}
         />
 
-        {/* Feld 3: Tutor-Persona */}
+        {/* Feld 3: Interne Anweisung für den Chatbot (für Lernende unsichtbar).
+            Wird beim Generieren aus Aufgabenstellung, Abgabeformaten,
+            Gütekriterien, Projekt-Ablauf und Tutor-Persona zusammengesetzt. */}
+        <SegmentField
+          label="3 · Interne Anweisung für den Chatbot"
+          description="Für Lernende unsichtbar – steuert, wie sich der Bot verhält. Enthält Aufgabenstellung, Abgabeformate, Gütekriterien und ggf. den Projekt-Ablauf mit Zwischenschritten."
+          value={segments.brian_system_instruction}
+          onChange={kannBearbeiten ? v => updateField('brian_system_instruction', v) : undefined}
+          kannBearbeiten={kannBearbeiten}
+        />
+
+        {/* Tutor-Persona: ein Baustein der internen Anweisung */}
         <TutorPersonaSection
           personaValue={segments.tutor_persona}
           personaZusatz={segments.tutor_persona_zusatz}

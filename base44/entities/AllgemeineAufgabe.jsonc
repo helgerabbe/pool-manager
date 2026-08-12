@@ -301,10 +301,26 @@
       "type": "string"
     },
     "brian_system_instruction": {
-      "type": "string"
+      "type": "string",
+      "description": "Brian-Feld 3 'Interne Anweisung f\u00fcr den Chatbot' (2026-08-12): F\u00fcr Lernende unsichtbare Anweisung, die das Bot-Verhalten steuert. Wird von generateBrianSegments aus Aufgabenstellung, Abgabeformaten, G\u00fctekriterien/Rubriken, Projekt-Ablauf und Tutor-Persona zusammengesetzt und ist im Tab 'KI-Tutor Prompt' editierbar."
     },
     "brian_completion_rule": {
       "type": "string"
+    },
+    "tutor_persona": {
+      "type": "string",
+      "enum": [
+        "standard",
+        "unterstuetzend",
+        "streng",
+        "restriktiv"
+      ],
+      "default": "standard",
+      "description": "Betreuungsstil des KI-Tutors \u2013 ein Baustein der internen Anweisung (brian_system_instruction)."
+    },
+    "tutor_persona_zusatz": {
+      "type": "string",
+      "description": "Optionale erg\u00e4nzende Hinweise der Lehrkraft zum Betreuungsstil (z. B. fachliche Strenge, Sprachebene, Scaffolding-Strategie)."
     },
     "brian_dialog_id": {
       "type": "string",
