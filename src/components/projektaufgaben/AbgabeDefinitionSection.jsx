@@ -15,6 +15,7 @@ const STANDARD_FORMATE = [
   { id: 'image',        label: 'Bild',            emoji: '🖼️' },
   { id: 'graphic',      label: 'Grafik',          emoji: '📐' },
   { id: 'audio',        label: 'Audio/Podcast',   emoji: '🎙️' },
+  { id: 'portfolio',    label: 'Portfolio',       emoji: '📁' },
 ];
 
 function FormatKachel({ format, selected, onToggle }) {
@@ -86,6 +87,7 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
   const [outputFormats, setOutputFormats] = useState([]);
   const [customFormat, setCustomFormat]   = useState('');
   const [qualityFocus, setQualityFocus]   = useState('');
+  const [projektAblauf, setProjektAblauf] = useState('');
   const [rubrics, setRubrics]             = useState([]);
   const [generating, setGenerating]       = useState(false);
   const [saving, setSaving]               = useState(false);
@@ -98,6 +100,7 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
     setOutputFormats(aufgabe.output_formats || []);
     setCustomFormat(aufgabe.custom_format || '');
     setQualityFocus(aufgabe.quality_focus || '');
+    setProjektAblauf(aufgabe.projekt_ablauf_beschreibung || '');
 
     // Migrationspfad: altes Objekt-Format → neues Array-Format
     const stored = aufgabe.rubric_criteria;
@@ -171,6 +174,7 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
         output_formats: outputFormats,
         custom_format:  customFormat,
         quality_focus:  qualityFocus,
+        projekt_ablauf_beschreibung: projektAblauf,
         rubric_criteria: rubricsToSave,
       });
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
@@ -210,7 +214,7 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
             Deshalb ist es wichtig, das gewünschte Format hier anzugeben: nur so weiß Brian, in welche Richtung er unterstützen soll.
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
           {STANDARD_FORMATE.map(fmt => (
             <FormatKachel
               key={fmt.id}
@@ -231,6 +235,33 @@ export default function AbgabeDefinitionSection({ aufgabe, kannBearbeiten }) {
             className="w-full h-9 px-3 rounded-lg border border-border text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
           />
         </div>
+      </section>
+
+      {/* ── Block A2: Projekt-Ablauf für die KI (nicht schülersichtbar) ── */}
+      <section className="space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold">Ablauf & Zwischenschritte <span className="text-muted-foreground font-normal">(nur für die KI)</span></h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Beschreibe hier, wie du dir den Ablauf der Projektarbeit vorstellst – die Schülerinnen und Schüler sehen diesen Text nicht.
+          </p>
+        </div>
+        <div className="flex items-start gap-2.5 rounded-lg border border-blue-200 bg-blue-50/70 px-3.5 py-3 text-xs text-blue-900 leading-relaxed">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-blue-500" />
+          <p>
+            Erkläre der KI den geplanten <strong>Ablauf des Projekts</strong>: Welche Zwischenschritte gibt es, in welcher
+            Reihenfolge sollen sie bearbeitet werden, und was sollen die Schülerinnen und Schüler in jedem Schritt tun?
+            Brian nutzt diese Beschreibung, um die Lernenden <strong>Schritt für Schritt</strong> durch das Projekt zu führen –
+            er erkennt so, wann ein Schritt abgeschlossen ist und der nächste beginnen soll.
+          </p>
+        </div>
+        <textarea
+          value={projektAblauf}
+          onChange={(e) => setProjektAblauf(e.target.value)}
+          disabled={!kannBearbeiten}
+          placeholder={'z.B.\n1. Zuerst recherchieren die Schüler … und halten ihre Ergebnisse fest.\n2. Erst wenn das steht, entwickeln sie …\n3. Zum Schluss …'}
+          rows={7}
+          className="w-full px-3 py-2 rounded-lg border border-border text-sm bg-background resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60"
+        />
       </section>
 
       {/* ── Block B: Fokus & KI-Trigger ── */}
