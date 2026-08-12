@@ -192,9 +192,27 @@ Deno.serve(async (req) => {
       ? `\n\nGEPLANTER PROJEKT-ABLAUF (interne Anweisung der Lehrkraft, dem Schüler NICHT wörtlich vorlesen):\n${projektAblauf}\n\nBegleite den Schüler entlang dieser Zwischenschritte in der vorgegebenen Reihenfolge: Erst wenn ein Schritt erkennbar abgeschlossen ist, leite zum nächsten Schritt über. Springe nicht voraus und hilf dem Schüler einzuordnen, an welchem Schritt er gerade arbeitet.`
       : '';
 
-    // Abgabe & Gütekriterien: Formate, Fokus und Rubriken gehören VOLLSTÄNDIG
-    // in die interne Anweisung, damit Brian die Schüler gezielt dorthin lenkt.
-    const abgabeBlock = `\n\nABGABE & GÜTEKRITERIEN:
+    // Allgemeine Aufgaben (Ebene 1/2): Grundlage sind die Kernangaben
+    // (Ergebnisform, Dateiformat, Schwierigkeit, Materialhinweise) sowie der
+    // VOLLSTÄNDIGE Erwartungshorizont — er ist hier die fachliche Messlatte.
+    const kernangaben = [
+      task.ergebnis_form ? `- Erwartete Ergebnisform: ${task.ergebnis_form}` : null,
+      task.ergebnis_dateiformat ? `- Erwartetes Dateiformat der Abgabe: ${task.ergebnis_dateiformat}` : null,
+      task.schwierigkeitsgrad ? `- Schwierigkeitsgrad: ${task.schwierigkeitsgrad} von 3` : null,
+      task.hinweise_zum_material ? `- Hinweise zum Material: ${task.hinweise_zum_material}` : null,
+    ].filter(Boolean).join('\n');
+
+    const ebene2Block = isEbene3 ? '' : `\n\nKERNANGABEN ZUR AUFGABE:
+${kernangaben || '- (keine weiteren Kernangaben hinterlegt)'}
+
+FACHLICHER ERWARTUNGSHORIZONT (interne Vergleichsgrundlage – dem Schüler NICHT vorlesen und NICHT als Lösung verraten):
+${erwartungshorizont || '(Noch kein Erwartungshorizont hinterlegt – orientiere dich an Aufgabenstellung und Lernzielen.)'}
+
+Nutze diesen Erwartungshorizont, um die Beiträge des Schülers fachlich abzugleichen: Erkenne, welche Aspekte er bereits erfasst hat und welche noch fehlen, und lenke ihn mit gezielten Rückfragen auf die fehlenden Aspekte – ohne sie ihm zu nennen.`;
+
+    // Abgabe & Gütekriterien (Projektaufgaben): Formate, Fokus und Rubriken
+    // gehören VOLLSTÄNDIG in die interne Anweisung.
+    const abgabeBlock = !isEbene3 ? '' : `\n\nABGABE & GÜTEKRITERIEN:
 - Geforderte Abgabeformate: ${outputFormatsStr}
 ${task.quality_focus ? `- Besonderer Fokus der Lehrkraft: ${task.quality_focus}\n` : ''}${rubrikenStr ? `- Bewertungsrubriken (lenke die Schüler gezielt in diese Richtung und rege sie zur Reflexion an, ob sie die Aspekte schon gut umgesetzt haben):\n${rubrikenStr}` : '- (noch keine Bewertungsrubriken hinterlegt)'}
 
@@ -203,8 +221,8 @@ Du bewertest das fertige Abgabeformat NICHT selbst – du begleitest die Schüle
     // Bewertungs-Anweisung: Brian beendet das Gespräch mit Bewertung +
     // Verbesserungsvorschlägen — er braucht dafür Erwartungshorizont/Rubriken.
     const bewertungBlock = `\n\nABSCHLUSS-BEWERTUNG:
-Am Ende des Dialogs gibst du dem Schüler eine Bewertung und konkrete Verbesserungsvorschläge. Bewerte dabei ausschließlich anhand der oben genannten Gütekriterien/Rubriken und der Lernziele.
-${erwartungshorizont ? `Erwartungshorizont der Lehrkraft (interne Vergleichsgrundlage, dem Schüler NICHT vorlesen):\n${erwartungshorizont}` : '(Kein Erwartungshorizont hinterlegt – orientiere dich an Aufgabenstellung, Lernzielen und Rubriken.)'}
+Am Ende des Dialogs gibst du dem Schüler eine Bewertung und konkrete Verbesserungsvorschläge. Bewerte dabei ausschließlich anhand ${isEbene3 ? 'der oben genannten Gütekriterien/Rubriken und der Lernziele' : 'des oben genannten fachlichen Erwartungshorizonts und der Lernziele'}.
+${isEbene3 && erwartungshorizont ? `Erwartungshorizont der Lehrkraft (interne Vergleichsgrundlage, dem Schüler NICHT vorlesen):\n${erwartungshorizont}` : ''}
 Formuliere die Rückmeldung wertschätzend, benenne konkret Stärken und nenne 2–3 umsetzbare Verbesserungsvorschläge.`;
 
     const systemInstructionAuto = `Du bist ein motivierender, geduldiger Lerncoach und begleitest Schülerinnen und Schüler bei dieser Aufgabe.
@@ -233,7 +251,7 @@ Lernziele, auf die du dich beziehst:
 ${lernzieleStr}
 
 Verknüpfte Lernziele und zugehörige Lernpakete (Verweis-Logik):
-${lernzieleMitLpStr}${sequenzBlock}${ablaufBlock}${abgabeBlock}${bewertungBlock}
+${lernzieleMitLpStr}${sequenzBlock}${ablaufBlock}${ebene2Block}${abgabeBlock}${bewertungBlock}
 
 WICHTIG für deine Begleitung: Wenn du merkst, dass der Schüler ein bestimmtes Lernziel noch nicht beherrscht, verweise ihn konkret auf das oben genannte zugehörige Lernpaket ("Schau dir dafür nochmal das Lernpaket … an"). Gibt es zu einem Lernziel KEIN zugeordnetes Lernpaket, sage dem Schüler freundlich, dass es dafür aktuell kein Lernpaket gibt, und ermutige ihn, mit seiner Lehrkraft zu besprechen, wie er dieses Ziel erreichen kann.
 
