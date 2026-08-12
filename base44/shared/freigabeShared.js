@@ -229,6 +229,15 @@ export async function checkUserCanEditEinheit(base44, user, einheit) {
       : { allowed: false, rolle, reason: 'wrong_fach' };
   }
   if (rolle === 'Fachlehrkraft') {
+    // RBAC-Angleichung (2026-08-12, Bugfix "Keine Berechtigung" bei
+    // Lernpaket-Freigabe): Wie in base44/shared/unitAccess.js und
+    // updateActivitySecure darf eine FACHLEHRKRAFT im eigenen Fach
+    // Inhalte bearbeiten UND freigeben — ohne delegierte
+    // EinheitMembers-Rolle. Die Delegation bleibt als Fallback für
+    // fachfremde Lehrkräfte erhalten.
+    if (faecher.includes(einheit.fach)) {
+      return { allowed: true, rolle };
+    }
     const ms = await listAllByFilter(base44.asServiceRole.entities.EinheitMembers, {
       einheit_id: einheit.id,
       user_email: user.email,
