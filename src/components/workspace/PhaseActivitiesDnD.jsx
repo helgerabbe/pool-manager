@@ -155,22 +155,36 @@ export default function PhaseActivitiesDnD({
     .filter(a => a.phase === phase && a.is_active !== false && a.name !== 'Kompaktwissen')
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
 
-  // Sortierte Liste der bereits zugeordneten Aktivitäten
-  const sortedAktivitaeten = [...aktivitaeten].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+  // Sortierte Liste der bereits zugeordneten Aktivitäten.
+  // Tiebreaker created_date: Altbestand ohne gepflegte `reihenfolge` bleibt
+  // dadurch in stabiler, nachvollziehbarer Ordnung.
+  const sortedAktivitaeten = [...aktivitaeten].sort((a, b) => {
+    const diff = (a.reihenfolge || 0) - (b.reihenfolge || 0);
+    if (diff !== 0) return diff;
+    return String(a.created_date || '').localeCompare(String(b.created_date || ''));
+  });
 
   const canEdit = inEditMode && kannBearbeiten;
 
-  // ── Neue Aktivität aus Palette hinzufügen ──
+  // ── Neue Aktivität aus Palette hinzufügen (an der Fallposition) ──
   const createMutation = useMutation({
-    mutationFn: (aktivitaetId) =>
-      base44.entities.LernpaketPhaseAktivitaet.create({
+    mutationFn: async ({ aktivitaetId, index }) => {
+      const created = await base44.entities.LernpaketPhaseAktivitaet.create({
         lernpaket_id: paket.id,
         phase,
         aktivitaet_id: aktivitaetId,
         field_values: {},
         is_complete: false,
-        reihenfolge: sortedAktivitaeten.length,
-      }),
+        reihenfolge: index,
+      });
+      // Gesamte Phase neu durchnummerieren, damit die neue Aktivität genau
+      // an der Fallposition liegt (und Altbestand ohne Reihenfolge sauber wird).
+      const ids = sortedAktivitaeten.map(a => a.id);
+      ids.splice(index, 0, created.id);
+      await Promise.all(
+        ids.map((id, i) => base44.entities.LernpaketPhaseAktivitaet.update(id, { reihenfolge: i }))
+      );
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
       toast.success('Aktivität hinzugefügt.');
@@ -223,7 +237,8 @@ export default function PhaseActivitiesDnD({
     if (srcId === paletteId && dstId === listId) {
       // draggableId = "palette-<katalogId>"
       const katalogId = result.draggableId.replace('palette-', '');
-      createMutation.mutate(katalogId);
+      const index = Math.min(result.destination.index, sortedAktivitaeten.length);
+      createMutation.mutate({ aktivitaetId: katalogId, index });
       return;
     }
 

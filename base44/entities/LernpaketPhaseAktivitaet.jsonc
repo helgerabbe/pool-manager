@@ -19,6 +19,11 @@
       "type": "string",
       "description": "FK zu AktivitaetenKatalog"
     },
+    "reihenfolge": {
+      "type": "number",
+      "default": 0,
+      "description": "Sortierreihenfolge der Aktivit\u00e4t innerhalb ihrer Phase (0-basiert). Wird beim Drag & Drop in der Phasen-Ansicht (PhaseActivitiesDnD) gesetzt: sowohl beim Einsortieren einer neuen Aktivit\u00e4t aus der Palette an die Fallposition als auch beim Umsortieren bestehender Aktivit\u00e4ten. Fehlt der Wert (Altbestand), gilt 0 und die Reihenfolge ergibt sich aus dem Anlagezeitpunkt."
+    },
     "field_values": {
       "type": "object",
       "description": "Konfigurierte Feldwerte f\u00fcr diese Aktivit\u00e4t (manueller Modus). Bei erstellungs_modus='ki' typischerweise leer / null.",
