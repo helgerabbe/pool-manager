@@ -69,9 +69,11 @@ export default function MaterialaufgabeSeite({ aktivitaet, busy, onErledigt, onB
 
         {/* Fragen */}
         {fragen.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic text-center py-6">
-            Für diese Aufgabe sind noch keine Fragen hinterlegt.
-          </p>
+          fv.fragen_im_material === true ? null : (
+            <p className="text-sm text-muted-foreground italic text-center py-6">
+              Für diese Aufgabe sind noch keine Fragen hinterlegt.
+            </p>
+          )
         ) : (
           <section className="space-y-4">
             {fragen.map((frage, idx) => {

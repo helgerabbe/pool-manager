@@ -45,7 +45,12 @@ export function isEmpty(v) {
   return false;
 }
 
-function validateJsonStruct(fieldName, data) {
+function validateJsonStruct(fieldName, data, fieldValues = {}) {
+  // Materialaufgabe: Fragen sind optional, wenn die Aufgabenstellung
+  // bereits im Material enthalten ist (fragen_im_material === true).
+  if (fieldName === 'material_fragen' && fieldValues?.fragen_im_material === true) {
+    return null;
+  }
   if (!data || typeof data !== 'object') return 'Inhalt fehlt';
   switch (fieldName) {
     case 'match_data': {
@@ -146,7 +151,7 @@ export function validateActivityCompleteness(catalog, fieldValues = {}, activity
     if (!field || !field.field_name || field.type === 'info' || !field.required) continue;
     const value = fieldValues[field.field_name];
     if (field.type === 'json') {
-      const reason = validateJsonStruct(field.field_name, value);
+      const reason = validateJsonStruct(field.field_name, value, fieldValues);
       if (reason) missingFields.push({ fieldName: field.field_name, label: field.label, reason });
     } else if (isEmpty(value)) {
       missingFields.push({ fieldName: field.field_name, label: field.label, reason: 'Pflichtfeld leer' });

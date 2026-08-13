@@ -41,9 +41,11 @@ export default function MaterialaufgabeReadOnly({ fieldValues = {} }) {
 
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-          <FileQuestion className="w-3.5 h-3.5" /> Fragen ({fragen.length})
+          <FileQuestion className="w-3.5 h-3.5" /> Fragen{fieldValues.fragen_im_material !== true && ` (${fragen.length})`}
         </p>
-        {fragen.length === 0 ? (
+        {fieldValues.fragen_im_material === true ? (
+          <p className="text-sm text-muted-foreground">Die Aufgabenstellung ist im Material enthalten – es werden keine Fragen in der App gestellt.</p>
+        ) : fragen.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">Noch keine Fragen hinterlegt.</p>
         ) : (
           <div className="space-y-2">

@@ -186,8 +186,11 @@ function validateMaterialData(data) {
 
 /**
  * Materialaufgabe – Fragen: mindestens eine eindeutig auswertbare Frage.
+ * Ausnahme: Wenn die Aufgabenstellung bereits im Material enthalten ist
+ * (fragen_im_material === true), sind keine Fragen erforderlich.
  */
-function validateMaterialFragen(data) {
+function validateMaterialFragen(data, fieldValues = {}) {
+  if (fieldValues?.fragen_im_material === true) return null;
   const fragen = Array.isArray(data) ? data : [];
   if (fragen.length === 0) return 'Mindestens eine Frage erforderlich';
   const unvollstaendig = fragen.findIndex((f) => !istFrageVollstaendig(f));
@@ -280,7 +283,7 @@ export function validateActivity(catalogEntry, fieldValues = {}, activity = null
     // Spezial-Validatoren für strukturierte JSON-Felder.
     const customValidator = JSON_FIELD_VALIDATORS[field.field_name];
     if (customValidator) {
-      const reason = customValidator(value);
+      const reason = customValidator(value, fieldValues);
       if (reason) missingFields.push(miss(field.field_name, field.label, reason));
       continue;
     }

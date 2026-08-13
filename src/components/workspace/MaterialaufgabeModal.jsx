@@ -33,6 +33,7 @@ export default function MaterialaufgabeModal({
   const [aufgabentext, setAufgabentext] = useState('');
   const [material, setMaterial] = useState(EMPTY_MATERIAL);
   const [fragen, setFragen] = useState([]);
+  const [fragenImMaterial, setFragenImMaterial] = useState(false);
   const prevOpenRef = useRef(false);
 
   useEffect(() => {
@@ -41,6 +42,7 @@ export default function MaterialaufgabeModal({
       setAufgabentext(fv.aufgabentext || '');
       setMaterial({ ...EMPTY_MATERIAL, ...(fv.material || {}) });
       setFragen(Array.isArray(fv.material_fragen) ? fv.material_fragen : []);
+      setFragenImMaterial(fv.fragen_im_material === true);
     }
     prevOpenRef.current = open;
   }, [open]);
@@ -59,7 +61,8 @@ export default function MaterialaufgabeModal({
       ...initialFieldValues,
       aufgabentext,
       material,
-      material_fragen: fragen,
+      material_fragen: fragenImMaterial ? [] : fragen,
+      fragen_im_material: fragenImMaterial,
     };
     if (initialFieldValues?.moodle_sync_status === 'synced') {
       payload.moodle_sync_status = 'modified';
@@ -68,7 +71,8 @@ export default function MaterialaufgabeModal({
     onSave?.(payload);
   };
 
-  const vollstaendig = istMaterialBefuellt(material) && fragen.length > 0 && fragen.every(istFrageVollstaendig);
+  const vollstaendig = istMaterialBefuellt(material)
+    && (fragenImMaterial || (fragen.length > 0 && fragen.every(istFrageVollstaendig)));
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel?.(); }}>
@@ -108,26 +112,69 @@ export default function MaterialaufgabeModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
-                2 · Fragen zum Material ({fragen.length}/{MAX_FRAGEN})
+                2 · Fragen &amp; Aufgaben zum Material{!fragenImMaterial && ` (${fragen.length}/${MAX_FRAGEN})`}
               </p>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setFragen([...fragen, leereFrage()])}
-                disabled={fragen.length >= MAX_FRAGEN}
-                className="gap-1 text-xs h-7 border-amber-300 text-amber-800 hover:bg-amber-100"
-              >
-                <Plus className="w-3.5 h-3.5" /> Frage
-              </Button>
+              {!fragenImMaterial && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setFragen([...fragen, leereFrage()])}
+                  disabled={fragen.length >= MAX_FRAGEN}
+                  className="gap-1 text-xs h-7 border-amber-300 text-amber-800 hover:bg-amber-100"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Frage
+                </Button>
+              )}
             </div>
 
-            {fragen.length === 0 && (
+            {/* Wahl: Fragen hier eingeben oder bereits im Material enthalten */}
+            <div className="grid sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFragenImMaterial(false)}
+                className={cn(
+                  'text-left rounded-lg border-2 px-3 py-2 text-sm transition-colors',
+                  !fragenImMaterial
+                    ? 'border-amber-500 bg-white font-medium text-amber-900'
+                    : 'border-amber-200 bg-white/60 text-muted-foreground hover:border-amber-300'
+                )}
+              >
+                Fragen / Aufgaben hier eingeben
+                <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                  Die Schüler beantworten die Fragen direkt in der App.
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFragenImMaterial(true)}
+                className={cn(
+                  'text-left rounded-lg border-2 px-3 py-2 text-sm transition-colors',
+                  fragenImMaterial
+                    ? 'border-amber-500 bg-white font-medium text-amber-900'
+                    : 'border-amber-200 bg-white/60 text-muted-foreground hover:border-amber-300'
+                )}
+              >
+                Aufgabenstellung ist im Material enthalten
+                <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                  z. B. Aufgabe steht bereits auf dem Bild / im Dokument.
+                </span>
+              </button>
+            </div>
+
+            {fragenImMaterial && (
+              <p className="text-sm text-amber-900/80">
+                Es werden keine Fragen in der App gestellt. Die Schüler bearbeiten die im
+                Material enthaltene Aufgabenstellung und markieren die Aktivität danach als erledigt.
+              </p>
+            )}
+
+            {!fragenImMaterial && fragen.length === 0 && (
               <p className="text-sm text-muted-foreground italic">
                 Noch keine Fragen. Füge mindestens eine Frage hinzu.
               </p>
             )}
 
-            {fragen.map((frage, idx) => (
+            {!fragenImMaterial && fragen.map((frage, idx) => (
               <div key={frage.id || idx} className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
@@ -172,8 +219,10 @@ export default function MaterialaufgabeModal({
               ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
               : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
             {vollstaendig
-              ? 'Material und alle Fragen sind vollständig.'
-              : 'Es fehlt noch etwas: Material hinterlegen und pro Frage eine eindeutige Lösung angeben.'}
+              ? (fragenImMaterial ? 'Material ist vollständig – die Aufgabenstellung steckt im Material.' : 'Material und alle Fragen sind vollständig.')
+              : (fragenImMaterial
+                ? 'Es fehlt noch das Material (Text, Datei oder Link).'
+                : 'Es fehlt noch etwas: Material hinterlegen und pro Frage eine eindeutige Lösung angeben.')}
           </div>
         </div>
 
