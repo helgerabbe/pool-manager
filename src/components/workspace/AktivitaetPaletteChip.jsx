@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
-import { Info, Eye } from 'lucide-react';
+import { Info, Lightbulb } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 function AktivitaetInfoDialog({ open, onOpenChange, katalogEntry }) {
   if (!katalogEntry) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Info className="w-4 h-4 text-primary" />
@@ -23,16 +23,17 @@ function AktivitaetInfoDialog({ open, onOpenChange, katalogEntry }) {
               <p className="text-sm text-muted-foreground italic">Noch keine Beschreibung hinterlegt.</p>
             )}
           </div>
-          <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
-              <Eye className="w-3.5 h-3.5" />
-              Vorschau (Schüleransicht)
-            </p>
-            <div className="rounded-lg border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center py-8 gap-2 text-muted-foreground">
-              <Eye className="w-6 h-6 opacity-20" />
-              <p className="text-xs text-center">Vorschau folgt in einer späteren Version.</p>
+          {katalogEntry.beispiel && (
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+                <Lightbulb className="w-3.5 h-3.5 text-accent" />
+                Aufgabenbeispiel
+              </p>
+              <div className="rounded-lg border border-amber-200 bg-amber-50/70 px-3 py-2.5">
+                <p className="text-sm text-amber-950 leading-relaxed whitespace-pre-line">{katalogEntry.beispiel}</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
