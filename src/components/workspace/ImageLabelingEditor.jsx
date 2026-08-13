@@ -15,11 +15,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Plus, Trash2, Loader2, Info, Clipboard } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Upload, Plus, Trash2, Loader2, Info, Clipboard, Sparkles, Maximize2 } from 'lucide-react';
 import { toast } from 'sonner';
+import BildbeschriftungKIDialog from '@/components/workspace/bildbeschriftung/BildbeschriftungKIDialog';
 
 const DEFAULT_BADGE_WIDTH = 150;
 const DEFAULT_BADGE_HEIGHT = 50;
+// Bild-Skalierung (2026-08-13): Zoomfaktor des Quellbildes im Editor.
+// Wird mitgespeichert, damit die Lehrkraft ihre Arbeitsgröße wiederfindet.
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 2.5;
 
 export default function ImageLabelingEditor({
   initialData,
@@ -42,6 +48,7 @@ export default function ImageLabelingEditor({
       height: z.height ?? DEFAULT_BADGE_HEIGHT,
     })),
     distractors: (raw?.distractors || []).map(d => typeof d === 'string' ? d : d),
+    image_zoom: Number(raw?.image_zoom) > 0 ? Number(raw.image_zoom) : 1,
   });
 
   const [data, setData] = useState(() => normalizeData(initialData));
@@ -52,13 +59,15 @@ export default function ImageLabelingEditor({
     if (readOnly) {
       setData(normalizeData(initialData));
     }
-  }, [readOnly, initialData?.backgroundImage, initialData?.aufgabenstellung, JSON.stringify(initialData?.dropZones), JSON.stringify(initialData?.distractors)]);
+  }, [readOnly, initialData?.backgroundImage, initialData?.aufgabenstellung, initialData?.image_zoom, JSON.stringify(initialData?.dropZones), JSON.stringify(initialData?.distractors)]);
 
   const [draggedLabel, setDraggedLabel] = useState(null);
   const imageRef = useRef(null);
   const fileInputRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [naturalWidth, setNaturalWidth] = useState(0);
+  const [kiDialogOpen, setKiDialogOpen] = useState(false);
   
   // Drag & Resize State
   const [draggingZoneIdx, setDraggingZoneIdx] = useState(null);
@@ -315,6 +324,29 @@ export default function ImageLabelingEditor({
     term => !data.dropZones.some(z => z.label === term)
   );
 
+  // Anzeigebreite des Bildes: Basisbreite (max. 640 px) × Zoomfaktor.
+  // Höhe folgt automatisch → Seitenverhältnis bleibt erhalten.
+  const baseWidth = naturalWidth ? Math.min(naturalWidth, 640) : 0;
+  const displayWidth = baseWidth ? Math.round(baseWidth * (data.image_zoom || 1)) : 0;
+
+  // KI-Vorschlag übernehmen: Zielbegriffe + Distraktoren ersetzen den Bestand.
+  const applyKiVorschlag = (v) => {
+    applyChange(d => ({
+      ...d,
+      aufgabenstellung: v.aufgabenstellung || d.aufgabenstellung,
+      backgroundImage: v.backgroundImage || d.backgroundImage,
+      dropZones: v.dropZones.map(z => ({
+        label: z.label,
+        x_percent: z.x_percent,
+        y_percent: z.y_percent,
+        width: DEFAULT_BADGE_WIDTH,
+        height: DEFAULT_BADGE_HEIGHT,
+      })),
+      distractors: v.distractors || [],
+    }));
+    toast.success('Vorschlag übernommen – bitte Positionen prüfen und ggf. nachziehen.');
+  };
+
   return (
     <div className="space-y-4">
       {/* Aufgabenstellung */}
@@ -387,6 +419,17 @@ export default function ImageLabelingEditor({
                   <span className="truncate">Bild hochgeladen</span>
                 </span>
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setKiDialogOpen(true)}
+                    disabled={uploading}
+                    className="h-7 text-xs gap-1.5 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
+                    title="Aus dieser Vorlage per KI eine Bildbeschriftung erstellen lassen"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> Per KI erstellen
+                  </Button>
                   <Button
                     type="button"
                     variant="outline"
@@ -538,20 +581,53 @@ export default function ImageLabelingEditor({
             </div>
           )}
 
-          <div 
-            className="relative bg-muted/30 rounded-lg p-4 border border-dashed border-border inline-block max-w-full"
+          {/* Bildgröße (2026-08-13): Das Quellbild kann proportional größer/kleiner
+              gezogen werden, damit die Zielfelder gut platzierbar sind. Der
+              Zoomfaktor wird mitgespeichert. */}
+          {!readOnly && (
+            <div className="flex items-center gap-3">
+              <Maximize2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <Label className="text-xs font-medium shrink-0">Bildgröße</Label>
+              <Slider
+                value={[data.image_zoom]}
+                min={MIN_ZOOM}
+                max={MAX_ZOOM}
+                step={0.05}
+                onValueChange={([v]) => applyChange(d => ({ ...d, image_zoom: v }))}
+                className="flex-1 max-w-[240px]"
+              />
+              <span className="text-xs text-muted-foreground w-10 tabular-nums">{Math.round(data.image_zoom * 100)}%</span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => applyChange(d => ({ ...d, image_zoom: 1 }))}
+                className="h-7 text-xs"
+              >
+                Zurücksetzen
+              </Button>
+            </div>
+          )}
+
+          <div
+            className="bg-muted/30 rounded-lg p-4 border border-dashed border-border overflow-auto max-h-[70vh]"
             onDragOver={handleDragOver}
             onDrop={handleDropOnImage}
           >
-            {/* Bild mit Drop-Zone */}
+            <div
+              className="relative inline-block align-top"
+              style={displayWidth ? { width: `${displayWidth}px` } : undefined}
+            >
+            {/* Bild mit Drop-Zone – Seitenverhältnis bleibt durch h-auto erhalten */}
             <img
               ref={imageRef}
               src={data.backgroundImage}
               alt="Bildbeschriftung"
               draggable="false"
-              onLoad={() => setImageLoaded(true)}
-              className="max-w-full h-auto rounded-lg cursor-grab active:cursor-grabbing select-none"
-              style={{ maxHeight: '400px' }}
+              onLoad={(e) => {
+                setNaturalWidth(e.currentTarget.naturalWidth || 0);
+                setImageLoaded(true);
+              }}
+              className="w-full h-auto block rounded-lg cursor-grab active:cursor-grabbing select-none"
             />
 
             {/* Drop-Zones visualisieren & interaktiv machen */}
@@ -616,6 +692,7 @@ export default function ImageLabelingEditor({
                 })}
               </div>
             )}
+            </div>
           </div>
 
           {/* Nicht platzierte Begriffe als Drag-Source (nur im Edit-Modus) / Wortspeicher (Read-Only) */}
@@ -648,8 +725,14 @@ export default function ImageLabelingEditor({
         </div>
       )}
 
-
-
+      {!readOnly && (
+        <BildbeschriftungKIDialog
+          open={kiDialogOpen}
+          onOpenChange={setKiDialogOpen}
+          bildUrl={data.backgroundImage}
+          onUebernehmen={applyKiVorschlag}
+        />
+      )}
     </div>
   );
 }
