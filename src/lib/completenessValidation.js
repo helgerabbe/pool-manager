@@ -186,16 +186,19 @@ function validateMaterialData(data) {
 
 /**
  * Materialaufgabe – Fragen: mindestens eine eindeutig auswertbare Frage.
- * Ausnahme: Wenn die Aufgabenstellung bereits im Material enthalten ist
- * (fragen_im_material === true), sind keine Fragen erforderlich.
+ * Wenn die Aufgabenstellung bereits im Material enthalten ist
+ * (fragen_im_material === true), ist der Fragetext optional —
+ * Antwortformat und Lösung bleiben Pflicht.
  */
 function validateMaterialFragen(data, fieldValues = {}) {
-  if (fieldValues?.fragen_im_material === true) return null;
+  const frageOptional = fieldValues?.fragen_im_material === true;
   const fragen = Array.isArray(data) ? data : [];
   if (fragen.length === 0) return 'Mindestens eine Frage erforderlich';
-  const unvollstaendig = fragen.findIndex((f) => !istFrageVollstaendig(f));
+  const unvollstaendig = fragen.findIndex((f) => !istFrageVollstaendig(f, { frageOptional }));
   if (unvollstaendig >= 0) {
-    return `Frage ${unvollstaendig + 1}: Fragetext und eindeutige Lösung erforderlich`;
+    return frageOptional
+      ? `Aufgabe ${unvollstaendig + 1}: Eindeutige Lösung erforderlich`
+      : `Frage ${unvollstaendig + 1}: Fragetext und eindeutige Lösung erforderlich`;
   }
   return null;
 }

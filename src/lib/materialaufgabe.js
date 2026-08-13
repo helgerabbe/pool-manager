@@ -64,9 +64,13 @@ export function istMaterialBefuellt(material = {}) {
   return !!material.datei_url || String(material.url || '').trim() !== '';
 }
 
-/** Ist eine einzelne Frage vollständig auswertbar? */
-export function istFrageVollstaendig(frage = {}) {
-  if (String(frage.frage || '').trim() === '') return false;
+/**
+ * Ist eine einzelne Frage vollständig auswertbar?
+ * @param {object} opts { frageOptional } — true, wenn die Aufgabenstellung im
+ *   Material enthalten ist und daher kein Fragetext erforderlich ist.
+ */
+export function istFrageVollstaendig(frage = {}, { frageOptional = false } = {}) {
+  if (!frageOptional && String(frage.frage || '').trim() === '') return false;
   if (frage.format === 'wahr_falsch') return typeof frage.korrekt_bool === 'boolean';
   if (frage.format === 'kurzantwort') return String(frage.loesungen || '').trim() !== '';
   const optionen = (frage.optionen || []).filter((o) => String(o?.text || '').trim() !== '');

@@ -61,7 +61,7 @@ export default function MaterialaufgabeModal({
       ...initialFieldValues,
       aufgabentext,
       material,
-      material_fragen: fragenImMaterial ? [] : fragen,
+      material_fragen: fragen,
       fragen_im_material: fragenImMaterial,
     };
     if (initialFieldValues?.moodle_sync_status === 'synced') {
@@ -71,8 +71,10 @@ export default function MaterialaufgabeModal({
     onSave?.(payload);
   };
 
+  const frageOpts = { frageOptional: fragenImMaterial };
   const vollstaendig = istMaterialBefuellt(material)
-    && (fragenImMaterial || (fragen.length > 0 && fragen.every(istFrageVollstaendig)));
+    && fragen.length > 0
+    && fragen.every((f) => istFrageVollstaendig(f, frageOpts));
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel?.(); }}>
@@ -112,19 +114,17 @@ export default function MaterialaufgabeModal({
           <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-4 space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-xs font-semibold text-amber-900 uppercase tracking-wide">
-                2 · Fragen &amp; Aufgaben zum Material{!fragenImMaterial && ` (${fragen.length}/${MAX_FRAGEN})`}
+                2 · Fragen &amp; Aufgaben zum Material ({fragen.length}/{MAX_FRAGEN})
               </p>
-              {!fragenImMaterial && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setFragen([...fragen, leereFrage()])}
-                  disabled={fragen.length >= MAX_FRAGEN}
-                  className="gap-1 text-xs h-7 border-amber-300 text-amber-800 hover:bg-amber-100"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Frage
-                </Button>
-              )}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setFragen([...fragen, leereFrage()])}
+                disabled={fragen.length >= MAX_FRAGEN}
+                className="gap-1 text-xs h-7 border-amber-300 text-amber-800 hover:bg-amber-100"
+              >
+                <Plus className="w-3.5 h-3.5" /> {fragenImMaterial ? 'Aufgabe' : 'Frage'}
+              </Button>
             </div>
 
             {/* Wahl: Fragen hier eingeben oder bereits im Material enthalten */}
@@ -141,7 +141,7 @@ export default function MaterialaufgabeModal({
               >
                 Fragen / Aufgaben hier eingeben
                 <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-                  Die Schüler beantworten die Fragen direkt in der App.
+                  Fragetext, Antwortformat und Lösungen werden hier gepflegt.
                 </span>
               </button>
               <button
@@ -156,38 +156,40 @@ export default function MaterialaufgabeModal({
               >
                 Aufgabenstellung ist im Material enthalten
                 <span className="block text-xs font-normal text-muted-foreground mt-0.5">
-                  z. B. Aufgabe steht bereits auf dem Bild / im Dokument.
+                  Kein Fragetext nötig – nur Antwortformat und Lösungen angeben.
                 </span>
               </button>
             </div>
 
             {fragenImMaterial && (
               <p className="text-sm text-amber-900/80">
-                Es werden keine Fragen in der App gestellt. Die Schüler bearbeiten die im
-                Material enthaltene Aufgabenstellung und markieren die Aktivität danach als erledigt.
+                Die Aufgabenstellungen stehen im Material. Lege für jede Aufgabe fest,
+                in welchem Format die Schüler antworten und was die richtige Lösung ist.
               </p>
             )}
 
-            {!fragenImMaterial && fragen.length === 0 && (
+            {fragen.length === 0 && (
               <p className="text-sm text-muted-foreground italic">
-                Noch keine Fragen. Füge mindestens eine Frage hinzu.
+                {fragenImMaterial
+                  ? 'Noch keine Aufgaben. Füge für jede Aufgabe im Material einen Antwortblock hinzu.'
+                  : 'Noch keine Fragen. Füge mindestens eine Frage hinzu.'}
               </p>
             )}
 
-            {!fragenImMaterial && fragen.map((frage, idx) => (
+            {fragen.map((frage, idx) => (
               <div key={frage.id || idx} className="rounded-lg border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                    Frage {idx + 1}
+                    {fragenImMaterial ? 'Aufgabe' : 'Frage'} {idx + 1}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className={cn(
                       'text-[10px] font-semibold px-1.5 py-0.5 rounded-full border',
-                      istFrageVollstaendig(frage)
+                      istFrageVollstaendig(frage, frageOpts)
                         ? 'bg-green-100 text-green-700 border-green-200'
                         : 'bg-amber-100 text-amber-700 border-amber-200'
                     )}>
-                      {istFrageVollstaendig(frage) ? 'vollständig' : 'unvollständig'}
+                      {istFrageVollstaendig(frage, frageOpts) ? 'vollständig' : 'unvollständig'}
                     </span>
                     <button onClick={() => moveFrage(idx, idx - 1)} disabled={idx === 0} className="p-1 rounded hover:bg-muted disabled:opacity-30" title="Nach oben">
                       <ChevronUp className="w-3.5 h-3.5" />
@@ -204,7 +206,7 @@ export default function MaterialaufgabeModal({
                     </button>
                   </div>
                 </div>
-                <FrageEditor frage={frage} onChange={(next) => updateFrage(idx, next)} />
+                <FrageEditor frage={frage} onChange={(next) => updateFrage(idx, next)} frageOptional={fragenImMaterial} />
               </div>
             ))}
           </div>
@@ -219,9 +221,9 @@ export default function MaterialaufgabeModal({
               ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
               : <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />}
             {vollstaendig
-              ? (fragenImMaterial ? 'Material ist vollständig – die Aufgabenstellung steckt im Material.' : 'Material und alle Fragen sind vollständig.')
+              ? (fragenImMaterial ? 'Material und alle Antwortblöcke sind vollständig.' : 'Material und alle Fragen sind vollständig.')
               : (fragenImMaterial
-                ? 'Es fehlt noch das Material (Text, Datei oder Link).'
+                ? 'Es fehlt noch etwas: Material hinterlegen und pro Aufgabe eine eindeutige Lösung angeben.'
                 : 'Es fehlt noch etwas: Material hinterlegen und pro Frage eine eindeutige Lösung angeben.')}
           </div>
         </div>

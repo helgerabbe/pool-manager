@@ -16,9 +16,11 @@ import { pruefeAntwort, loesungsText, istFrageVollstaendig } from '@/lib/materia
 export default function MaterialaufgabeSeite({ aktivitaet, busy, onErledigt, onBack, masterHinweis }) {
   const fv = aktivitaet?.field_values || {};
   const material = fv.material || {};
+  const frageOptional = fv.fragen_im_material === true;
   const fragen = useMemo(
-    () => (Array.isArray(fv.material_fragen) ? fv.material_fragen : []).filter(istFrageVollstaendig),
-    [fv.material_fragen]
+    () => (Array.isArray(fv.material_fragen) ? fv.material_fragen : [])
+      .filter((f) => istFrageVollstaendig(f, { frageOptional })),
+    [fv.material_fragen, frageOptional]
   );
 
   const [antworten, setAntworten] = useState({});
@@ -92,7 +94,11 @@ export default function MaterialaufgabeSeite({ aktivitaet, busy, onErledigt, onB
                   <div className="flex items-start gap-2">
                     {ergebnis === true && <CheckCircle2 className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />}
                     {ergebnis === false && <XCircle className="w-4 h-4 text-rose-500 mt-0.5 shrink-0" />}
-                    <p className="text-sm font-semibold leading-snug">{idx + 1}. {frage.frage}</p>
+                    <p className="text-sm font-semibold leading-snug">
+                      {idx + 1}. {String(frage.frage || '').trim() !== ''
+                        ? frage.frage
+                        : `Aufgabe ${idx + 1} aus dem Material`}
+                    </p>
                   </div>
 
                   {/* Auswahl / Mehrfachauswahl */}

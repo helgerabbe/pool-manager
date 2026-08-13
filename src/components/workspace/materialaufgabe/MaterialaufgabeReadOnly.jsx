@@ -7,6 +7,7 @@ import { ANTWORT_FORMATE, loesungsText, istFrageVollstaendig, MATERIAL_TYPEN } f
 export default function MaterialaufgabeReadOnly({ fieldValues = {} }) {
   const material = fieldValues.material || {};
   const fragen = Array.isArray(fieldValues.material_fragen) ? fieldValues.material_fragen : [];
+  const frageOptional = fieldValues.fragen_im_material === true;
   const typLabel = MATERIAL_TYPEN.find((t) => t.value === (material.material_typ || 'text'))?.label || 'Material';
 
   return (
@@ -41,21 +42,19 @@ export default function MaterialaufgabeReadOnly({ fieldValues = {} }) {
 
       <div className="space-y-2">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-          <FileQuestion className="w-3.5 h-3.5" /> Fragen{fieldValues.fragen_im_material !== true && ` (${fragen.length})`}
+          <FileQuestion className="w-3.5 h-3.5" /> {frageOptional ? 'Aufgaben (Aufgabenstellung im Material)' : 'Fragen'} ({fragen.length})
         </p>
-        {fieldValues.fragen_im_material === true ? (
-          <p className="text-sm text-muted-foreground">Die Aufgabenstellung ist im Material enthalten – es werden keine Fragen in der App gestellt.</p>
-        ) : fragen.length === 0 ? (
+        {fragen.length === 0 ? (
           <p className="text-sm text-muted-foreground italic">Noch keine Fragen hinterlegt.</p>
         ) : (
           <div className="space-y-2">
             {fragen.map((f, i) => (
               <div key={f.id || i} className="rounded-lg border border-border bg-muted/20 p-3 text-sm space-y-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="font-medium">{i + 1}. {f.frage || <span className="italic text-muted-foreground">Ohne Fragetext</span>}</p>
+                  <p className="font-medium">{i + 1}. {f.frage || <span className="italic text-muted-foreground">{frageOptional ? 'Aufgabenstellung im Material' : 'Ohne Fragetext'}</span>}</p>
                   <span className={cn(
                     'shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded-full border',
-                    istFrageVollstaendig(f)
+                    istFrageVollstaendig(f, { frageOptional })
                       ? 'bg-green-100 text-green-700 border-green-200'
                       : 'bg-amber-100 text-amber-700 border-amber-200'
                   )}>

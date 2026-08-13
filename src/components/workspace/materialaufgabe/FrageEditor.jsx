@@ -8,8 +8,12 @@ import { Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ANTWORT_FORMATE } from '@/lib/materialaufgabe';
 
-/** Editor für EINE Frage einer Materialaufgabe. */
-export default function FrageEditor({ frage, onChange, disabled = false }) {
+/**
+ * Editor für EINE Frage einer Materialaufgabe.
+ * frageOptional: Die Aufgabenstellung steht bereits im Material —
+ * der Fragetext entfällt, Antwortformat & Lösungen bleiben.
+ */
+export default function FrageEditor({ frage, onChange, disabled = false, frageOptional = false }) {
   const set = (field, value) => onChange({ ...frage, [field]: value });
   const optionen = frage.optionen || [];
   const mehrfach = frage.format === 'mehrfach';
@@ -25,16 +29,18 @@ export default function FrageEditor({ frage, onChange, disabled = false }) {
 
   return (
     <div className="space-y-4">
-      <div className="space-y-2">
-        <Label>Frage</Label>
-        <Textarea
-          value={frage.frage || ''}
-          onChange={(e) => set('frage', e.target.value)}
-          placeholder="z. B. „Wo findet das Gespräch statt?“"
-          className="min-h-[80px]"
-          disabled={disabled}
-        />
-      </div>
+      {!frageOptional && (
+        <div className="space-y-2">
+          <Label>Frage</Label>
+          <Textarea
+            value={frage.frage || ''}
+            onChange={(e) => set('frage', e.target.value)}
+            placeholder="z. B. „Wo findet das Gespräch statt?“"
+            className="min-h-[80px]"
+            disabled={disabled}
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Antwortformat</Label>

@@ -46,13 +46,31 @@ export function isEmpty(v) {
 }
 
 function validateJsonStruct(fieldName, data, fieldValues = {}) {
-  // Materialaufgabe: Fragen sind optional, wenn die Aufgabenstellung
-  // bereits im Material enthalten ist (fragen_im_material === true).
-  if (fieldName === 'material_fragen' && fieldValues?.fragen_im_material === true) {
-    return null;
-  }
   if (!data || typeof data !== 'object') return 'Inhalt fehlt';
   switch (fieldName) {
+    case 'material_fragen': {
+      // Materialaufgabe: Bei fragen_im_material === true ist der Fragetext
+      // optional (Aufgabenstellung steckt im Material) — Antwortformat und
+      // Lösung bleiben Pflicht. Synchron zu src/lib/materialaufgabe.js.
+      const frageOptional = fieldValues?.fragen_im_material === true;
+      const fragen = Array.isArray(data) ? data : [];
+      if (fragen.length === 0) return 'Mindestens 1 Frage';
+      for (let i = 0; i < fragen.length; i++) {
+        const f = fragen[i] || {};
+        if (!frageOptional && isEmpty(f.frage)) return `Frage ${i + 1}: Fragetext fehlt`;
+        if (f.format === 'wahr_falsch') {
+          if (typeof f.korrekt_bool !== 'boolean') return `Frage ${i + 1}: Lösung fehlt`;
+        } else if (f.format === 'kurzantwort') {
+          if (isEmpty(f.loesungen)) return `Frage ${i + 1}: Lösung fehlt`;
+        } else {
+          const opts = (Array.isArray(f.optionen) ? f.optionen : []).filter(o => o && !isEmpty(o.text));
+          if (opts.length < 2 || !opts.some(o => o.isCorrect === true)) {
+            return `Frage ${i + 1}: Mindestens 2 Antworten und 1 richtige markieren`;
+          }
+        }
+      }
+      return null;
+    }
     case 'match_data': {
       const pairs = Array.isArray(data.pairs) ? data.pairs : [];
       const valid = pairs.filter(p => p && String(p.left || '').trim() !== '' && String(p.right || '').trim() !== '');
