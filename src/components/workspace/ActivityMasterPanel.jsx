@@ -47,6 +47,7 @@ import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
+import KompaktwissenInfoBox from '@/components/workspace/KompaktwissenInfoBox';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
@@ -778,6 +779,7 @@ export default function ActivityMasterPanel({
 
         return (
           <>
+            {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && <KompaktwissenInfoBox />}
             {kannBearbeiten && (
               <div className="flex justify-end gap-2">
                 {/* Kompaktwissen: Übersicht per KI erstellen (aus Lernzielen,
