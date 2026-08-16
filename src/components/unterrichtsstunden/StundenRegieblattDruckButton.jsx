@@ -39,7 +39,7 @@ export default function StundenRegieblattDruckButton({ stunde, phasen = [] }) {
             <td>${esc(p.lehrer_hinweis) || '–'}</td>
             <td>${esc(aktivitaet?.name) || '–'}</td>
             <td>${esc(material) || '–'}</td>
-            <td class="code">${esc(p.freischalt_code) || '–'}</td>
+            <td class="code">${p.code_deaktiviert ? '<span class="aus">kein Code</span>' : esc(p.freischalt_code) || '–'}</td>
           </tr>`;
       })
       .join('');
@@ -60,6 +60,7 @@ export default function StundenRegieblattDruckButton({ stunde, phasen = [] }) {
   .nr, .mitte, .code { text-align: center; white-space: nowrap; }
   .code { font-family: "Courier New", monospace; font-weight: bold; }
   .art { font-size: 8.5pt; color: #555; }
+  .aus { font-family: Arial, sans-serif; font-weight: normal; font-size: 8.5pt; color: #777; }
   tfoot td { font-size: 9pt; background: #f6f6f6; }
 </style></head><body>
   <h1>${esc(stunde.arbeitstitel)}</h1>
