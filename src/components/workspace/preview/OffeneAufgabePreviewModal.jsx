@@ -39,6 +39,7 @@ export default function OffeneAufgabePreviewModal({
   catalogName = 'Offene Aufgabe',
   phase = 'Übung',
   existingSnapshotHtml = '',
+  existingSnapshotUrl = '',
   canApprove = false,
   isReleased = false,
   onApproveSnapshot,
@@ -102,7 +103,8 @@ ${description}`,
     }
   };
 
-  const hasPreview = !!previewHtml;
+  // Bereits übernommene Aufgaben können als Datei vorliegen (zu groß fürs Feld).
+  const hasPreview = !!previewHtml || !!existingSnapshotUrl;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -140,7 +142,7 @@ ${description}`,
               <Check className="w-4 h-4" /> Vorschau wurde übernommen und gespeichert
             </span>
           )}
-          {!isReleased && hasPreview && !isSaved && (
+          {!isReleased && !!previewHtml && !isSaved && (
             <Button
               onClick={handleApprove}
               disabled={!canApprove || isSaving || isGenerating}
@@ -181,8 +183,8 @@ ${description}`,
                 {hasPreview ? (
                   <iframe
                     title="Offene-Aufgabe-Vorschau"
-                    srcDoc={previewHtml}
-                    sandbox="allow-scripts"
+                    {...(previewHtml ? { srcDoc: previewHtml } : { src: existingSnapshotUrl })}
+                    sandbox="allow-scripts allow-same-origin"
                     className="w-full h-full border-0 bg-white"
                   />
                 ) : (

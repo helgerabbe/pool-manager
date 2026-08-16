@@ -20,7 +20,9 @@ import AufgabenstellungBox from './AufgabenstellungBox';
 export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBack, masterHinweis }) {
   const fv = aktivitaet?.field_values || {};
   const snapshotHtml = fv.approved_snapshot_html || '';
-  const hatSnapshot = !!snapshotHtml.trim();
+  // Große interaktive Aufgaben liegen als HTML-Datei vor (approved_snapshot_url).
+  const snapshotUrl = fv.approved_snapshot_url || '';
+  const hatSnapshot = !!snapshotHtml.trim() || !!snapshotUrl.trim();
 
   return (
     <div className="h-full flex flex-col max-w-3xl mx-auto w-full px-5 py-4">
@@ -39,8 +41,8 @@ export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBac
         <div className="flex-1 min-h-0 rounded-xl border border-border overflow-hidden bg-white shadow-sm">
           <iframe
             title="Offene Aufgabe"
-            srcDoc={snapshotHtml}
-            sandbox="allow-scripts"
+            {...(snapshotHtml.trim() ? { srcDoc: snapshotHtml } : { src: snapshotUrl })}
+            sandbox="allow-scripts allow-same-origin"
             className="w-full h-full border-0 bg-white"
           />
         </div>

@@ -21,11 +21,15 @@ export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry
   const [open, setOpen] = useState(false);
   const fv = phase.field_values || {};
   const description = fv.description || '';
-  const snapshot = fv.approved_snapshot_html || '';
+  const snapshot = fv.approved_snapshot_url || '';
 
   const uebernehmen = async (html) => {
+    // Die interaktive Aufgabe ist zu groß für ein Entity-Feld -> als HTML-Datei
+    // ablegen und nur die URL speichern.
+    const datei = new File([html], 'offene-aufgabe.html', { type: 'text/html' });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file: datei });
     await base44.entities.StundenSequenz.update(phase.id, {
-      field_values: { ...fv, approved_snapshot_html: html },
+      field_values: { ...fv, approved_snapshot_url: file_url, approved_snapshot_html: '' },
       is_complete: true,
     });
     queryClient.invalidateQueries({ queryKey: ['stundenSequenzen', stundeId] });
@@ -63,7 +67,7 @@ export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry
         kontext={phase.lehrer_hinweis || ''}
         catalogName={katalogEntry?.name || 'Offene Aufgabe'}
         phase={phase.phasenname || 'Übung'}
-        existingSnapshotHtml={snapshot}
+        existingSnapshotUrl={snapshot}
         canApprove
         onApproveSnapshot={uebernehmen}
       />
