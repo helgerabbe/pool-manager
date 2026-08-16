@@ -1,0 +1,100 @@
+{
+  "name": "StundenSequenz",
+  "type": "object",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear \u00fcber 'reihenfolge'. Je Phase entweder ein Lehrer-Input, eine digitale Sch\u00fcleraktivit\u00e4t (Verkn\u00fcpfung in den Aktivit\u00e4ten-Katalog + field_values, gepflegt mit den bestehenden Aktivit\u00e4ts-Editoren), eine analoge Aufgabe (nur Material/Anweisung) oder eine Sicherung.",
+  "properties": {
+    "stunde_id": {
+      "type": "string",
+      "description": "FK zur Unterrichtsstunde."
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 0,
+      "description": "Position der Phase im Stundenablauf (0-basiert)."
+    },
+    "phasenname": {
+      "type": "string",
+      "description": "Bezeichnung der Phase (z. B. 'Einstieg', 'Arbeitsphase 1', 'Sicherung')."
+    },
+    "typ": {
+      "type": "string",
+      "enum": [
+        "lehrer_input",
+        "schueler_aktivitaet",
+        "analog",
+        "sicherung"
+      ],
+      "default": "lehrer_input",
+      "description": "'lehrer_input' = Lehrkraft agiert (Vortrag, Gespr\u00e4ch), Sch\u00fcler passiv. 'schueler_aktivitaet' = digitale Aktivit\u00e4t aus dem Katalog. 'analog' = Aufgabe ohne digitale Bearbeitung (z. B. ausgeteiltes Arbeitsblatt, optional als Scan hinterlegt). 'sicherung' = Zwischensicherung/Auswertung."
+    },
+    "dauer_minuten": {
+      "type": "number",
+      "description": "Geplante Dauer der Phase in Minuten."
+    },
+    "lehrer_hinweis": {
+      "type": "string",
+      "description": "Regieanweisung f\u00fcr die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT f\u00fcr Sch\u00fcler)."
+    },
+    "schueler_anweisung": {
+      "type": "string",
+      "description": "Was die Sch\u00fcler in dieser Phase auf ihrem Ger\u00e4t lesen (z. B. 'H\u00f6r zu und mach dir Notizen')."
+    },
+    "folien_hinweis": {
+      "type": "string",
+      "description": "Verweis auf Foliensatz/Pr\u00e4sentation (z. B. 'Folie 2-4') oder ein Link."
+    },
+    "material_urls": {
+      "type": "array",
+      "description": "Hochgeladene Materialien dieser Phase (Arbeitsblatt-Scan, PDF, Bild, Link).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "differenzierung": {
+      "type": "object",
+      "description": "Differenzierungs-Hinweise der Phase: 'standard' (normale Anforderung), 'stark' (leistungsstarke Sch\u00fcler, \u2605\u2605), 'foerderung' (Hilfestellungen/Scaffolding).",
+      "additionalProperties": true,
+      "properties": {
+        "standard": {
+          "type": "string"
+        },
+        "stark": {
+          "type": "string"
+        },
+        "foerderung": {
+          "type": "string"
+        }
+      }
+    },
+    "freischalt_code": {
+      "type": "string",
+      "description": "Dreistelliger Zahlencode, den die Sch\u00fcler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zuf\u00e4llig vergeben, pro Stunde eindeutig, f\u00fcr die Lehrkraft jederzeit im Regieblatt sichtbar."
+    },
+    "aktivitaet_id": {
+      "type": "string",
+      "description": "Nur bei typ='schueler_aktivitaet': FK zu AktivitaetenKatalog (welche digitale Aufgabenart)."
+    },
+    "field_values": {
+      "type": "object",
+      "description": "Konfigurierte Inhalte der digitalen Aktivit\u00e4t - identisches Format wie LernpaketPhaseAktivitaet.field_values, damit die bestehenden Aktivit\u00e4ts-Editoren und Sch\u00fcler-Renderer unver\u00e4ndert genutzt werden k\u00f6nnen.",
+      "additionalProperties": true
+    },
+    "is_complete": {
+      "type": "boolean",
+      "default": false,
+      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollst\u00e4ndig konfiguriert (bei digitalen Aktivit\u00e4ten gepr\u00fcft \u00fcber die bestehende Vollst\u00e4ndigkeits-Validierung)."
+    }
+  },
+  "required": [
+    "stunde_id"
+  ]
+}

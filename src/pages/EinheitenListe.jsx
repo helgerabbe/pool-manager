@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
+import UnterrichtsstundenSektion from '@/components/unterrichtsstunden/UnterrichtsstundenSektion';
 import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
@@ -379,6 +380,12 @@ export default function EinheitenListe() {
         <PrivateEinheitenUebersicht einheiten={einheiten} />
       ) : (
       <>
+      {/* Moodle-Unterrichts-Generator: Unterrichtsstunden stehen im
+          Privatbereich ganz oben — sie sind der erste Planungsschritt. */}
+      {ansicht === 'privat' && (
+        <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+      )}
+
       {/* Angefangene Entwürfe (nur für den Ersteller sichtbar) */}
       {ansicht === 'oeffentlich' && <EntwurfSektion />}
 

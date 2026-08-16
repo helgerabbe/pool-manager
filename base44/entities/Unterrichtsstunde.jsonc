@@ -1,0 +1,61 @@
+{
+  "name": "Unterrichtsstunde",
+  "type": "object",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie geh\u00f6rt immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity. Die Stunde ist der lehrernahe, lineare Alltagsmodus - die spaetere Transformation in eine Poolzeit-Einheit ist bewusst noch NICHT implementiert.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, zu der diese Stunde geh\u00f6rt (Gruppierung in der Bibliothek)."
+    },
+    "fach": {
+      "type": "string",
+      "description": "Denormalisiert aus der Einheit - f\u00fcr die Gruppierung nach Fach."
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "description": "Denormalisiert aus der Einheit."
+    },
+    "arbeitstitel": {
+      "type": "string",
+      "description": "Arbeitstitel der Stunde. Unterrichtsstunden haben fachlich keinen Titel - der Arbeitstitel dient allein der Wiedererkennung in der Bibliothek. Gibt die Lehrkraft keinen an, generiert die KI im Stunden-Coach einen Vorschlag aus den Inhalten."
+    },
+    "stundenziel": {
+      "type": "string",
+      "description": "Das Stundenziel (eine Formulierung)."
+    },
+    "teilziele": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Optionale Teilziele der Stunde."
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Optionales geplantes Datum der Stunde."
+    },
+    "besitzer_email": {
+      "type": "string",
+      "description": "E-Mail der planenden Lehrkraft."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "entwurf",
+        "bereit"
+      ],
+      "default": "entwurf",
+      "description": "'entwurf' = in Planung. 'bereit' = alle Phasen vollst\u00e4ndig, Stunde ist f\u00fcr den Unterricht/Moodle einsetzbar."
+    },
+    "notfall_code": {
+      "type": "string",
+      "description": "Notfall-Schl\u00fcssel der Stunde: schaltet im Stunden-Player JEDE Phase frei, falls der Lehrkraft die Phasen-Codes im Unterricht nicht vorliegen."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "arbeitstitel"
+  ]
+}
