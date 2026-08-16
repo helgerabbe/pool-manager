@@ -92,9 +92,6 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
 
       {offen && (
         <div className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4">
-          <p className="text-xs font-semibold text-amber-900 mb-3 uppercase tracking-wide">
-            Arbeitsbereich · Phase {nummer} bearbeiten
-          </p>
           <StundenPhaseEditForm phase={phase} stundeId={stundeId} onFertig={onToggle} />
         </div>
       )}

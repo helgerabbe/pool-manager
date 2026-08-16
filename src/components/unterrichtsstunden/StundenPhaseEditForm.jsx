@@ -15,7 +15,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   PHASEN_TYP_META,
   istDigitalerTyp,
-  istInputTyp,
   normalisierterTyp,
   standardSchuelerAnweisung,
   istStandardSchuelerAnweisung,
@@ -52,8 +51,6 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         : f.schueler_anweisung,
     }));
 
-  const setDiff = (feld, wert) => setForm((f) => ({ ...f, differenzierung: { ...f.differenzierung, [feld]: wert } }));
-
   const speichern = useMutation({
     mutationFn: async () => {
       const istDigital = istDigitalerTyp(form.typ);
@@ -78,33 +75,32 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="sm:col-span-2 space-y-2">
-          <Label>Phasenname</Label>
-          <Input className="bg-card" value={form.phasenname} onChange={(e) => set('phasenname', e.target.value)} />
+      <div className="grid gap-3 sm:grid-cols-6">
+        <div className="sm:col-span-2 space-y-1.5">
+          <Label className="text-xs">Phasenname</Label>
+          <Input className="bg-card h-9" value={form.phasenname} onChange={(e) => set('phasenname', e.target.value)} />
         </div>
-        <div className="space-y-2">
-          <Label>Dauer (Min.)</Label>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Dauer (Min.)</Label>
           <Input
-            className="bg-card"
+            className="bg-card h-9"
             type="number"
             min="0"
             value={form.dauer_minuten}
             onChange={(e) => set('dauer_minuten', e.target.value)}
           />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label>Art der Phase</Label>
-        <Select value={form.typ} onValueChange={setTyp}>
-          <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {Object.entries(PHASEN_TYP_META).map(([key, meta]) => (
-              <SelectItem key={key} value={key}>{meta.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="sm:col-span-3 space-y-1.5">
+          <Label className="text-xs">Art der Phase</Label>
+          <Select value={form.typ} onValueChange={setTyp}>
+            <SelectTrigger className="bg-card h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(PHASEN_TYP_META).map(([key, meta]) => (
+                <SelectItem key={key} value={key}>{meta.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {istDigitalerTyp(form.typ) && (
@@ -119,46 +115,19 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
       </PhaseAbschnitt>
 
       {!istDigitalerTyp(form.typ) && (
-        <div className="space-y-2">
-          <Label>Anweisung für Schüler:innen (Standardsatz, anpassbar)</Label>
+        <PhaseAbschnitt
+          titel="Das sehen die Schüler auf ihrem Gerät"
+          hinweis="Standardsatz, anpassbar"
+          gefuellt={!!form.schueler_anweisung.trim()}
+        >
           <Textarea
             className="bg-card"
             rows={2}
             value={form.schueler_anweisung}
             onChange={(e) => set('schueler_anweisung', e.target.value)}
-            placeholder="Was die Klasse in dieser Phase auf dem Gerät liest"
+            placeholder="Text, der in dieser Phase auf dem Digitalgerät der Schüler:innen erscheint"
           />
-        </div>
-      )}
-
-      {!istInputTyp(form.typ) && (
-        <div className="space-y-2">
-          <Label>
-            {istDigitalerTyp(form.typ)
-              ? 'Aufgaben für diese Aufgabenart (bis zu drei, differenziert)'
-              : 'Differenzierung'}
-          </Label>
-          <div className="grid gap-3 sm:grid-cols-3">
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                {istDigitalerTyp(form.typ) ? 'Standardaufgabe (für alle)' : 'Standard'}
-              </p>
-              <Textarea className="bg-card" rows={3} value={form.differenzierung.standard || ''} onChange={(e) => setDiff('standard', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                {istDigitalerTyp(form.typ) ? '★★ Leistungsstark (optional)' : '★★ Leistungsstark'}
-              </p>
-              <Textarea className="bg-card" rows={3} value={form.differenzierung.stark || ''} onChange={(e) => setDiff('stark', e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">
-                {istDigitalerTyp(form.typ) ? 'Förderung (optional)' : 'Förderung'}
-              </p>
-              <Textarea className="bg-card" rows={3} value={form.differenzierung.foerderung || ''} onChange={(e) => setDiff('foerderung', e.target.value)} />
-            </div>
-          </div>
-        </div>
+        </PhaseAbschnitt>
       )}
 
       <PhaseAbschnitt
