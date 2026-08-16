@@ -10,6 +10,7 @@ import StundenSteckbriefCard from '@/components/unterrichtsstunden/StundenSteckb
 import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenVerlaufsplanTabelle';
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
+import StundenRegieblattDruckButton from '@/components/unterrichtsstunden/StundenRegieblattDruckButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
@@ -105,6 +106,9 @@ export default function UnterrichtsstundeDetail() {
             </p>
           ) : (
             <>
+              <div className="flex justify-end">
+                <StundenRegieblattDruckButton stunde={stunde} phasen={phasen} />
+              </div>
               {phasen.map((p, i) => (
                 <StundenPhaseCard
                   key={p.id}
