@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, AlertTriangle, Info } from 'lucide-react';
+import { Clock, AlertTriangle, Info, Users } from 'lucide-react';
 import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
@@ -8,9 +8,9 @@ import StundenPhaseSteuerspalte from './StundenPhaseSteuerspalte';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
- * Klare Zweiteilung (2026-08-16): LINKS ausschliesslich der Inhalt
- * (Art des Geschehens, Dauer, Regieanweisung, Differenzierung),
- * RECHTS gestapelt alle strukturellen Elemente (Steuerspalte).
+ * Kompakte Zweiteilung (2026-08-16): der Inhalt steht links/unten,
+ * die strukturellen Elemente liegen als schmale Leiste oben rechts.
+ * Ziel: möglichst viele Phasen auf einer Bildschirmseite.
  */
 export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
@@ -40,55 +40,29 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
   return (
     <div
       onClick={handleCardClick}
-      className={`rounded-xl border bg-card p-4 ${meta.rand} ${onToggle ? 'cursor-pointer' : ''}`}
+      className={`group rounded-lg border bg-card px-3 py-2 ${meta.rand} ${onToggle ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex gap-4">
-        {/* LINKS: Inhalt */}
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
-              {nummer}
+      {/* Kopfzeile: links Art/Titel/Dauer, rechts die Struktur-Leiste */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
+          <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shrink-0">
+            {nummer}
+          </span>
+          <StundenPhaseArtZeile phase={phase} />
+          {phase.dauer_minuten ? (
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              {phase.dauer_minuten} Min.
             </span>
-            <StundenPhaseArtZeile phase={phase} />
-            {phase.dauer_minuten ? (
-              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-                <Clock className="w-3 h-3" />
-                {phase.dauer_minuten} Min.
-              </span>
-            ) : null}
-          </div>
-
-          {aktivitaetFehlt && (
-            <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Noch keine digitale Aufgabenart verknüpft.
-            </p>
-          )}
-          {inhaltFehlt && (
-            <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
-              <AlertTriangle className="w-3.5 h-3.5" />
-              Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
-            </p>
-          )}
-          {materialHinweis && (
-            <p className="text-xs text-sky-700 inline-flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5" />
-              <span><span className="font-medium">Hinweis:</span> Für diese Phase ist noch kein Material hinterlegt.</span>
-            </p>
-          )}
-
-          <PhaseRegieText text={phase.lehrer_hinweis} />
-
-          {(diff.standard || diff.stark || diff.foerderung) && (
-            <div className="grid gap-1 sm:grid-cols-3 pt-1 text-xs text-muted-foreground">
-              {diff.standard && <p><span className="font-medium">Standard:</span> {diff.standard}</p>}
-              {diff.stark && <p><span className="font-medium">★★ Stark:</span> {diff.stark}</p>}
-              {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
-            </div>
+          ) : null}
+          {phase.methode_sozialform && (
+            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {phase.methode_sozialform}
+            </span>
           )}
         </div>
 
-        {/* RECHTS: Struktur */}
         <StundenPhaseSteuerspalte
           phase={phase}
           meta={meta}
@@ -101,11 +75,43 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
         />
       </div>
 
+      {/* Inhalt */}
+      <div className="pl-7 pr-2 space-y-1">
+        {aktivitaetFehlt && (
+          <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Noch keine digitale Aufgabenart verknüpft.
+          </p>
+        )}
+        {inhaltFehlt && (
+          <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
+          </p>
+        )}
+        {materialHinweis && (
+          <p className="text-xs text-sky-700 inline-flex items-center gap-1.5">
+            <Info className="w-3.5 h-3.5" />
+            <span><span className="font-medium">Hinweis:</span> Für diese Phase ist noch kein Material hinterlegt.</span>
+          </p>
+        )}
+
+        <PhaseRegieText text={phase.lehrer_hinweis} />
+
+        {(diff.standard || diff.stark || diff.foerderung) && (
+          <div className="grid gap-1 sm:grid-cols-3 text-xs text-muted-foreground">
+            {diff.standard && <p><span className="font-medium">Standard:</span> {diff.standard}</p>}
+            {diff.stark && <p><span className="font-medium">★★ Stark:</span> {diff.stark}</p>}
+            {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
+          </div>
+        )}
+      </div>
+
       {offen && (
         <div
           data-arbeitsbereich
           onClick={(e) => e.stopPropagation()}
-          className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4 cursor-default"
+          className="ml-4 sm:ml-7 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4 cursor-default"
         >
           <StundenPhaseEditForm phase={phase} stunde={stunde} stundeId={stundeId} onFertig={onToggle} />
         </div>
