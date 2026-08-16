@@ -54,9 +54,9 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
   const speichern = useMutation({
     mutationFn: async () => {
       const istDigital = istDigitalerTyp(form.typ);
-      const is_complete = istDigital
-        ? !!form.aktivitaet_id
-        : !!(form.lehrer_hinweis || '').trim();
+      // Analoge Phasen sind immer vollständig (Regieanweisung und Material sind
+      // optional); digitale Phasen brauchen die verknüpfte Aufgabenart.
+      const is_complete = istDigital ? !!form.aktivitaet_id : true;
 
       return base44.entities.StundenSequenz.update(phase.id, {
         ...form,
@@ -132,8 +132,8 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
 
       <PhaseAbschnitt
         titel="Materialien dieser Phase"
-        hinweis={istDigitalerTyp(form.typ) ? 'optional' : 'z. B. Folien, Arbeitsblatt'}
-        gefuellt={form.material_urls.length > 0}
+        hinweis="optional · z. B. Folien, Arbeitsblatt"
+        gefuellt
       >
         <StundenPhaseMaterialListe
           materialien={form.material_urls}
