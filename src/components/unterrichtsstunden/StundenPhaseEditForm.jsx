@@ -22,6 +22,7 @@ import {
 } from '@/lib/stundenPhasen';
 import StundenPhaseMaterialListe from './StundenPhaseMaterialListe';
 import StundenPhaseAktivitaetWahl from './StundenPhaseAktivitaetWahl';
+import PhaseAbschnitt from './PhaseAbschnitt';
 import { toast } from 'sonner';
 
 export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
@@ -113,43 +114,63 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         />
       )}
 
-      <div className="space-y-2">
-        <Label>Regieanweisung (nur für Sie)</Label>
+      <PhaseAbschnitt titel="Regieanweisung" hinweis="nur für Sie · optional" gefuellt={!!form.lehrer_hinweis.trim()}>
         <Textarea className="bg-card" rows={3} value={form.lehrer_hinweis} onChange={(e) => set('lehrer_hinweis', e.target.value)} />
-      </div>
+      </PhaseAbschnitt>
 
-      <div className="space-y-2">
-        <Label>Anweisung für Schüler:innen (Standardsatz, anpassbar)</Label>
-        <Textarea
-          className="bg-card"
-          rows={2}
-          value={form.schueler_anweisung}
-          onChange={(e) => set('schueler_anweisung', e.target.value)}
-          placeholder="Was die Klasse in dieser Phase auf dem Gerät liest"
-        />
-      </div>
+      {!istDigitalerTyp(form.typ) && (
+        <div className="space-y-2">
+          <Label>Anweisung für Schüler:innen (Standardsatz, anpassbar)</Label>
+          <Textarea
+            className="bg-card"
+            rows={2}
+            value={form.schueler_anweisung}
+            onChange={(e) => set('schueler_anweisung', e.target.value)}
+            placeholder="Was die Klasse in dieser Phase auf dem Gerät liest"
+          />
+        </div>
+      )}
 
       {!istInputTyp(form.typ) && (
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Standard</Label>
-            <Textarea className="bg-card" rows={2} value={form.differenzierung.standard || ''} onChange={(e) => setDiff('standard', e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>★★ Leistungsstark</Label>
-            <Textarea className="bg-card" rows={2} value={form.differenzierung.stark || ''} onChange={(e) => setDiff('stark', e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Förderung</Label>
-            <Textarea className="bg-card" rows={2} value={form.differenzierung.foerderung || ''} onChange={(e) => setDiff('foerderung', e.target.value)} />
+        <div className="space-y-2">
+          <Label>
+            {istDigitalerTyp(form.typ)
+              ? 'Aufgaben für diese Aufgabenart (bis zu drei, differenziert)'
+              : 'Differenzierung'}
+          </Label>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">
+                {istDigitalerTyp(form.typ) ? 'Standardaufgabe (für alle)' : 'Standard'}
+              </p>
+              <Textarea className="bg-card" rows={3} value={form.differenzierung.standard || ''} onChange={(e) => setDiff('standard', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">
+                {istDigitalerTyp(form.typ) ? '★★ Leistungsstark (optional)' : '★★ Leistungsstark'}
+              </p>
+              <Textarea className="bg-card" rows={3} value={form.differenzierung.stark || ''} onChange={(e) => setDiff('stark', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">
+                {istDigitalerTyp(form.typ) ? 'Förderung (optional)' : 'Förderung'}
+              </p>
+              <Textarea className="bg-card" rows={3} value={form.differenzierung.foerderung || ''} onChange={(e) => setDiff('foerderung', e.target.value)} />
+            </div>
           </div>
         </div>
       )}
 
-      <StundenPhaseMaterialListe
-        materialien={form.material_urls}
-        onChange={(m) => set('material_urls', m)}
-      />
+      <PhaseAbschnitt
+        titel="Materialien dieser Phase"
+        hinweis={istDigitalerTyp(form.typ) ? 'optional' : 'z. B. Folien, Arbeitsblatt'}
+        gefuellt={form.material_urls.length > 0}
+      >
+        <StundenPhaseMaterialListe
+          materialien={form.material_urls}
+          onChange={(m) => set('material_urls', m)}
+        />
+      </PhaseAbschnitt>
 
       <div className="flex justify-end gap-2 pt-1">
         <Button variant="outline" onClick={() => onFertig?.()}>Zuklappen</Button>
