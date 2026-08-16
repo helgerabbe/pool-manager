@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
             content: JSON.stringify({ kontext, aktivitaet: aktivitaetInfo, regeln: [...regeln, ...spez.regeln] }),
           },
         ]),
-        model: 'claude-sonnet-5',
+        model: 'claude_sonnet_4_6',
         response_json_schema: spez.schema,
       });
       const fieldValues = spez.build(unwrapLLM(llmResponse));
@@ -179,7 +179,7 @@ Deno.serve(async (req) => {
           }),
         },
       ]),
-      model: 'claude-sonnet-5',
+      model: 'claude_sonnet_4_6',
       response_json_schema: {
         type: 'object',
         properties: {
