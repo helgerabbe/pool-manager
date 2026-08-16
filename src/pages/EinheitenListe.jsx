@@ -365,6 +365,12 @@ export default function EinheitenListe() {
       </div>
       )}
 
+      {/* Moodle-Unterrichts-Generator: Unterrichtsstunden stehen im
+          Privatbereich ganz oben — auch für Administratoren. */}
+      {ansicht === 'privat' && (
+        <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+      )}
+
       {ansicht === 'basismodule' ? (
         <BasismoduleListe />
       ) : ansicht === 'austausch' ? (
@@ -380,12 +386,6 @@ export default function EinheitenListe() {
         <PrivateEinheitenUebersicht einheiten={einheiten} />
       ) : (
       <>
-      {/* Moodle-Unterrichts-Generator: Unterrichtsstunden stehen im
-          Privatbereich ganz oben — sie sind der erste Planungsschritt. */}
-      {ansicht === 'privat' && (
-        <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
-      )}
-
       {/* Angefangene Entwürfe (nur für den Ersteller sichtbar) */}
       {ansicht === 'oeffentlich' && <EntwurfSektion />}
 
