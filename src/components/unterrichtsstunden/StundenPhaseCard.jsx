@@ -2,14 +2,14 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { KeyRound, Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
+import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
  */
-export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onToggle }) {
+export default function StundenPhaseCard({ phase, nummer, stunde, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
   const diff = phase.differenzierung || {};
   const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
@@ -17,10 +17,12 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
     istDigitalerTyp(phase.typ) &&
     !!phase.aktivitaet_id &&
     Object.keys(phase.field_values || {}).length === 0;
-  const unvollstaendig = aktivitaetFehlt || inhaltFehlt;
+  const brianFehlt = istBrianTyp(phase.typ) && !istBrianVollstaendig(phase.brian);
+  const unvollstaendig = aktivitaetFehlt || inhaltFehlt || brianFehlt;
   // Reiner Hinweis (blockiert die Vollständigkeit NICHT): analoge Phase ohne Material.
   const materialHinweis =
     !istDigitalerTyp(phase.typ) &&
+    !istBrianTyp(phase.typ) &&
     (phase.material_urls || []).length === 0 &&
     !phase.material_hinweis;
 
@@ -121,7 +123,7 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
           onClick={(e) => e.stopPropagation()}
           className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4 cursor-default"
         >
-          <StundenPhaseEditForm phase={phase} stundeId={stundeId} onFertig={onToggle} />
+          <StundenPhaseEditForm phase={phase} stunde={stunde} stundeId={stundeId} onFertig={onToggle} />
         </div>
       )}
     </div>

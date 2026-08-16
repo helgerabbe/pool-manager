@@ -116,6 +116,7 @@ export default function UnterrichtsstundeDetail() {
                   key={p.id}
                   phase={p}
                   nummer={i + 1}
+                  stunde={stunde}
                   stundeId={id}
                   offen={editPhase === p.id}
                   onToggle={() => setEditPhase(editPhase === p.id ? null : p.id)}

@@ -1,7 +1,7 @@
 {
   "name": "StundenSequenz",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear ueber 'reihenfolge'. Die Phasen-Art unterscheidet analog/digital: bei digitalen Arten wird eine Aktivitaet aus dem Pool-Manager-Katalog verknuepft (aktivitaet_id + field_values), bei analogen Arten genuegen Anweisung und Material.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear ueber 'reihenfolge'. Die Phasen-Art unterscheidet analog/digital: bei digitalen Arten wird eine Aktivitaet aus dem Pool-Manager-Katalog verknuepft (aktivitaet_id + field_values), bei analogen Arten genuegen Anweisung und Material. Die Art 'brian_aufgabe' ist eine offene Aufgabe, die die Schueler im Dialog mit dem KI-Tutor Brian bearbeiten (Konfiguration im Feld 'brian').",
   "properties": {
     "stunde_id": {
       "type": "string",
@@ -23,6 +23,7 @@
         "digital_input",
         "analog_aufgabe",
         "digital_aufgabe",
+        "brian_aufgabe",
         "analog_sicherung",
         "digital_sicherung",
         "lehrer_input",
@@ -31,7 +32,7 @@
         "sicherung"
       ],
       "default": "analog_input",
-      "description": "Phasen-Art (2026-08-16): 'analog_input' = Input der Lehrkraft ohne Geraet (Vortrag, Gespraech, Tafel). 'digital_input' = digital ausgespielter Input (z. B. Lehrvideo) - verknuepfte Aktivitaet. 'analog_aufgabe' = Aufgabe ohne digitale Bearbeitung (Arbeitsblatt, Gespraech). 'digital_aufgabe' = Aufgabe, die als Aktivitaet aus dem Pool-Manager verknuepft und von den Schuelern digital bearbeitet wird. 'analog_sicherung' = Sicherung/Auswertung im Plenum. 'digital_sicherung' = digitale Sicherung ueber eine verknuepfte Aktivitaet. Alle 'digital_*'-Arten ziehen eine Aktivitaet hinzu. Die Werte 'lehrer_input', 'schueler_aktivitaet', 'analog' und 'sicherung' sind @legacy-Bestandswerte und werden im Frontend auf die neuen Arten abgebildet (src/lib/stundenPhasen.js)."
+      "description": "Phasen-Art (2026-08-16): 'analog_input' = Input der Lehrkraft ohne Geraet (Vortrag, Gespraech, Tafel). 'digital_input' = digital ausgespielter Input (z. B. Lehrvideo) - verknuepfte Aktivitaet. 'analog_aufgabe' = Aufgabe ohne digitale Bearbeitung (Arbeitsblatt, Gespraech). 'digital_aufgabe' = Aufgabe, die als Aktivitaet aus dem Pool-Manager verknuepft und von den Schuelern digital bearbeitet wird (deterministisch richtig/falsch). 'brian_aufgabe' (2026-08-16) = offene Aufgabe, die die Schueler im Dialog mit dem KI-Tutor Brian bearbeiten - analog zu den Allgemeinen Aufgaben des Pool-Managers; die vier Brian-Uebergabefelder liegen im Feld 'brian' und werden ueber einen eigenen Dialog (Register) gepflegt. 'analog_sicherung' = Sicherung/Auswertung im Plenum. 'digital_sicherung' = digitale Sicherung ueber eine verknuepfte Aktivitaet. Alle 'digital_*'-Arten ziehen eine Aktivitaet hinzu. Die Werte 'lehrer_input', 'schueler_aktivitaet', 'analog' und 'sicherung' sind @legacy-Bestandswerte und werden im Frontend auf die neuen Arten abgebildet (src/lib/stundenPhasen.js)."
     },
     "dauer_minuten": {
       "type": "number",
@@ -89,6 +90,57 @@
         }
       }
     },
+    "brian": {
+      "type": "object",
+      "description": "Brian-Aufgabe (2026-08-16, nur bei typ='brian_aufgabe'): Aufgabenstellung und Erwartungshorizont der Lehrkraft sowie die vier Uebergabefelder fuer Brian.study (Dialogname, Anweisung fuer Lernende, interne Anweisung, Abbruchbedingung). Format und Bedeutung sind identisch zu den brian_*-Feldern der AllgemeineAufgabe, damit dieselbe Generierung (generateBrianSegments) und derselbe Export genutzt werden koennen.",
+      "additionalProperties": true,
+      "properties": {
+        "aufgabenstellung": {
+          "type": "string",
+          "description": "Die Aufgabe, die die Schueler im Brian-Dialog bearbeiten."
+        },
+        "erwartungshorizont": {
+          "type": "string",
+          "description": "Fachliche Messlatte fuer Brian - NICHT schuelersichtbar."
+        },
+        "tutor_persona": {
+          "type": "string",
+          "enum": [
+            "standard",
+            "unterstuetzend",
+            "streng",
+            "restriktiv"
+          ],
+          "default": "standard",
+          "description": "Betreuungsstil des KI-Tutors."
+        },
+        "tutor_persona_zusatz": {
+          "type": "string",
+          "description": "Optionale ergaenzende Hinweise zum Betreuungsstil."
+        },
+        "dialog_name": {
+          "type": "string",
+          "description": "Uebergabefeld 1: Dialogname in Brian.study."
+        },
+        "learner_instruction": {
+          "type": "string",
+          "description": "Uebergabefeld 2: Anweisung fuer die Lernenden (schuelersichtbar)."
+        },
+        "system_instruction": {
+          "type": "string",
+          "description": "Uebergabefeld 3: interne Anweisung fuer den Chatbot (nicht schuelersichtbar)."
+        },
+        "completion_rule": {
+          "type": "string",
+          "description": "Uebergabefeld 4: Wann ist der Dialog beendet?"
+        },
+        "generiert_am": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Zeitstempel der letzten KI-Generierung der Uebergabefelder."
+        }
+      }
+    },
     "freischalt_code": {
       "type": "string",
       "description": "Dreistelliger Zahlencode, den die Schueler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zufaellig vergeben, pro Stunde eindeutig, fuer die Lehrkraft jederzeit im Regieblatt sichtbar."
@@ -105,7 +157,7 @@
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollstaendig konfiguriert (bei digitalen Arten gepruefte Verknuepfung/Vollstaendigkeit der Aktivitaet)."
+      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollstaendig konfiguriert (bei digitalen Arten gepruefte Verknuepfung/Vollstaendigkeit der Aktivitaet, bei 'brian_aufgabe' vorhandene Uebergabefelder)."
     }
   },
   "required": [

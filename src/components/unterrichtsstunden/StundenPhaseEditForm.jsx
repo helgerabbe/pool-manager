@@ -12,9 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import StundenBrianUebergabe from './StundenBrianUebergabe';
 import {
   PHASEN_TYP_META,
   istDigitalerTyp,
+  istBrianTyp,
+  istBrianVollstaendig,
   normalisierterTyp,
   standardSchuelerAnweisung,
   istStandardSchuelerAnweisung,
@@ -26,7 +29,7 @@ import PhaseAuswahlMitSonstiges, { METHODEN_SOZIALFORMEN, MATERIALIEN } from './
 import StundenAufgabeEditorButton from './StundenAufgabeEditorButton';
 import { toast } from 'sonner';
 
-export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
+export default function StundenPhaseEditForm({ phase, stunde, stundeId, onFertig }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(() => ({
     phasenname: phase.phasenname || '',
@@ -66,7 +69,11 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
       const istDigital = istDigitalerTyp(form.typ);
       // Analoge Phasen sind immer vollständig (Regieanweisung und Material sind
       // optional); digitale Phasen brauchen die verknüpfte Aufgabenart.
-      const is_complete = istDigital ? !!form.aktivitaet_id : true;
+      const is_complete = istDigital
+        ? !!form.aktivitaet_id
+        : istBrianTyp(form.typ)
+          ? istBrianVollstaendig(phase.brian)
+          : true;
 
       return base44.entities.StundenSequenz.update(phase.id, {
         ...form,
@@ -133,6 +140,16 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
             )
           )}
         </>
+      )}
+
+      {istBrianTyp(form.typ) && (
+        form.typ === normalisierterTyp(phase.typ) ? (
+          <StundenBrianUebergabe phase={phase} stunde={stunde} stundeId={stundeId} />
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Speichern Sie die Phase, um den Brian-Dialog einzurichten.
+          </p>
+        )
       )}
 
       <PhaseAbschnitt
