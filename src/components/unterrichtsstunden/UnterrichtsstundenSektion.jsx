@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StundeErstellenModal from './StundeErstellenModal';
 import StundenMoodleWegInfoBox from './StundenMoodleWegInfoBox';
+import StundeLoeschenButton from './StundeLoeschenButton';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Der Bereich "Meine Unterrichtsstunden"
@@ -83,10 +84,10 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
                   </div>
                   <div className="divide-y">
                     {gruppe.items.map((s) => (
+                      <div key={s.id} className="flex items-center gap-1 pr-2 hover:bg-muted/20 transition-colors">
                       <Link
-                        key={s.id}
                         to={`/unterrichtsstunde/${s.id}`}
-                        className="flex items-center gap-3 px-3 py-2.5 hover:bg-muted/20 transition-colors"
+                        className="flex items-center gap-3 px-3 py-2.5 flex-1 min-w-0"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-foreground truncate">{s.arbeitstitel}</p>
@@ -102,6 +103,8 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                       </Link>
+                      <StundeLoeschenButton stunde={s} />
+                      </div>
                     ))}
                   </div>
                 </div>
