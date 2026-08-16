@@ -6,6 +6,7 @@ import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } fro
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
 import StundenPhaseSortierButtons from './StundenPhaseSortierButtons';
+import StundenPhaseArtZeile from './StundenPhaseArtZeile';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
@@ -44,7 +45,7 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
         <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
           {nummer}
         </span>
-        <h3 className="text-sm font-bold text-foreground">{phase.phasenname || 'Phase'}</h3>
+        <StundenPhaseArtZeile phase={phase} />
         <Badge variant="outline" className={meta.badge}>{meta.label}</Badge>
         {phase.dauer_minuten ? (
           <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
