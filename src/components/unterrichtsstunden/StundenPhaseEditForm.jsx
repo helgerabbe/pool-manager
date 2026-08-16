@@ -22,6 +22,7 @@ import {
 import StundenPhaseMaterialListe from './StundenPhaseMaterialListe';
 import StundenPhaseAktivitaetWahl from './StundenPhaseAktivitaetWahl';
 import PhaseAbschnitt from './PhaseAbschnitt';
+import PhaseAuswahlMitSonstiges, { METHODEN_SOZIALFORMEN, MATERIALIEN } from './PhaseAuswahlMitSonstiges';
 import StundenAufgabeEditorButton from './StundenAufgabeEditorButton';
 import { toast } from 'sonner';
 
@@ -142,24 +143,20 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         <div className="space-y-3">
           <Textarea className="bg-card" rows={3} value={form.lehrer_hinweis} onChange={(e) => set('lehrer_hinweis', e.target.value)} />
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Methode & Sozialform <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
-                className="bg-card h-9"
-                value={form.methode_sozialform}
-                onChange={(e) => set('methode_sozialform', e.target.value)}
-                placeholder="z. B. Plenumsgespräch, Partnerarbeit"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Material <span className="text-muted-foreground font-normal">(optional)</span></Label>
-              <Input
-                className="bg-card h-9"
-                value={form.material_hinweis}
-                onChange={(e) => set('material_hinweis', e.target.value)}
-                placeholder="z. B. Tafel, Impulsbild"
-              />
-            </div>
+            <PhaseAuswahlMitSonstiges
+              titel="Methode & Sozialform"
+              optionen={METHODEN_SOZIALFORMEN}
+              value={form.methode_sozialform}
+              onChange={(v) => set('methode_sozialform', v)}
+              placeholder="Eigene Methode / Sozialform"
+            />
+            <PhaseAuswahlMitSonstiges
+              titel="Material"
+              optionen={MATERIALIEN}
+              value={form.material_hinweis}
+              onChange={(v) => set('material_hinweis', v)}
+              placeholder="Eigenes Material"
+            />
           </div>
         </div>
       </PhaseAbschnitt>
