@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, KeyRound } from 'lucide-react';
+import { ArrowLeft, KeyRound, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
 import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
@@ -28,13 +28,13 @@ export default function UnterrichtsstundeDetail() {
     enabled: !!id,
   });
 
-  const { data: phasen = [] } = useQuery({
+  const { data: phasen = [], isLoading: phasenLoading } = useQuery({
     queryKey: ['stundenSequenzen', id],
     queryFn: () => base44.entities.StundenSequenz.filter({ stunde_id: id }, 'reihenfolge', 50),
     enabled: !!id,
   });
 
-  if (isLoading) {
+  if (isLoading || phasenLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
@@ -79,7 +79,15 @@ export default function UnterrichtsstundeDetail() {
       <Tabs defaultValue={phasen.length > 0 ? 'regieblatt' : 'coach'}>
         <TabsList>
           <TabsTrigger value="coach">1. KI-Stundencoach</TabsTrigger>
-          <TabsTrigger value="regieblatt">2. Stunden-Regieblatt</TabsTrigger>
+          <TabsTrigger value="regieblatt" className="gap-2">
+            2. Stunden-Regieblatt
+            {phasen.length > 0 && (
+              <Badge variant="secondary" className="gap-1 text-[11px] px-1.5 py-0 bg-emerald-100 text-emerald-900">
+                <Check className="w-3 h-3" />
+                {phasen.length} Phasen
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
         {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
