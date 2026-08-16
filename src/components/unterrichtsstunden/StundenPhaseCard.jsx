@@ -14,8 +14,19 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
   const materialien = phase.material_urls || [];
   const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
 
+  // Klick irgendwo auf die Karte klappt den Arbeitsbereich auf/zu –
+  // Links, Buttons und der Arbeitsbereich selbst bleiben davon unberührt.
+  const handleCardClick = (e) => {
+    if (!onToggle) return;
+    if (e.target.closest('a, button, input, textarea, select, [role="combobox"], [data-arbeitsbereich]')) return;
+    onToggle();
+  };
+
   return (
-    <div className={`rounded-xl border bg-card p-4 space-y-2 ${meta.rand}`}>
+    <div
+      onClick={handleCardClick}
+      className={`rounded-xl border bg-card p-4 space-y-2 ${meta.rand} ${onToggle ? 'cursor-pointer' : ''}`}
+    >
       <div className="flex items-center gap-2 flex-wrap">
         <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
           {nummer}
@@ -91,7 +102,11 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
       )}
 
       {offen && (
-        <div className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4">
+        <div
+          data-arbeitsbereich
+          onClick={(e) => e.stopPropagation()}
+          className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4 cursor-default"
+        >
           <StundenPhaseEditForm phase={phase} stundeId={stundeId} onFertig={onToggle} />
         </div>
       )}
