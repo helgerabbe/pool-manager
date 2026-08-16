@@ -11,6 +11,7 @@ import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenV
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
 import StundenRegieblattDruckButton from '@/components/unterrichtsstunden/StundenRegieblattDruckButton';
+import StundenSchueleransichtTab from '@/components/unterrichtsstunden/StundenSchueleransichtTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
@@ -88,6 +89,7 @@ export default function UnterrichtsstundeDetail() {
               </Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="schueler">3. Schüleransicht</TabsTrigger>
         </TabsList>
 
         {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
@@ -124,6 +126,10 @@ export default function UnterrichtsstundeDetail() {
               </p>
             </>
           )}
+        </TabsContent>
+
+        <TabsContent value="schueler" className="mt-4">
+          <StundenSchueleransichtTab stunde={stunde} phasen={phasen} />
         </TabsContent>
       </Tabs>
 

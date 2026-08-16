@@ -6,24 +6,7 @@ import {
   masterCompositeId,
   MASTER_MODUS,
 } from '@/lib/masterAufgabenModus';
-import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
-import LinkOeffnenSeite from '@/components/schueler/lesen/LinkOeffnenSeite';
-import ReihenfolgeSortierenSeite from '@/components/schueler/lesen/ReihenfolgeSortierenSeite';
-import BegriffeZuordnenSeite from '@/components/schueler/lesen/BegriffeZuordnenSeite';
-import ZuordnungstrainingSeite from '@/components/schueler/lesen/ZuordnungstrainingSeite';
-import BearbeitungBestaetigenSeite from '@/components/schueler/lesen/BearbeitungBestaetigenSeite';
-import VideoAudioSeite from '@/components/schueler/lesen/VideoAudioSeite';
-import KITutorSeite from '@/components/schueler/lesen/KITutorSeite';
-import LueckentextSeite from '@/components/schueler/lesen/LueckentextSeite';
-import TestSeite from '@/components/schueler/lesen/TestSeite';
-import LehrwerkQuelleSeite from '@/components/schueler/lesen/LehrwerkQuelleSeite';
-import MiniquizSeite from '@/components/schueler/lesen/MiniquizSeite';
-import BildBeschriftungSeite from '@/components/schueler/lesen/BildBeschriftungSeite';
-import KICheckSeite from '@/components/schueler/lesen/KICheckSeite';
-import OffeneAufgabeSeite from '@/components/schueler/lesen/OffeneAufgabeSeite';
-import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
-import MaterialaufgabeSeite from '@/components/schueler/lesen/MaterialaufgabeSeite';
-import SprechaufgabeSeite from '@/components/schueler/lesen/SprechaufgabeSeite';
+import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
 import LernpaketAktivitaetSeite from './LernpaketAktivitaetSeite';
 
 /**
@@ -99,28 +82,9 @@ export default function MasterfaehigeAktivitaet({
     setAktiveMaster(offen[0]); // nächste anbieten, auf derselben Seite bleiben
   };
 
-  const katName = (kat?.name || '').toLowerCase();
-  // WICHTIG: „Materialaufgabe" zuerst prüfen – eigener Aktivitätstyp.
-  const istMaterialaufgabe = katName.includes('materialaufgabe');
-  const istSprechaufgabe = katName.includes('sprechaufgabe');
-  const istTextLesen = !istMaterialaufgabe && katName.includes('text lesen');
-  const istLinkUrl = katName.includes('link') || katName.includes('url');
-  const istReihenfolge = katName.includes('reihenfolge') || katName.includes('sortier');
-  // WICHTIG: 'zuordnungstraining' VOR 'zuordn' prüfen — sonst würde das
-  // Zuordnungstraining fälschlich als „Begriffe zuordnen" gerendert.
-  const istZuordnungstraining = katName.includes('zuordnungstraining');
-  const istBegriffeZuordnen = !istZuordnungstraining && (katName.includes('begriffe zuordnen') || katName.includes('zuordn'));
-  const istBestaetigen = katName.includes('bestätig') || katName.includes('bestaetig');
-  const istVideoAudio = katName.includes('video') || katName.includes('audio');
-  const istKITutor = katName.includes('ki-tutor') || katName.includes('ki tutor') || katName.includes('tutor');
-  const istLueckentext = katName.includes('lückentext') || katName.includes('lueckentext');
-  const istTest = katName === 'test' || katName.includes('abschlusstest');
-  const istLehrwerk = katName.includes('lehrwerk') || katName.includes('quelle');
-  const istMiniquiz = katName.includes('miniquiz') || katName.includes('mini-quiz');
-  const istBildbeschriftung = katName.includes('bildbeschriftung') || katName.includes('beschriftung');
-  const istKICheck = katName.includes('ki-check') || katName.includes('ki check');
-  const istOffeneAufgabe = katName.includes('offene');
-  const istHtmlSeite = katName.includes('html-seite') || katName.includes('html');
+  // Die Zuordnung Aktivitätsname → Schüler-Seite liegt zentral in
+  // src/lib/aktivitaetSeitenMap.js (auch vom Stunden-Player genutzt).
+  const Seite = getAktivitaetSeite(kat?.name);
 
   // key pro aktiver MasterAufgabe → erzwingt frischen internen State der
   // Einzelseite (z. B. neu gemischte Karten), wenn sequenziell die nächste kommt.
@@ -141,24 +105,7 @@ export default function MasterfaehigeAktivitaet({
         : null,
   };
 
-  if (istSprechaufgabe) return <SprechaufgabeSeite {...gemeinsameProps} />;
-  if (istMaterialaufgabe) return <MaterialaufgabeSeite {...gemeinsameProps} />;
-  if (istTextLesen) return <TextLesenSeite {...gemeinsameProps} />;
-  if (istLinkUrl) return <LinkOeffnenSeite {...gemeinsameProps} />;
-  if (istReihenfolge) return <ReihenfolgeSortierenSeite {...gemeinsameProps} />;
-  if (istZuordnungstraining) return <ZuordnungstrainingSeite {...gemeinsameProps} />;
-  if (istBegriffeZuordnen) return <BegriffeZuordnenSeite {...gemeinsameProps} />;
-  if (istBestaetigen) return <BearbeitungBestaetigenSeite {...gemeinsameProps} />;
-  if (istVideoAudio) return <VideoAudioSeite {...gemeinsameProps} />;
-  if (istKITutor) return <KITutorSeite {...gemeinsameProps} />;
-  if (istLueckentext) return <LueckentextSeite {...gemeinsameProps} />;
-  if (istTest) return <TestSeite {...gemeinsameProps} />;
-  if (istLehrwerk) return <LehrwerkQuelleSeite {...gemeinsameProps} />;
-  if (istMiniquiz) return <MiniquizSeite {...gemeinsameProps} />;
-  if (istBildbeschriftung) return <BildBeschriftungSeite {...gemeinsameProps} />;
-  if (istKICheck) return <KICheckSeite {...gemeinsameProps} />;
-  if (istOffeneAufgabe) return <OffeneAufgabeSeite {...gemeinsameProps} />;
-  if (istHtmlSeite) return <HtmlSeite {...gemeinsameProps} />;
+  if (Seite) return <Seite {...gemeinsameProps} />;
   return <LernpaketAktivitaetSeite {...gemeinsameProps} />;
 }
 
