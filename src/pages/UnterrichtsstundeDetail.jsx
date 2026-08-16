@@ -12,6 +12,7 @@ import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenV
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
 import StundenRegieblattDruckButton from '@/components/unterrichtsstunden/StundenRegieblattDruckButton';
+import RegieblattAssistentPanel from '@/components/unterrichtsstunden/RegieblattAssistentPanel';
 import StundenSchueleransichtTab from '@/components/unterrichtsstunden/StundenSchueleransichtTab';
 import StundenMoodleUebergabeTab from '@/components/unterrichtsstunden/StundenMoodleUebergabeTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -111,7 +112,10 @@ export default function UnterrichtsstundeDetail() {
             </p>
           ) : (
             <>
-              <div className="flex justify-end">
+              <div className="flex justify-between items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <RegieblattAssistentPanel stundeId={id} />
+                </div>
                 <StundenRegieblattDruckButton stunde={stunde} phasen={phasen} />
               </div>
               {phasen.map((p, i) => (
