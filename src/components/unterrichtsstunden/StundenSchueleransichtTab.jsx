@@ -22,11 +22,12 @@ export default function StundenSchueleransichtTab({ stunde, phasen }) {
         <Eye className="w-3.5 h-3.5" />
         Live-Vorschau Ihres aktuellen Stands – Freischalt-Codes werden hier übersprungen.
       </p>
-      <div className="mx-auto w-full max-w-3xl rounded-[2rem] border-8 border-slate-800 bg-background shadow-xl overflow-hidden">
+      {/* Querformat-Tablet (4:3 liegend) – so halten die Schüler das Gerät. */}
+      <div className="mx-auto w-full max-w-5xl rounded-[2rem] border-8 border-slate-800 bg-background shadow-xl overflow-hidden">
         <div className="flex items-center justify-center gap-2 bg-slate-800 py-1.5 text-[11px] text-slate-300">
-          <Smartphone className="w-3 h-3" /> Schüleransicht
+          <Smartphone className="w-3 h-3 rotate-90" /> Schüleransicht · Querformat
         </div>
-        <div className="h-[640px] bg-background">
+        <div className="aspect-[4/3] bg-background overflow-auto">
           <StundenPlayer stunde={stunde} phasen={phasen} vorschau />
         </div>
       </div>
