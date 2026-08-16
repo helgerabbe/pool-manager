@@ -16,7 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Sparkles, Info } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
+import StundenBrianBeschreibungHilfe from './StundenBrianBeschreibungHilfe';
 import { toast } from 'sonner';
 import { istBrianVollstaendig } from '@/lib/stundenPhasen';
 
@@ -105,13 +107,21 @@ export default function StundenBrianDialog({ open, onOpenChange, phase, stunde, 
         <Tabs value={tab} onValueChange={setTab}>
           <TabsList>
             <TabsTrigger value="aufgabe">1. Aufgabe</TabsTrigger>
-            <TabsTrigger value="erwartung">2. Erwartungshorizont</TabsTrigger>
+            <TabsTrigger value="erwartung">2. Aufgabe für Brian beschreiben</TabsTrigger>
             <TabsTrigger value="uebergabe">3. Übergabe an Brian</TabsTrigger>
           </TabsList>
 
           <TabsContent value="aufgabe" className="space-y-3 mt-4">
             <div className="space-y-1.5">
-              <Label className="text-xs">Aufgabenstellung für die Schüler</Label>
+              <div className="flex items-center justify-between gap-2">
+                <Label className="text-xs">Aufgabenstellung für die Schüler</Label>
+                <SpeechInputButton
+                  value={brian.aufgabenstellung}
+                  onResult={(t) => set('aufgabenstellung', t)}
+                  maxSeconds={120}
+                  label="Einsprechen"
+                />
+              </div>
               <Textarea
                 rows={7}
                 value={brian.aufgabenstellung}
@@ -140,15 +150,21 @@ export default function StundenBrianDialog({ open, onOpenChange, phase, stunde, 
           </TabsContent>
 
           <TabsContent value="erwartung" className="space-y-3 mt-4">
-            <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
-              <Info className="w-3.5 h-3.5" />
-              Nicht schülersichtbar – Brian nutzt dies als fachliche Messlatte für sein Feedback.
-            </p>
+            <StundenBrianBeschreibungHilfe />
+            <div className="flex items-center justify-between gap-2">
+              <Label className="text-xs">Beschreibung der Aufgabe (nicht schülersichtbar)</Label>
+              <SpeechInputButton
+                value={brian.erwartungshorizont}
+                onResult={(t) => set('erwartungshorizont', t)}
+                maxSeconds={120}
+                label="Beschreibung einsprechen"
+              />
+            </div>
             <Textarea
-              rows={10}
+              rows={12}
               value={brian.erwartungshorizont}
               onChange={(e) => set('erwartungshorizont', e.target.value)}
-              placeholder="Welche Aspekte soll eine gute Bearbeitung enthalten?"
+              placeholder="Beschreiben Sie die Aufgabe, das Material, die Arbeitsschritte, Ihre Erwartungen und alles, was Brian wissen muss…"
             />
           </TabsContent>
 
