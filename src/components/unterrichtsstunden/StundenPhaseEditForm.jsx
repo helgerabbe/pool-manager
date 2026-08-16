@@ -12,7 +12,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PHASEN_TYP_META, istDigitalerTyp, normalisierterTyp } from '@/lib/stundenPhasen';
+import {
+  PHASEN_TYP_META,
+  istDigitalerTyp,
+  normalisierterTyp,
+  standardSchuelerAnweisung,
+  istStandardSchuelerAnweisung,
+} from '@/lib/stundenPhasen';
 import StundenPhaseMaterialListe from './StundenPhaseMaterialListe';
 import StundenPhaseAktivitaetWahl from './StundenPhaseAktivitaetWahl';
 import { toast } from 'sonner';
@@ -24,7 +30,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
     typ: normalisierterTyp(phase.typ),
     dauer_minuten: phase.dauer_minuten ?? '',
     lehrer_hinweis: phase.lehrer_hinweis || '',
-    schueler_anweisung: phase.schueler_anweisung || '',
+    schueler_anweisung: phase.schueler_anweisung || standardSchuelerAnweisung(phase.typ),
     folien_hinweis: phase.folien_hinweis || '',
     aktivitaet_id: phase.aktivitaet_id || '',
     material_urls: phase.material_urls || [],
@@ -32,6 +38,18 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
   }));
 
   const set = (feld, wert) => setForm((f) => ({ ...f, [feld]: wert }));
+
+  // Art wechseln: den Standardsatz mitziehen, solange die Lehrkraft ihn nicht
+  // selbst umformuliert hat.
+  const setTyp = (typ) =>
+    setForm((f) => ({
+      ...f,
+      typ,
+      schueler_anweisung: istStandardSchuelerAnweisung(f.schueler_anweisung)
+        ? standardSchuelerAnweisung(typ)
+        : f.schueler_anweisung,
+    }));
+
   const setDiff = (feld, wert) => setForm((f) => ({ ...f, differenzierung: { ...f.differenzierung, [feld]: wert } }));
 
   const speichern = useMutation({
@@ -77,7 +95,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
 
       <div className="space-y-2">
         <Label>Art der Phase</Label>
-        <Select value={form.typ} onValueChange={(v) => set('typ', v)}>
+        <Select value={form.typ} onValueChange={setTyp}>
           <SelectTrigger className="bg-card"><SelectValue /></SelectTrigger>
           <SelectContent>
             {Object.entries(PHASEN_TYP_META).map(([key, meta]) => (
@@ -100,7 +118,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
       </div>
 
       <div className="space-y-2">
-        <Label>Anweisung für Schüler:innen</Label>
+        <Label>Anweisung für Schüler:innen (Standardsatz, anpassbar)</Label>
         <Textarea
           className="bg-card"
           rows={2}

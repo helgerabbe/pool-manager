@@ -27,6 +27,30 @@ export function phasenTypMeta(typ) {
   return PHASEN_TYP_META[normalisierterTyp(typ)];
 }
 
+/**
+ * Standard-Anweisung für Schüler:innen je Phasen-Art. Wird als Vorbelegung
+ * eingesetzt, damit die Lehrkraft den immer gleichen Satz nicht tippen muss.
+ */
+export const STANDARD_SCHUELER_ANWEISUNG = {
+  analog_input: 'Achtung: Du erhältst jetzt Informationen von deiner Lehrkraft. Hör gut zu und sei aufmerksam.',
+  digital_input: 'Schau dir jetzt den folgenden Input in Ruhe an und mach dir Notizen.',
+  analog_aufgabe: 'Du erhältst jetzt eine Aufgabe von deiner Lehrkraft. Was du zu tun hast, erklärt sie dir – bitte bearbeite die Aufgabe.',
+  digital_aufgabe: 'Bearbeite jetzt die folgende Aufgabe. Los geht\u2019s!',
+  analog_sicherung: 'Deine Lehrkraft fasst jetzt die wesentlichen Aspekte zusammen. Hör gut zu und ergänze deine Notizen.',
+  digital_sicherung: 'Sichere jetzt dein Ergebnis mit der folgenden Aufgabe.',
+};
+
+export function standardSchuelerAnweisung(typ) {
+  return STANDARD_SCHUELER_ANWEISUNG[normalisierterTyp(typ)] || '';
+}
+
+/** true, wenn der Text leer ist oder noch einer der Standard-Sätze ist. */
+export function istStandardSchuelerAnweisung(text) {
+  const t = (text || '').trim();
+  if (!t) return true;
+  return Object.values(STANDARD_SCHUELER_ANWEISUNG).includes(t);
+}
+
 /** Digitale Phasen ziehen eine Aktivität aus dem Pool-Manager hinzu. */
 export function istDigitalerTyp(typ) {
   return normalisierterTyp(typ).startsWith('digital_');
