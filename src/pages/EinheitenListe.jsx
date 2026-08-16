@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import UnterrichtsstundenSektion from '@/components/unterrichtsstunden/UnterrichtsstundenSektion';
+import EinheitErstellenButtons from '@/components/einheiten/EinheitErstellenButtons';
 import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
@@ -328,39 +329,10 @@ export default function EinheitenListe() {
             sowie Fachlehrkräfte (NUR privat — wird in Modal/Wizard erzwungen).
             In der Öffentlichen Bibliothek gibt es kein Erstellen —
             dort landen Einheiten nur per Freigabe. */}
-        {ansicht !== 'austausch' && (permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Button onClick={() => setSchnellErstellen(true)} className="gap-2 bg-blue-100 text-blue-900 border border-blue-200 shadow-sm hover:bg-blue-200">
-                <Plus className="w-4 h-4" />
-                Neue Einheit
-              </Button>
-              <HelpBadge
-                text="Schnell eine neue Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Themenfelder und Inhalte können Sie später im Workspace ergänzen."
-                docsSlug="einheiten-struktur"
-              />
-            </div>
-            <div className="flex items-center gap-1">
-              <Button onClick={() => navigate(`/einheit/coach${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2 bg-blue-300 text-blue-950 border border-blue-300 shadow-sm hover:bg-blue-400">
-                <Bot className="w-4 h-4" />
-                Mit KI-Coach planen
-              </Button>
-              <HelpBadge
-                text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch entspannt die Struktur Ihrer Einheit — mit kritischer Prüfung, Inspiration und Studyflix-Recherche. Das Ergebnis wird anschließend an den Wizard übergeben."
-                docsSlug="einheiten-struktur"
-              />
-            </div>
-            <div className="flex items-center gap-1">
-              <Button onClick={() => navigate(`/einheit/create${ansicht === 'privat' ? '?privat=1' : ''}`)} className="gap-2 bg-blue-500 text-white border border-blue-500 shadow-sm hover:bg-blue-600">
-                <Wand2 className="w-4 h-4" />
-                Einheiten-Wizard
-              </Button>
-              <HelpBadge
-                text="Der geführte Wizard hilft Ihnen Schritt für Schritt: Metadaten, Gesamtziele, Themenfelder und Lernpakete werden strukturiert angelegt. Empfohlen für neue Einheiten."
-                docsSlug="einheiten-struktur"
-              />
-            </div>
-          </div>
+        {/* Im Privatbereich stehen die Erstellen-Wege beim Bereich
+            "Meine Einheiten" — dort gehören sie thematisch hin. */}
+        {ansicht !== 'austausch' && ansicht !== 'privat' && (permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
+          <EinheitErstellenButtons privat={false} onNeueEinheit={() => setSchnellErstellen(true)} />
         )}
       </div>
       )}
@@ -369,6 +341,24 @@ export default function EinheitenListe() {
           Privatbereich ganz oben — auch für Administratoren. */}
       {ansicht === 'privat' && (
         <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+      )}
+
+      {/* Zweiter, klar getrennter Bereich der Privaten Bibliothek: die Einheiten. */}
+      {ansicht === 'privat' && (
+        <div className="flex items-center justify-between gap-3 pt-2 border-t">
+          <div>
+            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              Meine Einheiten
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Vollständige Einheiten für die Poolzeit — mit Themenfeldern, Lernpaketen und Aufgaben.
+            </p>
+          </div>
+          {(permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
+            <EinheitErstellenButtons privat onNeueEinheit={() => setSchnellErstellen(true)} />
+          )}
+        </div>
       )}
 
       {ansicht === 'basismodule' ? (

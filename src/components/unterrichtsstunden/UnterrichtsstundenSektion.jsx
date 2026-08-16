@@ -43,7 +43,7 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
   const fachNamen = Object.keys(faecher).sort((a, b) => a.localeCompare(b, 'de'));
 
   return (
-    <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-4 space-y-4">
+    <div className="rounded-xl border-2 border-amber-300 bg-amber-50/60 p-4 space-y-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -51,7 +51,7 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
             Meine Unterrichtsstunden
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Moodle-Unterrichts-Generator: Stunde für Stunde planen — später entsteht daraus die Einheit.
+            Moodle-Unterrichts-Generator: Stunde für Stunde planen — daraus entsteht schrittweise Ihre Einheit.
           </p>
         </div>
         <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2 shrink-0">
