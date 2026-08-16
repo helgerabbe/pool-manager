@@ -11,6 +11,7 @@ import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenV
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
 import StundenPhaseEditModal from '@/components/unterrichtsstunden/StundenPhaseEditModal';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Grundgerüst der Stunden-Ansicht.
@@ -75,26 +76,38 @@ export default function UnterrichtsstundeDetail() {
         </div>
       )}
 
-      {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
-      <div className="space-y-4">
-        <StundenSteckbriefCard steckbrief={plan.steckbrief} />
-        <StundenVerlaufsplanTabelle verlaufsplan={plan.verlaufsplan} />
-        {(plan.verlaufsplan || []).length > 0 && <StundenHinweiseFeld stunde={stunde} plan={plan} />}
-        <StundenCoachPanel stunde={stunde} />
-        <StundeGenerierenButton stunde={stunde} plan={plan} hatPhasen={phasen.length > 0} />
-      </div>
+      <Tabs defaultValue={phasen.length > 0 ? 'regieblatt' : 'coach'}>
+        <TabsList>
+          <TabsTrigger value="coach">1. KI-Stundencoach</TabsTrigger>
+          <TabsTrigger value="regieblatt">2. Stunden-Regieblatt</TabsTrigger>
+        </TabsList>
 
-      {phasen.length > 0 && (
-        <div className="space-y-3 pt-2">
-          <h2 className="text-sm font-bold text-foreground">Stunden-Regieblatt</h2>
-          {phasen.map((p, i) => (
-            <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} onEdit={() => setEditPhase(p)} />
-          ))}
-          <p className="text-xs text-muted-foreground">
-            Über „Bearbeiten“ können Sie jede Phase anpassen, Materialien hochladen und digitale Aufgabenarten verknüpfen.
-          </p>
-        </div>
-      )}
+        {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
+        <TabsContent value="coach" className="space-y-4 mt-4">
+          <StundenSteckbriefCard steckbrief={plan.steckbrief} />
+          <StundenVerlaufsplanTabelle verlaufsplan={plan.verlaufsplan} />
+          {(plan.verlaufsplan || []).length > 0 && <StundenHinweiseFeld stunde={stunde} plan={plan} />}
+          <StundenCoachPanel stunde={stunde} />
+          <StundeGenerierenButton stunde={stunde} plan={plan} hatPhasen={phasen.length > 0} />
+        </TabsContent>
+
+        <TabsContent value="regieblatt" className="space-y-3 mt-4">
+          {phasen.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              Noch keine Phasen vorhanden. Erarbeiten Sie zuerst im Tab „KI-Stundencoach“ eine Bauanleitung und generieren Sie daraus die Stunde.
+            </p>
+          ) : (
+            <>
+              {phasen.map((p, i) => (
+                <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} onEdit={() => setEditPhase(p)} />
+              ))}
+              <p className="text-xs text-muted-foreground">
+                Über „Bearbeiten“ können Sie jede Phase anpassen, Materialien hochladen und digitale Aufgabenarten verknüpfen.
+              </p>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {editPhase && (
         <StundenPhaseEditModal
