@@ -23,7 +23,7 @@ import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
-import StundenAufgabeKiGenerator from '@/components/unterrichtsstunden/StundenAufgabeKiGenerator';
+import StundenAufgabeKiButton from '@/components/unterrichtsstunden/StundenAufgabeKiButton';
 import StundenOffeneAufgabeVorschauButton from '@/components/unterrichtsstunden/StundenOffeneAufgabeVorschauButton';
 
 /** Aufgabenart → passender Editor-Dialog (gleiche Zuordnung wie im Pool-Manager). */
@@ -79,11 +79,6 @@ export default function StundenAufgabeEditorButton({ phase, katalogEntry, stunde
 
   return (
     <div className="space-y-3">
-    {/* Alle Standard-Arten: KI-Befüllung der Felder. Bei der offenen Aufgabe
-        entsteht zuerst die Beschreibung im Editor (siehe unten). */}
-    {typ !== 'offen' && (
-      <StundenAufgabeKiGenerator phase={phase} katalogEntry={katalogEntry} stundeId={stundeId} />
-    )}
     <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-blue-900">Inhalt der Aufgabe „{katalogEntry?.name}"</p>
@@ -95,10 +90,17 @@ export default function StundenAufgabeEditorButton({ phase, katalogEntry, stunde
           )}
         </p>
       </div>
-      <Button size="sm" className="gap-2 shrink-0" onClick={() => setOpen(true)}>
-        <Pencil className="w-3.5 h-3.5" />
-        {hatInhalt ? 'Aufgabe bearbeiten' : 'Aufgabe jetzt erstellen'}
-      </Button>
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Zwei Wege: selbst ausarbeiten ODER von der KI erstellen lassen.
+            Bei der offenen Aufgabe entsteht die Beschreibung im Editor. */}
+        {typ !== 'offen' && (
+          <StundenAufgabeKiButton phase={phase} katalogEntry={katalogEntry} stundeId={stundeId} />
+        )}
+        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}>
+          <Pencil className="w-3.5 h-3.5" />
+          {hatInhalt ? 'Aufgabe bearbeiten' : 'Aufgabe jetzt erstellen'}
+        </Button>
+      </div>
 
       {typ === 'lueckentext' && <LueckentextWysiwygModal {...gemeinsam} />}
       {typ === 'sortierung' && <SortingListModal {...gemeinsam} />}

@@ -16,7 +16,7 @@ import { toast } from 'sonner';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import StundenAufgabeVorschau from '@/components/unterrichtsstunden/StundenAufgabeVorschau';
 
-export default function StundenAufgabeKiGenerator({ phase, katalogEntry, stundeId }) {
+export default function StundenAufgabeKiGenerator({ phase, katalogEntry, stundeId, onFertig }) {
   const queryClient = useQueryClient();
   const [hinweis, setHinweis] = useState('');
   const [vorschau, setVorschau] = useState(null);
@@ -48,6 +48,7 @@ export default function StundenAufgabeKiGenerator({ phase, katalogEntry, stundeI
       setVorschau(null);
       queryClient.invalidateQueries({ queryKey: ['stundenSequenzen', stundeId] });
       toast.success('Aufgabe übernommen.');
+      onFertig?.();
     },
     onError: (e) => toast.error(e?.message || 'Übernehmen fehlgeschlagen.'),
   });
