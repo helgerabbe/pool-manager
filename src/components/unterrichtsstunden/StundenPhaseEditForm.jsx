@@ -184,6 +184,14 @@ export default function StundenPhaseEditForm({ phase, stunde, stundeId, onFertig
           hinweis="Standardsatz, anpassbar"
           gefuellt={!!form.schueler_anweisung.trim()}
         >
+          {istBrianTyp(form.typ) && (
+            <p className="text-xs text-muted-foreground mb-2">
+              Ergänzen Sie hier nach „Aufgabenstellung:“ die Aufgabe im Wortlaut – das ist der Text, den die
+              Schüler auf ihrem Gerät lesen, bevor sie in den Brian-Dialog gehen. Auch wenn die Aufgabe schon
+              auf dem Material steht: Schreiben Sie sie hier immer mit hin, damit die Schüler sie direkt vor
+              Augen haben.
+            </p>
+          )}
           <Textarea
             className="bg-card"
             rows={2}

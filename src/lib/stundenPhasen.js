@@ -39,7 +39,7 @@ export const STANDARD_SCHUELER_ANWEISUNG = {
   digital_input: 'Schau dir jetzt den folgenden Input in Ruhe an und mach dir Notizen.',
   analog_aufgabe: 'Du erhältst jetzt eine Aufgabe von deiner Lehrkraft. Was du zu tun hast, erklärt sie dir – bitte bearbeite die Aufgabe.',
   digital_aufgabe: 'Bearbeite jetzt die folgende Aufgabe. Los geht\u2019s!',
-  brian_aufgabe: 'Bearbeite jetzt die folgende Aufgabe im Gespräch mit Brian. Er begleitet dich dabei – arbeite so lange mit ihm, bis er die Aufgabe als abgeschlossen bestätigt.',
+  brian_aufgabe: 'Bearbeite jetzt die folgende Aufgabe im Gespräch mit Brian. Er begleitet dich dabei – arbeite so lange mit ihm, bis er die Aufgabe als abgeschlossen bestätigt.\n\nAufgabenstellung:\n',
   analog_sicherung: 'Deine Lehrkraft fasst jetzt die wesentlichen Aspekte zusammen. Hör gut zu und ergänze deine Notizen.',
   digital_sicherung: 'Sichere jetzt dein Ergebnis mit der folgenden Aufgabe.',
 };
