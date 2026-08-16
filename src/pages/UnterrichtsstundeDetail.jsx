@@ -53,7 +53,7 @@ export default function UnterrichtsstundeDetail() {
   const plan = stunde.coach_plan || {};
 
   return (
-    <div className="space-y-6 w-full max-w-5xl mx-auto">
+    <div className="space-y-6 w-full max-w-3xl mx-auto px-2">
       <Link to="/einheiten" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="w-4 h-4" />
         Zurück zur Privaten Bibliothek
