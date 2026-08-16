@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   PHASEN_TYP_META,
   istDigitalerTyp,
+  istInputTyp,
   normalisierterTyp,
   standardSchuelerAnweisung,
   istStandardSchuelerAnweisung,
@@ -128,30 +129,22 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Folien-/Präsentationshinweis</Label>
-        <Input
-          className="bg-card"
-          value={form.folien_hinweis}
-          onChange={(e) => set('folien_hinweis', e.target.value)}
-          placeholder="z. B. Folie 2–4"
-        />
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label>Standard</Label>
-          <Textarea className="bg-card" rows={2} value={form.differenzierung.standard || ''} onChange={(e) => setDiff('standard', e.target.value)} />
+      {!istInputTyp(form.typ) && (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Standard</Label>
+            <Textarea className="bg-card" rows={2} value={form.differenzierung.standard || ''} onChange={(e) => setDiff('standard', e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>★★ Leistungsstark</Label>
+            <Textarea className="bg-card" rows={2} value={form.differenzierung.stark || ''} onChange={(e) => setDiff('stark', e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Förderung</Label>
+            <Textarea className="bg-card" rows={2} value={form.differenzierung.foerderung || ''} onChange={(e) => setDiff('foerderung', e.target.value)} />
+          </div>
         </div>
-        <div className="space-y-2">
-          <Label>★★ Leistungsstark</Label>
-          <Textarea className="bg-card" rows={2} value={form.differenzierung.stark || ''} onChange={(e) => setDiff('stark', e.target.value)} />
-        </div>
-        <div className="space-y-2">
-          <Label>Förderung</Label>
-          <Textarea className="bg-card" rows={2} value={form.differenzierung.foerderung || ''} onChange={(e) => setDiff('foerderung', e.target.value)} />
-        </div>
-      </div>
+      )}
 
       <StundenPhaseMaterialListe
         materialien={form.material_urls}

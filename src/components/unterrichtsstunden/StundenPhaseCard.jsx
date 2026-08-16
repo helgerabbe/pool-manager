@@ -15,7 +15,7 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
   const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-2">
+    <div className={`rounded-xl border bg-card p-4 space-y-2 ${meta.rand}`}>
       <div className="flex items-center gap-2 flex-wrap">
         <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
           {nummer}
