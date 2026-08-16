@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
+import StundenPhaseSortierButtons from './StundenPhaseSortierButtons';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
  */
-export default function StundenPhaseCard({ phase, nummer, stunde, stundeId, offen, onToggle }) {
+export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
   const diff = phase.differenzierung || {};
   const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
@@ -52,6 +53,7 @@ export default function StundenPhaseCard({ phase, nummer, stunde, stundeId, offe
           </span>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
+          <StundenPhaseSortierButtons phase={phase} index={nummer - 1} anzahl={anzahl} stundeId={stundeId} />
           {unvollstaendig ? (
             <Badge variant="outline" className="gap-1 border-red-300 bg-red-50 text-red-700">
               <AlertTriangle className="w-3 h-3" />

@@ -6,6 +6,7 @@ import { ArrowLeft, KeyRound, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
 import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
+import StundenPhaseHinzufuegenButton from '@/components/unterrichtsstunden/StundenPhaseHinzufuegenButton';
 import StundenSteckbriefCard from '@/components/unterrichtsstunden/StundenSteckbriefCard';
 import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenVerlaufsplanTabelle';
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
@@ -116,12 +117,14 @@ export default function UnterrichtsstundeDetail() {
                   key={p.id}
                   phase={p}
                   nummer={i + 1}
+                  anzahl={phasen.length}
                   stunde={stunde}
                   stundeId={id}
                   offen={editPhase === p.id}
                   onToggle={() => setEditPhase(editPhase === p.id ? null : p.id)}
                 />
               ))}
+              <StundenPhaseHinzufuegenButton stundeId={id} phasen={phasen} />
               <p className="text-xs text-muted-foreground">
                 Über „Bearbeiten“ klappt die Phase auf: dort passen Sie Texte an, laden Materialien hoch und verknüpfen digitale Aufgabenarten.
               </p>
