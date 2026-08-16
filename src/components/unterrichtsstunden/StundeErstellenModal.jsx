@@ -46,7 +46,7 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
       let einheit = einheiten.find((e) => e.id === einheitId);
 
       if (neueEinheit) {
-        const res = await base44.functions.createEinheitMitDefaults({
+        const res = await base44.functions.invoke('createEinheitMitDefaults', {
           metaData: {
             fach: neuFach,
             titel_der_einheit: neuTitel.trim(),
@@ -168,9 +168,15 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
             <Input type="date" value={datum} onChange={(e) => setDatum(e.target.value)} />
           </div>
         </div>
+        {createMutation.isError && (
+          <p className="text-sm text-destructive">
+            {createMutation.error?.message || 'Die Stunde konnte nicht angelegt werden.'}
+          </p>
+        )}
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button
+            className="gap-2"
             onClick={() => createMutation.mutate()}
             disabled={
               !einheitId ||
@@ -178,6 +184,7 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
               createMutation.isPending
             }
           >
+            {createMutation.isPending && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
             Stunde anlegen
           </Button>
         </DialogFooter>
