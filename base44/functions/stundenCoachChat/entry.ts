@@ -1,0 +1,136 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+
+/**
+ * KI-Stunden-Coach (MUG Paket 2) — Dialog-Modus
+ * ─────────────────────────────────────────────
+ * Die Lehrkraft beschreibt frei (Text oder Diktat), was sie vorhat. Der Coach
+ * antwortet im Gespräch UND pflegt dabei eine strukturierte "Bauanleitung":
+ *   - Steckbrief (Zielgruppe, Thema, Dauer, Leitziel)
+ *   - Verlaufsplan (Phase / Zeit / Inhalt & Handlungsschritte / Methode & Sozialform / Material)
+ *   - didaktisch-methodische Hinweise
+ *
+ * Es werden bewusst NOCH KEINE digitalen Aktivitäten erzeugt — das ist die
+ * Ebene davor. Die Bauanleitung wird an der Stunde gespeichert und nie
+ * verworfen; die Umsetzung in Phasen erfolgt separat im Frontend.
+ *
+ * payload: { stunde_id, nachricht }
+ * returns: { antwort, plan, verlauf }
+ */
+export default async function (req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { stunde_id, nachricht } = await req.json().catch(() => ({}));
+    if (!stunde_id || !nachricht?.trim()) {
+      return Response.json({ error: 'stunde_id und nachricht sind erforderlich.' }, { status: 400 });
+    }
+
+    const stunde = await base44.asServiceRole.entities.Unterrichtsstunde.get(stunde_id);
+    if (!stunde) return Response.json({ error: 'Unterrichtsstunde nicht gefunden.' }, { status: 404 });
+
+    const verlauf = Array.isArray(stunde.coach_verlauf) ? stunde.coach_verlauf : [];
+    const plan = stunde.coach_plan || {};
+
+    const gespraech = verlauf
+      .slice(-12)
+      .map((m) => `${m.role === 'user' ? 'LEHRKRAFT' : 'COACH'}: ${m.content}`)
+      .join('\n\n');
+
+    const prompt = `Du bist ein erfahrener didaktischer Coach und planst gemeinsam mit einer Lehrkraft EINE einzelne Unterrichtsstunde. Du sprichst mit ihr im Gespräch und pflegst dabei eine strukturierte Bauanleitung der Stunde.
+
+Rahmen der Stunde:
+- Fach: ${stunde.fach || 'unbekannt'}
+- Jahrgangsstufe: ${stunde.jahrgangsstufe || 'unbekannt'}
+- Arbeitstitel: ${stunde.arbeitstitel || '(keiner)'}
+
+Bisherige Bauanleitung (JSON, kann leer sein):
+${JSON.stringify(plan, null, 2)}
+
+Bisheriges Gespräch:
+${gespraech || '(noch kein Gespräch)'}
+
+Neue Nachricht der Lehrkraft:
+"""
+${nachricht.trim()}
+"""
+
+Deine Aufgabe:
+1. Antworte der Lehrkraft kurz und kollegial (maximal 4 Sätze). Sage, was du in die Bauanleitung übernommen hast, und stelle höchstens EINE gezielte Rückfrage zu dem, was noch fehlt.
+2. Aktualisiere die Bauanleitung. Übernimm bereits vorhandene Inhalte und ändere nur, was sich durch die neue Nachricht ergibt. Erfinde nichts, was der Beschreibung widerspricht; sinnvoll ergänzen darfst du.
+   - steckbrief: zielgruppe, thema, dauer, leitziel. Was noch unklar ist, bleibt leerer String.
+   - verlaufsplan: 3-6 Phasen in linearer Reihenfolge. Pro Phase: phasenname, zeit_minuten (Zahl), inhalt (Inhalt & konkrete Handlungsschritte, 2-4 Sätze), methode_sozialform (z. B. Einzelarbeit, Gruppenarbeit, Plenumsgespräch), material, typ.
+     typ: "lehrer_input" (Lehrkraft agiert), "schueler_aktivitaet" (Arbeit am Gerät), "analog" (Arbeit ohne Gerät), "sicherung" (Auswertung).
+     Beschreibe hier, WAS in der Phase passieren soll — noch KEINE fertigen digitalen Aufgaben ausformulieren.
+     Die Summe der Zeiten soll etwa zur angegebenen Dauer passen.
+   - didaktische_hinweise: didaktisch-methodische Hinweise und alles, was sonst nirgendwo hineinpasst (Fließtext mit Absätzen, keine Markdown-Sonderzeichen).
+Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
+
+    const result = await base44.integrations.Core.InvokeLLM({
+      prompt,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          antwort: { type: 'string' },
+          plan: {
+            type: 'object',
+            properties: {
+              steckbrief: {
+                type: 'object',
+                properties: {
+                  zielgruppe: { type: 'string' },
+                  thema: { type: 'string' },
+                  dauer: { type: 'string' },
+                  leitziel: { type: 'string' },
+                },
+              },
+              verlaufsplan: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    phasenname: { type: 'string' },
+                    zeit_minuten: { type: 'number' },
+                    inhalt: { type: 'string' },
+                    methode_sozialform: { type: 'string' },
+                    material: { type: 'string' },
+                    typ: {
+                      type: 'string',
+                      enum: ['lehrer_input', 'schueler_aktivitaet', 'analog', 'sicherung'],
+                    },
+                  },
+                  required: ['phasenname'],
+                },
+              },
+              didaktische_hinweise: { type: 'string' },
+            },
+          },
+        },
+        required: ['antwort', 'plan'],
+      },
+    });
+
+    const neuerPlan = {
+      steckbrief: result?.plan?.steckbrief || plan.steckbrief || {},
+      verlaufsplan: result?.plan?.verlaufsplan || plan.verlaufsplan || [],
+      didaktische_hinweise: result?.plan?.didaktische_hinweise ?? plan.didaktische_hinweise ?? '',
+    };
+    const neuerVerlauf = [
+      ...verlauf,
+      { role: 'user', content: nachricht.trim() },
+      { role: 'assistant', content: result?.antwort || '' },
+    ].slice(-40);
+
+    await base44.asServiceRole.entities.Unterrichtsstunde.update(stunde_id, {
+      coach_plan: neuerPlan,
+      coach_verlauf: neuerVerlauf,
+      coach_plan_updated_at: new Date().toISOString(),
+    });
+
+    return Response.json({ antwort: result?.antwort || '', plan: neuerPlan, verlauf: neuerVerlauf });
+  } catch (error) {
+    console.error('[stundenCoachChat] Error:', error);
+    return Response.json({ error: error.message || 'Interner Fehler' }, { status: 500 });
+  }
+}

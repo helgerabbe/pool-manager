@@ -6,6 +6,10 @@ import { ArrowLeft, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
 import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
+import StundenSteckbriefCard from '@/components/unterrichtsstunden/StundenSteckbriefCard';
+import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenVerlaufsplanTabelle';
+import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
+import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Grundgerüst der Stunden-Ansicht.
@@ -39,6 +43,8 @@ export default function UnterrichtsstundeDetail() {
     return <p className="text-sm text-muted-foreground py-10 text-center">Diese Unterrichtsstunde wurde nicht gefunden.</p>;
   }
 
+  const plan = stunde.coach_plan || {};
+
   return (
     <div className="space-y-6">
       <Link to="/einheiten" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
@@ -67,24 +73,17 @@ export default function UnterrichtsstundeDetail() {
         </div>
       )}
 
-      {stunde.stundenziel && (
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-foreground">
-            <span className="text-muted-foreground">Stundenziel: </span>
-            {stunde.stundenziel}
-          </p>
-          {(stunde.teilziele || []).length > 0 && (
-            <ul className="text-xs text-muted-foreground list-disc pl-5 mt-1">
-              {stunde.teilziele.map((t, i) => <li key={i}>{t}</li>)}
-            </ul>
-          )}
-        </div>
-      )}
-
-      {phasen.length === 0 ? (
+      {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
+      <div className="space-y-4">
+        <StundenSteckbriefCard steckbrief={plan.steckbrief} />
+        <StundenVerlaufsplanTabelle verlaufsplan={plan.verlaufsplan} />
+        {(plan.verlaufsplan || []).length > 0 && <StundenHinweiseFeld stunde={stunde} plan={plan} />}
         <StundenCoachPanel stunde={stunde} />
-      ) : (
-        <div className="space-y-3">
+        <StundeGenerierenButton stunde={stunde} plan={plan} hatPhasen={phasen.length > 0} />
+      </div>
+
+      {phasen.length > 0 && (
+        <div className="space-y-3 pt-2">
           <h2 className="text-sm font-bold text-foreground">Stunden-Regieblatt</h2>
           {phasen.map((p, i) => (
             <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} />

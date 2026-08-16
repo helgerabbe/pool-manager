@@ -1,7 +1,7 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie geh\u00f6rt immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity. Die Stunde ist der lehrernahe, lineare Alltagsmodus - die spaetere Transformation in eine Poolzeit-Einheit ist bewusst noch NICHT implementiert.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie gehoert immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity. Die Stunde ist der lehrernahe, lineare Alltagsmodus - die spaetere Transformation in eine Poolzeit-Einheit ist bewusst noch NICHT implementiert.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -52,6 +52,98 @@
     "notfall_code": {
       "type": "string",
       "description": "Notfall-Schl\u00fcssel der Stunde: schaltet im Stunden-Player JEDE Phase frei, falls der Lehrkraft die Phasen-Codes im Unterricht nicht vorliegen."
+    },
+    "coach_plan": {
+      "type": "object",
+      "description": "KI-Stunden-Coach (MUG Paket 2, 2026-08-16): Die im Dialog entstandene 'Bauanleitung' der Stunde. Sie bleibt dauerhaft erhalten - auch nachdem daraus Phasen (StundenSequenz) generiert wurden - und kann jederzeit weiterentwickelt und erneut umgesetzt werden. Struktur: steckbrief (zielgruppe, thema, dauer, leitziel), verlaufsplan (Liste von Phasen mit phasenname, zeit_minuten, inhalt, methode_sozialform, material, typ) und didaktische_hinweise (Freitext f\u00fcr alles, was nirgends sonst hinpasst).",
+      "additionalProperties": true,
+      "properties": {
+        "steckbrief": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "zielgruppe": {
+              "type": "string"
+            },
+            "thema": {
+              "type": "string"
+            },
+            "dauer": {
+              "type": "string"
+            },
+            "leitziel": {
+              "type": "string"
+            }
+          }
+        },
+        "verlaufsplan": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "phasenname": {
+                "type": "string"
+              },
+              "zeit_minuten": {
+                "type": "number"
+              },
+              "inhalt": {
+                "type": "string"
+              },
+              "methode_sozialform": {
+                "type": "string"
+              },
+              "material": {
+                "type": "string"
+              },
+              "typ": {
+                "type": "string",
+                "enum": [
+                  "lehrer_input",
+                  "schueler_aktivitaet",
+                  "analog",
+                  "sicherung"
+                ]
+              }
+            }
+          },
+          "default": []
+        },
+        "didaktische_hinweise": {
+          "type": "string"
+        }
+      }
+    },
+    "coach_verlauf": {
+      "type": "array",
+      "description": "Chat-Verlauf mit dem KI-Stunden-Coach (Rollen 'user' und 'assistant'). Wird gespeichert, damit die Lehrkraft das Gespr\u00e4ch sp\u00e4ter fortsetzen kann.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      },
+      "default": []
+    },
+    "coach_plan_updated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der letzten \u00c4nderung der Bauanleitung durch den Coach."
+    },
+    "coach_plan_umgesetzt_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel, zu dem aus der Bauanleitung zuletzt Phasen (StundenSequenz) generiert wurden."
     }
   },
   "required": [
