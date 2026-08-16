@@ -11,9 +11,9 @@ export default function PhaseRegieText({ text }) {
   const rest = treffer ? treffer[3] : '';
 
   return (
-    <p className="text-sm text-foreground leading-relaxed">
-      <span className="font-semibold">{kern}</span>
-      {rest && <span className="text-muted-foreground"> {rest}</span>}
-    </p>
+    <div className="space-y-0.5">
+      <p className="text-sm font-semibold text-foreground leading-relaxed">{kern}</p>
+      {rest && <p className="text-xs italic text-muted-foreground leading-relaxed">{rest}</p>}
+    </div>
   );
 }

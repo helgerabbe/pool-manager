@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle, ChevronDown, ChevronUp, Users, Package } from 'lucide-react';
+import { KeyRound, Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
@@ -12,8 +12,11 @@ import PhaseRegieText from './PhaseRegieText';
 export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
   const diff = phase.differenzierung || {};
-  const materialien = phase.material_urls || [];
   const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
+  const inhaltFehlt =
+    istDigitalerTyp(phase.typ) &&
+    !!phase.aktivitaet_id &&
+    Object.keys(phase.field_values || {}).length === 0;
 
   // Klick irgendwo auf die Karte klappt den Arbeitsbereich auf/zu –
   // Links, Buttons und der Arbeitsbereich selbst bleiben davon unberührt.
@@ -65,14 +68,14 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
           Noch keine digitale Aufgabenart verknüpft.
         </p>
       )}
-
-      <PhaseRegieText text={phase.lehrer_hinweis} />
-      {phase.schueler_anweisung && (
-        <p className="text-sm text-foreground">
-          <span className="font-medium text-muted-foreground">Für Schüler:innen: </span>
-          {phase.schueler_anweisung}
+      {inhaltFehlt && (
+        <p className="text-xs text-amber-700 inline-flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
         </p>
       )}
+
+      <PhaseRegieText text={phase.lehrer_hinweis} />
       {(diff.standard || diff.stark || diff.foerderung) && (
         <div className="grid gap-1 sm:grid-cols-3 pt-1 text-xs text-muted-foreground">
           {diff.standard && <p><span className="font-medium">Standard:</span> {diff.standard}</p>}
@@ -80,37 +83,12 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
           {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
         </div>
       )}
-      {(phase.methode_sozialform || phase.material_hinweis) && (
-        <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
-          {phase.methode_sozialform && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-              <Users className="w-3 h-3" />
-              {phase.methode_sozialform}
-            </span>
-          )}
-          {phase.material_hinweis && (
-            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-              <Package className="w-3 h-3" />
-              {phase.material_hinweis}
-            </span>
-          )}
-        </div>
-      )}
-
-      {materialien.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />
-          {materialien.map((m, i) => (
-            <a
-              key={`${m.url}-${i}`}
-              href={m.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary underline"
-            >
-              {m.name || 'Material'}
-            </a>
-          ))}
+      {phase.methode_sozialform && (
+        <div className="pt-1.5">
+          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+            <Users className="w-3 h-3" />
+            {phase.methode_sozialform}
+          </span>
         </div>
       )}
 
