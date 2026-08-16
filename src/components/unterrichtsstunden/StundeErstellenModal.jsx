@@ -5,6 +5,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useQuery } from '@tanstack/react-query';
+
+const NEUE_EINHEIT = '__neu__';
 
 /** Dreistelliger Zufalls-Code (100-999) für Notfall-/Phasen-Freischaltung. */
 export function dreistelligerCode() {
@@ -20,13 +23,45 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
   const [arbeitstitel, setArbeitstitel] = useState('');
   const [einheitId, setEinheitId] = useState('');
   const [datum, setDatum] = useState('');
+  // Neue Einheit direkt aus dem Dialog anlegen (erste Stunde einer Einheit).
+  const [neuTitel, setNeuTitel] = useState('');
+  const [neuFach, setNeuFach] = useState('');
+  const [neuJahrgang, setNeuJahrgang] = useState('');
   const queryClient = useQueryClient();
+  const neueEinheit = einheitId === NEUE_EINHEIT;
+
+  const { data: faecher = [] } = useQuery({
+    queryKey: ['lookupFaecherAktiv'],
+    queryFn: () => base44.entities.LookupFaecher.filter({ ist_aktiv: true }, 'reihenfolge', 100),
+    enabled: neueEinheit,
+  });
+  const { data: jahrgaenge = [] } = useQuery({
+    queryKey: ['lookupJahrgaengeAktiv'],
+    queryFn: () => base44.entities.LookupJahrgaenge.filter({ ist_aktiv: true }, 'reihenfolge', 100),
+    enabled: neueEinheit,
+  });
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      const einheit = einheiten.find((e) => e.id === einheitId);
+      let einheit = einheiten.find((e) => e.id === einheitId);
+
+      if (neueEinheit) {
+        const res = await base44.functions.createEinheitMitDefaults({
+          metaData: {
+            fach: neuFach,
+            titel_der_einheit: neuTitel.trim(),
+            jahrgangsstufe: neuJahrgang,
+          },
+          privat: true,
+        });
+        einheit = res?.data?.einheit;
+        if (!einheit?.id) throw new Error(res?.data?.error || 'Einheit konnte nicht angelegt werden.');
+        // Direkt nutzbar machen (kein Wizard-Entwurf).
+        await base44.entities.Einheiten.update(einheit.id, { wizard_status: 'aktiv' });
+      }
+
       return base44.entities.Unterrichtsstunde.create({
-        einheit_id: einheitId,
+        einheit_id: einheit.id,
         fach: einheit?.fach || '',
         jahrgangsstufe: String(einheit?.jahrgangsstufe || ''),
         arbeitstitel: arbeitstitel.trim() || 'Neue Unterrichtsstunde',
@@ -38,9 +73,13 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
     },
     onSuccess: (stunde) => {
       queryClient.invalidateQueries({ queryKey: ['unterrichtsstunden'] });
+      queryClient.invalidateQueries({ queryKey: ['einheitenList'] });
       setArbeitstitel('');
       setEinheitId('');
       setDatum('');
+      setNeuTitel('');
+      setNeuFach('');
+      setNeuJahrgang('');
       onOpenChange(false);
       onCreated?.(stunde);
     },
@@ -61,18 +100,58 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
               onChange={(e) => setEinheitId(e.target.value)}
             >
               <option value="" disabled>Einheit auswählen...</option>
+              <option value={NEUE_EINHEIT}>➕ Neue Einheit anlegen</option>
               {einheiten.map((e) => (
                 <option key={e.id} value={e.id}>
                   {e.fach} · {e.titel_der_einheit}
                 </option>
               ))}
             </select>
-            {einheiten.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Sie brauchen zuerst eine Einheit — legen Sie unten eine an.
-              </p>
-            )}
           </div>
+
+          {neueEinheit && (
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+              <div className="space-y-2">
+                <Label>Titel der neuen Einheit *</Label>
+                <Input
+                  placeholder="z.B. Lineare Funktionen"
+                  value={neuTitel}
+                  onChange={(e) => setNeuTitel(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label>Fach *</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={neuFach}
+                    onChange={(e) => setNeuFach(e.target.value)}
+                  >
+                    <option value="" disabled>Fach...</option>
+                    {faecher.map((f) => (
+                      <option key={f.id} value={f.name}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Jahrgang *</Label>
+                  <select
+                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    value={neuJahrgang}
+                    onChange={(e) => setNeuJahrgang(e.target.value)}
+                  >
+                    <option value="" disabled>Jg....</option>
+                    {jahrgaenge.map((j) => (
+                      <option key={j.id} value={j.bezeichnung}>{j.bezeichnung}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Die Einheit wird als private Einheit angelegt — Ihre Stunde landet direkt darin.
+              </p>
+            </div>
+          )}
           <div className="space-y-2">
             <Label>Arbeitstitel der Stunde</Label>
             <Input
@@ -91,7 +170,14 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
-          <Button onClick={() => createMutation.mutate()} disabled={!einheitId || createMutation.isPending}>
+          <Button
+            onClick={() => createMutation.mutate()}
+            disabled={
+              !einheitId ||
+              (neueEinheit && (!neuTitel.trim() || !neuFach || !neuJahrgang)) ||
+              createMutation.isPending
+            }
+          >
             Stunde anlegen
           </Button>
         </DialogFooter>
