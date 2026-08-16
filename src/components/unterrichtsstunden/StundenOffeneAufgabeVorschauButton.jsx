@@ -28,8 +28,9 @@ export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry
     // ablegen und nur die URL speichern.
     const datei = new File([html], 'offene-aufgabe.html', { type: 'text/html' });
     const { file_url } = await base44.integrations.Core.UploadFile({ file: datei });
+    const { approved_snapshot_html, ...restFv } = fv;
     await base44.entities.StundenSequenz.update(phase.id, {
-      field_values: { ...fv, approved_snapshot_url: file_url, approved_snapshot_html: '' },
+      field_values: { ...restFv, approved_snapshot_url: file_url },
       is_complete: true,
     });
     queryClient.invalidateQueries({ queryKey: ['stundenSequenzen', stundeId] });
