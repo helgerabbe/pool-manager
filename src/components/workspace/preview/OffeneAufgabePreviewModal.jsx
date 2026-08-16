@@ -22,6 +22,7 @@ import IPadFrame from '@/components/workspace/preview/IPadFrame';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
+import OffeneAufgabeImpulsFeld from '@/components/workspace/preview/OffeneAufgabeImpulsFeld';
 
 // Entfernt evtl. Markdown-Code-Fences, falls das Modell sie mitliefert,
 // und gibt das reine HTML-Dokument zurück.
@@ -49,6 +50,8 @@ export default function OffeneAufgabePreviewModal({
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [impuls, setImpuls] = useState('');
+  const [isRefining, setIsRefining] = useState(false);
 
   // Beim Öffnen: vorhandenen Snapshot laden (oder leeren Zustand zeigen).
   useEffect(() => {
@@ -56,6 +59,7 @@ export default function OffeneAufgabePreviewModal({
       setPreviewHtml(existingSnapshotHtml || '');
       setIsGenerating(false);
       setIsSaved(false);
+      setImpuls('');
     }
   }, [open, existingSnapshotHtml]);
 
@@ -85,6 +89,40 @@ ${description}`,
       toast.error('Erstellung fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Punktuelle Nachbesserung: bestehende Aufgabe + Änderungswunsch → überarbeitete Aufgabe.
+  const handleRefine = async (aktuellesHtml) => {
+    if (!aktuellesHtml || !impuls.trim()) return;
+    setIsRefining(true);
+    try {
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Du überarbeitest eine bestehende interaktive Lernaufgabe (vollständige HTML-Seite).
+
+STRIKTE VORGABEN:
+- Ändere AUSSCHLIESSLICH das, was im Änderungswunsch steht. Alles andere bleibt inhaltlich und gestalterisch unverändert.
+- Wenn eine Funktion nicht arbeitet, finde den Fehler im JavaScript und behebe ihn.
+- Gib AUSSCHLIESSLICH das vollständige, überarbeitete HTML-Dokument zurück (beginnend mit <!DOCTYPE html>). Keine Erklärungen, kein Markdown, keine Code-Fences.
+- Alles bleibt inline (CSS in <style>, JS in <script>), keine externen Dateien oder CDNs. Sprache: Deutsch.
+
+ÄNDERUNGSWUNSCH DER LEHRKRAFT:
+${impuls}
+
+BISHERIGE AUFGABE:
+${aktuellesHtml}`,
+        model: 'claude_sonnet_4_6',
+      });
+      const html = extractHtml(typeof result === 'string' ? result : result?.text || '');
+      if (!html) throw new Error('Die KI hat keine überarbeitete Aufgabe zurückgegeben.');
+      setPreviewHtml(html);
+      setIsSaved(false);
+      setImpuls('');
+      toast.success('Anpassung eingebaut – bitte prüfen und dann übernehmen.');
+    } catch (err) {
+      toast.error('Anpassung fehlgeschlagen: ' + (err?.message || 'Unbekannt'));
+    } finally {
+      setIsRefining(false);
     }
   };
 
@@ -167,6 +205,17 @@ ${description}`,
           </div>
         )}
 
+        {!isReleased && hasPreview && (
+          <div className="pt-3">
+            <OffeneAufgabeImpulsFeld
+              wert={impuls}
+              onChange={setImpuls}
+              onAnpassen={() => handleRefine(anzeigeHtml)}
+              isBusy={isRefining || isGenerating || isSaving}
+            />
+          </div>
+        )}
+
         <div className="pt-3">
           <IPadFrame lernpaketTitel={catalogName} phaseLabel={phase}>
             <div className="bg-white h-full flex flex-col relative">
@@ -174,10 +223,12 @@ ${description}`,
                 <span className="font-semibold">{phase} ·</span> Hier übst du, was du gelernt hast.
               </div>
               <div className="flex-1 min-h-0 relative">
-                {isGenerating && (
+                {(isGenerating || isRefining) && (
                   <div className="absolute inset-0 z-10 bg-white/85 backdrop-blur-sm flex flex-col items-center justify-center gap-3 px-8 text-center">
                     <Loader2 className="w-8 h-8 animate-spin text-violet-600" />
-                    <p className="text-sm font-semibold text-slate-800">Deine Aufgabe wird erstellt…</p>
+                    <p className="text-sm font-semibold text-slate-800">
+                      {isRefining ? 'Deine Anpassung wird eingebaut…' : 'Deine Aufgabe wird erstellt…'}
+                    </p>
                     <p className="text-xs text-slate-500 max-w-sm flex items-center gap-1.5 justify-center">
                       <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       Bitte einen Moment Geduld und die Seite nicht verlassen.
