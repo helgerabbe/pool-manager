@@ -112,6 +112,19 @@
                   "analog",
                   "sicherung"
                 ]
+              },
+              "ki_erstellen": {
+                "type": "boolean",
+                "default": false,
+                "description": "KI-Mit-Erstellung (2026-08-16): true = beim Umsetzen der Bauanleitung soll die digitale Aufgabe dieser Phase gleich von der KI erzeugt werden."
+              },
+              "ki_aktivitaet": {
+                "type": "string",
+                "description": "Name der Aufgabenart aus dem AktivitaetenKatalog, die fuer diese Phase erzeugt werden soll."
+              },
+              "ki_hinweis": {
+                "type": "string",
+                "description": "Zusaetzliche inhaltliche Hinweise der Lehrkraft fuer die KI-Aufgabengenerierung dieser Phase."
               }
             }
           },
