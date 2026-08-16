@@ -4,6 +4,8 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, KeyRound } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
+import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Grundgerüst der Stunden-Ansicht.
@@ -16,6 +18,12 @@ export default function UnterrichtsstundeDetail() {
   const { data: stunde, isLoading } = useQuery({
     queryKey: ['unterrichtsstunde', id],
     queryFn: () => base44.entities.Unterrichtsstunde.get(id),
+    enabled: !!id,
+  });
+
+  const { data: phasen = [] } = useQuery({
+    queryKey: ['stundenSequenzen', id],
+    queryFn: () => base44.entities.StundenSequenz.filter({ stunde_id: id }, 'reihenfolge', 50),
     enabled: !!id,
   });
 
@@ -59,10 +67,33 @@ export default function UnterrichtsstundeDetail() {
         </div>
       )}
 
-      <div className="rounded-xl border border-dashed bg-muted/30 p-6 text-sm text-muted-foreground">
-        Das Stunden-Regieblatt (Phasen, Freischalt-Codes, Material und Aktivitäten) entsteht in den nächsten
-        Ausbauschritten: erst der KI-Stunden-Coach, dann die Arbeitsfläche.
-      </div>
+      {stunde.stundenziel && (
+        <div className="rounded-xl border bg-card p-4">
+          <p className="text-sm text-foreground">
+            <span className="text-muted-foreground">Stundenziel: </span>
+            {stunde.stundenziel}
+          </p>
+          {(stunde.teilziele || []).length > 0 && (
+            <ul className="text-xs text-muted-foreground list-disc pl-5 mt-1">
+              {stunde.teilziele.map((t, i) => <li key={i}>{t}</li>)}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {phasen.length === 0 ? (
+        <StundenCoachPanel stunde={stunde} />
+      ) : (
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-foreground">Stunden-Regieblatt</h2>
+          {phasen.map((p, i) => (
+            <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} />
+          ))}
+          <p className="text-xs text-muted-foreground">
+            Die digitalen Aktivitäten und Materialien der Phasen folgen im nächsten Ausbauschritt.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
