@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { stunde_id, phase_id, hinweis } = await req.json().catch(() => ({}));
+    const { stunde_id, phase_id, hinweis, preview } = await req.json().catch(() => ({}));
     if (!stunde_id || !phase_id) {
       return Response.json({ error: 'stunde_id und phase_id sind erforderlich.' }, { status: 400 });
     }
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     if (!phase.aktivitaet_id) {
       return Response.json({ success: false, skipped: true, reason: 'Der Phase ist keine Aufgabenart zugeordnet.' });
     }
-    if (!isEmptyValue(phase.field_values)) {
+    if (!preview && !isEmptyValue(phase.field_values)) {
       return Response.json({ success: false, skipped: true, reason: 'Die Aufgabe hat bereits Inhalt — er wird nicht überschrieben.' });
     }
 
@@ -106,6 +106,7 @@ Deno.serve(async (req) => {
       if (!fieldValues) {
         return Response.json({ success: false, error: 'KI-Inhalt unvollständig. Bitte erneut versuchen.' });
       }
+      if (preview) return Response.json({ success: true, mode: 'master', preview: true, field_values: fieldValues });
       await E.StundenSequenz.update(phase.id, { field_values: fieldValues, is_complete: true });
       return Response.json({ success: true, mode: 'master' });
     }
@@ -213,6 +214,9 @@ Deno.serve(async (req) => {
       return spez ? !!spez.validate(v) : !isEmptyValue(v);
     });
 
+    if (preview) {
+      return Response.json({ success: true, mode: 'fields', preview: true, field_values: merged, is_complete: isComplete });
+    }
     await E.StundenSequenz.update(phase.id, { field_values: merged, is_complete: isComplete });
     return Response.json({ success: true, mode: 'fields', is_complete: isComplete });
   } catch (error) {

@@ -23,6 +23,7 @@ import KITutorModalDetail from '@/components/workspace/KITutorModalDetail';
 import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalDetail';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
+import StundenAufgabeKiGenerator from '@/components/unterrichtsstunden/StundenAufgabeKiGenerator';
 
 /** Aufgabenart → passender Editor-Dialog (gleiche Zuordnung wie im Pool-Manager). */
 function editorTyp(name = '') {
@@ -76,6 +77,8 @@ export default function StundenAufgabeEditorButton({ phase, katalogEntry, stunde
   };
 
   return (
+    <div className="space-y-3">
+    <StundenAufgabeKiGenerator phase={phase} katalogEntry={katalogEntry} stundeId={stundeId} />
     <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 flex items-center justify-between gap-3">
       <div className="min-w-0">
         <p className="text-sm font-semibold text-blue-900">Inhalt der Aufgabe „{katalogEntry?.name}"</p>
@@ -115,6 +118,7 @@ export default function StundenAufgabeEditorButton({ phase, katalogEntry, stunde
           onSave={({ content_data }) => speichern.mutate({ ...initialData, ...content_data })}
         />
       )}
+    </div>
     </div>
   );
 }
