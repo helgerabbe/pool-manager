@@ -45,13 +45,13 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
     >
       {/* Kopfzeile: links Art/Titel/Dauer, rechts die Struktur-Leiste */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 min-w-0 flex items-center gap-2">
+        <div className="flex-1 min-w-0 flex items-center gap-2 text-sky-700">
           <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex items-center justify-center shrink-0">
             {nummer}
           </span>
           <StundenPhaseArtZeile phase={phase} />
           {phase.dauer_minuten ? (
-            <span className="text-xs text-muted-foreground inline-flex items-center gap-1 shrink-0">
+            <span className="text-xs inline-flex items-center gap-1 shrink-0">
               <Clock className="w-3 h-3" />
               {phase.dauer_minuten} Min.
             </span>
