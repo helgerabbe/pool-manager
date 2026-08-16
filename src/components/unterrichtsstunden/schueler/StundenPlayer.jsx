@@ -18,15 +18,19 @@ import StundenAbschlussSeite from './StundenAbschlussSeite';
  * `vorschau=true` (Lehrer-Register „Schüleransicht"): die Code-Sperren werden
  * übersprungen, damit die Lehrkraft frei durchklicken kann.
  */
-export default function StundenPlayer({ stunde, phasen, vorschau = false }) {
+export default function StundenPlayer({ stunde, phasen, vorschau = false, katalog: katalogProp = null }) {
   const [index, setIndex] = React.useState(-1); // -1 = Startseite, phasen.length = Abschluss
   const [entsperrt, setEntsperrt] = React.useState({});
 
-  const { data: katalog = [] } = useQuery({
+  // Moodle-Schüler (LTI) übergeben den Katalog fertig als Prop, weil sie kein
+  // Base44-Konto haben; im Lehrer-/App-Kontext wird er hier geladen.
+  const { data: katalogGeladen = [] } = useQuery({
     queryKey: ['aktivitaetenKatalogAlle'],
     queryFn: () => base44.entities.AktivitaetenKatalog.list('name', 200),
     staleTime: 10 * 60 * 1000,
+    enabled: !katalogProp,
   });
+  const katalog = katalogProp || katalogGeladen;
   const katById = React.useMemo(
     () => new Map(katalog.map((k) => [k.id, k])),
     [katalog]

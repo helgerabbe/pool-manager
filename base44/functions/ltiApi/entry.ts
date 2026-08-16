@@ -186,6 +186,37 @@ Deno.serve(async (req) => {
           .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
         break;
       }
+      // ── Unterrichtsstunde (Moodle-Unterrichts-Generator) ──
+      // Zugriff NUR auf die per Moodle verknüpfte Stunde.
+      case 'getStunde': {
+        if (!payload.stunde || String(params.id) !== String(payload.stunde)) {
+          throw new Error('Kein Zugriff auf diese Unterrichtsstunde.');
+        }
+        result = norm(await E.Unterrichtsstunde.get(params.id));
+        break;
+      }
+      case 'listStundenPhasen': {
+        if (!payload.stunde || String(params.stundeId) !== String(payload.stunde)) {
+          throw new Error('Kein Zugriff auf diese Unterrichtsstunde.');
+        }
+        result = (await E.StundenSequenz.filter({ stunde_id: params.stundeId }, 'reihenfolge', 100))
+          .map(norm)
+          .map((p) => {
+            const d = { ...p };
+            // Lehrkraft-interne Inhalte nie an Schüler ausliefern.
+            delete d.lehrer_hinweis;
+            delete d.differenzierung;
+            delete d.methode_sozialform;
+            if (d.brian) {
+              d.brian = { ...d.brian };
+              delete d.brian.erwartungshorizont;
+              delete d.brian.system_instruction;
+            }
+            return d;
+          });
+        break;
+      }
+
       case 'listThemenfelderByEinheit':
         await einheitErlaubt(params.einheitId);
         result = (await E.Themenfeld.filter({ einheit_id: params.einheitId })).map(norm);

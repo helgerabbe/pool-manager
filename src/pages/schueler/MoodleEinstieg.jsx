@@ -22,18 +22,18 @@ export default function MoodleEinstieg() {
   }
 
   useEffect(() => {
-    if (!gueltig || !payload.einheit) return;
+    if (!gueltig || (!payload.einheit && !payload.stunde)) return;
     // Kurze Pause, damit die Begrüßung sichtbar ist, dann Neuladen ohne
     // ?lti=-Parameter — App.jsx erkennt die gespeicherte Sitzung.
-    const timer = setTimeout(
-      () => window.location.replace(`/lernen/einheit?id=${payload.einheit}`),
-      1200
-    );
+    const ziel = payload.stunde
+      ? `/lernen/stunde?id=${payload.stunde}`
+      : `/lernen/einheit?id=${payload.einheit}`;
+    const timer = setTimeout(() => window.location.replace(ziel), 1200);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (gueltig && !payload.einheit) {
+  if (gueltig && !payload.einheit && !payload.stunde) {
     return <MoodleKeineEinheit />;
   }
 

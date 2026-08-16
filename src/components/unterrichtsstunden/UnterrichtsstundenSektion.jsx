@@ -8,6 +8,7 @@ import { Plus, CalendarDays, ChevronRight, PlaySquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import StundeErstellenModal from './StundeErstellenModal';
+import StundenMoodleWegInfoBox from './StundenMoodleWegInfoBox';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Der Bereich "Meine Unterrichtsstunden"
@@ -109,6 +110,8 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
           ))}
         </div>
       )}
+
+      <StundenMoodleWegInfoBox />
 
       <StundeErstellenModal
         open={erstellenOffen}

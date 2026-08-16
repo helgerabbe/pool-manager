@@ -13,6 +13,7 @@ import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweise
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
 import StundenRegieblattDruckButton from '@/components/unterrichtsstunden/StundenRegieblattDruckButton';
 import StundenSchueleransichtTab from '@/components/unterrichtsstunden/StundenSchueleransichtTab';
+import StundenMoodleUebergabeTab from '@/components/unterrichtsstunden/StundenMoodleUebergabeTab';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
@@ -91,6 +92,7 @@ export default function UnterrichtsstundeDetail() {
             )}
           </TabsTrigger>
           <TabsTrigger value="schueler">3. Schüleransicht</TabsTrigger>
+          <TabsTrigger value="moodle">4. Moodle-Übergabe</TabsTrigger>
         </TabsList>
 
         {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
@@ -134,6 +136,10 @@ export default function UnterrichtsstundeDetail() {
 
         <TabsContent value="schueler" className="mt-4">
           <StundenSchueleransichtTab stunde={stunde} phasen={phasen} />
+        </TabsContent>
+
+        <TabsContent value="moodle" className="mt-4">
+          <StundenMoodleUebergabeTab stunde={stunde} phasen={phasen} />
         </TabsContent>
       </Tabs>
 

@@ -90,9 +90,14 @@ Deno.serve(async (req) => {
     const targetUri = claims['https://purl.imsglobal.org/spec/lti/claim/target_link_uri'] || st.t || '';
     const custom = claims['https://purl.imsglobal.org/spec/lti/claim/custom'] || {};
     let einheitId = custom.einheit || custom.einheit_id || '';
-    if (!einheitId && targetUri) {
+    // Moodle-Unterrichts-Generator: alternativ kann eine einzelne
+    // Unterrichtsstunde verknüpft sein (?stunde=... bzw. custom stunde).
+    let stundeId = custom.stunde || custom.stunde_id || '';
+    if ((!einheitId || !stundeId) && targetUri) {
       try {
-        einheitId = new URL(targetUri).searchParams.get('einheit') || '';
+        const sp = new URL(targetUri).searchParams;
+        einheitId = einheitId || sp.get('einheit') || '';
+        stundeId = stundeId || sp.get('stunde') || '';
       } catch (_e) { /* ignorieren */ }
     }
 
@@ -132,6 +137,7 @@ Deno.serve(async (req) => {
       sub: String(claims.sub),
       name: claims.name || '',
       einheit: einheitId || '',
+      stunde: stundeId || '',
       exp: Date.now() + 8 * 60 * 60 * 1000,
     };
     const sessionPart = b64url(new TextEncoder().encode(JSON.stringify(sessionPayload)));
@@ -145,6 +151,7 @@ Deno.serve(async (req) => {
     const target = new URL(cfg.app_basis_url + '/lernen/moodle');
     target.searchParams.set('lti', sessionToken);
     if (einheitId) target.searchParams.set('einheit', einheitId);
+    if (stundeId) target.searchParams.set('stunde', stundeId);
 
     return new Response(null, { status: 302, headers: { Location: target.toString() } });
   } catch (error) {

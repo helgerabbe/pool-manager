@@ -42,6 +42,7 @@ import EinheitOnboardingQuiz from '@/pages/schueler/EinheitOnboardingQuiz';
 import EinheitDashboard from '@/pages/schueler/EinheitDashboard';
 import SupabaseLoginGate from '@/components/schueler/auth/SupabaseLoginGate';
 import MoodleEinstieg from '@/pages/schueler/MoodleEinstieg';
+import MoodleStunde from '@/pages/schueler/MoodleStunde';
 import { hatGueltigeLtiSession, getLtiSession } from '@/lib/ltiSession';
 import MoodleKeineEinheit from '@/components/schueler/MoodleKeineEinheit';
 import { hasToken } from '@/services/AuthService';
@@ -86,11 +87,14 @@ const AuthenticatedApp = () => {
   // (Inhaltscontainer) — keine Übersicht, keine Poolzeit, kein Lerntagebuch.
   // Die Daten laufen über die geprüfte ltiApi (SchuelerDataService → ltiAdapter).
   if (!hasToken() && hatGueltigeLtiSession() && window.location.pathname.startsWith('/lernen')) {
-    const ltiEinheitId = getLtiSession()?.einheit || '';
+    const ltiSession = getLtiSession() || {};
+    const ltiEinheitId = ltiSession.einheit || '';
+    const ltiStundeId = ltiSession.stunde || '';
     return (
       <ErrorBoundary fallback="Der Schülerbereich konnte nicht geladen werden.">
         <Routes>
           <Route element={<SchuelerOnlyLayout />}>
+            <Route path="/lernen/stunde" element={<MoodleStunde />} />
             <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
             <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
             <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
@@ -98,7 +102,9 @@ const AuthenticatedApp = () => {
           <Route
             path="*"
             element={
-              ltiEinheitId ? (
+              ltiStundeId ? (
+                <Navigate to={`/lernen/stunde?id=${ltiStundeId}`} replace />
+              ) : ltiEinheitId ? (
                 <Navigate to={`/lernen/einheit?id=${ltiEinheitId}`} replace />
               ) : (
                 <MoodleKeineEinheit />

@@ -28,6 +28,8 @@ export const listAufgabenByEinheit = (einheitId) => call('listAufgabenByEinheit'
 export const listLernpaketeByEinheit = (einheitId) => call('listLernpaketeByEinheit', { einheitId });
 export const getAktivitaetenKatalog = () => call('getAktivitaetenKatalog');
 export const getAktivitaetenByLernpaket = (lernpaketId) => call('getAktivitaetenByLernpaket', { lernpaketId });
+export const getStunde = (id) => call('getStunde', { id });
+export const listStundenPhasen = (stundeId) => call('listStundenPhasen', { stundeId });
 export const listThemenfelderByEinheit = (einheitId) => call('listThemenfelderByEinheit', { einheitId });
 export const listLernzieleByLernpaket = (lernpaketId) => call('listLernzieleByLernpaket', { lernpaketId });
 export const listFaecher = () => call('listFaecher');
