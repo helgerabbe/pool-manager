@@ -1,6 +1,6 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users } from 'lucide-react';
+import { KeyRound, Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
@@ -17,6 +17,12 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
     istDigitalerTyp(phase.typ) &&
     !!phase.aktivitaet_id &&
     Object.keys(phase.field_values || {}).length === 0;
+  const unvollstaendig = aktivitaetFehlt || inhaltFehlt;
+  // Reiner Hinweis (blockiert die Vollständigkeit NICHT): analoge Phase ohne Material.
+  const materialHinweis =
+    !istDigitalerTyp(phase.typ) &&
+    (phase.material_urls || []).length === 0 &&
+    !phase.material_hinweis;
 
   // Klick irgendwo auf die Karte klappt den Arbeitsbereich auf/zu –
   // Links, Buttons und der Arbeitsbereich selbst bleiben davon unberührt.
@@ -44,6 +50,17 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
           </span>
         ) : null}
         <div className="ml-auto flex items-center gap-2">
+          {unvollstaendig ? (
+            <Badge variant="outline" className="gap-1 border-red-300 bg-red-50 text-red-700">
+              <AlertTriangle className="w-3 h-3" />
+              Unvollständig
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
+              <CheckCircle2 className="w-3 h-3" />
+              Vollständig
+            </Badge>
+          )}
           {phase.freischalt_code && (
             <Badge className="font-mono gap-1">
               <KeyRound className="w-3 h-3" />
@@ -63,15 +80,21 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
       </div>
 
       {aktivitaetFehlt && (
-        <p className="text-xs text-amber-700 inline-flex items-center gap-1.5">
+        <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" />
           Noch keine digitale Aufgabenart verknüpft.
         </p>
       )}
       {inhaltFehlt && (
-        <p className="text-xs text-amber-700 inline-flex items-center gap-1.5">
+        <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
           <AlertTriangle className="w-3.5 h-3.5" />
           Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
+        </p>
+      )}
+      {materialHinweis && (
+        <p className="text-xs text-sky-700 inline-flex items-center gap-1.5">
+          <Info className="w-3.5 h-3.5" />
+          <span><span className="font-medium">Hinweis:</span> Für diese Phase ist noch kein Material hinterlegt.</span>
         </p>
       )}
 
