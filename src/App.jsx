@@ -172,6 +172,9 @@ const AuthenticatedApp = () => {
               <Route path="/lernen/einheit" element={<EinheitOnboarding />} />
               <Route path="/lernen/onboarding" element={<EinheitOnboardingQuiz />} />
               <Route path="/lernen/dashboard" element={<EinheitDashboard />} />
+              {/* Stunden-Player: auch für eingeloggte Lehrkräfte erreichbar
+                  (Test des Moodle-Einstiegs aus dem eigenen Konto heraus). */}
+              <Route path="/lernen/stunde" element={<MoodleStunde />} />
             </Route>
           </Route>
           
