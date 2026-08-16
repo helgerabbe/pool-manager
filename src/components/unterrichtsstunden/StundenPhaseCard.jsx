@@ -1,16 +1,16 @@
 import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users, CheckCircle2, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Clock, AlertTriangle, Info } from 'lucide-react';
 import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
-import StundenPhaseSortierButtons from './StundenPhaseSortierButtons';
 import StundenPhaseArtZeile from './StundenPhaseArtZeile';
-import StundenPhaseCodeToggle from './StundenPhaseCodeToggle';
+import StundenPhaseSteuerspalte from './StundenPhaseSteuerspalte';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
+ * Klare Zweiteilung (2026-08-16): LINKS ausschliesslich der Inhalt
+ * (Art des Geschehens, Dauer, Regieanweisung, Differenzierung),
+ * RECHTS gestapelt alle strukturellen Elemente (Steuerspalte).
  */
 export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
@@ -40,81 +40,66 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
   return (
     <div
       onClick={handleCardClick}
-      className={`rounded-xl border bg-card p-4 space-y-2 ${meta.rand} ${onToggle ? 'cursor-pointer' : ''}`}
+      className={`rounded-xl border bg-card p-4 ${meta.rand} ${onToggle ? 'cursor-pointer' : ''}`}
     >
-      <div className="flex items-center gap-2 flex-wrap">
-        <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
-          {nummer}
-        </span>
-        <StundenPhaseArtZeile phase={phase} />
-        <Badge variant="outline" className={meta.badge}>{meta.label}</Badge>
-        {phase.dauer_minuten ? (
-          <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
-            <Clock className="w-3 h-3" />
-            {phase.dauer_minuten} Min.
-          </span>
-        ) : null}
-        <div className="ml-auto flex items-center gap-2">
-          <StundenPhaseSortierButtons phase={phase} index={nummer - 1} anzahl={anzahl} stundeId={stundeId} />
-          {unvollstaendig ? (
-            <Badge variant="outline" className="gap-1 border-red-300 bg-red-50 text-red-700">
-              <AlertTriangle className="w-3 h-3" />
-              Unvollständig
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="gap-1 border-emerald-300 bg-emerald-50 text-emerald-700">
-              <CheckCircle2 className="w-3 h-3" />
-              Vollständig
-            </Badge>
+      <div className="flex gap-4">
+        {/* LINKS: Inhalt */}
+        <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center shrink-0">
+              {nummer}
+            </span>
+            <StundenPhaseArtZeile phase={phase} />
+            {phase.dauer_minuten ? (
+              <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {phase.dauer_minuten} Min.
+              </span>
+            ) : null}
+          </div>
+
+          {aktivitaetFehlt && (
+            <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Noch keine digitale Aufgabenart verknüpft.
+            </p>
           )}
-          <StundenPhaseCodeToggle phase={phase} stundeId={stundeId} />
-          {onToggle && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={onToggle}>
-              {offen ? (
-                <><ChevronUp className="w-3.5 h-3.5" /> Zuklappen</>
-              ) : (
-                <><Pencil className="w-3.5 h-3.5" /> Bearbeiten <ChevronDown className="w-3.5 h-3.5" /></>
-              )}
-            </Button>
+          {inhaltFehlt && (
+            <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" />
+              Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
+            </p>
+          )}
+          {materialHinweis && (
+            <p className="text-xs text-sky-700 inline-flex items-center gap-1.5">
+              <Info className="w-3.5 h-3.5" />
+              <span><span className="font-medium">Hinweis:</span> Für diese Phase ist noch kein Material hinterlegt.</span>
+            </p>
+          )}
+
+          <PhaseRegieText text={phase.lehrer_hinweis} />
+
+          {(diff.standard || diff.stark || diff.foerderung) && (
+            <div className="grid gap-1 sm:grid-cols-3 pt-1 text-xs text-muted-foreground">
+              {diff.standard && <p><span className="font-medium">Standard:</span> {diff.standard}</p>}
+              {diff.stark && <p><span className="font-medium">★★ Stark:</span> {diff.stark}</p>}
+              {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
+            </div>
           )}
         </div>
+
+        {/* RECHTS: Struktur */}
+        <StundenPhaseSteuerspalte
+          phase={phase}
+          meta={meta}
+          unvollstaendig={unvollstaendig}
+          nummer={nummer}
+          anzahl={anzahl}
+          stundeId={stundeId}
+          offen={offen}
+          onToggle={onToggle}
+        />
       </div>
-
-      {aktivitaetFehlt && (
-        <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          Noch keine digitale Aufgabenart verknüpft.
-        </p>
-      )}
-      {inhaltFehlt && (
-        <p className="text-xs font-medium text-red-700 inline-flex items-center gap-1.5">
-          <AlertTriangle className="w-3.5 h-3.5" />
-          Aufgabenart gewählt, aber die Aufgabe ist noch nicht erstellt.
-        </p>
-      )}
-      {materialHinweis && (
-        <p className="text-xs text-sky-700 inline-flex items-center gap-1.5">
-          <Info className="w-3.5 h-3.5" />
-          <span><span className="font-medium">Hinweis:</span> Für diese Phase ist noch kein Material hinterlegt.</span>
-        </p>
-      )}
-
-      <PhaseRegieText text={phase.lehrer_hinweis} />
-      {(diff.standard || diff.stark || diff.foerderung) && (
-        <div className="grid gap-1 sm:grid-cols-3 pt-1 text-xs text-muted-foreground">
-          {diff.standard && <p><span className="font-medium">Standard:</span> {diff.standard}</p>}
-          {diff.stark && <p><span className="font-medium">★★ Stark:</span> {diff.stark}</p>}
-          {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
-        </div>
-      )}
-      {phase.methode_sozialform && (
-        <div className="pt-1.5">
-          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
-            <Users className="w-3 h-3" />
-            {phase.methode_sozialform}
-          </span>
-        </div>
-      )}
 
       {offen && (
         <div
