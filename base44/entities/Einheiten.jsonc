@@ -4,27 +4,7 @@
   "properties": {
     "fach": {
       "type": "string",
-      "enum": [
-        "Deutsch",
-        "Mathematik",
-        "Englisch",
-        "Franz\u00f6sisch",
-        "Latein",
-        "Biologie",
-        "Chemie",
-        "Physik",
-        "Geschichte",
-        "Geographie",
-        "Politik",
-        "Wirtschaft",
-        "Kunst",
-        "Musik",
-        "Sport",
-        "Religion",
-        "Ethik",
-        "Informatik"
-      ],
-      "description": "Unterrichtsfach"
+      "description": "Unterrichtsfach. G\u00fcltige Werte werden \u00fcber die LookupFaecher-Entit\u00e4t gepflegt (kein festes Enum mehr, 2026-08-16) \u2014 damit sind auch schul-eigene F\u00e4cher (AWT, NAT, GEP) und offene F\u00e4cher (Klassenleitung, Berufsorientierung, F\u00e4cher\u00fcbergreifend) m\u00f6glich. Validierung erfolgt in den Create-Funktionen gegen die aktiven LookupFaecher."
     },
     "titel_der_einheit": {
       "type": "string",

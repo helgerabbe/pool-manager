@@ -88,13 +88,9 @@ function validateEinheitPayload(data) {
     errors.titel_der_einheit = 'Titel darf maximal 200 Zeichen lang sein';
   }
 
-  // fach: required, must be in enum
-  const VALID_FAECHER = [
-    'Deutsch', 'Mathematik', 'Englisch', 'Französisch', 'Latein',
-    'Biologie', 'Chemie', 'Physik', 'Geschichte', 'Geographie',
-    'Politik', 'Wirtschaft', 'Kunst', 'Musik', 'Sport', 'Religion', 'Ethik', 'Informatik'
-  ];
-  if (!data.fach || !VALID_FAECHER.includes(data.fach)) {
+  // fach: required. Gültigkeit wird im Handler dynamisch gegen die aktiven
+  // LookupFaecher geprüft (kein hartcodiertes Enum mehr, 2026-08-16).
+  if (!data.fach || typeof data.fach !== 'string') {
     errors.fach = 'Bitte wählen Sie ein gültiges Fach aus';
   }
 
@@ -148,6 +144,15 @@ Deno.serve(async (req) => {
           error: 'Validation failed',
           details: validation.errors,
         },
+        { status: 400 }
+      );
+    }
+
+    // 3b. Fach dynamisch gegen die Fächerverwaltung validieren (2026-08-16)
+    const aktiveFaecher = await base44.asServiceRole.entities.LookupFaecher.filter({ ist_aktiv: true });
+    if (!aktiveFaecher.some((f) => f.name === fach)) {
+      return Response.json(
+        { error: 'Validation failed', details: { fach: 'Bitte wählen Sie ein gültiges Fach aus' } },
         { status: 400 }
       );
     }

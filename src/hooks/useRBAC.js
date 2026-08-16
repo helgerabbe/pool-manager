@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { getCurrentUser } from '@/services/AuthService';
 import { getBenutzerByEmail, getSystemeinstellungen } from '@/services/BenutzerService';
 import { getPermissions, ROLLEN } from '@/lib/rbac';
@@ -63,7 +64,18 @@ export function useRBAC() {
   const wartungsmodus = systemSettings.find(s => s.schluessel === 'wartungsmodus')?.wert_boolean === true;
   const schreibgesperrt = wartungsmodus && realRolle !== ROLLEN.ADMIN && authUser?.role !== 'admin';
 
-  const basePermissions = getPermissions(aktiveRolle, aktiveFaecher);
+  // ── Offene Fächer (2026-08-16): gelten für jede schreibende Lehrkraft
+  // automatisch als zuständig (nur Inhalte-Dimension, keine 5er-Grenze).
+  const { data: alleFaecher = [] } = useQuery({
+    queryKey: ['lookupFaecherAlle'],
+    queryFn: () => base44.entities.LookupFaecher.list(),
+    staleTime: 5 * 60 * 1000,
+  });
+  const offeneFaecher = alleFaecher
+    .filter(f => f.ist_aktiv !== false && f.ist_offen_fuer_alle === true)
+    .map(f => f.name);
+
+  const basePermissions = getPermissions(aktiveRolle, aktiveFaecher, offeneFaecher);
 
   // Im Wartungsmodus werden alle Schreibrechte für non-Admins auf false gesetzt
   const permissions = schreibgesperrt
@@ -85,6 +97,7 @@ export function useRBAC() {
     rolle:      aktiveRolle,
     realRolle,
     faecher:    aktiveFaecher,
+    offeneFaecher,
     isMocked:   !!mockedRole,
     wartungsmodus,
     permissions,

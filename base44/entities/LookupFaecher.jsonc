@@ -25,6 +25,11 @@
       "default": true,
       "description": "Ob dieses Fach f\u00fcr Einheiten der Gemeinschaftlichen Bibliothek zur Auswahl steht. Private Einheiten und Basis-Einheiten k\u00f6nnen f\u00fcr ALLE aktiven F\u00e4cher angelegt werden; gemeinschaftliche (\u00f6ffentliche) Einheiten nur f\u00fcr F\u00e4cher mit diesem Flag. Bestandsf\u00e4cher wurden bei Einf\u00fchrung (2026-07-26) auf true gesetzt."
     },
+    "ist_offen_fuer_alle": {
+      "type": "boolean",
+      "default": false,
+      "description": "Offene F\u00e4cher (2026-08-16): true = dieses Fach gilt automatisch als zust\u00e4ndiges Fach f\u00fcr JEDE aktive Lehrkraft (Fachschaftsleitung wie Fachlehrkraft) \u2014 ohne Eintrag in Benutzer.fachbereich_zustaendigkeit und ohne die 5-F\u00e4cher-Grenze zu ber\u00fchren. Gedacht f\u00fcr fachungebundene Bereiche wie 'Klassenleitung', 'Berufsorientierung' oder 'F\u00e4cher\u00fcbergreifend'. Wirkung: Jede Lehrkraft kann in offenen F\u00e4chern private Einheiten anlegen und Inhalte bearbeiten (wie eine Fachlehrkraft dieses Fachs). Es gibt KEINE automatische Fachschaftsleitung \u2014 Leitungsrechte (z. B. \u00f6ffentliche Poolzeit-Einheiten anlegen/freigeben) entstehen nur durch eine regul\u00e4re, explizite Zuordnung des Fachs mit Rolle Fachschaftsleitung in der Benutzerverwaltung oder durch Administratoren. Zentrale Auswertung: base44/shared/offeneFaecher.js (Backend) und useRBAC/getPermissions (Frontend, nur Inhalte-Dimension)."
+    },
     "reihenfolge": {
       "type": "number",
       "description": "Sortierreihenfolge in Dropdown-Listen"

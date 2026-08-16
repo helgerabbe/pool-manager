@@ -9,7 +9,10 @@
  *   – Admin (Base44-Rolle oder Benutzer.rolle 'Administrator') → immer.
  *   – Fachschaftsleitung mit Zuständigkeit für das Fach der Einheit.
  *   – EinheitMembers mit unit_role LEITUNG oder EDITOR.
+ *   – Offene Fächer (2026-08-16): jede schreibende Lehrkraft im offenen Fach.
  */
+
+import { istOffenesFach } from './offeneFaecher.js';
 
 export function isAdmin(user, profile) {
   return user?.role === 'admin' || user?.role === 'Administrator' || profile?.rolle === 'Administrator';
@@ -56,5 +59,12 @@ export async function hasUnitWriteAccess(base44, user, einheit) {
   ) return true;
 
   const membership = memberships?.[0] || null;
-  return membership?.unit_role === 'LEITUNG' || membership?.unit_role === 'EDITOR';
+  if (membership?.unit_role === 'LEITUNG' || membership?.unit_role === 'EDITOR') return true;
+
+  // Offene Fächer (2026-08-16): In einem offenen Fach agiert jede schreibende
+  // Lehrkraft (Fachschaftsleitung wie Fachlehrkraft) als Fachlehrkraft.
+  const schreibRolle = profile?.rolle === 'Fachschaftsleitung' || profile?.rolle === 'Fachlehrkraft';
+  if (schreibRolle && (await istOffenesFach(base44, einheit.fach))) return true;
+
+  return false;
 }

@@ -221,11 +221,19 @@ export function kannFreigabeStatusAendern(rolle, benutzerFaecher, einheitFach) {
 /**
  * Berechnet die vollständige Permissions-Map für eine Rolle.
  * Nützlich für UI-Entscheidungen.
+ *
+ * offeneFaecher (2026-08-16): Fächer mit LookupFaecher.ist_offen_fuer_alle=true.
+ * Sie gelten in der INHALTE-Dimension (Fachlehrkraft-Rechte) automatisch als
+ * zuständige Fächer jeder schreibenden Lehrkraft — NICHT aber in der
+ * STRUKTUR-/Freigabe-Dimension (Fachschaftsleitungs-Rechte), die weiterhin
+ * eine explizite Fach-Zuordnung verlangt.
  */
-export function getPermissions(rolle, benutzerFaecher = []) {
+export function getPermissions(rolle, benutzerFaecher = [], offeneFaecher = []) {
+   const inhalteFaecher = [...new Set([...(benutzerFaecher || []), ...(offeneFaecher || [])])];
    return {
      rolle,
      faecher: benutzerFaecher,
+     offeneFaecher,
      istAdmin:                  rolle === ROLLEN.ADMIN,
 
      // ──────── BEREICH 1: STRUKTUR ────────────────────────────────────────
@@ -234,9 +242,11 @@ export function getPermissions(rolle, benutzerFaecher = []) {
      kannThemenfeldLoeschen:    (fach) => kannThemenfeldLoeschen(rolle, benutzerFaecher, fach),
 
      // ──────── BEREICH 2: INHALTE ────────────────────────────────────────
-     kannInhalteBearbeiten:     (fach) => kannInhalteBearbeiten(rolle, benutzerFaecher, fach),
-     kannInhaltFreigeben:       (fach) => kannInhaltFreigeben(rolle, benutzerFaecher, fach),
-     kannEinheitBearbeiten:     (fach) => kannEinheitBearbeiten(rolle, benutzerFaecher, fach),
+     // Offene Fächer zählen hier mit — jede schreibende Lehrkraft ist dort
+     // automatisch Fachlehrkraft (base44/shared/offeneFaecher.js im Backend).
+     kannInhalteBearbeiten:     (fach) => kannInhalteBearbeiten(rolle, inhalteFaecher, fach),
+     kannInhaltFreigeben:       (fach) => kannInhaltFreigeben(rolle, inhalteFaecher, fach),
+     kannEinheitBearbeiten:     (fach) => kannEinheitBearbeiten(rolle, inhalteFaecher, fach),
 
      // ──────── BEREICH 3: EXPORT ────────────────────────────────────────
      kannExportBedienen:        kannExportBedienen(rolle),

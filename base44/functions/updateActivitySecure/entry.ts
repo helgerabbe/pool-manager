@@ -19,6 +19,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { getOffeneFaecherNamen } from '../../shared/offeneFaecher.js';
 
 // ✅ Rate-Limiter: In-Memory Tracking mit Timestamps
 const requestLog = new Map();
@@ -53,8 +54,18 @@ function validateEditPermissionWithScope(
   faecher,
   targetFach,
   einheitId,
-  delegatedMembership
+  delegatedMembership,
+  offeneFaecher = []
 ) {
+  // Offene Fächer (2026-08-16): In einem offenen Fach agiert jede schreibende
+  // Lehrkraft (Fachschaftsleitung wie Fachlehrkraft) als Fachlehrkraft.
+  if (
+    (rolle === 'Fachlehrkraft' || rolle === 'Fachschaftsleitung') &&
+    offeneFaecher.includes(targetFach)
+  ) {
+    return { allowed: true, reason: 'offenes_fach' };
+  }
+
   // RBAC-Angleichung 2026-06-10 (Bugfix "Bearbeitungsmodus startet nicht"):
   // Die Frontend-Matrix (lib/rbac.js, Bereich 2 INHALTE) erlaubt der
   // FACHLEHRKRAFT die Inhalts-Bearbeitung im eigenen Fach — ohne
@@ -428,12 +439,14 @@ Deno.serve(async (req) => {
     const delegatedMembership = myMembership[0];
 
     // 7. Berechtigung validieren mit Scope (für Edit-Permission)
+    const offeneFaecher = await getOffeneFaecherNamen(base44).catch(() => []);
     const authCheck = validateEditPermissionWithScope(
       rolle,
       faecher,
       targetFach,
       einheitId,
-      delegatedMembership
+      delegatedMembership,
+      offeneFaecher
     );
 
     if (!authCheck.allowed) {

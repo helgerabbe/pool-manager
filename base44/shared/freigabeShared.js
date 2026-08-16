@@ -10,6 +10,8 @@
  * WICHTIG: Validierungsregeln synchron halten mit src/lib/completenessValidation.js!
  */
 
+import { istOffenesFach } from './offeneFaecher.js';
+
 export const EINHEIT_LOCKING_LIFECYCLES = new Set([
   'final_freigegeben',
   'export_running',
@@ -247,9 +249,11 @@ export async function checkUserCanEditEinheit(base44, user, einheit) {
 
   if (rolle === 'Administrator') return { allowed: true, rolle };
   if (rolle === 'Fachschaftsleitung') {
-    return faecher.includes(einheit.fach)
-      ? { allowed: true, rolle }
-      : { allowed: false, rolle, reason: 'wrong_fach' };
+    if (faecher.includes(einheit.fach)) return { allowed: true, rolle };
+    // Offene Fächer (2026-08-16): Im offenen Fach agiert auch eine
+    // Fachschaftsleitung (anderer Fächer) als Fachlehrkraft.
+    if (await istOffenesFach(base44, einheit.fach)) return { allowed: true, rolle, via: 'offenes_fach' };
+    return { allowed: false, rolle, reason: 'wrong_fach' };
   }
   if (rolle === 'Fachlehrkraft') {
     // RBAC-Angleichung (2026-08-12, Bugfix "Keine Berechtigung" bei
@@ -260,6 +264,10 @@ export async function checkUserCanEditEinheit(base44, user, einheit) {
     // fachfremde Lehrkräfte erhalten.
     if (faecher.includes(einheit.fach)) {
       return { allowed: true, rolle };
+    }
+    // Offene Fächer (2026-08-16): gelten für jede Fachlehrkraft als zuständig.
+    if (await istOffenesFach(base44, einheit.fach)) {
+      return { allowed: true, rolle, via: 'offenes_fach' };
     }
     const ms = await listAllByFilter(base44.asServiceRole.entities.EinheitMembers, {
       einheit_id: einheit.id,

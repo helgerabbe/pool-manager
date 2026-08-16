@@ -175,6 +175,9 @@ export default function AdminSettings() {
                 bestehende Einheiten bleiben erhalten. „Gemeinschaftlich" steuert, ob das Fach beim
                 Erstellen von Einheiten der Gemeinschaftlichen Bibliothek wählbar ist — private und
                 Basis-Einheiten sind immer für alle aktiven Fächer möglich.
+                „Offen für alle" macht jede Lehrkraft automatisch zur Fachlehrkraft dieses Fachs
+                (z. B. Klassenleitung, Berufsorientierung) — ohne die 5-Fächer-Grenze zu berühren
+                und ohne automatische Fachschaftsleitung.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -216,6 +219,18 @@ export default function AdminSettings() {
                         className="cursor-pointer"
                       />
                       Gemeinschaftlich
+                    </label>
+                    <label
+                      className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap cursor-pointer"
+                      title="Offene Fächer gelten automatisch als zuständiges Fach für JEDE Lehrkraft (z. B. Klassenleitung, Berufsorientierung). Keine automatische Fachschaftsleitung; zählt nicht in die 5-Fächer-Grenze."
+                    >
+                      <input
+                        type="checkbox"
+                        checked={values.ist_offen_fuer_alle === true}
+                        onChange={e => setValues({ ist_offen_fuer_alle: e.target.checked })}
+                        className="cursor-pointer"
+                      />
+                      Offen für alle
                     </label>
                   </div>
                 )}

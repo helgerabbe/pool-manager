@@ -44,9 +44,10 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
       if (permissions.istAdmin) {
         return activeFaecher;
       }
-      // Filtere auf User-Fächer (fallback: alle wenn keine Fächer zugewiesen)
+      // Filtere auf User-Fächer + offene Fächer (offene Fächer stehen
+      // JEDER Lehrkraft zur Verfügung; fallback: alle wenn keine Fächer zugewiesen)
       return userFaecher.length > 0 
-        ? activeFaecher.filter(f => userFaecher.includes(f.name))
+        ? activeFaecher.filter(f => userFaecher.includes(f.name) || f.ist_offen_fuer_alle === true)
         : activeFaecher;
     },
   });
@@ -84,9 +85,15 @@ export default function WizardStep1Meta({ onDone, istBasismodul = false, default
 
   // Gemeinschaftliche (nicht-private, nicht-Basis) Einheiten: nur Fächer mit
   // ist_gemeinschaftsfach anbieten. Private und Basis-Einheiten: alle Fächer.
+  // Offene Fächer (2026-08-16): stehen für PRIVATE Einheiten jeder Lehrkraft
+  // offen; für ÖFFENTLICHE Einheiten nur Admins oder explizit zugeordneten
+  // Fachschaftsleitungen (Backend erzwingt dieselbe Regel).
   const waehlbareFaecher = (privat || istBasismodul)
     ? faecher
-    : faecher.filter(f => f.ist_gemeinschaftsfach !== false);
+    : faecher.filter(f =>
+        f.ist_gemeinschaftsfach !== false &&
+        (permissions.istAdmin || f.ist_offen_fuer_alle !== true || userFaecher.includes(f.name))
+      );
 
   const canSubmit = form.fach && form.titel_der_einheit.trim() && form.jahrgangsstufe && form.zeit_phase_id;
 
