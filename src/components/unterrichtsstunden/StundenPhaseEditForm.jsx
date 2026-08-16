@@ -6,7 +6,7 @@
  */
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,6 +22,7 @@ import {
 import StundenPhaseMaterialListe from './StundenPhaseMaterialListe';
 import StundenPhaseAktivitaetWahl from './StundenPhaseAktivitaetWahl';
 import PhaseAbschnitt from './PhaseAbschnitt';
+import StundenAufgabeEditorButton from './StundenAufgabeEditorButton';
 import { toast } from 'sonner';
 
 export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
@@ -39,6 +40,12 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
   }));
 
   const set = (feld, wert) => setForm((f) => ({ ...f, [feld]: wert }));
+
+  const { data: katalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalogAktiv'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.filter({ is_active: true }, 'phase', 200),
+  });
+  const gewaehlteAktivitaet = katalog.find((a) => a.id === form.aktivitaet_id);
 
   // Art wechseln: den Standardsatz mitziehen, solange die Lehrkraft ihn nicht
   // selbst umformuliert hat.
@@ -104,10 +111,25 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
       </div>
 
       {istDigitalerTyp(form.typ) && (
-        <StundenPhaseAktivitaetWahl
-          value={form.aktivitaet_id}
-          onChange={(v) => set('aktivitaet_id', v)}
-        />
+        <>
+          <StundenPhaseAktivitaetWahl
+            value={form.aktivitaet_id}
+            onChange={(v) => set('aktivitaet_id', v)}
+          />
+          {form.aktivitaet_id && (
+            gewaehlteAktivitaet && form.aktivitaet_id === phase.aktivitaet_id ? (
+              <StundenAufgabeEditorButton
+                phase={phase}
+                katalogEntry={gewaehlteAktivitaet}
+                stundeId={stundeId}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Speichern Sie die Phase, um die Aufgabe inhaltlich auszuarbeiten.
+              </p>
+            )
+          )}
+        </>
       )}
 
       <PhaseAbschnitt titel="Regieanweisung" hinweis="nur für Sie · optional" gefuellt={!!form.lehrer_hinweis.trim()}>
