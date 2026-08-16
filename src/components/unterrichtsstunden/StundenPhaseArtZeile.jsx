@@ -28,7 +28,10 @@ export default function StundenPhaseArtZeile({ phase }) {
   }
 
   return (
-    <span className="text-sm min-w-0">
+    <span
+      className="text-sm min-w-0 truncate"
+      title={art + (phase.phasenname ? ` · ${phase.phasenname}` : '')}
+    >
       <span className="font-bold text-foreground">{art}</span>
       {phase.phasenname ? (
         <span className="text-muted-foreground"> · {phase.phasenname}</span>
