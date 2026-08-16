@@ -10,6 +10,7 @@ import StundenSteckbriefCard from '@/components/unterrichtsstunden/StundenSteckb
 import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenVerlaufsplanTabelle';
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
+import StundenPhaseEditModal from '@/components/unterrichtsstunden/StundenPhaseEditModal';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Grundgerüst der Stunden-Ansicht.
@@ -18,6 +19,7 @@ import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGeneri
  */
 export default function UnterrichtsstundeDetail() {
   const { id } = useParams();
+  const [editPhase, setEditPhase] = React.useState(null);
 
   const { data: stunde, isLoading } = useQuery({
     queryKey: ['unterrichtsstunde', id],
@@ -86,12 +88,22 @@ export default function UnterrichtsstundeDetail() {
         <div className="space-y-3 pt-2">
           <h2 className="text-sm font-bold text-foreground">Stunden-Regieblatt</h2>
           {phasen.map((p, i) => (
-            <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} />
+            <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} onEdit={() => setEditPhase(p)} />
           ))}
           <p className="text-xs text-muted-foreground">
-            Die digitalen Aktivitäten und Materialien der Phasen folgen im nächsten Ausbauschritt.
+            Über „Bearbeiten“ können Sie jede Phase anpassen, Materialien hochladen und digitale Aufgabenarten verknüpfen.
           </p>
         </div>
+      )}
+
+      {editPhase && (
+        <StundenPhaseEditModal
+          key={editPhase.id}
+          phase={editPhase}
+          stundeId={id}
+          open
+          onClose={() => setEditPhase(null)}
+        />
       )}
     </div>
   );
