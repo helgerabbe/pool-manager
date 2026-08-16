@@ -46,12 +46,14 @@ export default function OffeneAufgabePreviewModal({
   const [previewHtml, setPreviewHtml] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Beim Öffnen: vorhandenen Snapshot laden (oder leeren Zustand zeigen).
   useEffect(() => {
     if (open) {
       setPreviewHtml(existingSnapshotHtml || '');
       setIsGenerating(false);
+      setIsSaved(false);
     }
   }, [open, existingSnapshotHtml]);
 
@@ -89,7 +91,12 @@ ${description}`,
     setIsSaving(true);
     try {
       await onApproveSnapshot(previewHtml);
-      onOpenChange(false);
+      // Erst deutlich bestätigen, dann schließen – sonst bleibt unklar,
+      // ob die Vorlage wirklich gespeichert wurde.
+      setIsSaved(true);
+      setTimeout(() => onOpenChange(false), 1200);
+    } catch (err) {
+      toast.error('Übernehmen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
     } finally {
       setIsSaving(false);
     }
@@ -128,7 +135,12 @@ ${description}`,
           <span className="inline-flex items-center gap-1.5 text-xs text-amber-700">
             <Clock className="w-3.5 h-3.5" /> Achtung: Das Erstellen kann etwas dauern.
           </span>
-          {!isReleased && hasPreview && (
+          {!isReleased && hasPreview && isSaved && (
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-md bg-emerald-100 border border-emerald-300 px-3 py-1.5 text-sm font-semibold text-emerald-800">
+              <Check className="w-4 h-4" /> Vorschau wurde übernommen und gespeichert
+            </span>
+          )}
+          {!isReleased && hasPreview && !isSaved && (
             <Button
               onClick={handleApprove}
               disabled={!canApprove || isSaving || isGenerating}
