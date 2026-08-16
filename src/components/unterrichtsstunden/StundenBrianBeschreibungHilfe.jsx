@@ -20,8 +20,9 @@ export default function StundenBrianBeschreibungHilfe() {
     <div className="rounded-lg border border-violet-200 bg-violet-50/70 p-3 space-y-2">
       <p className="text-xs text-violet-950">
         Beschreiben Sie die Aufgabe hier <span className="font-semibold">so ausführlich, wie Sie es einer
-        Kollegin erklären würden</span>. Brian sieht Ihr Material nicht – alles, was er über die Aufgabe
-        weiß, steht in diesem Feld. Dieser Text ist nicht schülersichtbar.
+        Kollegin erklären würden</span>. Das Material selbst können Sie bei Brian hochladen – aber was Sie
+        sich bei der Aufgabe zusätzlich denken (Ziel, Arbeitsschritte, Erwartungen, Stolperstellen), weiß
+        Brian nur, wenn es hier steht. Dieser Text ist nicht schülersichtbar.
       </p>
       <ul className="text-xs text-violet-950 space-y-1 list-disc pl-4">
         {LEITFRAGEN.map((f) => <li key={f}>{f}</li>)}
