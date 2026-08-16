@@ -32,6 +32,8 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
     typ: normalisierterTyp(phase.typ),
     dauer_minuten: phase.dauer_minuten ?? '',
     lehrer_hinweis: phase.lehrer_hinweis || '',
+    methode_sozialform: phase.methode_sozialform || '',
+    material_hinweis: phase.material_hinweis || '',
     schueler_anweisung: phase.schueler_anweisung || standardSchuelerAnweisung(phase.typ),
     folien_hinweis: phase.folien_hinweis || '',
     aktivitaet_id: phase.aktivitaet_id || '',
@@ -132,8 +134,34 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         </>
       )}
 
-      <PhaseAbschnitt titel="Regieanweisung" hinweis="nur für Sie · optional" gefuellt={!!form.lehrer_hinweis.trim()}>
-        <Textarea className="bg-card" rows={3} value={form.lehrer_hinweis} onChange={(e) => set('lehrer_hinweis', e.target.value)} />
+      <PhaseAbschnitt
+        titel="Regieanweisung"
+        hinweis="nur für Sie · optional"
+        gefuellt={!!(form.lehrer_hinweis.trim() || form.methode_sozialform.trim() || form.material_hinweis.trim())}
+      >
+        <div className="space-y-3">
+          <Textarea className="bg-card" rows={3} value={form.lehrer_hinweis} onChange={(e) => set('lehrer_hinweis', e.target.value)} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Methode & Sozialform <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                className="bg-card h-9"
+                value={form.methode_sozialform}
+                onChange={(e) => set('methode_sozialform', e.target.value)}
+                placeholder="z. B. Plenumsgespräch, Partnerarbeit"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Material <span className="text-muted-foreground font-normal">(optional)</span></Label>
+              <Input
+                className="bg-card h-9"
+                value={form.material_hinweis}
+                onChange={(e) => set('material_hinweis', e.target.value)}
+                placeholder="z. B. Tafel, Impulsbild"
+              />
+            </div>
+          </div>
+        </div>
       </PhaseAbschnitt>
 
       {!istDigitalerTyp(form.typ) && (

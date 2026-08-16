@@ -1,9 +1,10 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle, ChevronDown, ChevronUp, Users, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
+import PhaseRegieText from './PhaseRegieText';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
@@ -65,12 +66,7 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
         </p>
       )}
 
-      {phase.lehrer_hinweis && (
-        <p className="text-sm text-foreground">
-          <span className="font-medium text-muted-foreground">Regie: </span>
-          {phase.lehrer_hinweis}
-        </p>
-      )}
+      <PhaseRegieText text={phase.lehrer_hinweis} />
       {phase.schueler_anweisung && (
         <p className="text-sm text-foreground">
           <span className="font-medium text-muted-foreground">Für Schüler:innen: </span>
@@ -84,6 +80,23 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
           {diff.foerderung && <p><span className="font-medium">Förderung:</span> {diff.foerderung}</p>}
         </div>
       )}
+      {(phase.methode_sozialform || phase.material_hinweis) && (
+        <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+          {phase.methode_sozialform && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+              <Users className="w-3 h-3" />
+              {phase.methode_sozialform}
+            </span>
+          )}
+          {phase.material_hinweis && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-border bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+              <Package className="w-3 h-3" />
+              {phase.material_hinweis}
+            </span>
+          )}
+        </div>
+      )}
+
       {materialien.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <Paperclip className="w-3.5 h-3.5 text-muted-foreground" />

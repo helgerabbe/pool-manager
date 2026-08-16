@@ -39,7 +39,15 @@
     },
     "lehrer_hinweis": {
       "type": "string",
-      "description": "Regieanweisung fuer die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT fuer Schueler)."
+      "description": "Regieanweisung fuer die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT fuer Schueler). Enthaelt NUR den inhaltlichen Ablauf - Methode/Sozialform und Materialhinweis liegen in eigenen Feldern (2026-08-16)."
+    },
+    "methode_sozialform": {
+      "type": "string",
+      "description": "Optionale Angabe zu Methode und Sozialform dieser Phase (z. B. 'Plenumsgespraech', 'Partnerarbeit'). Wird im Regieblatt als kleine Pille und im Phasen-Editor als eigenes Feld gepflegt."
+    },
+    "material_hinweis": {
+      "type": "string",
+      "description": "Optionaler Kurz-Hinweis auf benoetigtes Material dieser Phase als Text (z. B. 'Tafel, Impulsbild'). Ergaenzt material_urls, das hochgeladene Dateien enthaelt."
     },
     "schueler_anweisung": {
       "type": "string",

@@ -30,9 +30,9 @@ export default function StundeGenerierenButton({ stunde, plan, hatPhasen }) {
           typ: normalisierterTyp(p.typ),
           schueler_anweisung: standardSchuelerAnweisung(p.typ),
           dauer_minuten: Number(p.zeit_minuten) || undefined,
-          lehrer_hinweis: [p.inhalt, p.methode_sozialform && `Methode & Sozialform: ${p.methode_sozialform}`, p.material && `Material: ${p.material}`]
-            .filter(Boolean)
-            .join('\n'),
+          lehrer_hinweis: p.inhalt || '',
+          methode_sozialform: p.methode_sozialform || '',
+          material_hinweis: p.material || '',
           freischalt_code: codes[idx],
           is_complete: false,
         }))
