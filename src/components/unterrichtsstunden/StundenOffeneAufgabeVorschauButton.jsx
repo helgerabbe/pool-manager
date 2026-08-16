@@ -58,7 +58,7 @@ export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry
         disabled={!description.trim()}
       >
         <Wand2 className="w-3.5 h-3.5" />
-        {snapshot ? 'Aufgabe neu generieren' : 'Aufgabe jetzt generieren'}
+        {snapshot ? 'Aufgabe ansehen' : 'Aufgabe jetzt generieren'}
       </Button>
 
       <OffeneAufgabePreviewModal

@@ -2,6 +2,7 @@ import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 
 /**
  * Schüler-Aktivität „Offene Aufgabe".
@@ -19,9 +20,10 @@ import AufgabenstellungBox from './AufgabenstellungBox';
  */
 export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBack, masterHinweis }) {
   const fv = aktivitaet?.field_values || {};
-  const snapshotHtml = fv.approved_snapshot_html || '';
   // Große interaktive Aufgaben liegen als HTML-Datei vor (approved_snapshot_url).
   const snapshotUrl = fv.approved_snapshot_url || '';
+  const { html: dateiHtml } = useSnapshotHtml(snapshotUrl);
+  const snapshotHtml = fv.approved_snapshot_html || dateiHtml || '';
   const hatSnapshot = !!snapshotHtml.trim() || !!snapshotUrl.trim();
 
   return (
@@ -41,7 +43,7 @@ export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBac
         <div className="flex-1 min-h-0 rounded-xl border border-border overflow-hidden bg-white shadow-sm">
           <iframe
             title="Offene Aufgabe"
-            {...(snapshotHtml.trim() ? { srcDoc: snapshotHtml } : { src: snapshotUrl })}
+            srcDoc={snapshotHtml}
             sandbox="allow-scripts allow-same-origin"
             className="w-full h-full border-0 bg-white"
           />

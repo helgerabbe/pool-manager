@@ -21,6 +21,7 @@ import { Eye, Sparkles, Loader2, Check, Clock, AlertTriangle, Lock } from 'lucid
 import IPadFrame from '@/components/workspace/preview/IPadFrame';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
+import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 
 // Entfernt evtl. Markdown-Code-Fences, falls das Modell sie mitliefert,
 // und gibt das reine HTML-Dokument zurück.
@@ -103,8 +104,11 @@ ${description}`,
     }
   };
 
-  // Bereits übernommene Aufgaben können als Datei vorliegen (zu groß fürs Feld).
-  const hasPreview = !!previewHtml || !!existingSnapshotUrl;
+  // Bereits übernommene Aufgaben liegen als Datei vor (zu groß fürs Feld):
+  // Quelltext laden und wie eine frische Vorschau anzeigen.
+  const { html: gespeichertesHtml } = useSnapshotHtml(open ? existingSnapshotUrl : '');
+  const anzeigeHtml = previewHtml || gespeichertesHtml;
+  const hasPreview = !!anzeigeHtml;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -183,7 +187,7 @@ ${description}`,
                 {hasPreview ? (
                   <iframe
                     title="Offene-Aufgabe-Vorschau"
-                    {...(previewHtml ? { srcDoc: previewHtml } : { src: existingSnapshotUrl })}
+                    srcDoc={anzeigeHtml}
                     sandbox="allow-scripts allow-same-origin"
                     className="w-full h-full border-0 bg-white"
                   />
