@@ -61,7 +61,7 @@ Deine Aufgabe:
 2. Aktualisiere die Bauanleitung. Übernimm bereits vorhandene Inhalte und ändere nur, was sich durch die neue Nachricht ergibt. Erfinde nichts, was der Beschreibung widerspricht; sinnvoll ergänzen darfst du.
    - steckbrief: zielgruppe, thema, dauer, leitziel. Was noch unklar ist, bleibt leerer String.
    - verlaufsplan: 3-6 Phasen in linearer Reihenfolge. Pro Phase: phasenname, zeit_minuten (Zahl), inhalt (Inhalt & konkrete Handlungsschritte, 2-4 Sätze), methode_sozialform (z. B. Einzelarbeit, Gruppenarbeit, Plenumsgespräch), material, typ.
-     typ: "lehrer_input" (Lehrkraft agiert), "schueler_aktivitaet" (Arbeit am Gerät), "analog" (Arbeit ohne Gerät), "sicherung" (Auswertung).
+     typ (genau einer dieser Werte): "analog_input" (Input der Lehrkraft ohne Gerät: Vortrag, Gespräch, Tafel), "digital_input" (digital ausgespielter Input, z. B. Lehrvideo), "analog_aufgabe" (Aufgabe ohne digitale Bearbeitung, z. B. Arbeitsblatt, Partnergespräch), "digital_aufgabe" (Aufgabe, die die Schüler digital am Gerät bearbeiten), "analog_sicherung" (Sicherung/Auswertung im Plenum), "digital_sicherung" (Sicherung über eine digitale Aufgabe). Alle "digital_*"-Arten werden später mit einer Aktivität aus dem Pool-Manager verknüpft.
      Beschreibe hier, WAS in der Phase passieren soll — noch KEINE fertigen digitalen Aufgaben ausformulieren.
      Die Summe der Zeiten soll etwa zur angegebenen Dauer passen.
    - didaktische_hinweise: didaktisch-methodische Hinweise und alles, was sonst nirgendwo hineinpasst (Fließtext mit Absätzen, keine Markdown-Sonderzeichen).
@@ -97,7 +97,14 @@ Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
                     material: { type: 'string' },
                     typ: {
                       type: 'string',
-                      enum: ['lehrer_input', 'schueler_aktivitaet', 'analog', 'sicherung'],
+                      enum: [
+                        'analog_input',
+                        'digital_input',
+                        'analog_aufgabe',
+                        'digital_aufgabe',
+                        'analog_sicherung',
+                        'digital_sicherung',
+                      ],
                     },
                   },
                   required: ['phasenname'],

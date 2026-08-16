@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Wand2, AlertTriangle } from 'lucide-react';
-import { eindeutigeCodes } from '@/lib/stundenPhasen';
+import { eindeutigeCodes, normalisierterTyp } from '@/lib/stundenPhasen';
 
 /**
  * Setzt die Bauanleitung des Coaches in echte Stunden-Phasen (StundenSequenz)
@@ -27,7 +27,7 @@ export default function StundeGenerierenButton({ stunde, plan, hatPhasen }) {
           stunde_id: stunde.id,
           reihenfolge: idx,
           phasenname: p.phasenname || `Phase ${idx + 1}`,
-          typ: p.typ || 'lehrer_input',
+          typ: normalisierterTyp(p.typ),
           dauer_minuten: Number(p.zeit_minuten) || undefined,
           lehrer_hinweis: [p.inhalt, p.methode_sozialform && `Methode & Sozialform: ${p.methode_sozialform}`, p.material && `Material: ${p.material}`]
             .filter(Boolean)

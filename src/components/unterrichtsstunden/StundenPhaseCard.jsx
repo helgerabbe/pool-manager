@@ -2,7 +2,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { phasenTypMeta } from '@/lib/stundenPhasen';
+import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 
 /**
@@ -12,7 +12,7 @@ export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onTog
   const meta = phasenTypMeta(phase.typ);
   const diff = phase.differenzierung || {};
   const materialien = phase.material_urls || [];
-  const aktivitaetFehlt = phase.typ === 'schueler_aktivitaet' && !phase.aktivitaet_id;
+  const aktivitaetFehlt = istDigitalerTyp(phase.typ) && !phase.aktivitaet_id;
 
   return (
     <div className="rounded-xl border bg-card p-4 space-y-2">

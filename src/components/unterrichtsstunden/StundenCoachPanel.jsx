@@ -36,13 +36,13 @@ export default function StundenCoachPanel({ stunde }) {
     <div className="rounded-xl border-2 border-amber-300 bg-amber-50/60 p-4 space-y-3">
       <div className="flex items-center gap-2">
         <Bot className="w-4 h-4 text-amber-700" />
-        <h3 className="text-sm font-bold text-foreground">KI-Stunden-Coach</h3>
+        <h3 className="text-sm font-bold text-foreground">KI-Generator für das Stundenregieblatt</h3>
       </div>
 
       {verlauf.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Beschreiben Sie frei, was Sie in dieser Stunde vorhaben — Klasse, Thema, Dauer, geplanter Ablauf.
-          Der Coach baut daraus Steckbrief, Verlaufsplan und Hinweise auf und fragt nach, wo noch etwas fehlt.
+          Der KI-Generator baut daraus Steckbrief, Verlaufsplan und Hinweise auf und fragt nach, wo noch etwas fehlt.
         </p>
       ) : (
         <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -63,7 +63,7 @@ export default function StundenCoachPanel({ stunde }) {
       )}
 
       {senden.isError && (
-        <p className="text-sm text-destructive">{senden.error?.message || 'Der Coach konnte nicht antworten.'}</p>
+        <p className="text-sm text-destructive">{senden.error?.message || 'Der KI-Generator konnte nicht antworten.'}</p>
       )}
 
       <Textarea
@@ -81,7 +81,7 @@ export default function StundenCoachPanel({ stunde }) {
           {senden.isPending
             ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             : <Send className="w-4 h-4" />}
-          An den Coach senden
+          An den KI-Generator senden
         </Button>
         <SpeechInputButton
           value={eingabe}

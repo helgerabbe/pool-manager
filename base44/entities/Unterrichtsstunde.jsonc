@@ -1,15 +1,15 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie gehoert immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity. Die Stunde ist der lehrernahe, lineare Alltagsmodus - die spaetere Transformation in eine Poolzeit-Einheit ist bewusst noch NICHT implementiert.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie gehoert immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity.",
   "properties": {
     "einheit_id": {
       "type": "string",
-      "description": "FK zur Einheit, zu der diese Stunde geh\u00f6rt (Gruppierung in der Bibliothek)."
+      "description": "FK zur Einheit, zu der diese Stunde gehoert (Gruppierung in der Bibliothek)."
     },
     "fach": {
       "type": "string",
-      "description": "Denormalisiert aus der Einheit - f\u00fcr die Gruppierung nach Fach."
+      "description": "Denormalisiert aus der Einheit - fuer die Gruppierung nach Fach."
     },
     "jahrgangsstufe": {
       "type": "string",
@@ -17,7 +17,7 @@
     },
     "arbeitstitel": {
       "type": "string",
-      "description": "Arbeitstitel der Stunde. Unterrichtsstunden haben fachlich keinen Titel - der Arbeitstitel dient allein der Wiedererkennung in der Bibliothek. Gibt die Lehrkraft keinen an, generiert die KI im Stunden-Coach einen Vorschlag aus den Inhalten."
+      "description": "Arbeitstitel der Stunde zur Wiedererkennung in der Bibliothek."
     },
     "stundenziel": {
       "type": "string",
@@ -47,15 +47,15 @@
         "bereit"
       ],
       "default": "entwurf",
-      "description": "'entwurf' = in Planung. 'bereit' = alle Phasen vollst\u00e4ndig, Stunde ist f\u00fcr den Unterricht/Moodle einsetzbar."
+      "description": "'entwurf' = in Planung. 'bereit' = alle Phasen vollstaendig, Stunde ist fuer den Unterricht/Moodle einsetzbar."
     },
     "notfall_code": {
       "type": "string",
-      "description": "Notfall-Schl\u00fcssel der Stunde: schaltet im Stunden-Player JEDE Phase frei, falls der Lehrkraft die Phasen-Codes im Unterricht nicht vorliegen."
+      "description": "Notfall-Schluessel der Stunde: schaltet im Stunden-Player JEDE Phase frei, falls der Lehrkraft die Phasen-Codes im Unterricht nicht vorliegen."
     },
     "coach_plan": {
       "type": "object",
-      "description": "KI-Stunden-Coach (MUG Paket 2, 2026-08-16): Die im Dialog entstandene 'Bauanleitung' der Stunde. Sie bleibt dauerhaft erhalten - auch nachdem daraus Phasen (StundenSequenz) generiert wurden - und kann jederzeit weiterentwickelt und erneut umgesetzt werden. Struktur: steckbrief (zielgruppe, thema, dauer, leitziel), verlaufsplan (Liste von Phasen mit phasenname, zeit_minuten, inhalt, methode_sozialform, material, typ) und didaktische_hinweise (Freitext f\u00fcr alles, was nirgends sonst hinpasst).",
+      "description": "KI-Generator fuer das Stundenregieblatt (MUG Paket 2, 2026-08-16): Die im Dialog entstandene 'Bauanleitung' der Stunde. Sie bleibt dauerhaft erhalten - auch nachdem daraus Phasen (StundenSequenz) generiert wurden - und kann jederzeit weiterentwickelt und erneut umgesetzt werden. Struktur: steckbrief, verlaufsplan und didaktische_hinweise.",
       "additionalProperties": true,
       "properties": {
         "steckbrief": {
@@ -100,6 +100,12 @@
               "typ": {
                 "type": "string",
                 "enum": [
+                  "analog_input",
+                  "digital_input",
+                  "analog_aufgabe",
+                  "digital_aufgabe",
+                  "analog_sicherung",
+                  "digital_sicherung",
                   "lehrer_input",
                   "schueler_aktivitaet",
                   "analog",
@@ -117,7 +123,7 @@
     },
     "coach_verlauf": {
       "type": "array",
-      "description": "Chat-Verlauf mit dem KI-Stunden-Coach (Rollen 'user' und 'assistant'). Wird gespeichert, damit die Lehrkraft das Gespr\u00e4ch sp\u00e4ter fortsetzen kann.",
+      "description": "Chat-Verlauf mit dem KI-Generator (Rollen 'user' und 'assistant'). Wird gespeichert, damit die Lehrkraft das Gespraech spaeter fortsetzen kann.",
       "items": {
         "type": "object",
         "properties": {
@@ -138,7 +144,7 @@
     "coach_plan_updated_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel der letzten \u00c4nderung der Bauanleitung durch den Coach."
+      "description": "Zeitstempel der letzten Aenderung der Bauanleitung."
     },
     "coach_plan_umgesetzt_am": {
       "type": "string",

@@ -77,7 +77,7 @@ export default function UnterrichtsstundeDetail() {
 
       <Tabs defaultValue={phasen.length > 0 ? 'regieblatt' : 'coach'}>
         <TabsList>
-          <TabsTrigger value="coach">1. KI-Stundencoach</TabsTrigger>
+          <TabsTrigger value="coach">1. KI-Generator</TabsTrigger>
           <TabsTrigger value="regieblatt" className="gap-2">
             2. Stunden-Regieblatt
             {phasen.length > 0 && (
@@ -101,7 +101,7 @@ export default function UnterrichtsstundeDetail() {
         <TabsContent value="regieblatt" className="space-y-3 mt-4">
           {phasen.length === 0 ? (
             <p className="text-sm text-muted-foreground py-8 text-center">
-              Noch keine Phasen vorhanden. Erarbeiten Sie zuerst im Tab „KI-Stundencoach“ eine Bauanleitung und generieren Sie daraus die Stunde.
+              Noch keine Phasen vorhanden. Erarbeiten Sie zuerst im Tab „KI-Generator“ eine Bauanleitung und generieren Sie daraus das Regieblatt.
             </p>
           ) : (
             <>

@@ -1,7 +1,7 @@
 {
   "name": "StundenSequenz",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear \u00fcber 'reihenfolge'. Je Phase entweder ein Lehrer-Input, eine digitale Sch\u00fcleraktivit\u00e4t (Verkn\u00fcpfung in den Aktivit\u00e4ten-Katalog + field_values, gepflegt mit den bestehenden Aktivit\u00e4ts-Editoren), eine analoge Aufgabe (nur Material/Anweisung) oder eine Sicherung.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear ueber 'reihenfolge'. Die Phasen-Art unterscheidet analog/digital: bei digitalen Arten wird eine Aktivitaet aus dem Pool-Manager-Katalog verknuepft (aktivitaet_id + field_values), bei analogen Arten genuegen Anweisung und Material.",
   "properties": {
     "stunde_id": {
       "type": "string",
@@ -19,13 +19,19 @@
     "typ": {
       "type": "string",
       "enum": [
+        "analog_input",
+        "digital_input",
+        "analog_aufgabe",
+        "digital_aufgabe",
+        "analog_sicherung",
+        "digital_sicherung",
         "lehrer_input",
         "schueler_aktivitaet",
         "analog",
         "sicherung"
       ],
-      "default": "lehrer_input",
-      "description": "'lehrer_input' = Lehrkraft agiert (Vortrag, Gespr\u00e4ch), Sch\u00fcler passiv. 'schueler_aktivitaet' = digitale Aktivit\u00e4t aus dem Katalog. 'analog' = Aufgabe ohne digitale Bearbeitung (z. B. ausgeteiltes Arbeitsblatt, optional als Scan hinterlegt). 'sicherung' = Zwischensicherung/Auswertung."
+      "default": "analog_input",
+      "description": "Phasen-Art (2026-08-16): 'analog_input' = Input der Lehrkraft ohne Geraet (Vortrag, Gespraech, Tafel). 'digital_input' = digital ausgespielter Input (z. B. Lehrvideo) - verknuepfte Aktivitaet. 'analog_aufgabe' = Aufgabe ohne digitale Bearbeitung (Arbeitsblatt, Gespraech). 'digital_aufgabe' = Aufgabe, die als Aktivitaet aus dem Pool-Manager verknuepft und von den Schuelern digital bearbeitet wird. 'analog_sicherung' = Sicherung/Auswertung im Plenum. 'digital_sicherung' = digitale Sicherung ueber eine verknuepfte Aktivitaet. Alle 'digital_*'-Arten ziehen eine Aktivitaet hinzu. Die Werte 'lehrer_input', 'schueler_aktivitaet', 'analog' und 'sicherung' sind @legacy-Bestandswerte und werden im Frontend auf die neuen Arten abgebildet (src/lib/stundenPhasen.js)."
     },
     "dauer_minuten": {
       "type": "number",
@@ -33,15 +39,15 @@
     },
     "lehrer_hinweis": {
       "type": "string",
-      "description": "Regieanweisung f\u00fcr die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT f\u00fcr Sch\u00fcler)."
+      "description": "Regieanweisung fuer die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT fuer Schueler)."
     },
     "schueler_anweisung": {
       "type": "string",
-      "description": "Was die Sch\u00fcler in dieser Phase auf ihrem Ger\u00e4t lesen (z. B. 'H\u00f6r zu und mach dir Notizen')."
+      "description": "Was die Schueler in dieser Phase auf ihrem Geraet lesen (z. B. 'Hoer zu und mach dir Notizen')."
     },
     "folien_hinweis": {
       "type": "string",
-      "description": "Verweis auf Foliensatz/Pr\u00e4sentation (z. B. 'Folie 2-4') oder ein Link."
+      "description": "Verweis auf Foliensatz/Praesentation (z. B. 'Folie 2-4') oder ein Link."
     },
     "material_urls": {
       "type": "array",
@@ -61,7 +67,7 @@
     },
     "differenzierung": {
       "type": "object",
-      "description": "Differenzierungs-Hinweise der Phase: 'standard' (normale Anforderung), 'stark' (leistungsstarke Sch\u00fcler, \u2605\u2605), 'foerderung' (Hilfestellungen/Scaffolding).",
+      "description": "Differenzierungs-Hinweise der Phase: 'standard' (normale Anforderung), 'stark' (leistungsstarke Schueler), 'foerderung' (Hilfestellungen/Scaffolding).",
       "additionalProperties": true,
       "properties": {
         "standard": {
@@ -77,21 +83,21 @@
     },
     "freischalt_code": {
       "type": "string",
-      "description": "Dreistelliger Zahlencode, den die Sch\u00fcler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zuf\u00e4llig vergeben, pro Stunde eindeutig, f\u00fcr die Lehrkraft jederzeit im Regieblatt sichtbar."
+      "description": "Dreistelliger Zahlencode, den die Schueler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zufaellig vergeben, pro Stunde eindeutig, fuer die Lehrkraft jederzeit im Regieblatt sichtbar."
     },
     "aktivitaet_id": {
       "type": "string",
-      "description": "Nur bei typ='schueler_aktivitaet': FK zu AktivitaetenKatalog (welche digitale Aufgabenart)."
+      "description": "Nur bei digitalen Phasen-Arten ('digital_input', 'digital_aufgabe', 'digital_sicherung'): FK zu AktivitaetenKatalog (welche digitale Aufgabenart aus dem Pool-Manager hinzugezogen wird)."
     },
     "field_values": {
       "type": "object",
-      "description": "Konfigurierte Inhalte der digitalen Aktivit\u00e4t - identisches Format wie LernpaketPhaseAktivitaet.field_values, damit die bestehenden Aktivit\u00e4ts-Editoren und Sch\u00fcler-Renderer unver\u00e4ndert genutzt werden k\u00f6nnen.",
+      "description": "Konfigurierte Inhalte der digitalen Aktivitaet - identisches Format wie LernpaketPhaseAktivitaet.field_values, damit die bestehenden Aktivitaets-Editoren und Schueler-Renderer unveraendert genutzt werden koennen.",
       "additionalProperties": true
     },
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollst\u00e4ndig konfiguriert (bei digitalen Aktivit\u00e4ten gepr\u00fcft \u00fcber die bestehende Vollst\u00e4ndigkeits-Validierung)."
+      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollstaendig konfiguriert (bei digitalen Arten gepruefte Verknuepfung/Vollstaendigkeit der Aktivitaet)."
     }
   },
   "required": [

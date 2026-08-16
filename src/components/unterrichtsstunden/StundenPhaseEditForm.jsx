@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PHASEN_TYP_META } from '@/lib/stundenPhasen';
+import { PHASEN_TYP_META, istDigitalerTyp, normalisierterTyp } from '@/lib/stundenPhasen';
 import StundenPhaseMaterialListe from './StundenPhaseMaterialListe';
 import StundenPhaseAktivitaetWahl from './StundenPhaseAktivitaetWahl';
 import { toast } from 'sonner';
@@ -21,7 +21,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
   const queryClient = useQueryClient();
   const [form, setForm] = useState(() => ({
     phasenname: phase.phasenname || '',
-    typ: phase.typ || 'lehrer_input',
+    typ: normalisierterTyp(phase.typ),
     dauer_minuten: phase.dauer_minuten ?? '',
     lehrer_hinweis: phase.lehrer_hinweis || '',
     schueler_anweisung: phase.schueler_anweisung || '',
@@ -36,7 +36,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
 
   const speichern = useMutation({
     mutationFn: async () => {
-      const istDigital = form.typ === 'schueler_aktivitaet';
+      const istDigital = istDigitalerTyp(form.typ);
       const is_complete = istDigital
         ? !!form.aktivitaet_id
         : !!(form.lehrer_hinweis || '').trim();
@@ -87,7 +87,7 @@ export default function StundenPhaseEditForm({ phase, stundeId, onFertig }) {
         </Select>
       </div>
 
-      {form.typ === 'schueler_aktivitaet' && (
+      {istDigitalerTyp(form.typ) && (
         <StundenPhaseAktivitaetWahl
           value={form.aktivitaet_id}
           onChange={(v) => set('aktivitaet_id', v)}
