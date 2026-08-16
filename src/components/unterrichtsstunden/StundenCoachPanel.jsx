@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Bot, Send, User } from 'lucide-react';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 /**
  * KI-Stunden-Coach (MUG Paket 2): Dialog-Fenster.
@@ -71,16 +72,26 @@ export default function StundenCoachPanel({ stunde }) {
         value={eingabe}
         onChange={(e) => setEingabe(e.target.value)}
       />
-      <Button
-        onClick={() => senden.mutate(eingabe.trim())}
-        disabled={!eingabe.trim() || senden.isPending}
-        className="gap-2"
-      >
-        {senden.isPending
-          ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-          : <Send className="w-4 h-4" />}
-        An den Coach senden
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          onClick={() => senden.mutate(eingabe.trim())}
+          disabled={!eingabe.trim() || senden.isPending}
+          className="gap-2"
+        >
+          {senden.isPending
+            ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            : <Send className="w-4 h-4" />}
+          An den Coach senden
+        </Button>
+        <SpeechInputButton
+          value={eingabe}
+          onResult={setEingabe}
+          disabled={senden.isPending}
+          maxSeconds={120}
+          label="Aufsprechen"
+          listeningLabel="Aufnahme beenden"
+        />
+      </div>
     </div>
   );
 }
