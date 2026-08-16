@@ -10,7 +10,6 @@ import StundenSteckbriefCard from '@/components/unterrichtsstunden/StundenSteckb
 import StundenVerlaufsplanTabelle from '@/components/unterrichtsstunden/StundenVerlaufsplanTabelle';
 import StundenHinweiseFeld from '@/components/unterrichtsstunden/StundenHinweiseFeld';
 import StundeGenerierenButton from '@/components/unterrichtsstunden/StundeGenerierenButton';
-import StundenPhaseEditModal from '@/components/unterrichtsstunden/StundenPhaseEditModal';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /**
@@ -107,25 +106,23 @@ export default function UnterrichtsstundeDetail() {
           ) : (
             <>
               {phasen.map((p, i) => (
-                <StundenPhaseCard key={p.id} phase={p} nummer={i + 1} onEdit={() => setEditPhase(p)} />
+                <StundenPhaseCard
+                  key={p.id}
+                  phase={p}
+                  nummer={i + 1}
+                  stundeId={id}
+                  offen={editPhase === p.id}
+                  onToggle={() => setEditPhase(editPhase === p.id ? null : p.id)}
+                />
               ))}
               <p className="text-xs text-muted-foreground">
-                Über „Bearbeiten“ können Sie jede Phase anpassen, Materialien hochladen und digitale Aufgabenarten verknüpfen.
+                Über „Bearbeiten“ klappt die Phase auf: dort passen Sie Texte an, laden Materialien hoch und verknüpfen digitale Aufgabenarten.
               </p>
             </>
           )}
         </TabsContent>
       </Tabs>
 
-      {editPhase && (
-        <StundenPhaseEditModal
-          key={editPhase.id}
-          phase={editPhase}
-          stundeId={id}
-          open
-          onClose={() => setEditPhase(null)}
-        />
-      )}
     </div>
   );
 }

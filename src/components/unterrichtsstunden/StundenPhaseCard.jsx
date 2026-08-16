@@ -1,13 +1,14 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle } from 'lucide-react';
+import { KeyRound, Clock, Pencil, Paperclip, AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { phasenTypMeta } from '@/lib/stundenPhasen';
+import StundenPhaseEditForm from './StundenPhaseEditForm';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
  */
-export default function StundenPhaseCard({ phase, nummer, onEdit }) {
+export default function StundenPhaseCard({ phase, nummer, stundeId, offen, onToggle }) {
   const meta = phasenTypMeta(phase.typ);
   const diff = phase.differenzierung || {};
   const materialien = phase.material_urls || [];
@@ -34,9 +35,13 @@ export default function StundenPhaseCard({ phase, nummer, onEdit }) {
               {phase.freischalt_code}
             </Badge>
           )}
-          {onEdit && (
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={onEdit}>
-              <Pencil className="w-3.5 h-3.5" /> Bearbeiten
+          {onToggle && (
+            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={onToggle}>
+              {offen ? (
+                <><ChevronUp className="w-3.5 h-3.5" /> Zuklappen</>
+              ) : (
+                <><Pencil className="w-3.5 h-3.5" /> Bearbeiten <ChevronDown className="w-3.5 h-3.5" /></>
+              )}
             </Button>
           )}
         </div>
@@ -82,6 +87,15 @@ export default function StundenPhaseCard({ phase, nummer, onEdit }) {
               {m.name || 'Material'}
             </a>
           ))}
+        </div>
+      )}
+
+      {offen && (
+        <div className="ml-4 sm:ml-8 mt-3 rounded-lg border border-amber-300 bg-amber-50/70 border-l-4 border-l-amber-400 p-4">
+          <p className="text-xs font-semibold text-amber-900 mb-3 uppercase tracking-wide">
+            Arbeitsbereich · Phase {nummer} bearbeiten
+          </p>
+          <StundenPhaseEditForm phase={phase} stundeId={stundeId} onFertig={onToggle} />
         </div>
       )}
     </div>
