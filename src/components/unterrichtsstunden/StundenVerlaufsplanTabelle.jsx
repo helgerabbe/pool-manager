@@ -1,12 +1,13 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { phasenTypMeta } from '@/lib/stundenPhasen';
+import { phasenTypMeta, istDigitalerTyp } from '@/lib/stundenPhasen';
+import StundenPlanKiAufgabeFelder from './StundenPlanKiAufgabeFelder';
 
 /**
  * Verlaufsplan der Stunde (KI-Stunden-Coach): Phase / Zeit / Inhalt &
  * Handlungsschritte / Methode & Sozialform / Material.
  */
-export default function StundenVerlaufsplanTabelle({ verlaufsplan = [] }) {
+export default function StundenVerlaufsplanTabelle({ verlaufsplan = [], stunde = null, plan = null }) {
   const gesamt = verlaufsplan.reduce((s, p) => s + (Number(p.zeit_minuten) || 0), 0);
 
   if (verlaufsplan.length === 0) {
@@ -27,7 +28,8 @@ export default function StundenVerlaufsplanTabelle({ verlaufsplan = [] }) {
         {verlaufsplan.map((p, i) => {
           const meta = phasenTypMeta(p.typ);
           return (
-            <div key={i} className="p-4 grid gap-3 md:grid-cols-[200px_1fr_180px]">
+            <div key={i} className="p-4 space-y-3">
+            <div className="grid gap-3 md:grid-cols-[200px_1fr_180px]">
               <div className="space-y-1">
                 <p className="text-sm font-semibold text-foreground">
                   {i + 1}. {p.phasenname}
@@ -44,6 +46,10 @@ export default function StundenVerlaufsplanTabelle({ verlaufsplan = [] }) {
                 )}
                 {p.material && <p><span className="font-medium">Material: </span>{p.material}</p>}
               </div>
+            </div>
+            {stunde && istDigitalerTyp(p.typ) && (
+              <StundenPlanKiAufgabeFelder stunde={stunde} plan={plan} index={i} />
+            )}
             </div>
           );
         })}

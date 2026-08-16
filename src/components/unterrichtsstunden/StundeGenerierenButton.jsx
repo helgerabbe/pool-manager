@@ -15,8 +15,13 @@ export default function StundeGenerierenButton({ stunde, plan, hatPhasen }) {
   const queryClient = useQueryClient();
   const verlaufsplan = plan?.verlaufsplan || [];
 
+  const [status, setStatus] = useState('');
+  const [meldungen, setMeldungen] = useState([]);
+
   const generieren = useMutation({
     mutationFn: async () => {
+      setMeldungen([]);
+      const katalog = await base44.entities.AktivitaetenKatalog.filter({ is_active: true }, 'name', 200);
       const alte = await base44.entities.StundenSequenz.filter({ stunde_id: stunde.id }, 'reihenfolge', 100);
       for (const p of alte) {
         await base44.entities.StundenSequenz.delete(p.id);
@@ -41,6 +46,34 @@ export default function StundeGenerierenButton({ stunde, plan, hatPhasen }) {
         stundenziel: plan?.steckbrief?.leitziel || stunde.stundenziel || '',
         coach_plan_umgesetzt_am: new Date().toISOString(),
       });
+
+      // ── Digitale Aufgaben mit erstellen (nur wo die Lehrkraft es will) ──
+      const neuePhasen = await base44.entities.StundenSequenz.filter({ stunde_id: stunde.id }, 'reihenfolge', 100);
+      const notizen = [];
+      for (let idx = 0; idx < verlaufsplan.length; idx++) {
+        const p = verlaufsplan[idx];
+        if (p.ki_erstellen !== true) continue;
+        const phase = neuePhasen[idx];
+        const kat = katalog.find((k) => k.name === p.ki_aktivitaet);
+        if (!phase) continue;
+        if (!kat) {
+          notizen.push(`${p.phasenname}: keine Aufgabenart ausgewählt — bitte im Regieblatt ergänzen.`);
+          continue;
+        }
+        setStatus(`Aufgabe für „${p.phasenname}" wird erstellt…`);
+        await base44.entities.StundenSequenz.update(phase.id, { aktivitaet_id: kat.id });
+        const res = await base44.functions.invoke('generateStundenAufgabe', {
+          stunde_id: stunde.id,
+          phase_id: phase.id,
+          hinweis: p.ki_hinweis || '',
+        });
+        const d = res?.data || {};
+        if (!d.success) {
+          notizen.push(`${p.phasenname}: ${d.reason || d.error || 'Aufgabe konnte nicht erstellt werden.'}`);
+        }
+      }
+      setStatus('');
+      setMeldungen(notizen);
     },
     onSuccess: () => {
       setBestaetigen(false);
@@ -55,6 +88,17 @@ export default function StundeGenerierenButton({ stunde, plan, hatPhasen }) {
     <div className="space-y-2">
       {generieren.isError && (
         <p className="text-sm text-destructive">{generieren.error?.message || 'Umsetzung fehlgeschlagen.'}</p>
+      )}
+      {generieren.isPending && status && <p className="text-sm text-muted-foreground">{status}</p>}
+      {meldungen.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-1">
+          <p className="text-xs font-semibold text-amber-900">
+            Diese digitalen Aufgaben müssen Sie im Regieblatt selbst ausarbeiten:
+          </p>
+          {meldungen.map((m, i) => (
+            <p key={i} className="text-xs text-amber-900/90">{m}</p>
+          ))}
+        </div>
       )}
       {hatPhasen && bestaetigen ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 space-y-2">

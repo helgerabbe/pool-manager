@@ -98,7 +98,7 @@ export default function UnterrichtsstundeDetail() {
         {/* Bauanleitung des Coaches — bleibt dauerhaft erhalten */}
         <TabsContent value="coach" className="space-y-4 mt-4">
           <StundenSteckbriefCard steckbrief={plan.steckbrief} />
-          <StundenVerlaufsplanTabelle verlaufsplan={plan.verlaufsplan} />
+          <StundenVerlaufsplanTabelle verlaufsplan={plan.verlaufsplan} stunde={stunde} plan={plan} />
           {(plan.verlaufsplan || []).length > 0 && <StundenHinweiseFeld stunde={stunde} plan={plan} />}
           <StundenCoachPanel stunde={stunde} />
           <StundeGenerierenButton stunde={stunde} plan={plan} hatPhasen={phasen.length > 0} />

@@ -33,6 +33,14 @@ export default async function (req) {
     const verlauf = Array.isArray(stunde.coach_verlauf) ? stunde.coach_verlauf : [];
     const plan = stunde.coach_plan || {};
 
+    // Verfügbare digitale Aufgabenarten — der Coach darf sie den digitalen
+    // Phasen direkt zuordnen (Mit-Erstellung der Aufgabe, MUG 2026-08-16).
+    const katalog = (await base44.asServiceRole.entities.AktivitaetenKatalog
+      .filter({ is_active: true }, 'name', 200)
+      .catch(() => []))
+      .map((k) => `- ${k.name}: ${(k.beschreibung || '').slice(0, 180)}`)
+      .join('\n');
+
     const gespraech = verlauf
       .slice(-12)
       .map((m) => `${m.role === 'user' ? 'LEHRKRAFT' : 'COACH'}: ${m.content}`)
@@ -64,6 +72,12 @@ Deine Aufgabe:
      typ (genau einer dieser Werte): "analog_input" (Input der Lehrkraft ohne Gerät: Vortrag, Gespräch, Tafel), "digital_input" (digital ausgespielter Input, z. B. Lehrvideo), "analog_aufgabe" (Aufgabe ohne digitale Bearbeitung, z. B. Arbeitsblatt, Partnergespräch), "digital_aufgabe" (Aufgabe, die die Schüler digital am Gerät bearbeiten), "analog_sicherung" (Sicherung/Auswertung im Plenum), "digital_sicherung" (Sicherung über eine digitale Aufgabe). Alle "digital_*"-Arten werden später mit einer Aktivität aus dem Pool-Manager verknüpft.
      Beschreibe hier, WAS in der Phase passieren soll — noch KEINE fertigen digitalen Aufgaben ausformulieren.
      Die Summe der Zeiten soll etwa zur angegebenen Dauer passen.
+     NUR bei "digital_*"-Phasen zusätzlich diese drei Felder, wenn die Lehrkraft die Aufgabe erkennbar konkret beschrieben hat:
+       ki_erstellen (true/false): true, wenn aus der Beschreibung klar hervorgeht, welche Aufgabe die Schüler digital bearbeiten sollen — die Aufgabe kann dann später direkt mit erzeugt werden. Sonst false.
+       ki_aktivitaet: der EXAKTE Name einer Aufgabenart aus der folgenden Liste, die zur beschriebenen Aufgabe passt (nur wenn ki_erstellen true ist, sonst leerer String):
+${katalog || '- (keine Aufgabenarten verfügbar)'}
+       ki_hinweis: alle inhaltlichen Angaben der Lehrkraft, die für die Erstellung genau dieser Aufgabe wichtig sind (z. B. Achsenbeschriftungen, Begriffe, Eingrenzungen wie „nur afrikanische Länder"). Kurz und konkret, sonst leerer String.
+     Setze ki_erstellen nur auf true, wenn du dir bei der Aufgabenart sicher bist. Bereits von der Lehrkraft gesetzte Werte dieser drei Felder NICHT verändern.
    - didaktische_hinweise: didaktisch-methodische Hinweise und alles, was sonst nirgendwo hineinpasst (Fließtext mit Absätzen, keine Markdown-Sonderzeichen).
 Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
 
@@ -95,6 +109,9 @@ Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
                     inhalt: { type: 'string' },
                     methode_sozialform: { type: 'string' },
                     material: { type: 'string' },
+                    ki_erstellen: { type: 'boolean' },
+                    ki_aktivitaet: { type: 'string' },
+                    ki_hinweis: { type: 'string' },
                     typ: {
                       type: 'string',
                       enum: [
