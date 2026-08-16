@@ -1,12 +1,13 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { KeyRound, Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users, CheckCircle2, Info } from 'lucide-react';
+import { Clock, Pencil, AlertTriangle, ChevronDown, ChevronUp, Users, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { phasenTypMeta, istDigitalerTyp, istBrianTyp, istBrianVollstaendig } from '@/lib/stundenPhasen';
 import StundenPhaseEditForm from './StundenPhaseEditForm';
 import PhaseRegieText from './PhaseRegieText';
 import StundenPhaseSortierButtons from './StundenPhaseSortierButtons';
 import StundenPhaseArtZeile from './StundenPhaseArtZeile';
+import StundenPhaseCodeToggle from './StundenPhaseCodeToggle';
 
 /**
  * Eine Zeile des Stunden-Regieblatts (Lese-Ansicht, MUG Paket 2).
@@ -66,12 +67,7 @@ export default function StundenPhaseCard({ phase, nummer, anzahl, stunde, stunde
               Vollständig
             </Badge>
           )}
-          {phase.freischalt_code && (
-            <Badge className="font-mono gap-1">
-              <KeyRound className="w-3 h-3" />
-              {phase.freischalt_code}
-            </Badge>
-          )}
+          <StundenPhaseCodeToggle phase={phase} stundeId={stundeId} />
           {onToggle && (
             <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={onToggle}>
               {offen ? (

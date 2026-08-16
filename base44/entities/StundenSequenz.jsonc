@@ -145,6 +145,11 @@
       "type": "string",
       "description": "Dreistelliger Zahlencode, den die Schueler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zufaellig vergeben, pro Stunde eindeutig, fuer die Lehrkraft jederzeit im Regieblatt sichtbar."
     },
+    "code_deaktiviert": {
+      "type": "boolean",
+      "default": false,
+      "description": "Haltepunkt-Steuerung (2026-08-16): true = diese Phase verlangt KEINE Code-Eingabe, die Schueler gehen direkt hinein. Der Code in freischalt_code bleibt gespeichert und wird im Regieblatt nur ausgeblendet (durchgestrichener Schluessel); ein Klick auf den Schluessel schaltet den Haltepunkt wieder ein."
+    },
     "aktivitaet_id": {
       "type": "string",
       "description": "Nur bei digitalen Phasen-Arten ('digital_input', 'digital_aufgabe', 'digital_sicherung'): FK zu AktivitaetenKatalog (welche digitale Aufgabenart aus dem Pool-Manager hinzugezogen wird)."

@@ -56,7 +56,9 @@ export default function StundenPlayer({ stunde, phasen, vorschau = false, katalo
   }
 
   const phase = phasen[index];
-  const brauchtCode = !vorschau && !!phase.freischalt_code && !entsperrt[phase.id];
+  // Haltepunkt: nur Phasen mit AKTIVEM Code verlangen eine Eingabe.
+  const brauchtCode =
+    !vorschau && !!phase.freischalt_code && !phase.code_deaktiviert && !entsperrt[phase.id];
 
   if (brauchtCode) {
     return (
