@@ -67,6 +67,7 @@ export default function StundenPlayer({ stunde, phasen, vorschau = false, katalo
         code={phase.freischalt_code}
         notfallCode={stunde.notfall_code}
         onEntsperrt={() => setEntsperrt((p) => ({ ...p, [phase.id]: true }))}
+        onZurueck={index > 0 ? () => setIndex(index - 1) : null}
       />
     );
   }
