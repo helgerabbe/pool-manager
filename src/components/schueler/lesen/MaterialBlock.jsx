@@ -83,6 +83,14 @@ export default function MaterialBlock({ material = {} }) {
         </div>
       )}
 
+      {mt === 'text' && material.datei_url && (
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <a href={material.datei_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+            Dokument öffnen
+          </a>
+        </div>
+      )}
+
       {mt === 'pdf' && material.datei_url && (
         <div className="rounded-xl border border-border bg-card p-4 text-center">
           <p className="text-sm mb-2">PDF-Dokument</p>
