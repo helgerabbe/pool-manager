@@ -44,17 +44,17 @@ export const ZUGANG_DEFAULT_BY_LERNTYP = Object.freeze({
 export const ZUGANG_META = Object.freeze({
   [LERNPAKET_ZUGANG.STANDARD]: {
     label: 'Standard',
-    cls: 'bg-slate-100 text-slate-700 border-slate-300',
+    cls: 'bg-blue-50 text-blue-700 border-blue-200',
     kurz: 'Der Reihe nach: Input → Übung → Abschluss, jeweils in der angelegten Reihenfolge. Das nächste Element ist bis dahin gesperrt.',
   },
   [LERNPAKET_ZUGANG.FAST_TRACK]: {
     label: 'Fast-Track',
-    cls: 'bg-blue-100 text-blue-700 border-blue-300',
+    cls: 'bg-blue-200 text-blue-900 border-blue-400',
     kurz: 'Freie Bewegung im Lernpaket: Input und Übungen darf der Schüler ansehen oder überspringen – der Abschluss ist aber Pflicht. Er kann also sofort den Abschluss versuchen.',
   },
   [LERNPAKET_ZUGANG.WISSENSSPEICHER]: {
     label: 'Wissensspeicher',
-    cls: 'bg-violet-100 text-violet-700 border-violet-300',
+    cls: 'bg-blue-700 text-white border-blue-800',
     kurz: 'Völlig freie Nutzung: hineinschauen, nachlesen und jederzeit wieder verlassen. Nichts ist Pflicht.',
   },
 });

@@ -13,43 +13,28 @@
  */
 
 import React from 'react';
-import { getAcceptedTypeForAufgabe } from '@/lib/lernpfadeUtils';
+import { getElementArt, ART_FARBEN } from '@/lib/lernpfadFarben';
 
-const ART_META = {
-  lernpaket: {
-    label: 'Lernpaket',
-    cls: 'bg-violet-100 text-violet-800 border-violet-300',
-    title:
-      'Lernpaket — ein Paket aus mehreren Aktivitäten. Passt nur in ein Lernpaketebündel.',
-  },
-  projekt: {
-    label: 'Projekt',
-    cls: 'bg-rose-100 text-rose-800 border-rose-300',
-    title: 'Projektaufgabe (Ebene 3). Passt nur in ein Projektbündel.',
-  },
-  aufgabe: {
-    label: 'Aufgabe',
-    cls: 'bg-sky-100 text-sky-800 border-sky-300',
-    title: 'Einzelne Aufgabe (Ebene 1/2). Passt nur in ein Aufgabenbündel.',
-  },
+// Farben kommen zentral aus lernpfadFarben.js (blau = Lernpaket,
+// orange = Aufgabe, lila = Projekt) – identisch zu Zeile, Bündel und Badge.
+const ART_TITEL = {
+  lernpaket:
+    'Lernpaket (blau) — ein Paket aus mehreren Aktivitäten. Passt nur in ein Lernpaketebündel.',
+  projekt: 'Projektaufgabe (lila, Ebene 3). Passt nur in ein Projektbündel.',
+  aufgabe: 'Einzelne Aufgabe (orange, Ebene 1/2). Passt nur in ein Aufgabenbündel.',
 };
 
 export default function ItemArtBadge({ aufgabe }) {
   if (!aufgabe) return null;
-  const accepted = getAcceptedTypeForAufgabe(aufgabe);
-  const meta =
-    accepted === 'lernpaket'
-      ? ART_META.lernpaket
-      : accepted === 'projekt'
-      ? ART_META.projekt
-      : ART_META.aufgabe;
+  const art = getElementArt(aufgabe);
+  const farbe = ART_FARBEN[art];
 
   return (
     <span
-      className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${meta.cls}`}
-      title={meta.title}
+      className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${farbe.badge}`}
+      title={ART_TITEL[art]}
     >
-      {meta.label}
+      {farbe.label}
     </span>
   );
 }
