@@ -16,8 +16,10 @@ import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 
 /** Versionskennung der Gating-Engine (siehe Spec-Doc).
  *  gating-1.1.0: Sektor-Freischaltung (sektor_freischaltung-Regel +
- *  freischalt_bedingung pro Sektor). */
-export const GATING_ENGINE_VERSION = 'gating-1.1.0';
+ *  freischalt_bedingung pro Sektor).
+ *  gating-1.2.0: Verbindliche Darstellungsregeln (darstellung) — gesperrte
+ *  Elemente werden ausgegraut, nur das aktuelle Element ist farbig. */
+export const GATING_ENGINE_VERSION = 'gating-1.2.0';
 
 export const INITIAL_STATUS = Object.freeze({
   OFFEN: 'offen',
@@ -209,6 +211,46 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
     absolviert: 'Aktiv, sobald ein Test/eine Diagnose absolviert wurde.',
     alle_kinder: 'Bündel sequenziell: aktiv, sobald alle Kinder "erledigt" sind.',
     x_von_y: 'Bündel frei mit Schwelle: aktiv, sobald erforderliche_anzahl Kinder "erledigt" sind.',
+  },
+  darstellung: {
+    description:
+      'Verbindliche visuelle Umsetzung des Gatings (gating-1.2.0). Ziel: Der '
+      + 'Unterschied zwischen sequenzieller und freier Bearbeitung muss auf den '
+      + 'ersten Blick sichtbar sein. In einem sequenziellen Kontext darf NICHT '
+      + 'der gesamte Inhalt gleichwertig-farbig erscheinen, sonst wirkt das '
+      + 'Dashboard überfordernd ("was soll ich zuerst tun?").',
+    gilt_fuer:
+      'Jeden sequenziellen Kontext: Sektor mit modus="sequenziell", Bündel mit '
+      + 'bundle_config.modus="sequenziell" (dort für die Kinder) und die '
+      + 'Aktivitäten innerhalb eines Lernpakets mit lernpaket_modus="sequenziell".',
+    zustaende: {
+      aktiv:
+        'Das erste nicht-erledigte Element: volle Farbigkeit, Icon/Thumbnail in '
+        + 'Originalfarben, deutlich hervorgehoben (z. B. farbiger Rahmen), '
+        + 'anklickbar. Es ist das einzige farbig hervorgehobene offene Element.',
+      erledigt:
+        'Sichtbar und weiterhin anklickbar, aber ruhig dargestellt: gedeckte '
+        + 'Farben plus Häkchen-Symbol. Erledigtes soll den Blick nicht mit dem '
+        + 'aktuellen Element konkurrieren.',
+      gesperrt:
+        'Sichtbar, aber ausgegraut (entsättigt, reduzierte Deckkraft), mit '
+        + 'Schloss-Symbol und NICHT anklickbar. Der Titel bleibt lesbar, damit '
+        + 'die Länge des Weges einschätzbar ist. Ein Klickversuch führt zu keiner '
+        + 'Navigation; optional erscheint der Hinweis "Wird freigeschaltet, wenn '
+        + 'du den vorherigen Schritt abgeschlossen hast".',
+    },
+    uebergang:
+      'Sobald ein Element auf "erledigt" wechselt, wird das nächste Element von '
+      + 'ausgegraut auf farbig-aktiv umgestellt — sichtbar als kleiner '
+      + 'Fortschritts-Moment (kurze Einblend-/Farbanimation erlaubt).',
+    freier_kontext:
+      'Bei modus="frei" gilt diese Ausgrau-Regel NICHT: alle Elemente sind '
+      + 'gleichwertig farbig und jederzeit anklickbar (gewollte Freiheit, z. B. '
+      + 'Lerntyp "Passioniert").',
+    gesperrter_sektor:
+      'Ein per freischalt_bedingung gesperrter Sektor wird als Ganzes ausgegraut '
+      + 'und zugeklappt dargestellt (Schloss + Hinweistext); seine Elemente '
+      + 'werden nicht einzeln aufgelistet.',
   },
   sektor_freischaltung: {
     description:
