@@ -26,16 +26,10 @@ import DashboardToolbar from '@/components/lernpfade/DashboardToolbar';
 // genutzt – siehe `saveIndicator` weiter unten. Nicht entfernen.
 import LernpfadeAufgabenPool from '@/components/lernpfade/LernpfadeAufgabenPool';
 import LernpfadeArchitekt, { LERN_TYPEN } from '@/components/lernpfade/LernpfadeArchitekt';
-import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import ReleaseBlockerModal from '@/components/lernpfade/ReleaseBlockerModal';
 import ReleaseConfirmDialog from '@/components/lernpfade/ReleaseConfirmDialog';
 import DidaktischerGuidePanel from '@/components/lernpfade/DidaktischerGuidePanel';
-import DashboardPreviewModal from '@/components/lernpfade/DashboardPreviewModal';
-import EinfuehrungPreviewModal from '@/components/lernpfade/EinfuehrungPreviewModal';
-import EinstiegsdiagnosePreviewModal from '@/components/lernpfade/EinstiegsdiagnosePreviewModal';
-import DiagnoseQuizPreviewModal from '@/components/lernpfade/DiagnoseQuizPreviewModal';
-import LerntypDiagnosePreviewModal from '@/components/lernpfade/LerntypDiagnosePreviewModal';
-import ThemenfeldEinfuehrungPreviewModal from '@/components/lernpfade/ThemenfeldEinfuehrungPreviewModal';
+import CockpitPreviewModals from '@/components/lernpfade/CockpitPreviewModals';
 import OnboardingTab from '@/components/lernpfade/OnboardingTab';
 import { useLernpfadStatus } from '@/hooks/useLernpfadStatus';
 import { useDashboardSync } from '@/hooks/useDashboardSync';
@@ -54,25 +48,13 @@ import {
   removeSektor,
   moveSektor,
   removeAufgabeFromLernTyp,
-  setBundleConfig,
-  setBundleModus,
-  setItemAktiv,
-  setItemLernpaketZugang,
-  removeBundleAndCascade,
-  getBundleChildren,
-  getAutoFillCandidates,
-  bulkAddItemsToBundle,
 } from '@/lib/lernpfadeUtils';
-import {
-  addArbeitsphaseSektorForThemenfeld,
-  removeOrphanedSektor,
-  removeGhostItem,
-  addMissingItemToBundle,
-} from '@/lib/dashboardDriftResolutions';
-import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
+import { useDashboardBundleHandlers } from '@/hooks/useDashboardBundleHandlers';
+import { useDashboardDriftHandlers } from '@/hooks/useDashboardDriftHandlers';
+import { useCockpitPreviews } from '@/hooks/useCockpitPreviews';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
-import { DASHBOARD_TEMPLATES, getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
+import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 import { buildEffectiveTemplates, getEffectiveTemplateForLerntyp } from '@/lib/dashboardStandardVorlage';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
@@ -83,7 +65,7 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
-import { ladeOnboardingSnapshots, speichereOnboardingSnapshot } from '@/lib/onboardingSnapshots';
+import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
 import { autoAssembleLerntyp, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
