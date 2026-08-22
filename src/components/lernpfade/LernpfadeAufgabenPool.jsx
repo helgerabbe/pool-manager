@@ -20,6 +20,7 @@ import { base44 } from '@/api/base44Client';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
+import { getArtFarbe } from '@/lib/lernpfadFarben';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import { Loader2, Inbox, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -114,6 +115,9 @@ function FilterChip({ group, active, count, onClick }) {
 function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
   const typMeta = getAufgabenTyp(aufgabe.aufgaben_typ);
   const Icon = typMeta.icon;
+  // Farbe folgt der ART des Elements (blau = Lernpaket, orange = Aufgabe,
+  // lila = Projekt) — identisch zu Badges, Bündeln und Sektor-Zeilen.
+  const artFarbe = getArtFarbe(aufgabe);
   const isBuendel = aufgabe.aufgaben_typ === 'buendel';
   const isZwischentest = isBuendel && aufgabe.lernpaket_logik === 'test_only';
   const inlineSuffix = isBuendel ? LERNPAKET_LOGIK_INLINE[aufgabe.lernpaket_logik] : null;
@@ -123,8 +127,8 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
 
   // Zwischentests: Icon-Box dezent rosa (statt Standard-Blau) + sehr leichte
   // Karten-Tönung. Höhe bleibt identisch.
-  const buendelIconBox = isZwischentest ? 'bg-rose-100' : typMeta.color.iconBg;
-  const buendelIconColor = isZwischentest ? 'text-rose-600' : typMeta.color.iconText;
+  const iconBox = isZwischentest ? 'bg-rose-100' : artFarbe.iconBg;
+  const iconColor = isZwischentest ? 'text-rose-600' : artFarbe.iconText;
   const buendelTint = isZwischentest && !isUsed && !isSelected ? 'bg-rose-50/60' : '';
 
   return (
@@ -140,12 +144,12 @@ function AufgabeListItem({ aufgabe, index, isSelected, isUsed, onClick }) {
             isUsed
               ? 'border-border bg-muted/40 opacity-50 cursor-not-allowed'
               : isSelected
-                ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
-                : `border-border ${buendelTint || 'bg-card'} hover:border-primary/30 hover:bg-muted/30`
+                ? `${artFarbe.border} ${artFarbe.bg} shadow-sm`
+                : `border-border ${buendelTint || 'bg-card'} ${artFarbe.hoverBorder} hover:bg-muted/30`
           } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40 bg-card' : ''}`}
         >
-          <div className={`w-6 h-6 rounded ${isBuendel ? buendelIconBox : typMeta.color.iconBg} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
-            <Icon className={`w-3 h-3 ${isBuendel ? buendelIconColor : typMeta.color.iconText}`} />
+          <div className={`w-6 h-6 rounded ${iconBox} flex items-center justify-center shrink-0 ${isUsed ? 'grayscale' : ''}`}>
+            <Icon className={`w-3 h-3 ${iconColor}`} />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-xs font-medium text-foreground truncate leading-snug">
