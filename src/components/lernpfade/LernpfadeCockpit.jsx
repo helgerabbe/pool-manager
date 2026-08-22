@@ -72,7 +72,7 @@ import {
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
-import { DASHBOARD_TEMPLATES, getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
+import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 import { buildEffectiveTemplates, getEffectiveTemplateForLerntyp } from '@/lib/dashboardStandardVorlage';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
@@ -174,7 +174,7 @@ export default function LernpfadeCockpit({
   const [diagnoseQuizSnapshot, setDiagnoseQuizSnapshot] = useState(null);
   // Vorschau der KI-Lerntyp-Diagnose (Brian-Gespräch, 4./letztes Onboarding-Element).
   const [lerntypDiagnosePreviewOpen, setLerntypDiagnosePreviewOpen] = useState(false);
-  const [lerntypDiagnoseSnapshot, setLerntypDiagnoseSnapshot] = useState(null);
+  const [, setLerntypDiagnoseSnapshot] = useState(null);
   // Lehrer-Vorschau des Lernpfad-Bausteins „Einführung in das Themenfeld".
   // Trägt den Instanz-Kontext (Lerntyp + instance_id + themenfeld_id), damit
   // das Modal genau die richtige Snapshot-Instanz vorschaut/überschreibt.
@@ -1224,7 +1224,7 @@ export default function LernpfadeCockpit({
     if (saveState === 'pending') return { icon: Cloud, cls: 'text-muted-foreground', title: 'Änderung registriert…' };
     if (saveState === 'saving') return { icon: Loader2, cls: 'text-muted-foreground animate-spin', title: 'Speichere…' };
     if (saveState === 'saved') return { icon: Check, cls: 'text-emerald-600', title: 'Gespeichert' };
-    if (saveState === 'error') return { icon: CloudOff, cls: 'text-destructive', title: 'Fehler beim Speichern' };
+    if (saveState === 'error') return { icon: CloudOff, cls: 'text-destructive', title: 'Keine Verbindung – Änderungen sind gemerkt und werden automatisch nachgeschickt. Fenster geöffnet lassen.' };
     return null;
   })();
   const SaveIcon = saveIndicator?.icon;
@@ -1285,7 +1285,6 @@ export default function LernpfadeCockpit({
               selectedSystemBaustein={selectedSystemBaustein}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
-              onPreviewAufgabe={setPreviewAufgabe}
             />
           </aside>
 

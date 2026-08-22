@@ -631,18 +631,25 @@ export function setBundleConfig(konfig, lernTyp, sektorId, bundleInstanceId, erf
       if (it.instance_id !== bundleInstanceId) return it;
       if (it.type !== ITEM_TYPE.SYSTEM) return it; // safety
 
-      const { bundle_config: _ignored, ...rest } = it;
+      // WICHTIG: Die übrigen Bündel-Einstellungen (modus, lernpaket_modus)
+      // müssen erhalten bleiben – sonst setzt eine Änderung der Pflichtmenge
+      // den Bearbeitungsmodus des Bündels still zurück (Fix 2026-08-22).
+      const { bundle_config: prevConfig, ...rest } = it;
+      const { erforderliche_anzahl: _prevAnzahl, ...restConfig } = prevConfig || {};
       const num = Number(erforderlicheAnzahl);
-      if (
+      const clearAnzahl =
         erforderlicheAnzahl == null ||
         !Number.isFinite(num) ||
         num < 1 ||
-        childCount === 0
-      ) {
-        return rest; // bundle_config entfernen → Default
-      }
-      const clamped = Math.min(Math.max(1, Math.floor(num)), childCount);
-      return { ...rest, bundle_config: { erforderliche_anzahl: clamped } };
+        childCount === 0;
+      const nextConfig = clearAnzahl
+        ? { ...restConfig }
+        : {
+            ...restConfig,
+            erforderliche_anzahl: Math.min(Math.max(1, Math.floor(num)), childCount),
+          };
+      if (Object.keys(nextConfig).length === 0) return rest;
+      return { ...rest, bundle_config: nextConfig };
     });
     return { ...s, items };
   });
