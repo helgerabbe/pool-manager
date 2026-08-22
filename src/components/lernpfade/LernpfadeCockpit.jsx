@@ -3,10 +3,13 @@
  *
  * Schlanker Orchestrator für Tab 7 „Dashboards" (Lernpfad-Architekt).
  * Hält den Konfigurations-State und delegiert:
- *   - Persistenz       → useDashboardSync
- *   - Drag & Drop      → useDashboardDragAndDrop
- *   - Freigabe/Lock    → useDashboardRelease
- *   - Toolbar-UI       → CockpitActionToolbar
+ *   - Persistenz          → useDashboardSync
+ *   - Drag & Drop         → useDashboardDragAndDrop
+ *   - Freigabe/Lock       → useDashboardRelease
+ *   - Bündel & Elemente   → useDashboardBundleHandlers
+ *   - Drift-Auflösungen   → useDashboardDriftHandlers
+ *   - Vorschau-Fenster    → useCockpitPreviews + CockpitPreviewModals
+ *   - Toolbar-UI          → DashboardToolbar
  *
  * Persistenz-Modell:
  *   - Beim Mount: Snapshot aus einheit.lernpfade_konfiguration laden.
