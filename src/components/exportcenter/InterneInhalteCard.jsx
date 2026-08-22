@@ -8,7 +8,7 @@
  * gezielt „Fehlende erzeugen" oder alles neu generieren.
  */
 import React, { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,6 +36,7 @@ export default function InterneInhalteCard({ einheitId }) {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState(null);
   const [expanded, setExpanded] = useState(false);
+  const queryClient = useQueryClient();
 
   // Einheit laden für lernpfade_konfiguration
   const { data: einheit } = useQuery({
@@ -151,6 +152,9 @@ export default function InterneInhalteCard({ einheitId }) {
       const res = await base44.functions.invoke('generateInterneInhalte', { einheitId, force });
       if (res?.data?.error) throw new Error(res.data.error);
       setResult(res.data);
+      // Status-Anzeige neu laden — sonst zeigt die Karte weiter die alten
+      // „fehlt"-Zahlen, obwohl die Snapshots gerade erzeugt wurden.
+      await queryClient.invalidateQueries({ queryKey: ['schuelerInhaltSnapshots', einheitId] });
       const { erzeugt = 0, uebersprungen = 0, fehler = 0 } = res.data || {};
       toast.success(`${erzeugt} erzeugt, ${uebersprungen} übersprungen${fehler ? `, ${fehler} fehlerhaft` : ''}.`);
     } catch (e) {
