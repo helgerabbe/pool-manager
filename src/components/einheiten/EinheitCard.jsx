@@ -8,8 +8,7 @@ import EinheitBasismodulButton from '@/components/einheiten/EinheitBasismodulBut
 import EinheitVorschlagButton from '@/components/einheiten/EinheitVorschlagButton';
 import EinheitAustauschToggleButton from '@/components/einheiten/EinheitAustauschToggleButton';
 import EinheitWeitergebenButton from '@/components/einheiten/EinheitWeitergebenButton';
-import { format } from 'date-fns';
-import { de } from 'date-fns/locale';
+import EinheitZeitstempel from '@/components/einheiten/EinheitZeitstempel';
 import { base44 } from '@/api/base44Client';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -203,10 +202,7 @@ export default function EinheitCard({
 
             {/* ── Footer: Datum + fest integrierte Aktionen ── */}
             <div className="px-4 py-2 bg-muted/40 flex items-center justify-between gap-2 border-t shrink-0 mt-auto">
-              <span className="text-[11px] text-muted-foreground shrink-0">
-                {(einheit.updated_date || einheit.created_date) &&
-                  format(new Date(einheit.updated_date || einheit.created_date), 'dd. MMM yyyy', { locale: de })}
-              </span>
+              <EinheitZeitstempel einheit={einheit} className="shrink-0" />
               <div className="flex items-center gap-2 flex-wrap justify-end">
                 {istPrivat && (istPrivatBesitzer || darfStruktur) && (
                   <>

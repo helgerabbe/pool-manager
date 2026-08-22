@@ -50,6 +50,8 @@ import EinheitCoverImageSection from '@/components/workspace/EinheitCoverImageSe
 import MoodleCodeSection from '@/components/einheiten/MoodleCodeSection';
 import BasismodulVerwendungSection from '@/components/basismodule/BasismodulVerwendungSection';
 import LernpaketIntegrationEingang from '@/components/workspace/integration/LernpaketIntegrationEingang';
+import EinheitZeitstempel from '@/components/einheiten/EinheitZeitstempel';
+import EinheitAktivitaetenLog from '@/components/workspace/EinheitAktivitaetenLog';
 import { getBasismodulVerwendung } from '@/lib/basismodulVerknuepfung';
 
 /**
@@ -485,6 +487,7 @@ export default function EinheitUebersichtTab({
             <div>
               <h2 className="text-lg font-semibold">Einheit konfigurieren</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
+              <EinheitZeitstempel einheit={einheit} className="mt-1.5" />
             </div>
             <HelpDialog {...EINHEIT_HELP} />
           </div>
@@ -887,6 +890,9 @@ export default function EinheitUebersichtTab({
 
           {/* ── Lernpakete zur Integration (Angebote aus Privatbereichen) ─────── */}
           <LernpaketIntegrationEingang einheit={einheit} />
+
+          {/* ── Letzte Aktivitäten (schlankes Protokoll aus dem AuditLog) ─────── */}
+          <EinheitAktivitaetenLog einheit={einheit} />
           </>)}
           </section>
 
