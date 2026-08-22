@@ -7,7 +7,6 @@ import {
 } from '@/lib/statusLogic';
 import { TrendingUp, Clock, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SyncWarningBanner from '@/components/sync/SyncWarningBanner';
 import { StatusBadge, AmpelBanner } from './SharedUI';
 
 export default function EinheitPanel({
@@ -43,9 +42,6 @@ export default function EinheitPanel({
 
   return (
     <div className="space-y-6">
-      {/* Warn-Banner: Nach Export erneut geändert */}
-      <SyncWarningBanner item={einheit} isBasismodul={false} />
-
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-xl font-bold">{einheit.titel_der_einheit}</h2>

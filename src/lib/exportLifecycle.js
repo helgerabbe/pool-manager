@@ -44,19 +44,19 @@ export const EXPORT_LIFECYCLE_VALUES = Object.freeze([
  * - Im Zustand `published` ist die Einheit wieder editierbar (Versionierung
  *   greift); Änderungen markieren Items als 'modified'.
  */
-export function isContentLocked(status) {
-  return (
-    status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN ||
-    status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-  );
+export function isContentLocked() {
+  // 2026-08-22: Die formale Einheiten-Freigabe wurde abgeschafft — der Export
+  // läuft entkoppelt und jederzeit (GitHub-Push, idempotent). Damit gibt es
+  // keinen Zustand mehr, in dem Inhalte gegen Bearbeitung gesperrt werden.
+  return false;
 }
 
 /**
  * Soll die Einheit in der Übersicht visuell als „gesperrt im Export"
  * markiert werden? (Badge in Einheitenliste etc.)
  */
-export function isVisuallyLocked(status) {
-  return isContentLocked(status);
+export function isVisuallyLocked() {
+  return false;
 }
 
 /**
@@ -64,16 +64,16 @@ export function isVisuallyLocked(status) {
  * Nur solange das Export-Team noch nicht „Export starten" geklickt hat.
  * Nach `export_running` muss die Aufhebung im Export-Center passieren.
  */
-export function canUndoFreigabeInUnit(status) {
-  return status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN;
+export function canUndoFreigabeInUnit() {
+  return false;
 }
 
 /**
  * Darf die Einheit aktuell „final freigegeben" werden?
  * Nur aus dem Draft-Zustand (alle anderen Zustände sind ein Übergang weiter).
  */
-export function canEnterFinalFreigabe(status) {
-  return !status || status === EXPORT_LIFECYCLE_STATUS.DRAFT;
+export function canEnterFinalFreigabe() {
+  return false;
 }
 
 /**

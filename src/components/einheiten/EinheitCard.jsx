@@ -19,7 +19,6 @@ import { getFachFarbe, getFachBadgeStyle } from '@/lib/fachFarben';
 import EinheitAccessBadge from '@/components/ui/EinheitAccessBadge';
 import EinheitMetricsRow from '@/components/einheiten/EinheitMetricsRow';
 import DashboardStatusBadges from '@/components/einheiten/DashboardStatusBadges';
-import EinheitExportLifecycleBadge from '@/components/einheiten/EinheitExportLifecycleBadge';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 import MoodleParameterButton from '@/components/einheiten/MoodleParameterButton';
 
@@ -122,7 +121,6 @@ export default function EinheitCard({
                   </span>
                 </div>
                 <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
-                  <EinheitExportLifecycleBadge einheit={einheit} />
                   {istPrivat && (
                     <Badge className="bg-amber-100 text-amber-800 border border-amber-200 gap-1">
                       <EyeOff className="w-3 h-3" />

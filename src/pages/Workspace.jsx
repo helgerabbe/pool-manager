@@ -8,8 +8,6 @@ import ErrorBoundary from '@/components/errors/ErrorBoundary';
 import { SkeletonWorkspace } from '@/components/loading/SkeletonLoader';
 import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
-import { useEinheitFreigabeStatus } from '@/hooks/useEinheitFreigabeStatus';
-import { EXPORT_LIFECYCLE_LABELS, EXPORT_LIFECYCLE_STATUS } from '@/lib/exportLifecycle';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, Eye } from 'lucide-react';
@@ -22,7 +20,6 @@ import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import LernzieleUebersichtTab from '@/components/workspace/lernziele/LernzieleUebersichtTab';
 import MoodleExportTab from '@/components/workspace/MoodleExportTab';
-import ExportCockpitView from '@/components/export/ExportCockpitView';
 import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAufgabenView';
 import { base44 } from '@/api/base44Client';
@@ -54,8 +51,8 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // Export) sind aus der Einheitenansicht entfernt. Beide Workflows laufen
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
-    ? ['einheit', 'struktur', 'lernziele', 'lernpakete', 'cockpit']
-    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'cockpit', 'brian'];
+    ? ['einheit', 'struktur', 'lernziele', 'lernpakete']
+    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'brian'];
   // Tab-Verschmelzung (2026-07-27): Die früheren Tabs 'aktivitaeten' (4) und
   // 'aufgaben' (5) sind zum Tab 'lernpakete' vereint. Alte Deep-Links werden
   // transparent auf den neuen Tab abgebildet.
@@ -257,18 +254,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // von dieser Logik komplett unberührt.
   const istPrivat = einheit?.sichtbarkeit === 'privat';
 
-  // ── Ring der Macht: Lifecycle-Hard-Lock ─────────────────────────────────
-  // Sobald die Einheit final freigegeben oder im Export ist, sind ALLE
-  // Bearbeitungsknöpfe in jedem Tab weg — keine „Bearbeiten"-Buttons,
-  // kein „Bearbeitungsmodus aktivieren", kein „Mit KI entwerfen", nichts.
-  // Aufhebung läuft ausschließlich über das Freigabe-Cockpit (Tab 8) bzw.
-  // das Export-Center (Moodle-Team).
-  const { data: einheitFreigabe } = useEinheitFreigabeStatus(einheit?.id);
-  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
-  const lifecycleStatus = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
-
+  // 2026-08-22: Der frühere Lifecycle-Hard-Lock ist entfallen. Es gibt keine
+  // formale Einheiten-Freigabe mehr — an einer Einheit kann jederzeit
+  // weitergearbeitet werden, der Export zieht davon unabhängig ein Abbild.
   const kannDieseEinheitBearbeiten = einheit
-    ? (permissions.kannEinheitBearbeiten(einheit.fach) || unitAccess.hasFullAccess) && (!einheitGesperrt || kannSperreIgnorieren) && !isEinheitContentLocked
+    ? (permissions.kannEinheitBearbeiten(einheit.fach) || unitAccess.hasFullAccess) && (!einheitGesperrt || kannSperreIgnorieren)
     : false;
 
   // ── Präsenz ──────────────────────────────────────────────────────────────────
@@ -574,7 +564,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   const autoLockBlockedRef = useRef(null);
   useEffect(() => {
     if (!istPrivat || !einheit?.id || !kannDieseEinheitBearbeiten) return;
-    if (structLocked || isEinheitContentLocked) return;
+    if (structLocked) return;
     if (acquiringStructLock || acquiringTab1Lock || releasingStructLock || releasingTab1Lock) return;
     const blockKey = `${einheit.id}:${activeTab}`;
     (async () => {
@@ -605,7 +595,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       autoLockBlockedRef.current = ok ? null : blockKey;
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [istPrivat, einheit?.id, activeTab, isTab1EditingActive, isStructuralEditingActive, acquiringStructLock, acquiringTab1Lock, releasingStructLock, releasingTab1Lock, kannDieseEinheitBearbeiten, structLocked, isEinheitContentLocked]);
+  }, [istPrivat, einheit?.id, activeTab, isTab1EditingActive, isStructuralEditingActive, acquiringStructLock, acquiringTab1Lock, releasingStructLock, releasingTab1Lock, kannDieseEinheitBearbeiten, structLocked]);
 
   // ── "Paket verschoben"-Notification ──────────────────────────────────────────
   const [movedNotification, setMovedNotification] = useState(null);
@@ -732,19 +722,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
       <LoadingOverlay isVisible={showDashboardEndOverlay} />
       <div className="flex flex-col h-full w-full bg-background overflow-hidden">
 
-        {/* ── Lifecycle-Lock-Banner (Ring der Macht) ───────────────────────── */}
-        {isEinheitContentLocked && (
-          <div className="shrink-0 px-4 py-2.5 bg-red-50 border-b border-red-200 text-xs text-red-900 flex items-center gap-2">
-            <Lock className="w-3.5 h-3.5 shrink-0 text-red-600" />
-            <span>
-              <strong>{EXPORT_LIFECYCLE_LABELS[lifecycleStatus] || 'Einheit final freigegeben'}</strong> – Alle Bearbeitungsfunktionen in allen Tabs sind gesperrt.{' '}
-              {lifecycleStatus === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-                ? 'Die Einheit wird gerade vom Moodle-Team exportiert. Aufhebung nur über das Export-Center.'
-                : 'Hebe die Freigabe im Freigabe-Cockpit (Tab 8) auf, um wieder zu bearbeiten.'}
-            </span>
-          </div>
-        )}
-
         {/* ── Einheit-Gesperrt-Banner ─────────────────────────────────────────── */}
         {einheitGesperrt && !kannSperreIgnorieren && (
           <div className="shrink-0 px-4 py-2.5 bg-red-50 border-b border-red-200 text-xs text-red-800 flex items-center gap-2">
@@ -865,7 +842,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   die Moodle-Status-Zeile von StrukturBoardEmbedded gewandert. */}
               {activeTab === 'dashboards' &&
                 !isStructuralEditingActive &&
-                !isEinheitContentLocked &&
                 (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess) && (
                   <button
                     onClick={handleAcquireDashboardLock}
@@ -901,7 +877,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                        onReleaseLock={istPrivat ? undefined : handleReleaseTab1Lock}
                        isAcquiring={acquiringTab1Lock}
                        isReleasing={releasingTab1Lock}
-                       isEinheitContentLocked={isEinheitContentLocked}
                      />
                    )}
                  </ErrorBoundary>
@@ -920,14 +895,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                             lernziele={zieleFuerEinheit}
                             themenfelder={themenfelder}
                             queryClient={queryClient}
-                            readOnly={!isStructuralEditingActive || isLockedByOther || isEinheitContentLocked}
-                            isStructuralEditingActive={isStructuralEditingActive && !isEinheitContentLocked}
+                            readOnly={!isStructuralEditingActive || isLockedByOther}
+                            isStructuralEditingActive={isStructuralEditingActive}
                             isLockedByOther={isLockedByOther}
                             compact={strukturCompact}
                             onToggleCompact={() => setStrukturCompact(c => !c)}
                             canStartStructEdit={
-                              !isEinheitContentLocked &&
-                              (permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess)
+                              permissions.kannStrukturBearbeiten(einheit?.fach) || unitAccess.hasFullAccess
                             }
                             structLockedByOther={structLocked}
                             structLockedByName={einheit?.structural_lock}
@@ -1080,43 +1054,6 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 />
               </ErrorBoundary>
             </TabsContent>
-
-            {/* ── Tab 8: Freigabe-Cockpit (nicht bei privaten Einheiten) ──────── */}
-            {einheit?.sichtbarkeit !== 'privat' && (
-            <TabsContent value="cockpit" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
-              <div className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6">
-                <ErrorBoundary label="Freigabe-Cockpit">
-                  <ExportCockpitView 
-                    einheitId={selectedEinheitId} 
-                    userRole={rolle}
-                    onNavigateToActivity={(activityId) => {
-                      setTaskWorkshopActivityId(activityId);
-                      handleTabChange('lernpakete');
-                    }}
-                    onNavigateToTask={(ebene, taskId) => {
-                      handleTabChange(ebene === 'ebene12' ? 'ebene2' : 'ebene3');
-                      handleSelect({ type: 'allgemein-aufgabe', id: taskId });
-                    }}
-                    onOpenDashboardArchitekt={(lerntyp, sektorId) => {
-                      // Phase F.2: Deep-Link Tab 8 → Tab 7. Wir schreiben die
-                      // Ziel-Parameter als URL-Params; das LernpfadeCockpit
-                      // liest sie beim Mount aus und scrollt zum Sektor.
-                      const next = new URLSearchParams(searchParams);
-                      if (selectedEinheitId) next.set('einheit', selectedEinheitId);
-                      if (lerntyp) next.set('lerntyp', lerntyp);
-                      if (sektorId) {
-                        next.set('sektor', sektorId);
-                      } else {
-                        next.delete('sektor');
-                      }
-                      setSearchParams(next);
-                      handleTabChange('dashboards');
-                    }}
-                  />
-                </ErrorBoundary>
-              </div>
-            </TabsContent>
-            )}
 
             {/* ── Brian-Export-Tab (NUR private Einheiten) ────────────────────
                 Die Lehrkraft überträgt ihre KI-Tutor-Aufgaben selbst nach

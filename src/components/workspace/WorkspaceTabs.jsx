@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Package, ClipboardList, Target, CheckSquare, Compass, ListChecks, Bot } from 'lucide-react';
+import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -100,7 +100,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
       faqs: [
         { question: 'Wo ist der Unterschied zwischen Paket- und Aktivitäts-Ansicht?', answer: 'Im Lernpaket entscheidest du, WELCHE Aktivitäten es gibt (z. B. „Lückentext" als Übungsform). Klickst du im Baum auf eine Aktivität, füllst du deren konkrete Inhalte (z. B. die einzelnen Lückentext-Sätze mit Lösungen).' },
         { question: 'Was ist eine Mastervorlage?', answer: 'Eine Muster-Aufgabe, die du einmal sauber baust (z. B. „Berechne den Flächeninhalt"). Aus dieser Vorlage erzeugt die KI dir auf Knopfdruck weitere strukturell identische Aufgaben mit anderen Zahlen oder Begriffen.' },
-        { question: 'Wann kann ich ein Lernpaket freigeben?', answer: 'Sobald alle aktiven Aktivitäten des Pakets freigegeben sind. Freigegebene Pakete sind gesperrt und tauchen im Freigabe-Cockpit für den Export auf.' },
+        { question: 'Wann kann ich ein Lernpaket freigeben?', answer: 'Sobald alle aktiven Aktivitäten des Pakets vollständig sind. Freigegebene Pakete sind gegen versehentliche Änderungen gesperrt.' },
         { question: 'Was bedeutet das grüne Schloss?', answer: 'Das Element wurde bewusst freigegeben und ist gegen versehentliche Änderungen gesperrt. Wenn du doch noch etwas ändern willst, musst du die Freigabe erst aktiv zurückziehen.' },
         { question: 'Was ist der Unterschied zu den allgemeinen Aufgaben (Ebene 2)?', answer: 'Die Aufgaben hier sind kurze, automatisch auswertbare Übungen direkt im Lernpaket. Die allgemeinen Aufgaben (Ebene 2) sind die größeren, offenen Transfer-Aufgaben, die vom KI-Tutor begleitet werden.' },
       ],
@@ -172,43 +172,16 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
         { question: 'Was sind die vier Intensitätsstufen?', answer: 'Stufen mit unterschiedlicher Bearbeitungsintensität: Minimalist (Fokus auf Basis sichern), Pragmatiker (will effizient zum Ziel), Ehrgeizig (vollständige Prüfungsvorbereitung), Passioniert (große Freiheit, Schwerpunkt Projekte).' },
         { question: 'Was bedeutet die Sektor-Freischaltung?', answer: 'Pro Sektor legst du fest, ob er sofort zugänglich ist oder erst, nachdem ein anderer Sektor vollständig erledigt wurde. So baust du gestufte Lernpfade, ohne starre Gesamt-Reihenfolge.' },
         { question: 'Was macht „Standard-Raster laden"?', answer: 'Der Guide spielt das didaktisch passende Sektor-Gerüst für die aktuelle Intensitätsstufe ein. Bestehende Aufgaben werden dabei NICHT überschrieben – du bekommst nur die Struktur dazu.' },
-        { question: 'Was bedeutet „Prüfen & freigeben"?', answer: 'Der Pfad wird auf vollständige (grüne) Aufgaben geprüft und als „geprüft" markiert. Danach ist der Pfad gegen Änderungen gesperrt (und erscheint im Freigabe-Cockpit als „Geprüft") – Änderungen sind erst nach „Entsperren" wieder möglich.' },
+        { question: 'Was bedeutet „Prüfen & freigeben"?', answer: 'Der Pfad wird auf vollständige (grüne) Aufgaben geprüft und als „geprüft" markiert. Danach ist der Pfad gegen Änderungen gesperrt – Änderungen sind erst nach „Entsperren" wieder möglich.' },
         { question: 'Verändere ich hier die Aufgaben selbst?', answer: 'Nein. Die Aufgaben aus den Aufgaben-Tabs bleiben unverändert. Du legst hier nur fest, IN WELCHEM Sektor und in welcher Reihenfolge sie für die jeweilige Intensitätsstufe angeboten werden.' },
         { question: 'Warum kann ich nicht bearbeiten?', answer: 'Dieser Tab hat eine eigene strukturelle Sperre. Wenn jemand anderes gerade an diesem Lernpfad arbeitet oder der Pfad bereits geprüft/freigegeben ist, siehst du nur den Lese-Modus.' },
       ],
       docsSlug: 'dashboards-v2',
     },
   },
-  {
-    value: 'cockpit', label: 'Freigabe-Cockpit (Moodle)', icon: CheckSquare, step: 8,
-    help: {
-      title: 'Freigabe-Cockpit – Status auf einen Blick',
-      description: 'Das Freigabe-Cockpit ist eine reine Informationsseite. Es zeigt dir den Zustand der gesamten Einheit auf einen Blick: Strukturboard, Einheits-Informationen, Lernpakete, allgemeine Aufgaben, Projektaufgaben und die vier Arbeitspläne – jeweils mit ihrem Lebenszyklus (Moodle-Sync) und Freigabestatus. Hier wird nichts bearbeitet und nichts exportiert; du erkennst nur sofort, welche Bestandteile fertig sind und welche noch Aufmerksamkeit brauchen. Der eigentliche Export findet im zentralen Export-Center (Hauptmenü) statt.',
-      features: [
-        'Übersicht aller Einheiten-Bestandteile in einer kompakten Tabelle',
-        'Lebenszyklus-Badge pro Element: Neu · Synchron · Geändert (Moodle-Sync-Status)',
-        'Freigabe-Badge (Entwurf / Freigegeben) bei Lernpaketen und Aufgaben',
-        'Bei den Arbeitsplänen zusätzlich der Prüf-Status: „In Bearbeitung" oder „Geprüft" (gesperrt)',
-        'Per Klick auf eine Aufgabe springst du direkt in den passenden Arbeitsbereich',
-      ],
-      faqs: [
-        { question: 'Kann ich hier etwas bearbeiten oder exportieren?', answer: 'Nein. Das Cockpit ist nur eine Statusübersicht. Bearbeitet wird in den Tabs 1–7, der eigentliche Export läuft im zentralen Export-Center (Hauptmenü).' },
-        { question: 'Was bedeutet das Badge „Neu" bzw. „Geändert"?', answer: '„Neu" heißt: noch nie nach Moodle exportiert. „Synchron" heißt: aktuell live in Moodle. „Geändert" heißt: seit dem letzten Export wurde etwas verändert – ein erneuter Export ist nötig.' },
-        { question: 'Was bedeutet „Geprüft" bei einem Arbeitsplan?', answer: '„Geprüft" zeigt, dass der Lernpfad geprüft und gegen Bearbeitung gesperrt wurde. „In Bearbeitung" heißt, dass am Pfad noch Änderungen möglich sind.' },
-        { question: 'Warum sehe ich dieses Cockpit als Fachlehrkraft nicht?', answer: 'Es ist auf Admin und Moodle-Designer / Export-Team beschränkt. Fachlehrkräfte sind mit der Freigabe ihrer Inhalte in den Tabs 3–7 fertig.' },
-      ],
-      docsSlug: 'export-workflow',
-    },
-  },
   ];
 
   return allTabs.filter(tab => {
-    // Tab 8 (Freigabe-Cockpit) nur für Admin und Moodle-Designer.
-    // Bei Basismodulen zusätzlich für die Fachschaftsleitung — sie kontrolliert
-    // die (öffentlichen) Basismodule und übergibt sie an das Export-Center.
-    if (tab.value === 'cockpit') {
-      return showExportTabs || (isBasismodul && istFachschaft);
-    }
     // Tab 7 (Dashboards): für alle Lehrkräfte/Admins sichtbar
     if (tab.value === 'dashboards') return true;
     // Tabs 1 & 2 (Einheit verwalten, Struktur) sind für ALLE sichtbar (auch Fachlehrkräfte)
@@ -248,17 +221,15 @@ const BRIAN_TAB = {
 // Projekt-Aufgaben, keine Dashboards — aber MIT Freigabe-Cockpit, weil sie
 // kollaborativ gepflegt und über das Export-Center exportiert werden.
 // Die Steps werden für die Anzeige frisch von 1 durchnummeriert.
-const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete', 'cockpit'];
+const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete'];
 
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
   const { rolle } = useRBAC();
   let visibleTabs = getVisibleTabs(rolle, isBasismodul);
 
-  // Private Einheiten: kein Freigabe-Cockpit — der Moodle-Weg läuft dort
-  // direkt über den Einheiten-Code auf Tab 1. Dafür bekommen sie den
-  // Brian-Export-Tab, weil die Lehrkraft die Übertragung selbst macht.
+  // Private Einheiten bekommen den Brian-Export-Tab, weil die Lehrkraft die
+  // Übertragung nach Brian.study selbst vornimmt.
   if (istPrivat) {
-    visibleTabs = visibleTabs.filter((t) => t.value !== 'cockpit');
     visibleTabs = [...visibleTabs, BRIAN_TAB];
   }
 

@@ -50,10 +50,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { EXPORT_LIFECYCLE_STATUS, EXPORT_LIFECYCLE_LABELS } from '@/lib/exportLifecycle';
 import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
-import CockpitSyncBadge from '@/components/export/CockpitSyncBadge';
 import DashboardZustandBadge from '@/components/lernpfade/DashboardZustandBadge';
 
 const LERNTYP_META = {
@@ -78,12 +76,12 @@ function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onO
     <div className="max-w-[240px] space-y-1 text-xs leading-snug">
       <p className="font-semibold">{meta.label}</p>
       <p>
-        <span className="font-medium">Prüfung:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
+      <span className="font-medium">Prüfung:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
       </p>
       {locked && (
-        <p className="text-muted-foreground">
-          Dieser Arbeitsplan wurde als fertig markiert. Die Aufgaben bleiben weiterhin bearbeitbar – erst die finale Einheits-Freigabe sperrt alles.
-        </p>
+      <p className="text-muted-foreground">
+        Dieser Arbeitsplan wurde als fertig markiert. Die Aufgaben bleiben weiterhin bearbeitbar.
+      </p>
       )}
     </div>
   );
@@ -139,38 +137,11 @@ function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onO
         )}
       </span>
 
-      {/* Zeile 2: Dashboard-Zustand (Automatisch/Bearbeitet/Freigegeben/
-          Gesperrt) + Moodle-Lebenszyklus-Badge */}
+      {/* Zeile 2: Dashboard-Zustand (Automatisch/Bearbeitet/Geprüft) */}
       <span className="inline-flex items-center gap-1.5 pointer-events-auto">
         <DashboardZustandBadge zustand={zustand} />
-        <CockpitSyncBadge syncStatus={syncStatus || 'new'} />
       </span>
     </button>
-  );
-}
-
-// ── Einheit-Status-Badge ────────────────────────────────────────────────────
-function EinheitStatusBadge({ status }) {
-  const label = EXPORT_LIFECYCLE_LABELS[status] || EXPORT_LIFECYCLE_LABELS.draft;
-  const cls =
-    status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
-      ? 'bg-blue-600 text-white border-transparent'
-      : status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-        ? 'bg-orange-500 text-white border-transparent'
-        : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN
-          ? 'bg-emerald-600 text-white border-transparent'
-          : 'bg-slate-100 text-slate-700 border-slate-200';
-  const Icon =
-    status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING
-      ? Truck
-      : status === EXPORT_LIFECYCLE_STATUS.FINAL_FREIGEGEBEN || status === EXPORT_LIFECYCLE_STATUS.PUBLISHED
-        ? Lock
-        : ShieldOff;
-  return (
-    <span className={`inline-flex items-center gap-1 h-7 px-2 rounded-full border text-[11px] font-semibold ${cls}`}>
-      <Icon className="w-3 h-3" />
-      {label}
-    </span>
   );
 }
 
@@ -225,14 +196,7 @@ export default function DashboardToolbar({
   // Auto-Assembly-Status ALLER Lerntypen (für die Zustand-Badges der Pills).
   autoStatusByLerntyp = {},
 }) {
-  const status = einheitFreigabe?.status || EXPORT_LIFECYCLE_STATUS.DRAFT;
   const dashboards = einheitFreigabe?.dashboards || {};
-
-  // Killer-Switch: Sobald die Einheit final freigegeben oder im Export ist,
-  // werden ALLE Sektor-Pfad-Aktionen UND alle Dashboard-Reset-Aktionen
-  // ausgeblendet. Stattdessen ein klarer Read-Only-Hinweis.
-  const isEinheitContentLocked = einheitFreigabe?.isContentLocked === true;
-  const isExportRunning = status === EXPORT_LIFECYCLE_STATUS.EXPORT_RUNNING;
 
   const lerntypLabel = LERNTYP_META[activeLernTyp]?.label || activeLernTyp;
   // Onboarding ist einheits-global, kein Lerntyp-Dashboard → lerntyp-spezifische
@@ -292,7 +256,7 @@ export default function DashboardToolbar({
             Automatisch erstellt
           </span>
         )}
-        {!istOnboarding && autoStatus === 'auto' && onConfirmAuto && !isEinheitContentLocked && (
+        {!istOnboarding && autoStatus === 'auto' && onConfirmAuto && (
           <Button
             size="sm"
             variant="outline"
@@ -320,23 +284,8 @@ export default function DashboardToolbar({
             </Button>
           )}
 
-          {/* ── Killer-Switch: Lifecycle-Lock-Hinweis ────────────────────
-              Sobald die Einheit final freigegeben oder im Export ist,
-              werden ALLE Sektor-Pfad-Buttons ausgeblendet. Nur die
-              „Freigabe aufheben"-Aktion bleibt zugänglich (und nur dann,
-              wenn nicht 'export_running'). */}
-          {isEinheitContentLocked && (
-            <span className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-full bg-emerald-50 border border-emerald-300 text-[11px] text-emerald-900 font-medium">
-              <Lock className="w-3 h-3" />
-              {isExportRunning
-                ? 'Im Export – alle Bearbeitungen gesperrt'
-                : 'Final freigegeben – alle Bearbeitungen gesperrt'}
-            </span>
-          )}
-
-          {/* Aktiver Pfad: Prüfen & freigeben / Entsperren — NUR sichtbar,
-              solange die Einheit nicht final ist. */}
-          {!istOnboarding && !isEinheitContentLocked && !istPfadGesperrt && darfFreigeben && (
+          {/* Aktiver Pfad: Prüfen & freigeben / Entsperren */}
+          {!istOnboarding && !istPfadGesperrt && darfFreigeben && (
             <div className="inline-flex items-center gap-1">
               <Button
                 size="sm"
@@ -349,27 +298,23 @@ export default function DashboardToolbar({
                 Arbeitsplan als geprüft markieren
               </Button>
               <InfoHint title="Arbeitsplan als geprüft markieren">
-                Markiert den Lernpfad „{lerntypLabel}" als fertig geprüft. Das ist nur ein Status – die Aufgaben bleiben weiterhin bearbeitbar. Erst wenn alle 4 Arbeitspläne geprüft sind und du „Einheit final freigeben" klickst, werden alle Inhalte gesperrt.
+                Markiert den Lernpfad „{lerntypLabel}" als fertig geprüft. Das ist nur ein Status – die Aufgaben bleiben jederzeit bearbeitbar, und der Export zieht unabhängig davon immer den aktuellen Stand.
               </InfoHint>
             </div>
           )}
-          {!istOnboarding && !isEinheitContentLocked && istPfadGesperrt && darfEntsperren && (
+          {!istOnboarding && istPfadGesperrt && darfEntsperren && (
             <Button
               size="sm"
               variant="outline"
               onClick={onUnlockPath}
               disabled={pfadStatusBusy}
               className="gap-1.5 h-7 text-[11px] px-2.5 border-amber-300 text-amber-700 hover:bg-amber-50"
-              title={`Der Arbeitsplan „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Erst „Einheit final freigeben" sperrt alle Aufgaben, bis der Export abgeschlossen ist. Hier nimmst du nur die Prüf-Markierung zurück.`}
+              title={`Der Arbeitsplan „${lerntypLabel}" wurde als geprüft markiert – die Aufgaben sind dadurch NICHT gesperrt und können weiter bearbeitet werden. Hier nimmst du nur die Prüf-Markierung zurück.`}
             >
               {pfadStatusBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCcw className="w-3 h-3" />}
               Prüfung zurücknehmen
             </Button>
           )}
-
-          {/* Hinweis: „Einheit final freigeben" / „Freigabe aufheben" sind
-              ins Freigabe-Cockpit (Tab 9) umgezogen – dort, wo der
-              Gesamtstatus der Einheit sichtbar ist. */}
 
           {/* Bearbeitung beenden */}
           {isStructuralEditingActive && onEndEditing && (
@@ -455,15 +400,12 @@ export default function DashboardToolbar({
             active={activeLernTyp === lt}
             locked={!!dashboards[lt]}
             zustand={
-              isEinheitContentLocked
-                ? 'gesperrt'
-                : dashboards[lt]
-                  ? 'freigegeben'
-                  : autoStatusByLerntyp?.[lt] === 'auto'
-                    ? 'automatisch'
-                    : 'bearbeitet'
+              dashboards[lt]
+                ? 'freigegeben'
+                : autoStatusByLerntyp?.[lt] === 'auto'
+                  ? 'automatisch'
+                  : 'bearbeitet'
             }
-            syncStatus={dashboardSyncByLerntyp[lt]}
             onClick={() => onActiveLernTypChange?.(lt)}
             // Direkthilfe: erst auf DIESEN Lerntyp wechseln, dann den Guide
             // öffnen — so trifft „Auf Standard zurücksetzen" immer genau das
