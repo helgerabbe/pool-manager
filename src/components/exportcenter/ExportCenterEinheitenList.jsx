@@ -114,6 +114,27 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
   // Moodle-Sync-Status pro Einheit (new / in_sync / out_of_sync).
   const syncStatusMap = useEinheitenMoodleSyncStatus(filtered);
 
+  // Gruppierung nach Fach: Fächer alphabetisch, innerhalb eines Fachs
+  // nach Jahrgangsstufe und dann nach Titel sortiert.
+  const gruppen = useMemo(() => {
+    const byFach = new Map();
+    for (const e of filtered) {
+      const fach = e.fach || 'Ohne Fach';
+      if (!byFach.has(fach)) byFach.set(fach, []);
+      byFach.get(fach).push(e);
+    }
+    return [...byFach.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0], 'de'))
+      .map(([fach, items]) => ({
+        fach,
+        items: items.sort(
+          (a, b) =>
+            (Number(a.jahrgangsstufe) || 0) - (Number(b.jahrgangsstufe) || 0) ||
+            (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de')
+        ),
+      }));
+  }, [filtered]);
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Suche */}
@@ -141,8 +162,18 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
             Keine Einheiten gefunden.
           </div>
         ) : (
-          <ul className="divide-y divide-border">
-            {filtered.map((e) => {
+          gruppen.map((gruppe) => (
+            <div key={gruppe.fach}>
+              <div className="sticky top-0 z-10 px-3 py-1.5 bg-muted/80 backdrop-blur-sm border-y border-border flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wide text-muted-foreground truncate">
+                  {gruppe.fach}
+                </span>
+                <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                  {gruppe.items.length}
+                </span>
+              </div>
+              <ul className="divide-y divide-border">
+                {gruppe.items.map((e) => {
               const meta =
                 STATUS_META[e.export_lifecycle_status] ||
                 STATUS_META[EXPORT_LIFECYCLE_STATUS.DRAFT];
@@ -220,9 +251,11 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
                     </div>
                   </button>
                 </li>
-              );
-            })}
-          </ul>
+                  );
+                })}
+              </ul>
+            </div>
+          ))
         )}
       </div>
     </div>
