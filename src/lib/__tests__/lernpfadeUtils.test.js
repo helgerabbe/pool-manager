@@ -12,7 +12,6 @@
  * Abgedeckte Definition-of-Done-Punkte:
  *   T1  Lazy Migration: Alte aufgaben_ids-Sektoren werden zu items normalisiert.
  *   T2  Anti-Duplikate: getUsedAufgabenIds liefert nur type === 'aufgabe' zurück.
- *   T3  Move/Insert: Reihenfolge nach Reorder/Insert/Move stimmt.
  */
 
 import {
@@ -192,34 +191,6 @@ describe('Anti-Duplikat-Logik (System-Bausteine ignoriert)', () => {
     const next = removeAufgabeFromLernTyp(tricky, 'pragmatiker', 'collision');
     expect(next.pragmatiker[0].items).toEqual([{ type: 'system', ref_id: 'collision' }]);
   });
-});
-
-// ─────────────────────────────────────────────────────────────────────────
-// T3 – Move/Insert: Reihenfolge bleibt korrekt
-// ─────────────────────────────────────────────────────────────────────────
-describe('Reihenfolge bei Move/Insert', () => {
-  const baseKonfig = () =>
-    makeKonfig({
-      pragmatiker: [
-        {
-          sektor_id: 'sec_1',
-          titel: 'A',
-          modus: 'sequenziell',
-          items: [
-            { type: 'aufgabe', ref_id: 'a1' },
-            { type: 'aufgabe', ref_id: 'a2' },
-            { type: 'aufgabe', ref_id: 'a3' },
-          ],
-        },
-        {
-          sektor_id: 'sec_2',
-          titel: 'B',
-          modus: 'sequenziell',
-          items: [{ type: 'aufgabe', ref_id: 'b1' }],
-        },
-      ],
-    });
-
 });
 
 // ─────────────────────────────────────────────────────────────────────────
