@@ -130,7 +130,7 @@ export function buildAirGapBulkPlan({
   // Records `injection_points.back_targets` tragen.
   const structurePayloadForNav = buildStructurePayload({
     einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-    katalogById, allgemeineAufgaben, systemBausteine,
+    katalogById, allgemeineAufgaben, systemBausteine, inhaltSnapshots,
     systemContextHash, uiConfigHash,
   });
   const navigationContextByRefId = extractNavigationContextByRefId(

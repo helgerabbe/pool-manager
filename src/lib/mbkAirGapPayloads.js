@@ -31,6 +31,7 @@
 
 import { getSektorTypLabel } from '@/lib/sektorTypen';
 import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGating';
+import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboardingPayload';
 
 /**
  * Versionskennung der Air-Gap-Payload-Engine.
@@ -620,87 +621,8 @@ const EINHEIT_ARBEITSUMGEBUNG_CONTRACT = {
     + 'SCORM-Bau einweben — das gehört alles in die Portal-Schicht.',
 };
 
-const ONBOARDING_CONTRACT = {
-  was_ist_das:
-    'Jede Einheit hat eine einheits-GLOBALE Orientierungs-/Onboarding-Phase, '
-    + 'die dem Schüler VOR der Wahl eines der vier Lerntyp-Dashboards '
-    + '(minimalist/pragmatiker/ehrgeizig/passioniert) angezeigt wird. Sie ist '
-    + 'bewusst NICHT Teil der Dashboards/Lernpfade, sondern eine eigene, allen '
-    + 'vier Dashboards vorgeschaltete Einstiegsseite der Einheit. Früher war '
-    + 'diese Phase 4× redundant in jedem Dashboard — jetzt existiert sie genau '
-    + 'einmal pro Einheit.',
-  ablauf:
-    'Reihenfolge der Schüleransicht: 1) Vorstellung der Einheit (Titel, Fach, '
-    + 'Jahrgang, Gesamtziele). 2) Die drei Onboarding-Elemente (siehe '
-    + 'elemente). 3) Erst danach wählt der Schüler sein Dashboard und startet '
-    + 'den eigentlichen Lernpfad. Die Onboarding-Inhalte werden EINMAL beim '
-    + 'Bauen festgelegt (Snapshot) und NICHT bei jedem Schülerklick neu '
-    + 'generiert.',
-  elemente: [
-    {
-      key: 'einfuehrung',
-      titel: 'Kurze Einführung in die Einheit',
-      zweck:
-        'Motivierender, schülergerechter Einstieg: worum geht es in dieser '
-        + 'Einheit, warum ist das relevant. Struktur (titel, intro, '
-        + 'abschnitte[], optional bild). Reine Information, keine Bewertung.',
-    },
-    {
-      key: 'fragenblock',
-      titel: 'Freiwilliger Selbsteinschätzungs-Fragenblock',
-      zweck:
-        'FREIWILLIGE Selbsteinschätzung des Schülers (kein Test, keine '
-        + 'Wertung). Hilft dem Schüler, seinen eigenen Stand/seine Motivation '
-        + 'einzuordnen. Struktur (titel, intro, fragen[], hinweis).',
-    },
-    {
-      key: 'einstiegsdiagnose',
-      titel: 'Einstiegsdiagnose (Wissens-Quiz)',
-      zweck:
-        'Multiple-Choice-Wissensquiz zum Vorwissen für diese Einheit. Dient '
-        + 'der Standortbestimmung des Schülers vor dem Start. Kann später eine '
-        + 'Dashboard-/Lerntyp-Empfehlung speisen.',
-    },
-    {
-      key: 'lerntyp_diagnose',
-      titel: 'KI-Lerntyp-Diagnose (Brian-Gespräch)',
-      zweck:
-        'IMMER das LETZTE Element der Orientierungsphase. Wenn der Schüler '
-        + 'nach den vorherigen Elementen weiterhin unsicher ist, welcher der '
-        + 'vier Lerntypen zu ihm passt, kann er mit dem KI-Lernbegleiter Brian '
-        + 'sprechen. Struktur (titel, intro, gespraechs_leitfaden[], hinweis). '
-        + 'Brian stellt die Leitfragen und spricht am Ende eine Empfehlung aus.',
-    },
-  ],
-  hinweis_fuer_mbk:
-    'Baue die Orientierungsphase als EINE, allen vier Dashboards '
-    + 'vorgeschaltete Einstiegsseite der Einheit (nicht pro Dashboard '
-    + 'wiederholen). Die konkreten Inhalte der drei Elemente stehen in '
-    + 'Payload 2 unter `einheit.onboarding`. Fehlt dort ein Element (null), '
-    + 'wurde es von der Lehrkraft noch nicht erzeugt und darf NICHT erfunden '
-    + 'werden.',
-};
-
-/**
- * Normalisiert den Onboarding-Snapshot der Einheit für Payload 2.
- *
- * Liest `Einheiten.onboarding_konfiguration` (siehe Entity-Schema + Tab 8,
- * 5. Pill „Onboarding") und reicht die drei festen Elemente 1:1 durch.
- * Jedes Element ist `null`, solange es die Lehrkraft nicht erzeugt/gespeichert
- * hat — die MBK darf fehlende Elemente NICHT erfinden (siehe
- * ONBOARDING_CONTRACT.hinweis_fuer_mbk).
- */
-function buildOnboardingForStructure(konfig) {
-  const k = konfig && typeof konfig === 'object' ? konfig : {};
-  const obj = (v) => (v && typeof v === 'object' ? v : null);
-  return {
-    einfuehrung: obj(k.einfuehrung),
-    fragenblock: obj(k.fragenblock),
-    einstiegsdiagnose: obj(k.einstiegsdiagnose),
-    lerntyp_diagnose: obj(k.lerntyp_diagnose),
-    generiert_am: nullable(k.generiert_am),
-  };
-}
+/* ONBOARDING_CONTRACT + buildOnboardingForStructure liegen in
+   @/lib/mbkOnboardingPayload (airgap-1.18.0, oben importiert). */
 
 /**
  * Erkennt Platzhalter-System-Bausteine (`sys_platzhalter_*`).
@@ -1197,6 +1119,7 @@ export function buildStructurePayload({
   katalogById = new Map(),
   allgemeineAufgaben = [],
   systemBausteine = [],
+  inhaltSnapshots = [],
   systemContextHash = null,
   uiConfigHash = null,
   nowIso = null,
@@ -1531,7 +1454,7 @@ export function buildStructurePayload({
       // airgap-1.10.0: Konkrete Inhalte der einheits-globalen Orientierungs-/
       // Onboarding-Phase (Snapshot aus Einheiten.onboarding_konfiguration).
       // Der generische Vertrag dazu steht in Payload 1 (`onboarding_contract`).
-      onboarding: buildOnboardingForStructure(einheit?.onboarding_konfiguration),
+      onboarding: buildOnboardingForStructure(einheit?.onboarding_konfiguration, inhaltSnapshots),
       // airgap-1.12.0: Update-Lifecycle-Informationen für die MBK.
       // Effektive Strategie = override (Export-Center) > Strategie (Fachschaftsleitung).
       update_strategy: nullable(einheit?.update_strategy),

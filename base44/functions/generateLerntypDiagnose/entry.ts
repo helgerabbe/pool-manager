@@ -85,6 +85,7 @@ ${JSON.stringify(kontext, null, 2)}
 
 TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT verhandelbar):
 - 4 bis 6 Leitfragen für das Brian-Gespräch.
+- Zusätzlich die vier Brian.study-Übergabefelder (brian_uebergabe): dialog_name, learner_instruction (schülersichtbar), system_instruction (interne Anweisung an Brian, enthält die Leitfragen und die vier Intensitätsstufen), completion_rule.
 - Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.${verfeinerungBlock}`;
 
     const result = await base44.integrations.Core.InvokeLLM({
@@ -107,8 +108,19 @@ TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT
             },
           },
           hinweis: { type: 'string', description: 'Kurzer Abschluss-Hinweis: Brian gibt nur eine Empfehlung, die Entscheidung bleibt beim Schüler.' },
+          brian_uebergabe: {
+            type: 'object',
+            description: 'Die vier Übergabefelder für Brian.study (identisches Format wie bei Brian-Aufgaben).',
+            properties: {
+              dialog_name: { type: 'string', description: 'Übergabefeld 1: kurzer Dialogname in Brian.study (mit Einheitstitel).' },
+              learner_instruction: { type: 'string', description: 'Übergabefeld 2: schülersichtbare Anweisung — was passiert hier, wozu, „du"-Ansprache, kurz.' },
+              system_instruction: { type: 'string', description: 'Übergabefeld 3: NICHT schülersichtbare Anweisung für Brian: Rolle, die vier Intensitätsstufen mit Merkmalen, die Leitfragen der Reihe nach stellen, Sprache, am Ende genau eine Stufe begründet empfehlen und klarstellen, dass der Schüler frei entscheidet.' },
+              completion_rule: { type: 'string', description: 'Übergabefeld 4: Wann ist der Dialog beendet?' },
+            },
+            required: ['dialog_name', 'learner_instruction', 'system_instruction', 'completion_rule'],
+          },
         },
-        required: ['titel', 'intro', 'gespraechs_leitfaden'],
+        required: ['titel', 'intro', 'gespraechs_leitfaden', 'brian_uebergabe'],
       },
     });
 

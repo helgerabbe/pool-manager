@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import PreviewActionBar from './preview/PreviewActionBar';
+import BrianUebergabeFelder from './BrianUebergabeFelder';
 
 export default function LerntypDiagnosePreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, onUebernehmen,
@@ -57,6 +58,7 @@ export default function LerntypDiagnosePreviewModal({
       intro: diagnose.intro,
       gespraechs_leitfaden: diagnose.gespraechs_leitfaden || [],
       hinweis: diagnose.hinweis || '',
+      brian_uebergabe: diagnose.brian_uebergabe || null,
     });
     onOpenChange(false);
   };
@@ -148,6 +150,10 @@ export default function LerntypDiagnosePreviewModal({
                       <p className="text-xs text-slate-500">{diagnose.hinweis}</p>
                     </div>
                   )}
+
+                  {/* Die vier Brian-Übergabefelder — das eigentlich Wichtige
+                      an diesem Element, denn das Gespräch läuft in Brian. */}
+                  <BrianUebergabeFelder uebergabe={diagnose.brian_uebergabe} />
                 </div>
               )}
             </div>

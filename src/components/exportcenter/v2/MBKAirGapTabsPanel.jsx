@@ -275,11 +275,11 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     () =>
       buildStructurePayload({
         einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten,
-        katalogById, allgemeineAufgaben, systemBausteine,
+        katalogById, allgemeineAufgaben, systemBausteine, inhaltSnapshots,
         systemContextHash: currentHash,
         uiConfigHash: currentUiHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, systemBausteine, currentHash, currentUiHash]
+    [einheit, themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById, allgemeineAufgaben, systemBausteine, inhaltSnapshots, currentHash, currentUiHash]
   );
   const buildStructure = () => structurePayload;
 
