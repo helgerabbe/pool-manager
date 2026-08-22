@@ -225,12 +225,32 @@ function MultiSelectField({ value, onChange, label, options }) {
 }
 
 // File-Upload Handler (nutzt Base44 SDK)
+// `accept` ist im Datei-Dialog nur ein Filter-Vorschlag — wer im Dialog auf
+// „Alle Dateien" umstellt, kann z. B. ein PDF in ein Bild-Feld laden (passierte
+// real bei Kompaktwissen-Grafiken). Deshalb prüfen wir den MIME-Typ hier
+// zusätzlich hart, bevor überhaupt hochgeladen wird.
+const ERWARTETE_ART = {
+  'image/*': { prefix: 'image/', name: 'ein Bild (JPG, PNG, WebP)' },
+  'audio/*': { prefix: 'audio/', name: 'eine Audio-Datei (MP3, M4A, WAV)' },
+};
+
 function FileField({ value, onChange, label, required, accept }) {
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const erwartet = ERWARTETE_ART[accept];
+    if (erwartet && !file.type?.startsWith(erwartet.prefix)) {
+      toast.error(
+        `„${file.name}" passt hier nicht: In dieses Feld gehört ${erwartet.name}. `
+        + 'Dokumente wie PDFs hinterlegst du stattdessen als Material.'
+      );
+      e.target.value = '';
+      return;
+    }
+
     setIsUploading(true);
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -261,7 +281,13 @@ function FileField({ value, onChange, label, required, accept }) {
         <label className={`flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-dashed cursor-pointer transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : 'border-border hover:border-primary/40 hover:bg-muted/30'}`}>
           <Upload className="w-5 h-5 text-muted-foreground" />
           <span className="text-xs text-muted-foreground text-center">
-            {isUploading ? 'Wird hochgeladen…' : 'PDF oder Word-Dokument auswählen'}
+            {isUploading
+              ? 'Wird hochgeladen…'
+              : accept === 'image/*'
+                ? 'Bild auswählen (JPG, PNG, WebP)'
+                : accept === 'audio/*'
+                  ? 'Audio-Datei auswählen (MP3, M4A, WAV)'
+                  : 'PDF oder Word-Dokument auswählen'}
           </span>
           <input
             type="file"
