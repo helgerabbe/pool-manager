@@ -69,7 +69,17 @@ Deno.serve(async (req) => {
       lernpakete = [],
       bisheriger_entwurf,
       nachbesserung,
+      loesung_datei_url,
     } = body;
+
+    // Hochgeladene Musterlösung (PDF/Bild) wird von der KI direkt mitgelesen.
+    // Word-Dateien kann das Modell nicht öffnen — sie bleiben reines Archiv.
+    const lesbareDatei =
+      typeof loesung_datei_url === 'string'
+        && /^https?:\/\//i.test(loesung_datei_url)
+        && /\.(pdf|png|jpe?g|gif|webp)(\?|$)/i.test(loesung_datei_url)
+        ? loesung_datei_url
+        : null;
 
     if (!aufgabenstellung?.trim()) {
       return Response.json(
@@ -101,6 +111,12 @@ Deno.serve(async (req) => {
           nachbesserung: nachbesserung || '',
           lernziele: lernzielContext,
           lernpakete: lernpaketContext,
+          vorhandene_loesung_als_datei: lesbareDatei
+            ? 'Der Lehrkraft liegt eine fertige Musterlösung als Datei vor (angehängt). '
+              + 'Werte sie aus und baue den Erwartungshorizont auf DIESER Lösung auf — '
+              + 'übernimm die dort genannten Inhalte, Lösungswege und Kriterien und '
+              + 'erfinde nichts, was ihr widerspricht.'
+            : null,
           anforderung: isRevision
             ? 'Überarbeite den bisherigen Erwartungshorizont gemäß der Nachbesserung. Behalte alles bei, was nicht explizit geändert werden soll.'
             : 'Erstelle einen detaillierten, strukturierten Erwartungshorizont mit inhaltlichen Kriterien, Umfang und Struktur, Methoden und Prozess, Qualitätsmerkmalen sowie Lernziel-Bezug.',
@@ -111,6 +127,7 @@ Deno.serve(async (req) => {
     const generatedText = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: JSON.stringify(messages),
       model: 'automatic',
+      ...(lesbareDatei ? { file_urls: [lesbareDatei] } : {}),
     });
 
     if (!generatedText || typeof generatedText !== 'string') {

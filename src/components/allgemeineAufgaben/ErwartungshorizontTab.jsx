@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertCircle, Sparkles, Loader2, Save, HelpCircle } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
+import ErwartungshorizontDateiFeld from '@/components/allgemeineAufgaben/ErwartungshorizontDateiFeld';
 import { toast } from 'sonner';
 
 export default function ErwartungshorizontTab({
@@ -67,6 +68,7 @@ export default function ErwartungshorizontTab({
           title: lz.title
         })),
         lernpakete: [],
+        loesung_datei_url: aufgabe.erwartungshorizont_datei_url || null,
       });
 
       if (response.data?.erwartungshorizont) {
@@ -99,6 +101,7 @@ export default function ErwartungshorizontTab({
         lernpakete: [],
         bisheriger_entwurf: editText,
         nachbesserung: refinementText,
+        loesung_datei_url: aufgabe.erwartungshorizont_datei_url || null,
       });
       if (response.data?.erwartungshorizont) {
         setEditText(response.data.erwartungshorizont);
@@ -227,6 +230,19 @@ export default function ErwartungshorizontTab({
             </Button>
           )}
         </div>
+
+        {/* Vorhandene Lösung als Datei (PDF, Word, Bild, Screenshot) */}
+        <ErwartungshorizontDateiFeld
+          fileUrl={aufgabe.erwartungshorizont_datei_url}
+          fileName={aufgabe.erwartungshorizont_datei_name}
+          disabled={!kannBearbeiten}
+          onChange={({ url, name }) =>
+            updateMutation.mutate({
+              erwartungshorizont_datei_url: url || null,
+              erwartungshorizont_datei_name: name || null,
+            })
+          }
+        />
 
         {/* Textarea */}
         <div className="space-y-2">

@@ -223,6 +223,14 @@
     "erwartungshorizont": {
       "type": "string"
     },
+    "erwartungshorizont_datei_url": {
+      "type": "string",
+      "description": "Optionale hochgeladene Musterloesung/Erwartungshorizont-Datei (PDF, Word, Bild, Screenshot). PDFs und Bilder werden bei der KI-Generierung des Erwartungshorizonts mitgelesen (2026-08-22)."
+    },
+    "erwartungshorizont_datei_name": {
+      "type": "string",
+      "description": "Urspruenglicher Dateiname der hochgeladenen Erwartungshorizont-Datei."
+    },
     "projekt_ablauf_beschreibung": {
       "type": "string",
       "description": "Projektaufgaben (Ebene 3, 2026-08-12): NICHT schuelersichtbare Beschreibung des geplanten Projekt-Ablaufs fuer die KI. Die Lehrkraft erklaert hier, wie sie sich den Ablauf der Projektarbeit vorstellt (Zwischenschritte, Reihenfolge, was die Schueler in welchem Schritt tun sollen), damit Brian die Schueler Schritt fuer Schritt durch das Projekt fuehren kann. Gepflegt im Tab 'Abgabe & Guetekriterien'; fliesst in generateBrianSegments in die System-Anweisung ein."
