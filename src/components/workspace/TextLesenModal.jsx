@@ -20,6 +20,7 @@ import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGenerat
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
 import KompaktwissenGrafikFeld from '@/components/workspace/KompaktwissenGrafikFeld';
+import KompaktwissenVorlageBox from '@/components/workspace/KompaktwissenVorlageBox';
 import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
 
 import ReleasedLockedBanner from '@/components/release/ReleasedLockedBanner';
@@ -370,6 +371,14 @@ export default function TextLesenModal({
             // Kompaktwissen: optionale Übersichtsgrafik – hochladen, einfügen
             // oder per KI aus dem Kompaktwissen-Text erstellen lassen.
             if (isKompaktwissen) {
+              out.push(
+                <KompaktwissenVorlageBox
+                  key="__kompaktwissen_vorlage__"
+                  vorlage={fieldValues.text_vorlage || ''}
+                  disabled={isSaving || exportLocked}
+                  onRestore={(val) => handleFieldChange('text', val)}
+                />
+              );
               out.push(
                 <KompaktwissenGrafikFeld
                   key="__kompaktwissen_grafik__"

@@ -159,7 +159,15 @@ export default async function(req) {
     }
 
     // Ergebnis an der Aktivität persistieren (Aufgabentext bleibt erhalten).
-    const newFieldValues = { ...(activity.field_values || {}), inhalt_typ: 'text', text };
+    // Die selbst geschriebene Vorarbeit der Lehrkraft wird NICHT überschrieben,
+    // sondern beim ersten KI-Durchlauf in 'text_vorlage' gesichert (2026-08-22).
+    const bisherigeVorlage = typeof eigeneFv.text_vorlage === 'string' ? eigeneFv.text_vorlage.trim() : '';
+    const newFieldValues = {
+      ...(activity.field_values || {}),
+      inhalt_typ: 'text',
+      text,
+      ...(!bisherigeVorlage && eigenerText ? { text_vorlage: eigenerText } : {}),
+    };
     await base44.entities.LernpaketPhaseAktivitaet.update(activity.id, {
       field_values: newFieldValues,
       is_complete: true,
