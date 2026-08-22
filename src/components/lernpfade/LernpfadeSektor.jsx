@@ -27,23 +27,15 @@ import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
 import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
 import ItemArtBadge from '@/components/lernpfade/ItemArtBadge';
+import LernpaketZugangBadge from '@/components/lernpfade/LernpaketZugangBadge';
+import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
 import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
 import SektorDriftBadge from '@/components/lernpfade/SektorDriftBadge';
 
-// Dynamische Lernpaket-Variante je nach Lerntyp ("Chamäleon-Logik").
-// Nur reguläre Lernpakete (buendel) zeigen ein Varianten-Label;
-// Zwischentests (test_only) sind statisch und bekommen keines.
-const LERNTYP_VARIANTE = {
-  minimalist: { label: 'Standard', cls: 'bg-slate-100 text-slate-700 border-slate-200' },
-  pragmatiker: { label: 'Fast-Track', cls: 'bg-blue-100 text-blue-700 border-blue-200' },
-  ehrgeizig: { label: 'Fast-Track', cls: 'bg-amber-100 text-amber-700 border-amber-200' },
-  passioniert: { label: 'Wissensspeicher', cls: 'bg-violet-100 text-violet-700 border-violet-200' },
-};
-
-function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel, inaktiv = false, onToggleAktiv }) {
+function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel, inaktiv = false, onToggleAktiv, zugang, onSetZugang }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
   // Lernpakete sind keine Aufgaben: Sie tragen den Adapter-Marker _isLernpaket.
@@ -59,7 +51,8 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
 
   const isBuendel = aufgabe?.aufgaben_typ === 'buendel';
   const isZwischentest = isBuendel && aufgabe?.lernpaket_logik === 'test_only';
-  const variante = isBuendel && !isZwischentest ? LERNTYP_VARIANTE[activeLernTyp] : null;
+  // Zugang nur an regulären Lernpaketen (Zwischentests sind statisch).
+  const zeigeZugang = isBuendel && !isZwischentest;
 
   return (
     <Draggable draggableId={draggableId} index={index} isDragDisabled={disabled}>
@@ -101,19 +94,12 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
               ⚠ Anderes Themenfeld
             </span>
           )}
-          {variante && (
-            <span
-              className={`shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border ${variante.cls}`}
-              title={
-                variante.label === 'Standard'
-                  ? 'Dieses Lernpaket muss der Reihe nach abgearbeitet werden, bevor es abgeschlossen werden kann.'
-                  : variante.label === 'Fast-Track'
-                  ? 'Der Schüler kann selbst entscheiden, was und in welcher Reihenfolge er in diesem Lernpaket bearbeitet.'
-                  : `Variante: ${variante.label}`
-              }
-            >
-              {variante.label}
-            </span>
+          {zeigeZugang && (
+            <LernpaketZugangBadge
+              zugang={zugang}
+              disabled={disabled || !onSetZugang}
+              onChange={onSetZugang}
+            />
           )}
           {isZwischentest && (
             <span
@@ -184,6 +170,7 @@ export default function LernpfadeSektor({
   onSetBundleModus,
   onAutoFillBundle,
   onToggleItemAktiv,
+  onSetLernpaketZugang,
   getIsDropDisabled,
   onSelectAufgabe,
   onSelectSystemBaustein,
@@ -313,6 +300,13 @@ export default function LernpfadeSektor({
         activeLernTyp={activeLernTyp}
         fremdesThemenfeldTitel={fremdesThemenfeldTitel}
         inaktiv={item.aktiv === false}
+        zugang={resolveLernpaketZugang(item, activeLernTyp)}
+        onSetZugang={
+          onSetLernpaketZugang
+            ? (naechster) =>
+                onSetLernpaketZugang(sektor.sektor_id, item.instance_id, naechster)
+            : undefined
+        }
         onToggleAktiv={
           onToggleItemAktiv
             ? (nextAktiv) => onToggleItemAktiv(sektor.sektor_id, item.instance_id, nextAktiv)

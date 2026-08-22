@@ -57,6 +57,7 @@ import {
   setBundleConfig,
   setBundleModus,
   setItemAktiv,
+  setItemLernpaketZugang,
   removeBundleAndCascade,
   getBundleChildren,
   getAutoFillCandidates,
@@ -1033,6 +1034,18 @@ export default function LernpfadeCockpit({
     [readOnly, activeLernTyp, updateKonfiguration]
   );
 
+  // Lernpaket-Zugang (2026-08-22): Standard → Fast-Track → Wissensspeicher
+  // per Klick auf das Badge am Lernpaket – gilt nur für dieses Dashboard.
+  const handleSetLernpaketZugang = useCallback(
+    (sektorId, instanceId, zugang) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) =>
+        setItemLernpaketZugang(prev, activeLernTyp, sektorId, instanceId, zugang)
+      );
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
   // Phase 3.5/3.6: Cascade-Delete eines Bündel-Containers.
   // - Bei leerem Bündel: direkt löschen (kein Modal).
   // - Bei Bündel mit Children: Modal öffnen, Confirm löst Delete aus.
@@ -1346,6 +1359,7 @@ export default function LernpfadeCockpit({
                 onSetBundleModus={handleSetBundleModus}
                 onAutoFillBundle={handleAutoFillBundle}
                 onToggleItemAktiv={handleToggleItemAktiv}
+                onSetLernpaketZugang={handleSetLernpaketZugang}
                 expandedSektoren={expandedSektoren}
                 onToggleSektorExpanded={toggleSektorExpanded}
                 expandedBundles={expandedBundles}

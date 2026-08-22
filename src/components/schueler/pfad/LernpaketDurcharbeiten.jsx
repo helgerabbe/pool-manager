@@ -48,8 +48,8 @@ export default function LernpaketDurcharbeiten({
   const compositeId = (akt) => `${item.instance_id}::${akt.id}`;
 
   const sortiert = useMemo(
-    () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik, lerntyp) : []),
-    [aktivitaeten, lernpaketLogik, lerntyp]
+    () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik) : []),
+    [aktivitaeten, lernpaketLogik]
   );
 
   // Nach Phase gruppiert (Reihenfolge der ersten Vorkommen bleibt erhalten),
@@ -84,10 +84,12 @@ export default function LernpaketDurcharbeiten({
   // Pflicht-Aktivitäten: optionale Phasen (Übung beim Pragmatiker) zählen
   // NICHT für den Paket-Abschluss – Input + Abschluss genügen.
   const pflicht = useMemo(
-    () => sortiert.filter((akt) => !istPhaseOptional(akt.phase, lerntyp)),
-    [sortiert, lerntyp]
+    () => sortiert.filter((akt) => !istPhaseOptional(akt.phase, lerntyp, lernpaketLogik)),
+    [sortiert, lerntyp, lernpaketLogik]
   );
-  const alleErledigt = pflicht.length > 0 && pflicht.every((akt) => erledigtSet.has(akt.id));
+  // Wissensspeicher: keine Pflicht-Aktivitäten → das Paket gilt sofort als
+  // erledigt, der Schüler kann es jederzeit wieder verlassen.
+  const alleErledigt = sortiert.length > 0 && pflicht.every((akt) => erledigtSet.has(akt.id));
   const gegated = istLernpaketGegated(lernpaketLogik, alleErledigt);
 
   // Sobald alle Aktivitäten erledigt sind, das Lernpaket-Item selbst als
@@ -104,10 +106,13 @@ export default function LernpaketDurcharbeiten({
   // Pragmatiker) sind nie gesperrt und blockieren nichts.
   const istGesperrt = (idx) => {
     if (!gegated) return false;
-    if (istPhaseOptional(sortiert[idx]?.phase, lerntyp)) return false;
+    if (istPhaseOptional(sortiert[idx]?.phase, lerntyp, lernpaketLogik)) return false;
     return sortiert
       .slice(0, idx)
-      .some((akt) => !istPhaseOptional(akt.phase, lerntyp) && !erledigtSet.has(akt.id));
+      .some(
+        (akt) =>
+          !istPhaseOptional(akt.phase, lerntyp, lernpaketLogik) && !erledigtSet.has(akt.id)
+      );
   };
 
   // Einzel-Aktivitätsseite anzeigen, wenn eine Aktivität gewählt ist.
@@ -168,7 +173,7 @@ export default function LernpaketDurcharbeiten({
               <section key={gruppe.phase} className="space-y-3">
                 <PhasenAbschnitt
                   phase={gruppe.phase}
-                  optional={istPhaseOptional(gruppe.phase, lerntyp)}
+                  optional={istPhaseOptional(gruppe.phase, lerntyp, lernpaketLogik)}
                 />
                 <ul className="space-y-2.5">
                   {gruppe.items.map(({ akt, idx }) => (

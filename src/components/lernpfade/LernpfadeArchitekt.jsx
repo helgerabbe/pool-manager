@@ -175,6 +175,7 @@ export default function LernpfadeArchitekt({
   onSetBundleModus,
   onAutoFillBundle,
   onToggleItemAktiv,
+  onSetLernpaketZugang,
   expandedSektoren,
   onToggleSektorExpanded,
   expandedBundles,
@@ -247,6 +248,7 @@ export default function LernpfadeArchitekt({
                 onSetBundleModus={onSetBundleModus}
                 onAutoFillBundle={onAutoFillBundle}
                 onToggleItemAktiv={onToggleItemAktiv}
+                onSetLernpaketZugang={onSetLernpaketZugang}
                 collapsed={!expandedSektoren?.has(sektor.sektor_id)}
                 onToggleCollapsed={() => onToggleSektorExpanded?.(sektor.sektor_id)}
                 expandedBundles={expandedBundles}

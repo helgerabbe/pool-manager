@@ -104,6 +104,16 @@ export function normalizeItem(item) {
         normalized.bundle_config = bc;
       }
     }
+    // Lernpaket-Zugang (2026-08-22): Pro Lernpaket im Dashboard überschreibbar
+    // ('standard' | 'fast_track' | 'wissensspeicher'). Fehlend = Default des
+    // Lerntyps (siehe lib/lernpaketZugang.js).
+    if (
+      item.lernpaket_zugang === 'standard' ||
+      item.lernpaket_zugang === 'fast_track' ||
+      item.lernpaket_zugang === 'wissensspeicher'
+    ) {
+      normalized.lernpaket_zugang = item.lernpaket_zugang;
+    }
     // Etappe 2 (Auto-Assembly): „Deaktivieren statt Löschen". Nur der
     // Ausnahme-Zustand wird persistiert (aktiv=false); fehlend = aktiv.
     if (item.aktiv === false) {
@@ -693,6 +703,25 @@ export function setBundleModus(konfig, lernTyp, sektorId, bundleInstanceId, modu
  * Es wird nur der Ausnahme-Zustand gespeichert: aktiv=true entfernt das
  * Feld wieder. Operiert idempotent und immutable.
  */
+export function setItemLernpaketZugang(konfig, lernTyp, sektorId, instanceId, zugang) {
+  if (!instanceId) return konfig;
+  const gueltig =
+    zugang === 'standard' || zugang === 'fast_track' || zugang === 'wissensspeicher';
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const items = s.items.map((it) => {
+      if (it.instance_id !== instanceId) return it;
+      if (!gueltig) {
+        const { lernpaket_zugang: _ignored, ...rest } = it;
+        return rest; // zurück auf Lerntyp-Default
+      }
+      return { ...it, lernpaket_zugang: zugang };
+    });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
 export function setItemAktiv(konfig, lernTyp, sektorId, instanceId, aktiv) {
   if (!instanceId) return konfig;
   const next = getSektoren(konfig, lernTyp).map((s) => {
