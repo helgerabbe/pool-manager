@@ -199,8 +199,10 @@ export default function LernpaketDurcharbeiten({
       {alleErledigt && (
         <p className="pt-4 text-center text-sm font-medium text-emerald-600 shrink-0">
           <CheckCircle2 className="inline w-4 h-4 mr-1.5 -mt-0.5" />
-          {lerntyp === 'pragmatiker'
-            ? 'Lernpaket abgeschlossen – die Übungen stehen dir weiterhin freiwillig zur Verfügung.'
+          {lernpaketLogik === 'wissensspeicher'
+            ? 'Wissensspeicher – schau hier so oft hinein, wie du magst, und geh weiter, wann du willst.'
+            : lernpaketLogik === 'fast_track'
+            ? 'Lernpaket abgeschlossen – Input und Übungen stehen dir weiterhin freiwillig zur Verfügung.'
             : 'Lernpaket abgeschlossen – du kannst alle Übungen jederzeit wiederholen.'}
         </p>
       )}

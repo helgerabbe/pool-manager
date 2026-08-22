@@ -13,6 +13,7 @@ import PfadNavigation from '@/components/schueler/pfad/PfadNavigation';
 import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
+import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 import LernlandkarteSeite from '@/components/schueler/pfad/LernlandkarteSeite';
 import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
@@ -203,7 +204,7 @@ export default function EinheitDashboard() {
           <LernpaketDurcharbeiten
             item={activeItem}
             meta={activeMeta}
-            lernpaketLogik={activeAufgabe?.lernpaket_logik || 'standard'}
+            lernpaketLogik={resolveLernpaketZugang(activeItem, lerntypKey)}
             lerntyp={lerntypKey}
             loadLernpaketAktivitaeten={loadLernpaketAktivitaeten}
             katalogById={katalogById}
