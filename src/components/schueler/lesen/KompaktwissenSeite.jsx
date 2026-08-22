@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
 import KompaktwissenSektionen from './KompaktwissenSektionen';
 import KompaktwissenMedium from './KompaktwissenMedium';
+import KompaktwissenExtraMedium from './KompaktwissenExtraMedium';
 
 /**
  * Schüler-Aktivität „Kompaktwissen".
@@ -20,15 +21,15 @@ export default function KompaktwissenSeite({ aktivitaet, busy, onErledigt, onBac
   const bildUrl = fv.bild_url || '';
   const hatInhalt = inhaltTyp === 'text' ? !!text.trim() : !!bildUrl;
 
-  const standardAufgabe =
-    'Lies dir den folgenden Wissensüberblick aufmerksam durch. Er fasst die wichtigsten Inhalte des Lernpakets kompakt zusammen und hilft dir, den Überblick zu behalten.';
+  // Das Kompaktwissen hat KEINE Aufgabenstellung – es ist eine Übersicht zum
+  // Nachschlagen. Der Einleitungstext ist daher fest vorgegeben (2026-08-22).
+  const EINLEITUNG =
+    'Hier erhältst du eine Übersicht über die Lerninhalte dieses Lernpakets. Du kannst jederzeit hierher zurückkommen und nachschlagen.';
 
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
-      {/* Aufgabenstellung */}
-      <AufgabenstellungBox className="mb-4 shrink-0">
-        {fv.aufgabentext || standardAufgabe}
-      </AufgabenstellungBox>
+      {/* Feste Einleitung (keine Aufgabenstellung) */}
+      <AufgabenstellungBox className="mb-4 shrink-0">{EINLEITUNG}</AufgabenstellungBox>
 
       {/* Kompaktwissen – Text oder Bild */}
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
@@ -49,6 +50,8 @@ export default function KompaktwissenSeite({ aktivitaet, busy, onErledigt, onBac
               </p>
             </div>
             <KompaktwissenSektionen text={text} />
+            {/* Zusatz: hochgeladene Grafik/PDF zum Aufklappen */}
+            <KompaktwissenExtraMedium url={bildUrl} />
           </div>
         )}
       </div>
