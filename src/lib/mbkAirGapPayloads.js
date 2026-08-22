@@ -88,8 +88,16 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     und `is_complete` — der ECHTE Freigabestand lebt seit 2026-08-11 auf
  *     Lernpaket-Ebene. Das `content_status`-Feld der einzelnen Aktivitäten
  *     ist ein Legacy-Feld ohne Bedeutung (bleibt aus Kompatibilität erhalten).
+ * airgap-1.17.0: Fertige Inhalte im Systembaustein-Briefing.
+ *   - Payload 6: jedes Systembaustein-Item trägt jetzt `fertige_inhalte` —
+ *     die im Export-Center erzeugten SchuelerInhaltSnapshots dieses
+ *     Bausteins in diesem Lerntyp-Pfad (pro Instanz ein Eintrag mit
+ *     instance_id, themenfeld_id und dem fertigen `inhalt`-Objekt).
+ *     Damit gilt der Snapshot-Prioritäts-Vertrag auch hier praktisch:
+ *     Vorhandenes wird 1:1 übernommen, die MBK schreibt nur, was leer ist.
+ *     Zusätzlich sagt `inhalt_regel` der MBK genau das.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.16.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.17.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -319,9 +327,12 @@ const SNAPSHOT_PRIORITY_CONTRACT = {
       + 'fertiges JSON-Objekt (Snapshot) oder null (noch nicht erzeugt → '
       + 'NICHT erfinden).',
     systembausteine:
-      'In Payload 6 (Systembaustein-Briefings). Wenn ein Briefing-Eintrag '
-      + 'konkrete Text-Inhalte enthält (nicht nur Metadaten), sind das die '
-      + 'fertigen Snapshots. Verwende sie 1:1 für die HTML-Generierung.',
+      'In Payload 6 (Systembaustein-Briefings) im Feld `fertige_inhalte`. '
+      + 'Jeder Eintrag dort ist ein fertiger, von der Lehrkraft erzeugter '
+      + 'Snapshot (Feld `inhalt`) für genau eine Baustein-Instanz im Pfad. '
+      + 'Verwende diese Inhalte 1:1 für die HTML-Generierung. Ist '
+      + '`fertige_inhalte` leer, generiere den Inhalt aus der '
+      + '`export_instruktion` des Bausteins.',
     interne_inhalte:
       'Die Funktion "Interne Inhalte erzeugen" im Export-Center generiert '
       + 'diese Snapshots VOR dem Export. Nach der Generierung existiert für '
@@ -1621,6 +1632,43 @@ function summarizeLerntypPfad(sektoren, themenfelderById) {
  * `system-<lerntyp>-<baustein_id>.html`, die im Lernpfad an genau dieser
  * Stelle vom Merger eingehängt wird.
  */
+/**
+ * Sammelt die fertigen SchuelerInhaltSnapshots, die zu einem Baustein in
+ * einem Lerntyp-Pfad gehören (airgap-1.17.0).
+ *
+ * Ein Baustein kann in einem Pfad MEHRFACH vorkommen (z. B. eine
+ * Themenfeld-Einführung pro Themenfeld) — pro Vorkommen (instance_id)
+ * existiert ein eigener Snapshot. Wir geben ALLE mit, damit die MBK die
+ * fertigen Texte 1:1 einsetzen kann, statt sie neu zu schreiben.
+ */
+function collectFertigeInhalte({ snapshots = [], lerntyp, bausteinId, lerntypPfad = [] }) {
+  // instance_id → themenfeld_id aus dem Pfad, damit die MBK die Zuordnung
+  // auch ohne Cross-Lookup ins Strukturpayload versteht.
+  const themenfeldByInstance = new Map();
+  for (const sektor of lerntypPfad || []) {
+    for (const item of sektor?.items || []) {
+      if (item?.instance_id) {
+        themenfeldByInstance.set(item.instance_id, sektor?.themenfeld_id || null);
+      }
+    }
+  }
+
+  return (snapshots || [])
+    .filter(
+      (s) =>
+        s?.baustein_id === bausteinId
+        && s?.lerntyp === lerntyp
+        && s?.inhalt
+        && typeof s.inhalt === 'object'
+    )
+    .map((s) => ({
+      instance_id: nullable(s.instance_id),
+      themenfeld_id: nullable(s.themenfeld_id) || themenfeldByInstance.get(s.instance_id) || null,
+      generiert_am: nullable(s.generiert_am),
+      inhalt: s.inhalt,
+    }));
+}
+
 export function buildSystembausteinPayloadItem({
   einheit,
   lerntyp,
@@ -1631,6 +1679,9 @@ export function buildSystembausteinPayloadItem({
   lernpakete = [],
   lernziele = [],
   navigationContext = [],
+  // airgap-1.17.0: SchuelerInhaltSnapshot[] der Einheit (alle Bausteine/
+  // Lerntypen) — wird hier auf die passenden Einträge gefiltert.
+  snapshots = [],
   systemContextHash = null,
   uiConfigHash = null,
   nowIso = null,
@@ -1695,6 +1746,16 @@ export function buildSystembausteinPayloadItem({
       },
     lerntyp_pfad: summarizeLerntypPfad(lerntypPfad, themenfelderById),
     lernlandkarte,
+    // airgap-1.17.0: Bereits von der Lehrkraft erzeugte, geprüfte Inhalte
+    // dieses Bausteins in diesem Pfad. Siehe snapshot_priority_contract
+    // in Payload 1.
+    fertige_inhalte: collectFertigeInhalte({ snapshots, lerntyp, bausteinId, lerntypPfad }),
+    inhalt_regel:
+      'Enthält `fertige_inhalte` Einträge, sind das fertige, von der Lehrkraft '
+      + 'geprüfte Inhalte: übernimm sie 1:1 (nicht umformulieren, nicht kürzen, '
+      + 'nicht "verbessern") und baue pro Eintrag den zugehörigen Abschnitt. '
+      + 'Ist `fertige_inhalte` leer, erzeuge den Inhalt selbst aus '
+      + '`baustein.export_instruktion` und dem Pfad-Kontext.',
     output_contract: {
       format: 'full_html',
       filename: fnSystemBaustein(bausteinId, lerntyp),
@@ -1720,6 +1781,8 @@ export function buildSystembausteinPayloadBundle({
   lernziele = [],
   systemBausteine = [],
   navigationContextByRefId = new Map(),
+  // airgap-1.17.0: fertige SchuelerInhaltSnapshots der Einheit.
+  snapshots = [],
   systemContextHash = null,
   uiConfigHash = null,
   nowIso = null,
@@ -1761,6 +1824,7 @@ export function buildSystembausteinPayloadBundle({
           lernpakete,
           lernziele,
           navigationContext: navFor(refId),
+          snapshots,
           systemContextHash,
           uiConfigHash,
           nowIso,

@@ -34,6 +34,7 @@ export function useAirGapBulk({
   allgemeineAufgaben,
   allgemeineAufgabenEbene23,
   systemBausteine,
+  inhaltSnapshots,
   prompts,
   tsIndex,
   systemContextHash,
@@ -59,6 +60,7 @@ export function useAirGapBulk({
         allgemeineAufgaben,
         allgemeineAufgabenEbene23,
         systemBausteine,
+        inhaltSnapshots,
         prompts,
         tsIndex,
         systemContextHash,
@@ -68,7 +70,7 @@ export function useAirGapBulk({
       einheitId, einheit, stammdaten, schulNomenklatur, globalPrompts,
       themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
       masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23,
-      systemBausteine, prompts, tsIndex, systemContextHash, uiConfigHash,
+      systemBausteine, inhaltSnapshots, prompts, tsIndex, systemContextHash, uiConfigHash,
     ]
   );
 

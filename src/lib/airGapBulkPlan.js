@@ -84,6 +84,9 @@ export function buildAirGapBulkPlan({
   allgemeineAufgaben = [],
   allgemeineAufgabenEbene23 = [],
   systemBausteine = [],
+  // airgap-1.17.0: fertige SchuelerInhaltSnapshots — wandern in die
+  // Systembaustein-Briefings, damit die MBK sie 1:1 übernimmt.
+  inhaltSnapshots = [],
   prompts,
   tsIndex,
   systemContextHash,
@@ -395,6 +398,7 @@ export function buildAirGapBulkPlan({
               lernpakete,
               lernziele,
               navigationContext: navFor(refId),
+              snapshots: inhaltSnapshots,
               systemContextHash,
               uiConfigHash,
             }),

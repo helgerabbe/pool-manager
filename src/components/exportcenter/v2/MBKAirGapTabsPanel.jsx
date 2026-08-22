@@ -169,6 +169,15 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     staleTime: 60_000,
   });
 
+  // airgap-1.17.0: Bereits erzeugte, schülergerechte Inhalte („Interne
+  // Inhalte erzeugen"). Sie wandern in die Systembaustein-Briefings, damit
+  // die MBK sie 1:1 übernimmt und nur Leerstellen selbst füllt.
+  const { data: inhaltSnapshots = [] } = useQuery({
+    queryKey: ['schuelerInhaltSnapshots', einheitId],
+    queryFn: () => base44.entities.SchuelerInhaltSnapshot.filter({ einheit_id: einheitId }),
+    enabled: !!einheitId,
+  });
+
   const { data: aufgabenbausteine = [] } = useQuery({
     queryKey: ['aufgabenbausteine-by-pakete', paketIds.join(',')],
     queryFn: async () => {
@@ -235,7 +244,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
     einheitId, einheit, stammdaten, schulNomenklatur, globalPrompts,
     themenfelder, lernpakete, lernziele, phaseAktivitaeten, katalogById,
     masterAufgaben, allgemeineAufgaben, allgemeineAufgabenEbene23,
-    systemBausteine,
+    systemBausteine, inhaltSnapshots,
     prompts: dbPrompts, tsIndex,
     systemContextHash: currentHash,
     uiConfigHash: currentUiHash,
@@ -309,10 +318,11 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       buildSystembausteinPayloadBundle({
         einheit, themenfelder, lernpakete, lernziele, systemBausteine,
         navigationContextByRefId,
+        snapshots: inhaltSnapshots,
         systemContextHash: currentHash,
         uiConfigHash: currentUiHash,
       }),
-    [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, currentHash, currentUiHash]
+    [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, inhaltSnapshots, currentHash, currentUiHash]
   );
 
   // Item-Listen analog zum alten Panel.
@@ -495,6 +505,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
                 lernpakete,
                 lernziele,
                 navigationContext: navFor(refId),
+                snapshots: inhaltSnapshots,
                 systemContextHash: currentHash,
                 uiConfigHash: currentUiHash,
               }),
@@ -503,7 +514,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
       }
     }
     return out;
-  }, [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, currentHash, currentUiHash]);
+  }, [einheit, themenfelder, lernpakete, lernziele, systemBausteine, navigationContextByRefId, inhaltSnapshots, currentHash, currentUiHash]);
 
   // ── Aktion-Helfer ────────────────────────────────────────────────────
   const baseSlug = slugify(einheit?.titel_der_einheit, einheitId || 'einheit');
