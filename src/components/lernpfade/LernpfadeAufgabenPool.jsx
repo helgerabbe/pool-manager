@@ -181,7 +181,7 @@ export default function LernpfadeAufgabenPool({
   onPreviewAufgabe,
 }) {
   // Reiter-Verhalten: genau eine Gruppe ist aktiv.
-  const [activeFilter, setActiveFilter] = useState('aufgaben');
+  const [activeFilter, setActiveFilter] = useState('lernpakete');
   const [activeTab, setActiveTab] = useState('aufgaben');
 
   const { data: alleAufgaben = [], isLoading: loadingAufgaben } = useQuery({
