@@ -119,7 +119,7 @@ export default function BildEinfuegenFeld({ value, onChange, disabled = false, e
       />
       {uploading ? (
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="w-4 h-4 animate-spin" /> Bild wird hochgeladen…
+          <Loader2 className="w-4 h-4 animate-spin" /> Datei wird hochgeladen…
         </div>
       ) : (
         <div className="space-y-2">
