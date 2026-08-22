@@ -48,7 +48,10 @@ export default async function (req) {
     }
 
     const body = await req.json();
-    const { einheitId, slug, payloads = [], media = [] } = body || {};
+    // modus: 'vorschau' = nur vergleichen (Delta anzeigen, nichts schreiben)
+    //        'delta'    = nur geänderte/neue Dateien schreiben (Standard)
+    //        'voll'     = alles neu schreiben
+    const { einheitId, slug, payloads = [], media = [], modus = 'delta' } = body || {};
     if (!einheitId || !slug || payloads.length === 0) {
       return Response.json(
         { error: 'einheitId, slug und payloads sind erforderlich.' },
@@ -107,17 +110,26 @@ export default async function (req) {
       branch: BRANCH,
       files,
       message: `Export: ${slug} (Pool-Manager, ${new Date().toISOString().slice(0, 16).replace('T', ' ')})`,
+      force: modus === 'voll',
+      dryRun: modus === 'vorschau',
     });
 
     // Export-Zeitstempel der Einheit fortschreiben (entkoppelt von der Freigabe).
-    await base44.asServiceRole.entities.Einheiten.update(einheitId, {
-      last_exported_at: new Date().toISOString(),
-    });
+    // Nur bei echter Übergabe — die Vorschau verändert den Sync-Stand nicht.
+    if (modus !== 'vorschau') {
+      await base44.asServiceRole.entities.Einheiten.update(einheitId, {
+        last_exported_at: new Date().toISOString(),
+      });
+    }
 
     const medienFehler = medienStatus.filter((m) => !m.ok);
     return Response.json({
       ok: true,
+      modus,
       ordner,
+      neu: ergebnis.neu,
+      geaendert: ergebnis.geaendert,
+      unveraendert: ergebnis.unveraendert,
       repository: `${OWNER}/${REPO}`,
       branch: BRANCH,
       commit_url: ergebnis.commit_url,

@@ -16,18 +16,20 @@ import { Button } from '@/components/ui/button';
 import { Loader2, Github, UploadCloud, ExternalLink } from 'lucide-react';
 import { collectMediaEntries } from '@/lib/airGapMediaManifest';
 import { useAirGapPayloads } from '@/hooks/useAirGapPayloads';
+import GitHubDeltaAuswahl from '@/components/exportcenter/GitHubDeltaAuswahl';
 
 export default function GitHubExportCard({ einheitId }) {
   const { payloads, ordnerSlug } = useAirGapPayloads(einheitId);
   const [running, setRunning] = useState(false);
   const [ergebnis, setErgebnis] = useState(null);
+  const [vorschau, setVorschau] = useState(null);
   const [error, setError] = useState(null);
 
-  const handlePush = async () => {
+  const handlePush = async (modus = 'delta') => {
     if (!payloads) return;
     setRunning(true);
     setError(null);
-    setErgebnis(null);
+    if (modus !== 'vorschau') setErgebnis(null);
     try {
       const media = collectMediaEntries(payloads.map((p) => p.content)).map((entry) => ({
         // filename kommt als "media/<datei>" — im Repo liegt es unter material/
@@ -40,8 +42,14 @@ export default function GitHubExportCard({ einheitId }) {
         slug: ordnerSlug,
         payloads,
         media,
+        modus,
       });
-      setErgebnis(res.data);
+      if (modus === 'vorschau') {
+        setVorschau(res.data);
+      } else {
+        setVorschau(null);
+        setErgebnis(res.data);
+      }
     } catch (e) {
       setError(e?.response?.data?.error || e?.message || 'Export fehlgeschlagen.');
     } finally {
@@ -62,8 +70,19 @@ export default function GitHubExportCard({ einheitId }) {
             <code className="bg-muted px-1 rounded text-[11px]">IGS-Seevetal/Poolzeit</code> (Branch{' '}
             <code className="bg-muted px-1 rounded text-[11px]">main</code>) unter{' '}
             <code className="bg-muted px-1 rounded text-[11px]">kurse/{ordnerSlug || '…'}/</code>.
-            Jederzeit möglich – es wird nur übertragen, was sich geändert hat.
+            Jederzeit möglich – GitHub selbst vergleicht den Stand, du wählst anschließend, ob nur
+            die Änderungen oder alles neu übertragen wird.
           </p>
+
+          {vorschau && (
+            <GitHubDeltaAuswahl
+              vorschau={vorschau}
+              running={running}
+              onDelta={() => handlePush('delta')}
+              onVoll={() => handlePush('voll')}
+              onAbbrechen={() => setVorschau(null)}
+            />
+          )}
 
           {ergebnis && (
             <div className="mt-2 text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-lg p-2 space-y-1">
@@ -98,12 +117,12 @@ export default function GitHubExportCard({ einheitId }) {
           )}
         </div>
         <Button
-          onClick={handlePush}
-          disabled={!payloads || running}
+          onClick={() => handlePush('vorschau')}
+          disabled={!payloads || running || !!vorschau}
           className="gap-2 bg-slate-900 hover:bg-slate-800 shrink-0"
         >
           {running ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-          {running ? 'Übertrage …' : 'Nach GitHub übertragen'}
+          {running ? 'Prüfe …' : 'Nach GitHub übertragen'}
         </Button>
       </div>
     </div>

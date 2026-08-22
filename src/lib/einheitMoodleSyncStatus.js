@@ -4,9 +4,9 @@
  * Berechnet den Moodle-Sync-Status einer Einheit für die Export-Center-
  * Liste. Drei Zustände:
  *
- *   - 'new'         → Einheit wurde noch nie nach Moodle ver-published
- *                     (kein `export_published_at`).
- *   - 'in_sync'     → Einheit wurde published und seither hat sich nichts
+ *   - 'new'         → Einheit wurde noch nie nach GitHub übergeben
+ *                     (kein `last_exported_at`).
+ *   - 'in_sync'     → Einheit wurde übergeben und seither hat sich nichts
  *                     im Pool-Manager an dieser Einheit geändert (weder
  *                     an der Einheit selbst, noch an ihren Themenfeldern,
  *                     Lernpaketen, Aktivitäten oder Allgemeinen Aufgaben).
@@ -35,7 +35,9 @@ export function computeEinheitMoodleSyncStatus({
   masterAufgaben = [],
 }) {
   if (!einheit) return 'new';
-  const publishedAt = einheit.export_published_at;
+  // Maßgeblich ist ausschließlich die GitHub-Übergabe (last_exported_at).
+  // ZIP-Downloads und Supabase-Exporte setzen diesen Zeitstempel nicht.
+  const publishedAt = einheit.last_exported_at;
   if (!publishedAt) return 'new';
 
   const publishedTs = new Date(publishedAt).getTime();

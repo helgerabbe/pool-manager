@@ -280,11 +280,10 @@ Deno.serve(async (req) => {
       if (error) fail('export_prompts', error);
     }
 
-    // Zeitstempel auf der Einheit aktualisieren.
-    const now = new Date().toISOString();
-    try {
-      await sr.Einheiten.update(einheitId, { last_exported_at: now });
-    } catch (_e) { /* nicht kritisch */ }
+    // Hinweis (2026-08-22): Der Export-Zeitstempel `last_exported_at` der Einheit
+    // wird BEWUSST nicht gesetzt — er markiert ausschließlich die Übergabe nach
+    // GitHub und steuert dort das Sync-Badge (Neu / In Sync / Out of Sync).
+    // Supabase-Exporte und ZIP-Downloads verändern diesen Stand nicht.
 
     return Response.json({
       success: true,

@@ -65,9 +65,11 @@ export function bytesToBase64(bytes) {
  * @param {string} p.branch
  * @param {Array<{path: string, bytes: Uint8Array}>} p.files
  * @param {string} p.message
- * @returns {Promise<{commit_url: string|null, geschrieben: string[], unveraendert: string[]}>}
+ * @param {boolean} [p.force]   true = alle Dateien neu schreiben (kein Delta-Vergleich).
+ * @param {boolean} [p.dryRun]  true = nur vergleichen, NICHTS schreiben.
+ * @returns {Promise<{commit_url: string|null, geschrieben: string[], unveraendert: string[], neu: string[], geaendert: string[]}>}
  */
-export async function pushFiles({ token, owner, repo, branch, files, message }) {
+export async function pushFiles({ token, owner, repo, branch, files, message, force = false, dryRun = false }) {
   const base = `/repos/${owner}/${repo}`;
 
   let ref;
@@ -93,14 +95,28 @@ export async function pushFiles({ token, owner, repo, branch, files, message }) 
 
   const geaendert = [];
   const unveraendert = [];
+  const neuePfade = [];
+  const geaenderteFfade = [];
   for (const file of files) {
     const sha = await gitBlobSha(file.bytes);
-    if (vorhanden.get(file.path) === sha) unveraendert.push(file.path);
-    else geaendert.push(file);
+    const istGleich = !force && vorhanden.get(file.path) === sha;
+    if (istGleich) {
+      unveraendert.push(file.path);
+      continue;
+    }
+    geaendert.push(file);
+    if (vorhanden.has(file.path)) geaenderteFfade.push(file.path);
+    else neuePfade.push(file.path);
+  }
+
+  const diff = { neu: neuePfade, geaendert: geaenderteFfade, unveraendert };
+
+  if (dryRun) {
+    return { commit_url: null, geschrieben: [], ...diff };
   }
 
   if (geaendert.length === 0) {
-    return { commit_url: null, geschrieben: [], unveraendert: unveraendert.map((p) => p) };
+    return { commit_url: null, geschrieben: [], ...diff };
   }
 
   const treeEntries = [];
@@ -130,6 +146,6 @@ export async function pushFiles({ token, owner, repo, branch, files, message }) 
   return {
     commit_url: neuerCommit.html_url || `https://github.com/${owner}/${repo}/commit/${neuerCommit.sha}`,
     geschrieben: geaendert.map((f) => f.path),
-    unveraendert,
+    ...diff,
   };
 }
