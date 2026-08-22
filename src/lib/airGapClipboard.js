@@ -30,13 +30,17 @@ export function downloadJson(payload, filename) {
 
 /**
  * Erstellt ein ZIP-Archiv mit mehreren Dateien.
- * @param {Array<{name: string, content: string|object}>} files
- *   `content` darf String (1:1 ablegen) oder Objekt (wird stringified) sein.
+ * @param {Array<{name: string, content: string|object|Blob|ArrayBuffer}>} files
+ *   `content` darf String (1:1 ablegen), Blob/ArrayBuffer (binär, z. B.
+ *   Datei-Beipack) oder Objekt (wird stringified) sein.
  */
 export async function downloadZip(files, zipName) {
   const zip = new JSZip();
   for (const f of files) {
-    const data = typeof f.content === 'string' ? f.content : JSON.stringify(f.content, null, 2);
+    const c = f.content;
+    const data = (typeof c === 'string' || c instanceof Blob || c instanceof ArrayBuffer)
+      ? c
+      : JSON.stringify(c, null, 2);
     zip.file(f.name, data);
   }
   const blob = await zip.generateAsync({ type: 'blob' });

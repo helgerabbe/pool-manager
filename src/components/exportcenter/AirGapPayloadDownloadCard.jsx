@@ -13,6 +13,9 @@
  *     3-task-content.json
  *     4-micro-briefings.json
  *     5-systembausteine.json
+ *   media/                ← Datei-Beipack (airgap-1.16.0): alle app-gehosteten
+ *     <dateien>              Materialien (PDF, Bild, Audio, Video), damit der
+ *   media-manifest.json      Export autark ist (URL → lokaler Pfad).
  *
  * Wird im Export-Center unterhalb des MBKPromptGeneratorPanel eingeblendet.
  */
@@ -33,10 +36,13 @@ import {
 } from '@/lib/mbkAirGapPayloads';
 import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
 import { downloadZip, slugify } from '@/lib/airGapClipboard';
+import { collectMediaEntries, buildMediaManifest } from '@/lib/airGapMediaManifest';
 import { useSchulStammdaten } from '@/hooks/useSchulStammdaten';
 
 export default function AirGapPayloadDownloadCard({ einheitId }) {
   const [generating, setGenerating] = useState(false);
+  const [progress, setProgress] = useState(null);
+  const [mediaWarnung, setMediaWarnung] = useState(null);
   const [error, setError] = useState(null);
 
   const { land, bundesland, schulform } = useSchulStammdaten();
@@ -212,12 +218,49 @@ export default function AirGapPayloadDownloadCard({ einheitId }) {
     if (!payloads) return;
     setGenerating(true);
     setError(null);
+    setMediaWarnung(null);
     try {
-      await downloadZip(payloads, `mbk-payloads_${baseSlug}.zip`);
+      // ── Datei-Beipack (airgap-1.16.0): alle app-gehosteten Materialien
+      // aus den Payloads einsammeln und mit ins ZIP packen, damit der
+      // Export autark ist (MBK-Feedback: SCORM offline in Moodle).
+      const mediaEntries = collectMediaEntries(payloads.map((p) => p.content));
+      const mediaFiles = [];
+      const results = [];
+      for (let i = 0; i < mediaEntries.length; i += 1) {
+        const entry = mediaEntries[i];
+        setProgress(`Lade Datei ${i + 1}/${mediaEntries.length} …`);
+        try {
+          const res = await fetch(entry.url);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const blob = await res.blob();
+          mediaFiles.push({ name: entry.filename, content: blob });
+          results.push({ ...entry, ok: true });
+        } catch {
+          results.push({ ...entry, ok: false });
+        }
+      }
+      setProgress('Erstelle ZIP …');
+
+      const fehlgeschlagen = results.filter((r) => !r.ok);
+      if (fehlgeschlagen.length > 0) {
+        setMediaWarnung(
+          `${fehlgeschlagen.length} von ${results.length} Materialien konnten nicht `
+          + `geladen werden und fehlen im Beipack (siehe media-manifest.json): `
+          + fehlgeschlagen.map((r) => r.filename.replace('media/', '')).join(', ')
+        );
+      }
+
+      const files = [
+        ...payloads,
+        ...mediaFiles,
+        { name: 'media-manifest.json', content: buildMediaManifest(results) },
+      ];
+      await downloadZip(files, `mbk-payloads_${baseSlug}.zip`);
     } catch (e) {
       setError(e?.message || 'Download fehlgeschlagen.');
     } finally {
       setGenerating(false);
+      setProgress(null);
     }
   };
 
@@ -233,9 +276,18 @@ export default function AirGapPayloadDownloadCard({ einheitId }) {
           <h3 className="text-sm font-semibold text-foreground">Air-Gap-Payloads herunterladen</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
             Erzeugt alle sechs Payloads (UI-Config, System-Kontext, Struktur,
-            Aufgaben, Micro-Briefings, Systembausteine) als ZIP-Archiv.
+            Aufgaben, Micro-Briefings, Systembausteine) als ZIP-Archiv —
+            inklusive Datei-Beipack: alle hochgeladenen Materialien (PDFs,
+            Bilder, Audio, Video) liegen unter <code className="bg-muted px-1 rounded text-[11px]">media/</code> mit
+            Zuordnung in <code className="bg-muted px-1 rounded text-[11px]">media-manifest.json</code>.
             Zum Einchecken ins GitHub-Repo unter <code className="bg-muted px-1 rounded text-[11px]">kurse/&lt;slug&gt;/payloads/</code>.
           </p>
+
+          {mediaWarnung && (
+            <div className="mt-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+              {mediaWarnung}
+            </div>
+          )}
 
           {error && (
             <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2">
@@ -252,7 +304,7 @@ export default function AirGapPayloadDownloadCard({ einheitId }) {
             ? <Loader2 className="w-4 h-4 animate-spin" />
             : <Download className="w-4 h-4" />
           }
-          {generating ? 'Erstelle ZIP …' : 'ZIP herunterladen'}
+          {generating ? (progress || 'Erstelle ZIP …') : 'ZIP herunterladen'}
         </Button>
       </div>
     </div>
