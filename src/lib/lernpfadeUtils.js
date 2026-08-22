@@ -204,26 +204,6 @@ export function getUsedAufgabenIds(konfiguration, lernTyp) {
   return used;
 }
 
-/**
- * Convenience-Check: Ist die Aufgabe (per ref_id) bereits im aktuellen Pfad?
- */
-export function isAufgabeInLernpfad(konfiguration, lernTyp, aufgabeId) {
-  return getUsedAufgabenIds(konfiguration, lernTyp).has(aufgabeId);
-}
-
-/**
- * Liefert true, wenn die Konfiguration komplett leer ist – also für
- * KEINEN der vier Lerntypen Sektoren existieren. Wird vom Frontend für
- * den Lazy-Init-Pfad genutzt: Bestandseinheiten ohne Default-Dashboards
- * (vor dem Eager-Init-Rollout angelegt) werden beim ersten Aufruf
- * organisch mit den Standard-Templates befüllt.
- */
-export function isKonfigurationEmpty(konfiguration) {
-  if (!konfiguration || typeof konfiguration !== 'object') return true;
-  const keys = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
-  return keys.every((k) => !Array.isArray(konfiguration[k]) || konfiguration[k].length === 0);
-}
-
 // ── Sektor-Helfer ──────────────────────────────────────────────────────────
 
 /**
@@ -398,48 +378,6 @@ export function moveSektor(konfig, lernTyp, sektorId, direction) {
   const next = [...sektoren];
   [next[idx], next[target]] = [next[target], next[idx]];
   return setSektoren(konfig, lernTyp, pinFeedbackSektorToEnd(next));
-}
-
-/**
- * Aufgabe an einer bestimmten Position in einen Sektor einfügen.
- * Falls aufgabeId bereits in irgendeinem Sektor des Lerntyps vorkommt
- * (Anti-Duplikat) → unverändert zurückgeben.
- *
- * NB: Diese Funktion arbeitet ausschließlich mit Aufgaben-Items.
- * Für System-Bausteine siehe `insertSystemBausteinInSektor`.
- */
-export function insertAufgabeInSektor(konfig, lernTyp, sektorId, aufgabeId, index) {
-  if (!aufgabeId) return konfig;
-  if (getUsedAufgabenIds(konfig, lernTyp).has(aufgabeId)) return konfig;
-
-  const next = getSektoren(konfig, lernTyp).map((s) => {
-    if (s.sektor_id !== sektorId) return s;
-    const items = [...s.items];
-    const insertAt = typeof index === 'number' && index >= 0 && index <= items.length ? index : items.length;
-    items.splice(insertAt, 0, { type: ITEM_TYPE.AUFGABE, ref_id: aufgabeId });
-    return { ...s, items };
-  });
-  return setSektoren(konfig, lernTyp, next);
-}
-
-/**
- * System-Baustein an einer bestimmten Position in einen Sektor einfügen.
- *
- * WICHTIG: Hier greift die Anti-Duplikat-Sperre ABSICHTLICH NICHT.
- * System-Bausteine sind globale Platzhalter (z. B. „Lehrer-Check") und dürfen
- * mehrfach in beliebig vielen Sektoren des gleichen Lerntyps vorkommen.
- */
-export function insertSystemBausteinInSektor(konfig, lernTyp, sektorId, bausteinId, index) {
-  if (!bausteinId) return konfig;
-
-  const next = getSektoren(konfig, lernTyp).map((s) => {
-    if (s.sektor_id !== sektorId) return s;
-    const items = [...s.items];
-    const insertAt = typeof index === 'number' && index >= 0 && index <= items.length ? index : items.length;
-    items.splice(insertAt, 0, { type: ITEM_TYPE.SYSTEM, ref_id: bausteinId });
-    return { ...s, items };
-  });
-  return setSektoren(konfig, lernTyp, next);
 }
 
 /**
@@ -780,28 +718,6 @@ export function freezeThemenfeldSnapshot(konfig, lernTyp, themenfeldTitelById) {
 }
 
 /**
- * Sektoren von einem Lerntyp in einen anderen kopieren (Deep Clone).
- * - Generiert frische sektor_id pro Sektor (verhindert React-Key-Kollisionen).
- * - Übernimmt nur titel, modus, items (keine internen Flags).
- * - Item-Objekte werden flach geklont (frische Referenzen).
- * - Überschreibt die Sektor-Liste des Ziel-Lerntyps komplett.
- */
-export function copySektorenBetweenLernTypen(konfig, fromLernTyp, toLernTyp) {
-  if (fromLernTyp === toLernTyp) return konfig;
-  const source = getSektoren(konfig, fromLernTyp);
-  const cloned = source.map((s) => ({
-    sektor_id: `sec_${uuid()}`,
-    titel: s.titel || 'Neuer Sektor',
-    modus: s.modus === 'frei' ? 'frei' : 'sequenziell',
-    sektor_typ: s.sektor_typ || DEFAULT_SEKTOR_TYP,
-    themenfeld_id: s.themenfeld_id || null,
-    titel_snapshot: null, // Snapshot wird im Ziel-Lerntyp neu erzeugt.
-    items: s.items.map((it) => ({ type: it.type, ref_id: it.ref_id })),
-  }));
-  return setSektoren(konfig, toLernTyp, cloned);
-}
-
-/**
  * Wendet ein statisches Dashboard-Template (siehe lib/dashboardTemplates.js)
  * auf den Lernpfad eines bestimmten Lerntyps an.
  *
@@ -910,26 +826,6 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
   }
 
   return setSektoren(aktuelleKonfig || {}, lerntyp, freshSektoren);
-}
-
-/**
- * Wendet die kompletten Default-Dashboards (alle vier Lerntypen) auf
- * eine Konfiguration an. Wird sowohl für den Lazy-Init-Pfad genutzt
- * (Bestandseinheiten ohne `lernpfade_konfiguration`) als auch theoretisch
- * für einen "Alle Dashboards zurücksetzen"-Button (aktuell nicht im UI).
- *
- * Erwartet ein `templates`-Objekt mit Keys minimalist/pragmatiker/
- * ehrgeizig/passioniert (z. B. `DASHBOARD_TEMPLATES`).
- */
-export function applyAllDashboardTemplates(aktuelleKonfig, templates, themenfelder = null) {
-  if (!templates || typeof templates !== 'object') return aktuelleKonfig;
-  let next = aktuelleKonfig || {};
-  for (const lerntyp of ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert']) {
-    if (Array.isArray(templates[lerntyp])) {
-      next = applyDashboardTemplate(next, lerntyp, templates[lerntyp], themenfelder);
-    }
-  }
-  return next;
 }
 
 // ── Phase D: Auto-Befüllen von Bündeln ──────────────────────────────────────
@@ -1054,52 +950,6 @@ export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId
 }
 
 /**
- * Phase 3.4: Index-Translation zwischen lokalem DnD-Index und absolutem
- * Index in `sektor.items`.
- *
- * - Root-Drop:  rootDndIndex   → absoluter Index NACH dem rootDndIndex-ten Root-Item
- *               (oder ans Ende, wenn es so viele Roots nicht gibt).
- * - Bündel-Drop: childDndIndex → absoluter Index NACH dem childDndIndex-ten Child
- *                des Ziel-Bündels (oder direkt nach dem Bündel selbst, falls leer).
- *
- * Wichtig: Wenn das gezogene Item in derselben Liste umsortiert wird, gibt
- * @hello-pangea/dnd `destination.index` BEZOGEN AUF DIE LISTE OHNE das gezogene
- * Item zurück (Standardverhalten). Der Aufrufer muss vor der Translation das
- * Item also noch im Array haben — wir errechnen den Ziel-Index unter der
- * Annahme, dass das Item gleich entfernt und neu eingefügt wird.
- */
-export function resolveAbsoluteInsertIndex(items, targetParentInstanceId, localIndex) {
-  const list = Array.isArray(items) ? items : [];
-  if (targetParentInstanceId) {
-    // Bündel-Drop: zähle Children dieses Bündels in Original-Reihenfolge.
-    const childPositions = [];
-    list.forEach((it, idx) => {
-      if (it?.parent_instance_id === targetParentInstanceId) childPositions.push(idx);
-    });
-    if (localIndex <= 0 || childPositions.length === 0) {
-      // Vor das erste Child – also direkt hinter den Bündel-Header.
-      const bundlePos = list.findIndex((it) => it?.instance_id === targetParentInstanceId);
-      return bundlePos === -1 ? list.length : bundlePos + 1;
-    }
-    if (localIndex >= childPositions.length) {
-      // Hinter das letzte Child.
-      return childPositions[childPositions.length - 1] + 1;
-    }
-    // Vor das localIndex-te Child.
-    return childPositions[localIndex];
-  }
-
-  // Root-Drop: Roots sind Items mit parent_instance_id == null.
-  const rootPositions = [];
-  list.forEach((it, idx) => {
-    if (!it?.parent_instance_id) rootPositions.push(idx);
-  });
-  if (localIndex <= 0 || rootPositions.length === 0) return 0;
-  if (localIndex >= rootPositions.length) return list.length;
-  return rootPositions[localIndex];
-}
-
-/**
  * Phase 3.4: Item an absoluter Position einfügen. Setzt parent_instance_id
  * konsistent (null für Sektor-Root, bundleInstanceId für Bündel-Children).
  *
@@ -1172,46 +1022,3 @@ export function moveItemAbsolute(
   return setSektoren(konfig, lernTyp, next);
 }
 
-/**
- * Item innerhalb eines Sektors umsortieren oder zwischen zwei Sektoren des
- * gleichen Lerntyps verschieben. Reine Reihenfolge-Operation – führt keine
- * Duplikat-Prüfung durch (es wird ja kein neues Item hinzugefügt).
- *
- * Funktioniert für Aufgaben- UND System-Items gleichermaßen.
- *
- * Phase 3.4-Hinweis: Diese Funktion arbeitet noch auf flachen Indizes ohne
- * parent_instance_id-Update. Für Bündel-DnD nutzt das Cockpit jetzt
- * `moveItemAbsolute`. `moveAufgabe` bleibt für Legacy-Reorder ohne Hierarchie
- * erhalten (z. B. wenn nur Roots umsortiert werden, ohne Bündel-Wechsel).
- */
-export function moveAufgabe(konfig, lernTyp, fromSektorId, fromIndex, toSektorId, toIndex) {
-  const sektoren = getSektoren(konfig, lernTyp);
-  const fromSektor = sektoren.find((s) => s.sektor_id === fromSektorId);
-  if (!fromSektor) return konfig;
-  const movedItem = fromSektor.items[fromIndex];
-  if (!movedItem) return konfig;
-
-  const next = sektoren.map((s) => {
-    // Source = Target → Reorder innerhalb einer Liste.
-    if (fromSektorId === toSektorId && s.sektor_id === fromSektorId) {
-      const items = [...s.items];
-      items.splice(fromIndex, 1);
-      const insertAt = typeof toIndex === 'number' && toIndex >= 0 && toIndex <= items.length ? toIndex : items.length;
-      items.splice(insertAt, 0, movedItem);
-      return { ...s, items };
-    }
-    if (s.sektor_id === fromSektorId) {
-      const items = [...s.items];
-      items.splice(fromIndex, 1);
-      return { ...s, items };
-    }
-    if (s.sektor_id === toSektorId) {
-      const items = [...s.items];
-      const insertAt = typeof toIndex === 'number' && toIndex >= 0 && toIndex <= items.length ? toIndex : items.length;
-      items.splice(insertAt, 0, movedItem);
-      return { ...s, items };
-    }
-    return s;
-  });
-  return setSektoren(konfig, lernTyp, next);
-}
