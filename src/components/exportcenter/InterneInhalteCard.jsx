@@ -16,6 +16,7 @@ import {
   ChevronDown, ChevronRight, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { istVorabErzeugbar } from '@/lib/interneInhalteBausteine';
 
 const LERNTYP_LABELS = {
   minimalist: 'Minimalist',
@@ -50,8 +51,20 @@ export default function InterneInhalteCard({ einheitId }) {
     enabled: !!einheitId,
   });
 
-  // Erwartete KI-Bausteine aus lernpfade_konfiguration
-  const expectedItems = useMemo(() => {
+  // Baustein-Titel für eine verständliche Anzeige („Einführung in das
+  // Themenfeld" statt „sys_themenfeld_intro").
+  const { data: systemBausteine = [] } = useQuery({
+    queryKey: ['systemBausteine'],
+    queryFn: () => base44.entities.SystemBausteine.list(),
+  });
+  const titelByBausteinId = useMemo(
+    () => new Map((systemBausteine || []).map((b) => [b.baustein_id, b.titel])),
+    [systemBausteine]
+  );
+
+  // Alle System-Bausteine der vier Lernpfade — getrennt danach, ob der
+  // Pool-Manager den Inhalt vorab erzeugen kann oder ob die MBK die Seite baut.
+  const alleSystemItems = useMemo(() => {
     if (!einheit?.lernpfade_konfiguration) return [];
     const items = [];
     const konfig = einheit.lernpfade_konfiguration;
@@ -73,6 +86,28 @@ export default function InterneInhalteCard({ einheitId }) {
     }
     return items;
   }, [einheit]);
+
+  // Nur diese zählen als „Inhalt vorhanden / fehlt".
+  const expectedItems = useMemo(
+    () => alleSystemItems.filter((i) => istVorabErzeugbar(i.bausteinId)),
+    [alleSystemItems]
+  );
+
+  // Struktur-Bausteine ohne Vorab-Generator, nach Art zusammengefasst.
+  const mbkBausteine = useMemo(() => {
+    const map = new Map();
+    for (const i of alleSystemItems) {
+      if (istVorabErzeugbar(i.bausteinId)) continue;
+      map.set(i.bausteinId, (map.get(i.bausteinId) || 0) + 1);
+    }
+    return [...map.entries()]
+      .map(([bausteinId, anzahl]) => ({
+        bausteinId,
+        anzahl,
+        titel: titelByBausteinId.get(bausteinId) || bausteinId,
+      }))
+      .sort((a, b) => b.anzahl - a.anzahl);
+  }, [alleSystemItems, titelByBausteinId]);
 
   // Snapshots indizieren
   const snapByKey = useMemo(() => {
@@ -149,8 +184,9 @@ export default function InterneInhalteCard({ einheitId }) {
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            KI-generierte Baustein-Inhalte (z.B. Themenfeld-Einführungen) für alle
-            vier Lerntypen erzeugen. Schüler lesen daraus ohne Wartezeit.
+            Erzeugt die Inhalte, die der Pool-Manager selbst schreiben kann —
+            aktuell die <strong className="font-medium text-foreground">Themenfeld-Einführungen</strong> je
+            Lerntyp. Du kannst sie hier prüfen, und die Schüler lesen sie ohne Wartezeit.
           </p>
 
           {/* Status-Übersicht mit Aufklapp-Details */}
@@ -190,7 +226,8 @@ export default function InterneInhalteCard({ einheitId }) {
                               <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
                             )}
                             <span className={item.exists ? 'text-muted-foreground' : 'text-foreground font-medium'}>
-                              {item.sektorTitel}
+                              {titelByBausteinId.get(item.bausteinId) || item.bausteinId}
+                              <span className="text-muted-foreground font-normal"> — {item.sektorTitel}</span>
                             </span>
                             {item.exists && (
                               <Button
@@ -209,6 +246,26 @@ export default function InterneInhalteCard({ einheitId }) {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Struktur-Bausteine: hier ist nichts vorab zu erzeugen. */}
+          {mbkBausteine.length > 0 && (
+            <div className="mt-3 rounded-lg border border-border bg-muted/40 px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Baut die MBK beim Export ({mbkBausteine.reduce((s, b) => s + b.anzahl, 0)})
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Struktur-Seiten ohne eigenen Text — sie entstehen aus der Export-Instruktion
+                des Bausteins. Hier gibt es nichts vorab zu erzeugen.
+              </p>
+              <ul className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+                {mbkBausteine.map((b) => (
+                  <li key={b.bausteinId} className="text-xs text-muted-foreground">
+                    {b.titel} <span className="text-[10px]">×{b.anzahl}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
