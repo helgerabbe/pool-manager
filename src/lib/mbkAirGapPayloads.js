@@ -79,12 +79,32 @@ import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGat
  *     `dialog_id` und `url` — die beim Brian-Export erfasste ID/URL der
  *     Aufgabe in Brian.study, damit Moodle-HTML-Seiten direkt auf die
  *     richtige Brian-Aufgabe verlinken können.
+ * airgap-1.16.0: Tombstone-Filter + Lernpaket-Freigabestand.
+ *   - Gelöschte Datensätze (sync_status='to_delete' — Tombstones aus dem
+ *     Lösch-Workflow) werden in ALLEN Payloads herausgefiltert. Vorher
+ *     tauchten gelöschte Aktivitäten als "leere" Einträge (field_values={})
+ *     im Export auf.
+ *   - Payload 2 + 3: jedes Lernpaket erhält `content_status`, `released_at`
+ *     und `is_complete` — der ECHTE Freigabestand lebt seit 2026-08-11 auf
+ *     Lernpaket-Ebene. Das `content_status`-Feld der einzelnen Aktivitäten
+ *     ist ein Legacy-Feld ohne Bedeutung (bleibt aus Kompatibilität erhalten).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.15.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.16.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+
+/**
+ * Tombstone-Filter (airgap-1.16.0): Gelöschte Aktivitäten/Aufgaben/Master
+ * werden im Lösch-Workflow nur markiert (sync_status='to_delete'), nicht
+ * physisch entfernt. Die App blendet sie überall aus — der Export MUSS
+ * dieselbe Regel anwenden, sonst erscheinen gelöschte Aktivitäten als
+ * "leere" Einträge in den Payloads.
+ */
+function isTombstone(record) {
+  return record?.sync_status === 'to_delete';
+}
 
 /**
  * Erkennt, ob eine LernpaketPhaseAktivitaet didaktisch eine
@@ -1035,6 +1055,10 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
     themenfeld_id: lp.themenfeld_id || null,
     reihenfolge_nummer: lp.reihenfolge_nummer ?? null,
     geschaetzte_dauer_minuten: lp.geschaetzte_dauer_minuten ?? null,
+    // airgap-1.16.0: ECHTER Freigabestand (lebt auf Lernpaket-Ebene).
+    content_status: nullable(lp.content_status),
+    released_at: nullable(lp.released_at),
+    is_complete: lp.is_complete === true,
     kernbegriffe: Array.isArray(lp.kernbegriffe) ? lp.kernbegriffe.filter(Boolean) : [],
     aktivitaeten: (phasenDesPakets || [])
       .slice()
@@ -1173,6 +1197,10 @@ export function buildStructurePayload({
     uiConfigHash,
     nowIso,
   });
+
+  // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
+  phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
+  allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !isTombstone(aa));
 
   // Themenfelder + Pakete sortieren.
   const themenfelderSorted = [...themenfelder].sort(
@@ -1772,6 +1800,9 @@ export function buildTaskContentItemForLernpaket({
   masterAufgaben = [],
   navigationContext = [],
 }) {
+  // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
+  phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
+  masterAufgaben = (masterAufgaben || []).filter((m) => !isTombstone(m));
   // MasterAufgaben pro activity_id gruppieren.
   const masterByActivity = new Map();
   for (const m of masterAufgaben || []) {
@@ -1840,6 +1871,11 @@ export function buildTaskContentItemForLernpaket({
     themenfeld_id: lernpaket?.themenfeld_id || null,
     reihenfolge_nummer: lernpaket?.reihenfolge_nummer ?? null,
     geschaetzte_dauer_minuten: lernpaket?.geschaetzte_dauer_minuten ?? null,
+    // airgap-1.16.0: ECHTER Freigabestand des Lernpakets. Das
+    // content_status-Feld der einzelnen Aktivitäten ist Legacy ohne Bedeutung.
+    content_status: nullable(lernpaket?.content_status),
+    released_at: nullable(lernpaket?.released_at),
+    is_complete: lernpaket?.is_complete === true,
     kernbegriffe: Array.isArray(lernpaket?.kernbegriffe) ? lernpaket.kernbegriffe.filter(Boolean) : [],
     lernziele: (lernziele || []).map((lz) => ({
       lernziel_id: lz.id || null,
@@ -1864,6 +1900,8 @@ export function buildTaskContentItemForLernpaket({
  * durch — das eigentliche Briefing kommt in Payload 4.
  */
 export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationContext = [] }) {
+  // airgap-1.16.0: Tombstones liefern kein Item.
+  if (isTombstone(aufgabe)) return null;
   const istKi = aufgabe?.erstellungs_modus === 'ki';
   return {
     item_type: 'allgemeine_aufgabe',
@@ -1974,12 +2012,15 @@ export function buildTaskContentBundle({
       })
     );
 
-  const aufgabeItems = (allgemeineAufgabenEbene23 || []).map((aa) =>
-    buildTaskContentItemForAllgemeineAufgabe({
-      aufgabe: aa,
-      navigationContext: navFor(aa.id),
-    })
-  );
+  const aufgabeItems = (allgemeineAufgabenEbene23 || [])
+    .filter((aa) => !isTombstone(aa))
+    .map((aa) =>
+      buildTaskContentItemForAllgemeineAufgabe({
+        aufgabe: aa,
+        navigationContext: navFor(aa.id),
+      })
+    )
+    .filter(Boolean);
 
   const items = [...lernpaketItems, ...aufgabeItems];
 
@@ -2058,7 +2099,7 @@ export function buildMicroPayloadForActivity({
   uiConfigHash = null,
   nowIso = null,
 }) {
-  if (!aktivitaet) return null;
+  if (!aktivitaet || isTombstone(aktivitaet)) return null;
   const istOffene = isOffeneAufgabeActivity(aktivitaet, katalogById);
   // Ein Micro-Briefing wird erzeugt, wenn die Aktivität entweder explizit
   // im KI-Modus läuft oder strukturell eine "Offene Aufgabe" ist.
@@ -2166,7 +2207,7 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   uiConfigHash = null,
   nowIso = null,
 }) {
-  if (!aufgabe || aufgabe.erstellungs_modus !== 'ki') return null;
+  if (!aufgabe || isTombstone(aufgabe) || aufgabe.erstellungs_modus !== 'ki') return null;
 
   const briefing = aufgabe.ki_briefing && typeof aufgabe.ki_briefing === 'object'
     ? aufgabe.ki_briefing
@@ -2260,6 +2301,10 @@ export function buildMicroPayloadBundle({
   uiConfigHash = null,
   nowIso = null,
 }) {
+  // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
+  phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
+  allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !isTombstone(aa));
+  masterAufgaben = (masterAufgaben || []).filter((m) => !isTombstone(m));
   const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
   const lernpaketById = new Map((lernpakete || []).map((lp) => [lp.id, lp]));
   const phasenByPaket = new Map();
