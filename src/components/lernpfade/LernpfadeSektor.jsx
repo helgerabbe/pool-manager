@@ -22,6 +22,7 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical, Trash2, X, Plus, ChevronUp, ChevronDown, ChevronRight, Pencil, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getAufgabenTyp, ITEM_TYPE } from '@/lib/aufgabenTypen';
+import { getArtFarbe } from '@/lib/lernpfadFarben';
 import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
 import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
@@ -45,6 +46,9 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
   const istLernpaket = aufgabe?._isLernpaket === true;
   const typMeta = getAufgabenTyp(aufgabe?.aufgaben_typ);
   const Icon = typMeta.icon;
+  // Farbe folgt der ART des Elements (blau=Lernpaket, orange=Aufgabe,
+  // lila=Projekt) — zentral in lernpfadFarben.js, identisch zu Badge & Bündel.
+  const artFarbe = getArtFarbe(aufgabe);
   // Phase 3: Draggable-IDs müssen über Sektor- und Bündel-Droppables eindeutig
   // sein. Wir nehmen die instance_id als stabilen Anker (vorhanden seit Phase 1).
   const draggableId = `pfaditem-aufgabe-${instanceId || `${sektorId}-${index}-${refId}`}`;
@@ -64,13 +68,13 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
           onClick={() => onSelect?.(refId)}
           className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${
             isSelected
-              ? `${typMeta.color.border} ${typMeta.color.bg} shadow-sm`
-              : 'border-border bg-card hover:border-primary/30'
-          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''} ${inaktiv ? 'opacity-50' : ''}`}
+              ? `${artFarbe.border} ${artFarbe.bg} shadow-sm`
+              : `border-border bg-card ${artFarbe.hoverBorder}`
+          } ${snapshot.isDragging ? 'shadow-lg ring-2 ring-primary/40' : ''} ${indent ? 'ml-5 border-l-2 border-l-border' : ''} ${inaktiv ? 'opacity-50' : ''}`}
         >
           <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
-          <div className={`w-5 h-5 rounded ${typMeta.color.iconBg} flex items-center justify-center shrink-0`}>
-            <Icon className={`w-3 h-3 ${typMeta.color.iconText}`} />
+          <div className={`w-5 h-5 rounded ${artFarbe.iconBg} flex items-center justify-center shrink-0`}>
+            <Icon className={`w-3 h-3 ${artFarbe.iconText}`} />
           </div>
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
@@ -103,7 +107,7 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
           )}
           {isZwischentest && (
             <span
-              className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-rose-500 text-white border-rose-600"
+              className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-slate-700 text-white border-slate-800"
               title="Statischer Zwischentest"
             >
               Zwischentest
