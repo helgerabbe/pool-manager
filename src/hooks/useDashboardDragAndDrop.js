@@ -32,9 +32,25 @@ import { toast } from 'sonner';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import {
   canDrop,
-  normalizeItem,
   getUsedAufgabenIds,
+  groupItemsByParent,
+  insertItemInSektorAtAbsolute,
+  moveItemAbsolute,
 } from '@/lib/lernpfadeUtils';
+
+/** Klartext-Meldung für einen abgelehnten Drop. */
+function dropFehlerText(validation) {
+  switch (validation?.reason) {
+    case 'bundle_in_bundle':
+      return 'Ein Bündel kann nicht in ein anderes Bündel gelegt werden.';
+    case 'duplicate_in_lerntyp':
+      return 'Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.';
+    case 'wrong_type':
+      return 'Dieses Element passt nicht in dieses Bündel. Lernpakete gehören in ein Lernpaketebündel, Aufgaben in ein Aufgabenbündel und Projekte in ein Projektbündel.';
+    default:
+      return 'Dieses Element kann hier nicht abgelegt werden.';
+  }
+}
 
 const SYSTEM_DRAG_PREFIX = 'system-';
 const PFAD_AUFGABE_PREFIX = 'pfaditem-aufgabe-';
@@ -67,20 +83,6 @@ function findItemByInstanceId(konfiguration, lernTyp, instanceId) {
     const idx = items.findIndex((it) => it?.instance_id === instanceId);
     if (idx !== -1) {
       return { sektorId: s.sektor_id, absoluteIndex: idx, item: items[idx] };
-    }
-  }
-  return null;
-}
-
-/**
- * Findet einen Sektor anhand einer Bündel-instance_id (für Bündel-Drops, deren
- * Ziel-Droppable nur die Bündel-ID kennt, aber nicht den Container-Sektor).
- */
-function findSektorIdForBundle(konfiguration, lernTyp, bundleInstanceId) {
-  const sektoren = konfiguration?.[lernTyp] || [];
-  for (const s of sektoren) {
-    if ((s.items || []).some((it) => it?.instance_id === bundleInstanceId)) {
-      return s.sektor_id;
     }
   }
   return null;
@@ -133,20 +135,42 @@ function isBundleHeader(item, isBundleRef) {
 }
 
 /**
- * Flaches Datenmodell (single Droppable pro Sektor): Die Bündel-Zugehörigkeit
- * eines an `insertIndex` eingefügten Items wird aus dem VORGÄNGER abgeleitet.
- *   - Vorgänger ist ein Bündel-Header  → Item wird Kind dieses Bündels.
- *   - Vorgänger ist selbst ein Kind    → Item tritt demselben Bündel bei.
- *   - sonst (Root oder Position 0)     → Item ist Root (parent=null).
- * So kann innerhalb eines Bündels punktgenau sortiert UND ein Element durch
- * Ablage zwischen Root-Items wieder herausgezogen werden.
+ * Baut die SICHTBARE Item-Reihenfolge eines Sektors — identisch zu der, die
+ * LernpfadeSektor rendert (Kinder zugeklappter Bündel fehlen). Nur so passt
+ * `destination.index` der DnD-Engine zu unseren Daten.
  */
-function inferParentInstanceId(items, insertIndex, isBundleRef) {
-  if (insertIndex <= 0) return null;
-  const prev = items[insertIndex - 1];
-  if (!prev) return null;
-  if (isBundleHeader(prev, isBundleRef)) return prev.instance_id;
-  return prev.parent_instance_id || null;
+function buildVisibleItems(items, isBundleRef, expandedBundles) {
+  const grouped = groupItemsByParent(items, isBundleRef);
+  const visible = [];
+  for (const entry of grouped) {
+    visible.push(entry.item);
+    if (!entry.children) continue;
+    const expanded = expandedBundles ? !!expandedBundles.has?.(entry.item.instance_id) : true;
+    if (!expanded) continue;
+    for (const child of entry.children) visible.push(child.item);
+  }
+  return visible;
+}
+
+/**
+ * Übersetzt die Ablageposition (Index in der sichtbaren Liste) in
+ *   - `parent`: Bündel-Zugehörigkeit, abgeleitet aus dem VORGÄNGER
+ *     (Vorgänger ist ein Bündel-Kopf → Aufnahme ins Bündel; Vorgänger ist
+ *     selbst ein Kind → gleiches Bündel; sonst Sektor-Ebene),
+ *   - `absoluteIndex`: Position im flachen items-Array.
+ * Ablegen zwischen zwei Sektor-Elementen holt ein Element damit auch wieder
+ * aus einem Bündel heraus.
+ */
+function resolveDropTarget(items, visible, insertIndex, isBundleRef) {
+  if (insertIndex <= 0) return { parent: null, absoluteIndex: 0 };
+  const prev = visible[Math.min(insertIndex, visible.length) - 1];
+  if (!prev) return { parent: null, absoluteIndex: items.length };
+  const prevAbs = items.findIndex((it) => it?.instance_id === prev.instance_id);
+  const absoluteIndex = prevAbs === -1 ? items.length : prevAbs + 1;
+  const parent = isBundleHeader(prev, isBundleRef)
+    ? prev.instance_id
+    : prev.parent_instance_id || null;
+  return { parent, absoluteIndex };
 }
 
 export function useDashboardDragAndDrop({
@@ -156,6 +180,9 @@ export function useDashboardDragAndDrop({
   systemBausteineById,
   aufgabenById,
   updateKonfiguration,
+  // Klappzustand der Bündel — muss mit der Sektor-Ansicht übereinstimmen,
+  // damit Ablagepositionen korrekt umgerechnet werden.
+  expandedBundles,
 }) {
   // dragState ist NUR während eines aktiven Drags belegt.
   // validationByTarget: Map<droppableId, canDropResult> – pro Hover-Target,
@@ -234,10 +261,7 @@ export function useDashboardDragAndDrop({
       const src = parseDroppableId(source.droppableId);
       const dst = parseDroppableId(destination.droppableId);
       if (!src || !dst) return;
-      // Es gibt nur noch EINEN Droppable pro Sektor (keine verschachtelten
-      // Bündel-Droppables mehr). Bündel-Zugehörigkeit wird über die Ablage-
-      // Position abgeleitet (inferParentInstanceId). Pool-Ziele werden
-      // verworfen, Bündel-Ziele existieren nicht mehr als Droppable.
+
       if (dst.kind !== 'sektor') return;
       const toSektorId = dst.id;
 
@@ -252,105 +276,147 @@ export function useDashboardDragAndDrop({
       const isBundleRef = (refId) =>
         systemBausteineById?.get?.(refId)?.baustein_modus === 'bundle_1ton';
 
-      // Finalen Parent bestimmen + Bündel-Aufnahme validieren. Ungültige
-      // Kombinationen (falscher Typ, Bündel-in-Bündel) fallen auf Root zurück,
-      // statt den Drop zu verwerfen.
-      const resolveParent = (items, insertIndex, item) => {
-        const parent = inferParentInstanceId(items, insertIndex, isBundleRef);
-        if (!parent) return null;
-        if (isBundleHeader(item, isBundleRef)) return null; // kein Bündel-in-Bündel
-        const bundleHeader = items.find((it) => it?.instance_id === parent);
-        const validation = canDrop({
-          draggedItem: dragged.isFromPool
-            ? { type: item.type, ref_id: item.ref_id, isFromPool: true }
-            : { ...item, isFromPool: false },
-          lernTyp: activeLernTyp,
-          konfiguration,
-          targetParentRefId: bundleHeader?.ref_id || null,
-          systemBausteineById,
-          aufgabenById,
-        });
-        return validation.ok ? parent : null;
-      };
+      const getItems = (konfig, sektorId) =>
+        (konfig?.[activeLernTyp] || []).find((s) => s.sektor_id === sektorId)?.items || [];
 
-      // ── Pool → Sektor ──
-      if (src.kind === 'pool' || src.kind === 'pool-system') {
-        if (
-          dragged.type === ITEM_TYPE.AUFGABE &&
-          getUsedAufgabenIds(konfiguration, activeLernTyp).has(dragged.ref_id)
-        ) {
-          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
-          return;
-        }
-        updateKonfiguration((prev) => {
-          const sektoren = (prev?.[activeLernTyp] || []).map((s) => ({
-            ...s,
-            items: [...(s.items || [])],
-          }));
-          const target = sektoren.find((s) => s.sektor_id === toSektorId);
-          if (!target) return prev;
-          const insertAt = Math.max(0, Math.min(destination.index, target.items.length));
-          const newItem = normalizeItem({
-            type: dragged.type,
-            ref_id: dragged.ref_id,
-            parent_instance_id: null,
-          });
-          target.items.splice(insertAt, 0, newItem);
-          const parent = resolveParent(target.items, insertAt, newItem);
-          target.items[insertAt] = { ...newItem, parent_instance_id: parent };
-          return { ...prev, [activeLernTyp]: sektoren };
-        });
-        return;
-      }
-
-      // ── Sektor → Sektor (bestehendes Item verschieben) ──
+      // Bestehendes Item? → instance_id + Herkunft ermitteln.
+      const isMove = src.kind === 'sektor' || src.kind === 'bundle';
       let instanceId = null;
       if (draggableId.startsWith(PFAD_AUFGABE_PREFIX)) {
         instanceId = draggableId.slice(PFAD_AUFGABE_PREFIX.length);
       } else if (draggableId.startsWith(PFAD_SYSTEM_PREFIX)) {
         instanceId = draggableId.slice(PFAD_SYSTEM_PREFIX.length);
       }
-      if (!instanceId) return;
+      const found = instanceId
+        ? findItemByInstanceId(konfiguration, activeLernTyp, instanceId)
+        : null;
+      if (isMove && !found) return;
 
-      const found = findItemByInstanceId(konfiguration, activeLernTyp, instanceId);
+      /**
+       * Ablageziel für eine gegebene Konfiguration berechnen. Beim Verschieben
+       * innerhalb des gleichen Sektors wird das gezogene Item vorher aus der
+       * Liste genommen — genau so zählt die DnD-Engine.
+       */
+      const computeTarget = (konfig) => {
+        const items = getItems(konfig, toSektorId);
+        const list =
+          found && found.sektorId === toSektorId
+            ? items.filter((it) => it?.instance_id !== instanceId)
+            : items;
+        const visible = buildVisibleItems(list, isBundleRef, expandedBundles);
+        const { parent, absoluteIndex } = resolveDropTarget(
+          list,
+          visible,
+          destination.index,
+          isBundleRef
+        );
+        return { parent, absoluteIndex };
+      };
+
+      const movedIsHeader = !!found && isBundleHeader(found.item, isBundleRef);
+      const zielJetzt = computeTarget(konfiguration);
+
+      // Aufnahme in ein Bündel validieren (Typ-Regeln); auf Sektor-Ebene nur
+      // gegen Duplikate prüfen.
+      if (zielJetzt.parent && !movedIsHeader) {
+        const bundleItem = findItemByInstanceId(
+          konfiguration,
+          activeLernTyp,
+          zielJetzt.parent
+        )?.item;
+        const validation = canDrop({
+          draggedItem: dragged,
+          lernTyp: activeLernTyp,
+          konfiguration,
+          targetParentRefId: bundleItem?.ref_id || null,
+          systemBausteineById,
+          aufgabenById,
+        });
+        if (!validation.ok) {
+          toast.error(dropFehlerText(validation));
+          return;
+        }
+      } else if (dragged.type === ITEM_TYPE.AUFGABE && dragged.isFromPool) {
+        if (getUsedAufgabenIds(konfiguration, activeLernTyp).has(dragged.ref_id)) {
+          toast.error('Diese Aufgabe ist bereits in diesem Lernpfad vorhanden.');
+          return;
+        }
+      }
+
+      // ── Pool → Pfad ──
+      if (src.kind === 'pool' || src.kind === 'pool-system') {
+        updateKonfiguration((prev) => {
+          const { parent, absoluteIndex } = computeTarget(prev);
+          return insertItemInSektorAtAbsolute(
+            prev,
+            activeLernTyp,
+            toSektorId,
+            {
+              type: dragged.type,
+              ref_id: dragged.ref_id,
+              // Bündel-Bausteine selbst werden nie Kind eines Bündels.
+              parent_instance_id:
+                dragged.type === ITEM_TYPE.SYSTEM && isBundleRef(dragged.ref_id)
+                  ? null
+                  : parent,
+            },
+            absoluteIndex
+          );
+        });
+        return;
+      }
+
       if (!found) return;
       const fromSektorId = found.sektorId;
-      const movedIsHeader = isBundleHeader(found.item, isBundleRef);
 
-      updateKonfiguration((prev) => {
-        const sektoren = (prev?.[activeLernTyp] || []).map((s) => ({
-          ...s,
-          items: [...(s.items || [])],
-        }));
-        const fromSektor = sektoren.find((s) => s.sektor_id === fromSektorId);
-        const toSektor = sektoren.find((s) => s.sektor_id === toSektorId);
-        if (!fromSektor || !toSektor) return prev;
+      // Bündel-Kopf: Kopf + Kinder als Block verschieben (immer auf Sektor-Ebene).
+      if (movedIsHeader) {
+        updateKonfiguration((prev) => {
+          const sektoren = (prev?.[activeLernTyp] || []).map((s) => ({
+            ...s,
+            items: [...(s.items || [])],
+          }));
+          const fromSektor = sektoren.find((s) => s.sektor_id === fromSektorId);
+          const toSektor = sektoren.find((s) => s.sektor_id === toSektorId);
+          if (!fromSektor || !toSektor) return prev;
 
-        // Bündel-Header: Header + alle seine Kinder als zusammenhängenden Block
-        // verschieben, damit das Bündel beim Umsortieren nicht zerfällt.
-        if (movedIsHeader) {
           const headerId = found.item.instance_id;
           const block = fromSektor.items.filter(
             (it) => it.instance_id === headerId || it.parent_instance_id === headerId
           );
           const blockIds = new Set(block.map((b) => b.instance_id));
           fromSektor.items = fromSektor.items.filter((it) => !blockIds.has(it.instance_id));
+          const visible = buildVisibleItems(toSektor.items, isBundleRef, expandedBundles);
+          const { absoluteIndex } = resolveDropTarget(
+            toSektor.items,
+            visible,
+            destination.index,
+            isBundleRef
+          );
           const reHeader = { ...found.item, parent_instance_id: null };
           const reChildren = block.filter((b) => b.instance_id !== headerId);
-          const insertAt = Math.max(0, Math.min(destination.index, toSektor.items.length));
-          toSektor.items.splice(insertAt, 0, reHeader, ...reChildren);
+          toSektor.items.splice(absoluteIndex, 0, reHeader, ...reChildren);
           return { ...prev, [activeLernTyp]: sektoren };
-        }
+        });
+        return;
+      }
 
-        // Einzelnes Item.
-        const fromIdx = fromSektor.items.findIndex((it) => it.instance_id === instanceId);
+      // Einzelnes Item (Aufgabe oder einfacher System-Baustein).
+      updateKonfiguration((prev) => {
+        const fromIdx = getItems(prev, fromSektorId).findIndex(
+          (it) => it.instance_id === instanceId
+        );
         if (fromIdx === -1) return prev;
-        const [removed] = fromSektor.items.splice(fromIdx, 1);
-        const insertAt = Math.max(0, Math.min(destination.index, toSektor.items.length));
-        toSektor.items.splice(insertAt, 0, removed);
-        const parent = resolveParent(toSektor.items, insertAt, removed);
-        toSektor.items[insertAt] = { ...removed, parent_instance_id: parent };
-        return { ...prev, [activeLernTyp]: sektoren };
+        const { parent, absoluteIndex } = computeTarget(prev);
+        return moveItemAbsolute(
+          prev,
+          activeLernTyp,
+          fromSektorId,
+          fromIdx,
+          toSektorId,
+          absoluteIndex,
+          parent
+        );
       });
     },
     [
@@ -360,6 +426,7 @@ export function useDashboardDragAndDrop({
       systemBausteineById,
       aufgabenById,
       updateKonfiguration,
+      expandedBundles,
     ]
   );
 

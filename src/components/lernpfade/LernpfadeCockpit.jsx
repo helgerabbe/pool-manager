@@ -787,6 +787,10 @@ export default function LernpfadeCockpit({
     systemBausteineById,
     aufgabenById,
     updateKonfiguration,
+    // Muss mit der Sektor-Ansicht übereinstimmen: Kinder zugeklappter Bündel
+    // werden nicht gerendert und dürfen bei der Positionsberechnung des Drops
+    // deshalb nicht mitgezählt werden.
+    expandedBundles,
   });
 
   // ── Sektor-Handler ──────────────────────────────────────────────────

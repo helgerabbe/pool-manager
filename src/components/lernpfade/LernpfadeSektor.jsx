@@ -26,6 +26,7 @@ import SystemBausteinPill from '@/components/lernpfade/SystemBausteinPill';
 import SektorModusToggle from '@/components/lernpfade/SektorModusToggle';
 import SektorFreischaltControl from '@/components/lernpfade/SektorFreischaltControl';
 import BundleAutoFillButton from '@/components/lernpfade/BundleAutoFillButton';
+import ItemArtBadge from '@/components/lernpfade/ItemArtBadge';
 import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
@@ -81,6 +82,9 @@ function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = fal
           <span className="flex-1 min-w-0 truncate">
             {aufgabe ? titel : <span className="italic text-muted-foreground">Unbekannte Aufgabe</span>}
           </span>
+          {/* Art des Elements (Lernpaket / Aufgabe / Projekt) — macht sichtbar,
+              in welches Bündel es hineinpasst. */}
+          <ItemArtBadge aufgabe={aufgabe} />
           {inaktiv && (
             <span
               className="shrink-0 text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded border bg-slate-100 text-slate-500 border-slate-300"
@@ -507,64 +511,80 @@ export default function LernpfadeSektor({
                 Aufgaben oder Standard-Elemente hierher ziehen.
               </div>
             )}
-            {grouped.map((entry) => {
-              // Bündel: Header + eingerückte Kinder als FLACHE Geschwister im
-              // selben Sektor-Droppable (keine verschachtelten Droppables mehr).
-              // Die Bündel-Zugehörigkeit wird beim Drop aus der Position
-              // abgeleitet (siehe useDashboardDragAndDrop).
-              if (entry.children) {
+            {(() => {
+              // Sichtbare Reihenfolge = genau die Reihenfolge, in der die
+              // Draggables gerendert werden. Die DnD-Engine verlangt LÜCKENLOSE
+              // Indizes (0..n-1) pro Drop-Zone. Zugeklappte Bündel blenden ihre
+              // Kinder aus — deshalb wird hier durchgezählt und NICHT der
+              // absolute Index aus sektor.items verwendet. (Fix 2026-08-22:
+              // vorher entstanden Lücken, wodurch Drops in Bündel wirkungslos
+              // waren.) Die Umrechnung der Ablageposition in Bündel-
+              // Zugehörigkeit passiert in useDashboardDragAndDrop.
+              const rows = [];
+              let cursor = 0;
+              for (const entry of grouped) {
+                rows.push(renderItem(entry, cursor));
+                cursor += 1;
+                if (!entry.children) continue;
+
                 const bundleBaustein = systemBausteineById?.get(entry.item.ref_id);
-                // Bündel-Akkordeon: ohne Toggle-Callback immer aufgeklappt
-                // (rückwärtskompatibel); sonst nur, wenn explizit expandiert.
                 const bundleExpanded = onToggleBundle
                   ? !!expandedBundles?.has?.(entry.item.instance_id)
                   : true;
-                return (
-                  <React.Fragment key={`bundle-${entry.item.instance_id || entry.originalIndex}`}>
-                    {renderItem(entry, entry.originalIndex)}
-                    {onToggleBundle && (
-                      <button
-                        type="button"
-                        onClick={() => onToggleBundle(entry.item.instance_id)}
-                        title={bundleExpanded ? 'Bündel zuklappen' : 'Bündel aufklappen'}
-                        className="ml-5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors py-0.5"
-                      >
-                        <ChevronRight
-                          className={`w-3 h-3 transition-transform ${bundleExpanded ? 'rotate-90' : ''}`}
-                        />
-                        {entry.children.length}{' '}
-                        {entry.children.length === 1 ? 'Element' : 'Elemente'}
-                      </button>
-                    )}
-                    {bundleExpanded &&
-                      entry.children.map((child) =>
-                        renderItem(child, child.originalIndex, true)
-                      )}
-                    {bundleExpanded && entry.children.length === 0 && (
-                      <div className="ml-5 border-l-2 border-bundle/40 pl-3 py-0.5 space-y-1">
-                        <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
-                          Bündel ist leer – passende Aufgaben hierher ziehen.
-                        </div>
-                        {!readOnly && onAutoFillBundle && (
-                          <BundleAutoFillButton
-                            onAutoFill={() =>
-                              onAutoFillBundle(
-                                sektor.sektor_id,
-                                entry.item.instance_id,
-                                bundleBaustein
-                              )
-                            }
-                            disabled={readOnly}
-                          />
-                        )}
+
+                if (onToggleBundle) {
+                  rows.push(
+                    <button
+                      key={`bundle-toggle-${entry.item.instance_id}`}
+                      type="button"
+                      onClick={() => onToggleBundle(entry.item.instance_id)}
+                      title={bundleExpanded ? 'Bündel zuklappen' : 'Bündel aufklappen'}
+                      className="ml-5 flex items-center gap-1 text-[10px] font-medium text-muted-foreground hover:text-foreground transition-colors py-0.5"
+                    >
+                      <ChevronRight
+                        className={`w-3 h-3 transition-transform ${bundleExpanded ? 'rotate-90' : ''}`}
+                      />
+                      {entry.children.length}{' '}
+                      {entry.children.length === 1 ? 'Element' : 'Elemente'}
+                    </button>
+                  );
+                }
+
+                if (!bundleExpanded) continue;
+
+                for (const child of entry.children) {
+                  rows.push(renderItem(child, cursor, true));
+                  cursor += 1;
+                }
+
+                if (entry.children.length === 0) {
+                  rows.push(
+                    <div
+                      key={`bundle-empty-${entry.item.instance_id}`}
+                      className="ml-5 border-l-2 border-bundle/40 pl-3 py-0.5 space-y-1"
+                    >
+                      <div className="text-[10px] italic text-muted-foreground/70 py-0.5">
+                        Bündel ist leer – passende Elemente direkt unter die
+                        Bündel-Zeile ziehen.
                       </div>
-                    )}
-                  </React.Fragment>
-                );
+                      {!readOnly && onAutoFillBundle && (
+                        <BundleAutoFillButton
+                          onAutoFill={() =>
+                            onAutoFillBundle(
+                              sektor.sektor_id,
+                              entry.item.instance_id,
+                              bundleBaustein
+                            )
+                          }
+                          disabled={readOnly}
+                        />
+                      )}
+                    </div>
+                  );
+                }
               }
-              // Reguläres Root-Item (Aufgabe oder Nicht-Bündel-System-Baustein).
-              return renderItem(entry, entry.originalIndex);
-            })}
+              return rows;
+            })()}
             {provided.placeholder}
           </div>
         )}
