@@ -90,6 +90,10 @@ export default function LernpfadeCockpit({
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Alle Vorschau-Fenster (Dashboard, Onboarding-Elemente, Themenfeld-
+  // Einführung, Aufgabe) inkl. Snapshot-Persistenz.
+  const previews = useCockpitPreviews({ einheitId: einheit?.id, toast, queryClient });
+
   // ── State ───────────────────────────────────────────────────────────
   const [konfiguration, setKonfiguration] = useState(
     () => einheit?.lernpfade_konfiguration || DEFAULT_KONFIG
@@ -1005,7 +1009,6 @@ export default function LernpfadeCockpit({
               selectedSystemBaustein={selectedSystemBaustein}
               onSelectAufgabe={setSelectedAufgabeId}
               onSelectSystemBaustein={setSelectedSystemBausteinId}
-              onPreviewAufgabe={setPreviewAufgabe}
             />
           </aside>
 
@@ -1025,7 +1028,7 @@ export default function LernpfadeCockpit({
               onReleasePath={handleReleasePath}
               onUnlockPath={handleUnlockPath}
               onOpenGuide={() => setIsGuideOpen(true)}
-              onOpenPreview={() => setDashboardPreviewOpen(true)}
+              onOpenPreview={previews.openDashboard}
               isStructuralEditingActive={isStructuralEditingActive}
               isEndingEdit={isEndingEdit}
               onEndEditing={onEndEditing}
@@ -1054,10 +1057,10 @@ export default function LernpfadeCockpit({
               {activeLernTyp === 'onboarding' ? (
                 <OnboardingTab
                   onboardingKonfig={onboardingSnapshots}
-                  onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
-                  onPreviewQblock={() => setQblockPreviewOpen(true)}
-                  onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
-                  onPreviewLerntypDiagnose={() => setLerntypDiagnosePreviewOpen(true)}
+                  onPreviewEinfuehrung={previews.openEinfuehrung}
+                  onPreviewQblock={previews.openQblock}
+                  onPreviewDiagnoseQuiz={previews.openDiagnoseQuiz}
+                  onPreviewLerntypDiagnose={previews.openLerntypDiagnose}
                 />
               ) : (
               <LernpfadeArchitekt
@@ -1097,11 +1100,11 @@ export default function LernpfadeCockpit({
                 themenfeldTitelById={themenfeldTitelById}
                 getDriftStatus={getDriftStatus}
                 driftReportLoading={driftReportLoading}
-                onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
-                onPreviewQblock={() => setQblockPreviewOpen(true)}
-                onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
+                onPreviewEinfuehrung={previews.openEinfuehrung}
+                onPreviewQblock={previews.openQblock}
+                onPreviewDiagnoseQuiz={previews.openDiagnoseQuiz}
                 onPreviewThemenfeldIntro={(ctx) =>
-                  setThemenfeldIntroContext({ ...ctx, lerntyp: activeLernTyp })
+                  previews.openThemenfeldIntro({ ...ctx, lerntyp: activeLernTyp })
                 }
               />
               )}
@@ -1110,85 +1113,13 @@ export default function LernpfadeCockpit({
         </div>
       </DragDropContext>
 
-      <DashboardPreviewModal
-        open={dashboardPreviewOpen}
-        onOpenChange={setDashboardPreviewOpen}
-        lerntyp={activeLernTyp}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
+      <CockpitPreviewModals
+        previews={previews}
+        einheit={einheit}
+        activeLernTyp={activeLernTyp}
         sektoren={konfiguration?.[activeLernTyp] || []}
         aufgabenById={aufgabenById}
         systemBausteineById={systemBausteineById}
-        einfuehrungSnapshot={einfuehrungSnapshot}
-        qblockSnapshot={qblockSnapshot}
-        diagnoseQuizSnapshot={diagnoseQuizSnapshot}
-        onPreviewEinfuehrung={() => setEinfuehrungPreviewOpen(true)}
-        onPreviewQblock={() => setQblockPreviewOpen(true)}
-        onPreviewDiagnoseQuiz={() => setDiagnoseQuizPreviewOpen(true)}
-      />
-
-      <EinfuehrungPreviewModal
-        open={einfuehrungPreviewOpen}
-        onOpenChange={setEinfuehrungPreviewOpen}
-        einheitId={einheit?.id}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
-        onUebernehmen={(snap) => {
-          setEinfuehrungSnapshot(snap);
-          persistOnboardingElement('einfuehrung', snap);
-        }}
-      />
-
-      <EinstiegsdiagnosePreviewModal
-        open={qblockPreviewOpen}
-        onOpenChange={setQblockPreviewOpen}
-        einheitId={einheit?.id}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
-        onUebernehmen={(snap) => {
-          setQblockSnapshot(snap);
-          persistOnboardingElement('fragenblock', snap);
-        }}
-      />
-
-      <DiagnoseQuizPreviewModal
-        open={diagnoseQuizPreviewOpen}
-        onOpenChange={setDiagnoseQuizPreviewOpen}
-        einheitId={einheit?.id}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
-        initialSnapshot={diagnoseQuizSnapshot}
-        onUebernehmen={(snap) => {
-          setDiagnoseQuizSnapshot(snap);
-          persistOnboardingElement('einstiegsdiagnose', snap);
-        }}
-      />
-
-      <LerntypDiagnosePreviewModal
-        open={lerntypDiagnosePreviewOpen}
-        onOpenChange={setLerntypDiagnosePreviewOpen}
-        einheitId={einheit?.id}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
-        onUebernehmen={(snap) => {
-          setLerntypDiagnoseSnapshot(snap);
-          persistOnboardingElement('lerntyp_diagnose', snap);
-        }}
-      />
-
-      <ThemenfeldEinfuehrungPreviewModal
-        open={!!themenfeldIntroContext}
-        onOpenChange={(v) => { if (!v) setThemenfeldIntroContext(null); }}
-        einheitId={einheit?.id}
-        einheitTitel={einheit?.titel_der_einheit}
-        fach={einheit?.fach}
-        context={themenfeldIntroContext}
-      />
-
-      <AufgabePreviewDialog
-        open={!!previewAufgabe}
-        onOpenChange={(v) => !v && setPreviewAufgabe(null)}
-        aufgabe={previewAufgabe}
       />
 
       <ReleaseBlockerModal
