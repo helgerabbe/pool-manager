@@ -225,7 +225,7 @@
     },
     "projekt_ablauf_beschreibung": {
       "type": "string",
-      "description": "Projektaufgaben (Ebene 3, 2026-08-12): NICHT sch\u00fclersichtbare Beschreibung des geplanten Projekt-Ablaufs f\u00fcr die KI. Die Lehrkraft erkl\u00e4rt hier, wie sie sich den Ablauf der Projektarbeit vorstellt (Zwischenschritte, Reihenfolge, was die Sch\u00fcler in welchem Schritt tun sollen), damit Brian die Sch\u00fcler Schritt f\u00fcr Schritt durch das Projekt f\u00fchren kann. Gepflegt im Tab 'Abgabe & G\u00fctekriterien'; flie\u00dft in generateBrianSegments in die System-Anweisung ein."
+      "description": "Projektaufgaben (Ebene 3, 2026-08-12): NICHT schuelersichtbare Beschreibung des geplanten Projekt-Ablaufs fuer die KI. Die Lehrkraft erklaert hier, wie sie sich den Ablauf der Projektarbeit vorstellt (Zwischenschritte, Reihenfolge, was die Schueler in welchem Schritt tun sollen), damit Brian die Schueler Schritt fuer Schritt durch das Projekt fuehren kann. Gepflegt im Tab 'Abgabe & Guetekriterien'; fliesst in generateBrianSegments in die System-Anweisung ein."
     },
     "musterloesung": {
       "type": "string"
@@ -254,14 +254,30 @@
     },
     "materialien": {
       "type": "array",
+      "description": "Zusaetzliche Materialien zur Aufgabe (Freitext, Buchverweis, PDF, Bild). Fix 2026-08-22: Bis dahin war nur 'type' im Schema definiert, weshalb hochgeladene Dateien (url) und Bezeichnungen (label) beim Speichern still verworfen wurden.",
       "items": {
         "type": "object",
         "properties": {
           "type": {
-            "type": "string"
+            "type": "string",
+            "description": "free_text | book_ref | pdf | image"
+          },
+          "label": {
+            "type": "string",
+            "description": "Optionale Bezeichnung des Materials."
+          },
+          "content": {
+            "type": "string",
+            "description": "Textinhalt bei free_text / book_ref."
+          },
+          "url": {
+            "type": "string",
+            "description": "Datei-URL bei pdf / image."
           }
-        }
-      }
+        },
+        "additionalProperties": true
+      },
+      "default": []
     },
     "output_formats": {
       "type": "array",
@@ -302,7 +318,7 @@
     },
     "brian_system_instruction": {
       "type": "string",
-      "description": "Brian-Feld 3 'Interne Anweisung f\u00fcr den Chatbot' (2026-08-12): F\u00fcr Lernende unsichtbare Anweisung, die das Bot-Verhalten steuert. Wird von generateBrianSegments aus Aufgabenstellung, Abgabeformaten, G\u00fctekriterien/Rubriken, Projekt-Ablauf und Tutor-Persona zusammengesetzt und ist im Tab 'KI-Tutor Prompt' editierbar."
+      "description": "Brian-Feld 3 'Interne Anweisung fuer den Chatbot' (2026-08-12): Fuer Lernende unsichtbare Anweisung, die das Bot-Verhalten steuert. Wird von generateBrianSegments aus Aufgabenstellung, Abgabeformaten, Guetekriterien/Rubriken, Projekt-Ablauf und Tutor-Persona zusammengesetzt und ist im Tab 'KI-Tutor Prompt' editierbar."
     },
     "brian_completion_rule": {
       "type": "string"
@@ -316,11 +332,11 @@
         "restriktiv"
       ],
       "default": "standard",
-      "description": "Betreuungsstil des KI-Tutors \u2013 ein Baustein der internen Anweisung (brian_system_instruction)."
+      "description": "Betreuungsstil des KI-Tutors - ein Baustein der internen Anweisung (brian_system_instruction)."
     },
     "tutor_persona_zusatz": {
       "type": "string",
-      "description": "Optionale erg\u00e4nzende Hinweise der Lehrkraft zum Betreuungsstil (z. B. fachliche Strenge, Sprachebene, Scaffolding-Strategie)."
+      "description": "Optionale ergaenzende Hinweise der Lehrkraft zum Betreuungsstil (z. B. fachliche Strenge, Sprachebene, Scaffolding-Strategie)."
     },
     "brian_dialog_id": {
       "type": "string",

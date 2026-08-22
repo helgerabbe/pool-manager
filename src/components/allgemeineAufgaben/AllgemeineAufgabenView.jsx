@@ -480,9 +480,27 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                 {mat.type === 'pdf' && mat.url && (
                   <iframe src={mat.url} className="w-full h-48 rounded border border-border mb-2" title={mat.label || 'PDF'} />
                 )}
-                <p className="font-medium mb-0.5">
-                  {mat.type === 'freitext' && '📝'} {mat.type === 'pdf' && !mat.url && '📄'} {mat.type === 'image' && !mat.url && '🖼️'} {mat.type === 'book_ref' && '📚'}
-                  {' '}{mat.label || mat.content || (mat.type === 'image' || mat.type === 'pdf' ? '' : mat.url) || '…'}
+                <p className="font-medium mb-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span>
+                    {mat.type === 'pdf' ? '📄' : mat.type === 'image' ? '🖼️' : mat.type === 'book_ref' ? '📚' : '📝'}
+                  </span>
+                  <span className="break-all">
+                    {mat.label
+                      || mat.content
+                      || (mat.url
+                        ? decodeURIComponent(mat.url.split('/').pop().split('?')[0])
+                        : 'Datei fehlt – bitte erneut hochladen')}
+                  </span>
+                  {mat.url && (
+                    <a
+                      href={mat.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline font-normal"
+                    >
+                      öffnen
+                    </a>
+                  )}
                 </p>
                 {mat.content && <p className="text-muted-foreground line-clamp-2">{mat.content}</p>}
               </div>
