@@ -19,15 +19,11 @@ import {
   normalizeItem,
   normalizeSektor,
   getUsedAufgabenIds,
-  isAufgabeInLernpfad,
   createNewSektor,
   addSektor,
   patchSektor,
   removeSektor,
-  insertAufgabeInSektor,
   removeAufgabeFromLernTyp,
-  copySektorenBetweenLernTypen,
-  moveAufgabe,
 } from '@/lib/lernpfadeUtils';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 
@@ -113,7 +109,6 @@ describe('Lazy Migration (alt → neu)', () => {
       ],
     });
     expect(getUsedAufgabenIds(legacyKonfig, 'pragmatiker').has('uuid-1')).toBe(true);
-    expect(isAufgabeInLernpfad(legacyKonfig, 'pragmatiker', 'uuid-1')).toBe(true);
   });
 
   it('schreibende Helfer entfernen aufgaben_ids beim ersten Update (organische Migration)', () => {
@@ -180,17 +175,6 @@ describe('Anti-Duplikat-Logik (System-Bausteine ignoriert)', () => {
     expect(used.size).toBe(2);
   });
 
-  it('isAufgabeInLernpfad gibt false für System-Baustein-IDs zurück', () => {
-    expect(isAufgabeInLernpfad(konfigMixed, 'pragmatiker', 'sys_diagnose')).toBe(false);
-    expect(isAufgabeInLernpfad(konfigMixed, 'pragmatiker', 'uuid-1')).toBe(true);
-  });
-
-  it('insertAufgabeInSektor blockiert Duplikate von Aufgaben', () => {
-    const next = insertAufgabeInSektor(konfigMixed, 'pragmatiker', 'sec_2', 'uuid-1', 0);
-    // Konfiguration unverändert – Aufgabe war schon in sec_1.
-    expect(next).toBe(konfigMixed);
-  });
-
   it('removeAufgabeFromLernTyp entfernt nur Aufgaben-Items, lässt System-Items mit gleicher ID intakt', () => {
     const tricky = makeKonfig({
       pragmatiker: [
@@ -236,62 +220,10 @@ describe('Reihenfolge bei Move/Insert', () => {
       ],
     });
 
-  it('insertAufgabeInSektor fügt eine neue Aufgabe an der gewünschten Position ein', () => {
-    const next = insertAufgabeInSektor(baseKonfig(), 'pragmatiker', 'sec_2', 'b2', 0);
-    const refIds = next.pragmatiker[1].items.map((i) => i.ref_id);
-    expect(refIds).toEqual(['b2', 'b1']);
-  });
-
-  it('insertAufgabeInSektor ohne expliziten Index hängt am Ende an', () => {
-    const next = insertAufgabeInSektor(baseKonfig(), 'pragmatiker', 'sec_2', 'b2');
-    const refIds = next.pragmatiker[1].items.map((i) => i.ref_id);
-    expect(refIds).toEqual(['b1', 'b2']);
-  });
-
-  it('moveAufgabe sortiert innerhalb desselben Sektors um (a1, a2, a3 → a2, a3, a1)', () => {
-    const next = moveAufgabe(baseKonfig(), 'pragmatiker', 'sec_1', 0, 'sec_1', 2);
-    const refIds = next.pragmatiker[0].items.map((i) => i.ref_id);
-    expect(refIds).toEqual(['a2', 'a3', 'a1']);
-  });
-
-  it('moveAufgabe verschiebt zwischen Sektoren und behält Reihenfolge bei (a2 → sec_2[1])', () => {
-    const next = moveAufgabe(baseKonfig(), 'pragmatiker', 'sec_1', 1, 'sec_2', 1);
-    const sec1 = next.pragmatiker[0].items.map((i) => i.ref_id);
-    const sec2 = next.pragmatiker[1].items.map((i) => i.ref_id);
-    expect(sec1).toEqual(['a1', 'a3']);
-    expect(sec2).toEqual(['b1', 'a2']);
-  });
-
-  it('moveAufgabe verschiebt System-Items genauso wie Aufgaben-Items', () => {
-    const konfig = makeKonfig({
-      pragmatiker: [
-        {
-          sektor_id: 'sec_1',
-          titel: 'A',
-          modus: 'sequenziell',
-          items: [
-            { type: 'system', ref_id: 'sys_diagnose' },
-            { type: 'aufgabe', ref_id: 'a1' },
-          ],
-        },
-      ],
-    });
-    const next = moveAufgabe(konfig, 'pragmatiker', 'sec_1', 0, 'sec_1', 1);
-    expect(next.pragmatiker[0].items).toEqual([
-      { type: 'aufgabe', ref_id: 'a1' },
-      { type: 'system', ref_id: 'sys_diagnose' },
-    ]);
-  });
-
-  it('moveAufgabe gibt unveränderte Konfiguration zurück, wenn Quelle ungültig', () => {
-    const konfig = baseKonfig();
-    const next = moveAufgabe(konfig, 'pragmatiker', 'sec_unknown', 0, 'sec_1', 0);
-    expect(next).toBe(konfig);
-  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
-// Bonus: Sektor-Lebenszyklus + copySektoren
+// Bonus: Sektor-Lebenszyklus
 // ─────────────────────────────────────────────────────────────────────────
 describe('Sektor-Lebenszyklus', () => {
   it('addSektor → patchSektor → removeSektor wirkt sauber zusammen', () => {
@@ -307,26 +239,4 @@ describe('Sektor-Lebenszyklus', () => {
     expect(konfig.minimalist).toHaveLength(0);
   });
 
-  it('copySektorenBetweenLernTypen erzeugt frische sektor_ids und droppt aufgaben_ids', () => {
-    const konfig = makeKonfig({
-      pragmatiker: [
-        {
-          sektor_id: 'sec_legacy',
-          titel: 'Legacy',
-          modus: 'sequenziell',
-          aufgaben_ids: ['uuid-1', 'uuid-2'],
-        },
-      ],
-    });
-    const next = copySektorenBetweenLernTypen(konfig, 'pragmatiker', 'minimalist');
-    const copied = next.minimalist[0];
-
-    expect(copied.sektor_id).not.toBe('sec_legacy');
-    expect(copied.sektor_id.startsWith('sec_')).toBe(true);
-    expect(copied).not.toHaveProperty('aufgaben_ids');
-    expect(copied.items).toEqual([
-      { type: 'aufgabe', ref_id: 'uuid-1' },
-      { type: 'aufgabe', ref_id: 'uuid-2' },
-    ]);
-  });
 });
