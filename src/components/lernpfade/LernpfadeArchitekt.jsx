@@ -24,59 +24,39 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
+import { getIntensitaetsFarbe } from '@/lib/lernpfadFarben';
 
+// Intensitätsstufen: eigener Teal-Verlauf (hell → dunkel = wenig → viel
+// Intensität). Bewusst getrennt von den Inhaltsfarben (blau = Lernpakete,
+// orange = Aufgaben, lila = Projekte, grau = System, grün/rot = Status).
 export const LERN_TYPEN = [
   {
     key: 'minimalist',
     label: 'Minimalist',
     description: 'Konzentriert sich auf das Wesentliche.',
     icon: Sparkles,
-    color: {
-      bg: 'bg-slate-50',
-      bgSolid: 'bg-slate-700',
-      border: 'border-slate-300',
-      text: 'text-slate-700',
-      textOn: 'text-white',
-    },
+    color: getIntensitaetsFarbe('minimalist'),
   },
   {
     key: 'pragmatiker',
     label: 'Pragmatiker',
     description: 'Effiziente, lösungsorientierte Reihenfolge.',
     icon: Layers,
-    color: {
-      bg: 'bg-blue-50',
-      bgSolid: 'bg-blue-600',
-      border: 'border-blue-300',
-      text: 'text-blue-700',
-      textOn: 'text-white',
-    },
+    color: getIntensitaetsFarbe('pragmatiker'),
   },
   {
     key: 'ehrgeizig',
     label: 'Ehrgeizig',
     description: 'Fordert mit zusätzlichen Herausforderungen.',
     icon: Trophy,
-    color: {
-      bg: 'bg-amber-50',
-      bgSolid: 'bg-amber-600',
-      border: 'border-amber-300',
-      text: 'text-amber-700',
-      textOn: 'text-white',
-    },
+    color: getIntensitaetsFarbe('ehrgeizig'),
   },
   {
     key: 'passioniert',
     label: 'Passioniert',
     description: 'Tiefer Tauchgang mit Projektfokus.',
     icon: Star,
-    color: {
-      bg: 'bg-violet-50',
-      bgSolid: 'bg-violet-600',
-      border: 'border-violet-300',
-      text: 'text-violet-700',
-      textOn: 'text-white',
-    },
+    color: getIntensitaetsFarbe('passioniert'),
   },
 ];
 
@@ -90,21 +70,21 @@ const ADD_SEKTOR_OPTIONS = [
     label: 'Arbeitsphase Themenfeld',
     hint: 'Verknüpfung mit einem Themenfeld der Einheit',
     Icon: BookOpen,
-    cls: 'text-blue-600',
+    cls: 'text-slate-600',
   },
   {
     key: SEKTOR_TYP.ZWISCHENTEST,
     label: 'Zwischentest',
     hint: 'Einstiegsseite · Zwischentest-Platzhalter',
     Icon: ClipboardCheck,
-    cls: 'text-rose-600',
+    cls: 'text-slate-600',
   },
   {
     key: SEKTOR_TYP.FEEDBACK,
     label: 'Feedback',
     hint: 'Schüler-Rückmeldung am Ende der Einheit (immer letzter Sektor)',
     Icon: MessageSquare,
-    cls: 'text-emerald-600',
+    cls: 'text-slate-600',
   },
   {
     key: SEKTOR_TYP.INDIVIDUELL,
