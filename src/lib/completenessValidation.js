@@ -328,6 +328,15 @@ export function validateAllgemeineAufgabe(aufgabe) {
   const missingFields = [];
   const typ = aufgabe.aufgaben_typ || 'inhalt';
 
+  // Brian-Übergabefelder (2026-08-22): Für Brian.study gibt es keine API —
+  // die vier Felder müssen von der Lehrkraft/KI erzeugt sein, sonst kann das
+  // MBK-Team den Dialog nicht anlegen. Gilt in BEIDEN Erstellungs-Modi.
+  const brianMissing = istBrianAufgabe(aufgabe)
+    ? fehlendeBrianFelder(aufgabe).map((f) =>
+      miss(f.key, `Brian: ${f.label}`, 'KI-Tutor-Feld noch nicht erzeugt')
+    )
+    : [];
+
   // KI-Modus: Briefing prüfen, nicht Aufgabenstellung.
   if (aufgabe.erstellungs_modus === 'ki') {
     const briefing = aufgabe.ki_briefing || {};
@@ -342,6 +351,7 @@ export function validateAllgemeineAufgabe(aufgabe) {
       const std = briefing.standard || {};
       if (isEmptyValue(std.schwerpunkt)) missingFields.push(miss('ki_briefing.standard.schwerpunkt', 'Schwerpunkt', 'Pflichtfeld leer'));
     }
+    missingFields.push(...brianMissing);
     return { isComplete: missingFields.length === 0, missingFields };
   }
 
@@ -390,6 +400,8 @@ export function validateAllgemeineAufgabe(aufgabe) {
         missingFields.push(miss('aufgabenstellung', 'Aufgabenstellung', 'Pflichtfeld leer'));
       }
   }
+
+  missingFields.push(...brianMissing);
 
   return { isComplete: missingFields.length === 0, missingFields };
 }
