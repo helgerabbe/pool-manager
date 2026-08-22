@@ -11,6 +11,11 @@
  * Für jedes Sektor-Item wird ein lokaler, sektor-eindeutiger draggableId
  * benötigt (System-Bausteine dürfen mehrfach im gleichen Lernpfad existieren).
  * Wir kombinieren deshalb sektor_id + index + ref_id.
+ *
+ * Tooltip (2026-08-22): Der Erklär-Tooltip hängt am SYMBOL, nicht an der
+ * ganzen Zeile. Am breiten Zeilen-Trigger erschien er mittig über dem Element
+ * und verdeckte die Nachbarzeilen — am kleinen Symbol erscheint er dort, wo
+ * der Mauszeiger tatsächlich steht (wie bei allen anderen Tooltips der App).
  */
 
 import React from 'react';
@@ -73,6 +78,10 @@ export default function SystemBausteinPill({
   // Nur am Aufgabenbündel zeigen wir den X-von-Y-Stepper (Phase 4).
   const isAufgabenBuendel = isBundle && refId === AUFGABEN_BUENDEL_REF_ID;
 
+  const tooltipText = isBundle
+    ? `${titel}: Ein Container für zusammengehörende Elemente – ziehe passende Aufgaben oder Lernpakete per Drag & Drop hinein. Sein Zweck: an dieser Stelle die andere Bearbeitungsart als im Abschnitt ermöglichen (im sequenziellen Abschnitt eine freie Auswahl, im freien Abschnitt eine feste Reihenfolge). Details im Sequenziell/Frei-Schalter rechts.`
+    : baustein?.admin_beschreibung || null;
+
   let containerClasses;
   if (isBundle) {
     containerClasses = isSelected
@@ -92,19 +101,19 @@ export default function SystemBausteinPill({
     <Draggable draggableId={draggableId} index={index} isDragDisabled={disabled}>
       {(provided, snapshot) => (
         <TooltipProvider delayDuration={400}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div
-                ref={provided.innerRef}
-                {...provided.draggableProps}
-                {...provided.dragHandleProps}
-                onClick={() => onSelect?.(refId)}
-                data-platzhalter={isPlatzhalter ? 'true' : 'false'}
-                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${containerClasses} ${
-                  snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
-                } ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
-              >
-                <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            onClick={() => onSelect?.(refId)}
+            data-platzhalter={isPlatzhalter ? 'true' : 'false'}
+            className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${containerClasses} ${
+              snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
+            } ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
+          >
+            <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <div
                   className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${
                     isBundle
@@ -125,76 +134,78 @@ export default function SystemBausteinPill({
                     }`}
                   />
                 </div>
-                <span
-                  className={`flex-1 min-w-0 truncate font-medium ${
-                    isBundle
-                      ? 'text-bundle'
-                      : isPlatzhalter
-                      ? PLATZHALTER_CLASSES.title
-                      : 'text-slate-800'
-                  }`}
+              </TooltipTrigger>
+              {tooltipText && (
+                <TooltipContent
+                  side="right"
+                  align="start"
+                  className="max-w-xs text-xs leading-relaxed"
                 >
-                  {titel}
-                  {!baustein && (
-                    <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
-                  )}
-                </span>
-                <div className="ml-auto flex items-center gap-1.5 shrink-0">
-                  {onPreview && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onPreview();
-                      }}
-                      title="KI-Vorschau erstellen"
-                      className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition-colors"
-                    >
-                      <Eye className="w-3 h-3" /> Vorschau
-                    </button>
-                  )}
-                  {isBundle && (
-                    <BundleModusToggle
-                      acceptedTypes={baustein?.accepted_types}
-                      modus={bundleConfig?.modus}
-                      sektorModus={sektorModus}
-                      disabled={disabled}
-                      onChange={onSetBundleModus}
-                    />
-                  )}
-                  {isAufgabenBuendel && (
-                    <BundleErforderlichControl
-                      childCount={bundleChildCount}
-                      erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
-                      modus={resolveBundleModus(bundleConfig?.modus, sektorModus)}
-                      disabled={disabled}
-                      onChange={onSetBundleConfig}
-                    />
-                  )}
-                  {!disabled && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove?.();
-                      }}
-                      title="Aus Pfad entfernen"
-                      className="text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </TooltipTrigger>
-            {(isBundle || baustein?.admin_beschreibung) && (
-              <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
-                {isBundle
-                  ? `${titel}: Ein Container für zusammengehörende Elemente – ziehe passende Aufgaben oder Lernpakete per Drag & Drop hinein. Sein Zweck: an dieser Stelle die andere Bearbeitungsart als im Abschnitt ermöglichen (im sequenziellen Abschnitt eine freie Auswahl, im freien Abschnitt eine feste Reihenfolge). Details im Sequenziell/Frei-Schalter rechts.`
-                  : baustein.admin_beschreibung}
-              </TooltipContent>
-            )}
-          </Tooltip>
+                  {tooltipText}
+                </TooltipContent>
+              )}
+            </Tooltip>
+            <span
+              className={`flex-1 min-w-0 truncate font-medium ${
+                isBundle
+                  ? 'text-bundle'
+                  : isPlatzhalter
+                  ? PLATZHALTER_CLASSES.title
+                  : 'text-slate-800'
+              }`}
+            >
+              {titel}
+              {!baustein && (
+                <span className="ml-1 italic text-muted-foreground">(unbekannt)</span>
+              )}
+            </span>
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+              {onPreview && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview();
+                  }}
+                  title="KI-Vorschau erstellen"
+                  className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition-colors"
+                >
+                  <Eye className="w-3 h-3" /> Vorschau
+                </button>
+              )}
+              {isBundle && (
+                <BundleModusToggle
+                  acceptedTypes={baustein?.accepted_types}
+                  modus={bundleConfig?.modus}
+                  sektorModus={sektorModus}
+                  disabled={disabled}
+                  onChange={onSetBundleModus}
+                />
+              )}
+              {isAufgabenBuendel && (
+                <BundleErforderlichControl
+                  childCount={bundleChildCount}
+                  erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
+                  modus={resolveBundleModus(bundleConfig?.modus, sektorModus)}
+                  disabled={disabled}
+                  onChange={onSetBundleConfig}
+                />
+              )}
+              {!disabled && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove?.();
+                  }}
+                  title="Aus Pfad entfernen"
+                  className="text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         </TooltipProvider>
       )}
     </Draggable>
