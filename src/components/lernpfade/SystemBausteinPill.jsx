@@ -115,7 +115,7 @@ export default function SystemBausteinPill({
             data-platzhalter={isPlatzhalter ? 'true' : 'false'}
             className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs cursor-pointer transition-colors ${containerClasses} ${
               snapshot.isDragging ? 'shadow-lg ring-2 ring-slate-400 bg-white' : ''
-            } ${indent ? 'ml-5 border-l-2 border-l-border' : ''}`}
+            } ${indent ? 'ml-5 border-l-2 border-l-bundle/40' : ''}`}
           >
             <GripVertical className="w-3 h-3 text-muted-foreground/60 shrink-0" />
             <Tooltip>
@@ -174,7 +174,7 @@ export default function SystemBausteinPill({
                     onPreview();
                   }}
                   title="KI-Vorschau erstellen"
-                  className="inline-flex items-center gap-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 hover:bg-slate-100 transition-colors"
+                  className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition-colors"
                 >
                   <Eye className="w-3 h-3" /> Vorschau
                 </button>
