@@ -86,7 +86,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'lernpakete', label: 'Lernpakete (Ebene 1)', icon: Package, step: 4,
+    value: 'lernpakete', label: 'Lernpakete (Ebene 1)', icon: Package, step: 4, art: 'lernpaket',
     help: {
       title: 'Lernpakete (Ebene 1) — Aktivitäten & Aufgaben an einem Ort',
       description: 'Hier füllst du als Fachlehrkraft die Lernpakete mit Leben — alles in einem Tab. Links wählst du im Baum ein Lernpaket: Rechts legst du fest, WELCHE Aktivitäten es pro Phase (Erarbeitung · Übung · Abschluss) enthält, startest den Aufgabeneditor (KI) und gibst das Paket frei. Klickst du im Baum tiefer auf eine Aktivität, öffnet sich direkt die Aufgaben-Werkstatt: Dort arbeitest du die konkreten Inhalte aus (z. B. die Lückentext-Sätze), legst Mastervorlagen an und lässt dir KI-Klone generieren. Die Ansicht rechts folgt immer deiner Auswahl im Baum.',
@@ -108,7 +108,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 5,
+    value: 'ebene2', label: 'Allgemeine Aufgaben (Ebene 2)', icon: ClipboardList, step: 5, art: 'aufgabe',
     help: {
       title: 'Allgemeine Aufgaben (Ebene 2 – Transfer)',
       description: 'In diesem Tab erstellst du als Fachlehrkraft die allgemeinen Transfer-Aufgaben deiner Einheit (Ebene 2). Das sind die größeren, offenen Aufgaben, bei denen Schüler:innen das in den Lernpaketen Gelernte auf eine neue Situation anwenden müssen – z. B. eine Quelle analysieren, ein Diagramm auswerten oder eine kurze Erörterung schreiben. Begleitet werden sie dabei vom KI-Tutor Brian.study, den du in diesem Tab gleich mit konfigurierst. Beim Anlegen wählst du zunächst die Art der Aufgabe (Mission) – also welche Denkleistung im Vordergrund steht. Wenn dir die Idee fehlt, hilft dir die KI-Ideenbox mit passenden Vorschlägen für das jeweilige Themenfeld.',
@@ -132,7 +132,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'ebene3', label: 'Projektaufgaben (Ebene 3)', icon: Target, step: 6,
+    value: 'ebene3', label: 'Projektaufgaben (Ebene 3)', icon: Target, step: 6, art: 'projekt',
     help: {
       title: 'Projektaufgaben (Ebene 3)',
       description: 'In diesem Tab erstellst du als Fachlehrkraft die anspruchsvollen Anwendungs- und Projektaufgaben (Ebene 3). Das sind die offenen, kreativen Aufgaben, bei denen deine Schüler:innen ein Produkt oder Projekt selbstständig planen und erstellen – z. B. ein Plakat, ein Podcast, eine Präsentation oder ein Portfolio. Da es hier keine eindeutige Musterlösung gibt, definierst du die Abgabeformate, Bewertungsrubriken und einen Projekt-Coach (KI-Tutor), der die Lernenden über mehrere Sitzungen begleitet.',
@@ -223,6 +223,29 @@ const BRIAN_TAB = {
 // Die Steps werden für die Anzeige frisch von 1 durchnummeriert.
 const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete'];
 
+// Inhaltsfarben der Tabs 4–6 — identisch zur Farbsprache der Lernpfade
+// (blau = Lernpakete, orange = Aufgaben, lila = Projekte).
+const TAB_ART_STYLE = {
+  lernpaket: {
+    active: 'bg-blue-600 text-white border-blue-700 shadow-sm',
+    activeStep: 'bg-white text-blue-700',
+    idle: 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 hover:border-blue-400',
+    idleStep: 'bg-blue-100 text-blue-700',
+  },
+  aufgabe: {
+    active: 'bg-orange-600 text-white border-orange-700 shadow-sm',
+    activeStep: 'bg-white text-orange-700',
+    idle: 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100 hover:border-orange-400',
+    idleStep: 'bg-orange-100 text-orange-700',
+  },
+  projekt: {
+    active: 'bg-violet-600 text-white border-violet-700 shadow-sm',
+    activeStep: 'bg-white text-violet-700',
+    idle: 'bg-violet-50 border-violet-300 text-violet-700 hover:bg-violet-100 hover:border-violet-400',
+    idleStep: 'bg-violet-100 text-violet-700',
+  },
+};
+
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
   const { rolle } = useRBAC();
   let visibleTabs = getVisibleTabs(rolle, isBasismodul);
@@ -245,6 +268,7 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
         {visibleTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.value;
+          const artStyle = tab.art ? TAB_ART_STYLE[tab.art] : null;
           return (
             <div key={tab.value} className="relative">
               <Tooltip>
@@ -254,15 +278,15 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
                     className={cn(
                       'flex items-center gap-1.5 py-1 rounded-md border transition-all font-medium',
                       isActive
-                        ? 'bg-primary text-primary-foreground border-primary shadow-sm px-3 justify-start'
-                        : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50 px-2 justify-center'
+                        ? cn('px-3 justify-start', artStyle ? artStyle.active : 'bg-primary text-primary-foreground border-primary shadow-sm')
+                        : cn('px-2 justify-center', artStyle ? artStyle.idle : 'bg-card border-border text-muted-foreground hover:border-primary/50 hover:bg-muted/50')
                     )}
                   >
                     <span className={cn(
                       'flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold shrink-0 transition-all',
                       isActive
-                        ? 'bg-primary-foreground text-primary'
-                        : 'bg-muted text-muted-foreground'
+                        ? (artStyle ? artStyle.activeStep : 'bg-primary-foreground text-primary')
+                        : (artStyle ? artStyle.idleStep : 'bg-muted text-muted-foreground')
                     )}>
                       {tab.step}
                     </span>
