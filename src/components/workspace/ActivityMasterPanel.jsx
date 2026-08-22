@@ -787,6 +787,7 @@ export default function ActivityMasterPanel({
                 {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && (
                   <KompaktwissenKIPanel
                     activityId={activityRecord.id}
+                    fieldValues={fieldValues}
                     disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive)}
                     onGenerated={async (newFieldValues) => {
                       if (newFieldValues) setFieldValues(newFieldValues);
