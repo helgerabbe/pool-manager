@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/tooltip';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
+import { getBundleFarbe } from '@/lib/lernpfadFarben';
 
 export default function SystemBausteinPoolItem({
   baustein,
@@ -33,17 +34,18 @@ export default function SystemBausteinPoolItem({
   // klar von regulären System-Bausteinen abzugrenzen.
   const isPlatzhalter = isPlatzhalterBaustein(baustein);
 
-  // Bündel (baustein_modus='bundle_1ton') bekommt den Lila-Look – konsistent
-  // zur Sektor-Pill (siehe Logbuch §18, Phase 2). Vorrang vor Platzhalter-Style,
-  // weil Bündel zwar 1:n-Container sind, optisch aber als eigene Klasse
-  // erkennbar bleiben müssen.
+  // Bündel (baustein_modus='bundle_1ton') tragen die Farbe ihres INHALTS —
+  // blau = Lernpakete, orange = Aufgaben, lila = Projekte (zentral:
+  // lernpfadFarben.js, identisch zur Sektor-Pill). Vorrang vor dem
+  // Platzhalter-Style, weil Bündel optisch als Container erkennbar bleiben.
   const isBundle = baustein?.baustein_modus === 'bundle_1ton';
+  const bundleFarbe = isBundle ? getBundleFarbe(baustein?.accepted_types) : null;
 
   let containerClasses;
   if (isBundle) {
     containerClasses = isSelected
-      ? 'border-dashed border-2 border-bundle bg-bundle-soft shadow-sm'
-      : 'border-dashed border-2 border-bundle-border bg-bundle-soft hover:border-bundle';
+      ? `border-dashed border-2 ${bundleFarbe.border} ${bundleFarbe.bg} shadow-sm`
+      : `border-dashed border-2 ${bundleFarbe.border} ${bundleFarbe.bg} ${bundleFarbe.hoverBorder}`;
   } else if (isPlatzhalter) {
     containerClasses = isSelected
       ? PLATZHALTER_CLASSES.containerSelected
@@ -73,7 +75,7 @@ export default function SystemBausteinPoolItem({
                 <div
                   className={`w-6 h-6 rounded flex items-center justify-center shrink-0 ${
                     isBundle
-                      ? 'bg-bundle text-bundle-foreground'
+                      ? bundleFarbe.iconBg
                       : isPlatzhalter
                       ? PLATZHALTER_CLASSES.iconBox
                       : 'bg-slate-200'
@@ -83,7 +85,7 @@ export default function SystemBausteinPoolItem({
                     strokeWidth={2.5}
                     className={`w-3 h-3 ${
                       isBundle
-                        ? 'text-bundle-foreground'
+                        ? bundleFarbe.iconText
                         : isPlatzhalter
                         ? PLATZHALTER_CLASSES.icon
                         : 'text-slate-700'
@@ -94,7 +96,7 @@ export default function SystemBausteinPoolItem({
                   <p
                     className={`text-xs font-semibold truncate leading-snug ${
                       isBundle
-                        ? 'text-bundle'
+                        ? bundleFarbe.text
                         : isPlatzhalter
                         ? PLATZHALTER_CLASSES.title
                         : 'text-slate-800'
