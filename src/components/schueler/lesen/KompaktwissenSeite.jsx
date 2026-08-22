@@ -1,7 +1,8 @@
-import { CheckCircle2, Loader2, ArrowLeft, Lightbulb, Image } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, Lightbulb } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
 import KompaktwissenSektionen from './KompaktwissenSektionen';
+import KompaktwissenMedium from './KompaktwissenMedium';
 
 /**
  * Schüler-Aktivität „Kompaktwissen".
@@ -36,19 +37,7 @@ export default function KompaktwissenSeite({ aktivitaet, busy, onErledigt, onBac
             Für diese Aktivität ist noch kein Kompaktwissen hinterlegt.
           </p>
         ) : inhaltTyp === 'bild' ? (
-          <div className="rounded-2xl border border-border bg-card overflow-hidden">
-            <img
-              src={bildUrl}
-              alt="Kompaktwissen – Übersichtsgrafik"
-              className="w-full h-auto object-contain max-h-[60vh]"
-            />
-            <div className="px-4 py-2 border-t border-border bg-muted/20">
-              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Image className="w-3.5 h-3.5" />
-                Übersichtsgrafik – verschaffe dir einen Überblick über die wichtigsten Inhalte.
-              </p>
-            </div>
-          </div>
+          <KompaktwissenMedium url={bildUrl} />
         ) : (
           <div className="space-y-3">
             <div className="flex items-center gap-2">

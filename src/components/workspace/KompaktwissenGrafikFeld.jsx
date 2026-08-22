@@ -40,7 +40,7 @@ export default function KompaktwissenGrafikFeld({ value = '', kompaktwissenText 
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <Label>
-          Übersichtsbild / Grafik <span className="text-muted-foreground font-normal">(optional)</span>
+          Übersicht als Bild oder PDF <span className="text-muted-foreground font-normal">(optional)</span>
         </Label>
         <Button
           type="button"
@@ -56,9 +56,11 @@ export default function KompaktwissenGrafikFeld({ value = '', kompaktwissenText 
             : <><Sparkles className="w-4 h-4" /> Grafik mit KI erstellen</>}
         </Button>
       </div>
-      <BildEinfuegenFeld value={value} onChange={onChange} disabled={disabled || generating} />
+      <BildEinfuegenFeld value={value} onChange={onChange} disabled={disabled || generating} erlaubtPdf />
       <p className="text-xs text-muted-foreground">
-        KI-Grafiken enthalten manchmal fehlerhafte Beschriftungen – prüfe das Ergebnis, bevor du es freigibst.
+        Erlaubt sind Bilder (auch per Strg+V eingefügte Screenshots) und PDF-Dateien. Die Datei wird
+        den Schüler:innen angezeigt und dient der KI als Grundlage. KI-Grafiken enthalten manchmal
+        fehlerhafte Beschriftungen – prüfe das Ergebnis, bevor du es freigibst.
       </p>
     </div>
   );
