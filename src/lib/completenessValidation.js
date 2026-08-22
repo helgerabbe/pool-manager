@@ -15,6 +15,7 @@
  */
 
 import { istMaterialBefuellt, istFrageVollstaendig } from '@/lib/materialaufgabe';
+import { istBrianAufgabe, fehlendeBrianFelder } from '@/lib/brianFelder';
 
 // ---------------------------------------------------------------------------
 // Helpers
