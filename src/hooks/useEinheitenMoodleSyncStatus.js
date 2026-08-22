@@ -23,12 +23,17 @@ export function useEinheitenMoodleSyncStatus(einheiten) {
   );
   const idsKey = einheitIds.join(',');
 
-  // Nur Einheiten, die bereits published sind, brauchen die Drift-Prüfung.
-  // Für 'new'-Einheiten reicht die Einheit selbst.
+  // Nur Einheiten, die schon einmal nach GitHub übergeben wurden, brauchen die
+  // Drift-Prüfung. Maßgeblich ist `last_exported_at` — derselbe Zeitstempel,
+  // gegen den `computeEinheitMoodleSyncStatus` vergleicht. (Fix 2026-08-22:
+  // vorher wurde hier auf das alte `export_published_at` gefiltert, weshalb
+  // für GitHub-exportierte Einheiten die Kind-Datensätze gar nicht geladen
+  // wurden und Änderungen an Lernpaketen/Aktivitäten/Aufgaben unentdeckt
+  // blieben.)
   const publishedIds = useMemo(
     () =>
       (einheiten || [])
-        .filter((e) => !!e.export_published_at)
+        .filter((e) => !!e.last_exported_at)
         .map((e) => e.id),
     [einheiten]
   );
