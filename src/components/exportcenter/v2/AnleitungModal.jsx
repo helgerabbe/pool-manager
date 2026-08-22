@@ -1,10 +1,9 @@
 /**
  * AnleitungModal.jsx
  *
- * Statisches Nachschlagewerk für das Export-Team. Erklärt für jedes
- * Drift-Szenario, was konkret zu tun ist. Bewusst statisch
- * (kein dynamischer Plan), damit das Team auch ohne offene Einheit
- * nachlesen kann, wie was funktioniert.
+ * Nachschlagewerk für den Export. Beschreibt den aktuellen, entkoppelten
+ * Ablauf (GitHub-Push mit Delta-Abgleich, ZIP als Fallback, Copy/Paste-Tabs
+ * für einzelne Bausteine) — ohne die frühere Einheiten-Freigabe.
  *
  * Der dynamische, kontextbezogene Action-Plan lebt weiterhin in
  * `OperatorActionPlanCard` und zeigt nur die gerade relevanten Schritte.
@@ -17,7 +16,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
-import { ScrollText, FileCode, Trash2, Sparkles, ListChecks } from 'lucide-react';
+import { ScrollText, FileCode, ListChecks, GitBranch, RefreshCw, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import OperatorActionPlanCard from '@/components/export/airgap/OperatorActionPlanCard';
 import { useOperatorActionPlan } from '@/hooks/useOperatorActionPlan';
@@ -59,69 +58,45 @@ function ActionPlanSection({ einheitId }) {
 
 const SCENARIOS = [
   {
-    id: 'first-export',
-    icon: ScrollText,
-    title: '🆕 Erst-Export einer Einheit',
+    id: 'github-push',
+    icon: GitBranch,
+    title: '🚀 Regelweg: Push nach GitHub',
     steps: [
-      'Tab 0 — Meta-System-Prompt: kopieren und als allerersten Prompt in die MBK senden. Auf „MBK v2.0 bereit." warten.',
-      'Tab 1 — Struktur: kopieren und an die MBK senden. Sie generiert daraus imsmanifest.xml und alle leeren Task-HTMLs.',
-      'Tab 2 — Aufgaben: alle Items der Reihe nach kopieren und an die MBK senden. Pro Item entsteht eine task-<id>.html.',
-      'Falls KI-Aufgaben existieren: Tab 3 (Globale KI) kopieren, danach Tab 5 (KI-Aufgaben) Item für Item.',
-      'Alle Dateien aus der MBK-Antwort einsammeln und zu einem SCORM-ZIP packen.',
-      'Im Header „Export beendet & Freigeben" klicken — die Einheit kehrt in den Bearbeitungsmodus zurück.',
+      'Einheit links auswählen. Ein Push ist jederzeit möglich — es gibt keine Freigabe und keine Sperre mehr; die Lehrkräfte arbeiten während des Exports normal weiter.',
+      'In der GitHub-Karte „Änderungen prüfen" — es wird gezeigt, welche Dateien neu, geändert oder unverändert sind (Delta-Abgleich gegen das Repository).',
+      'Push starten. Es werden nur die tatsächlich geänderten Dateien übertragen (Struktur-Payloads + Material-Ordner).',
+      'Danach steht die Einheit auf „In Sync" und der Zeitpunkt des Exports wird gespeichert.',
     ],
   },
   {
-    id: 'task-changed',
+    id: 'delta',
+    icon: RefreshCw,
+    title: '🔍 Was hat sich seit dem letzten Push geändert?',
+    steps: [
+      'Das Badge an jeder Einheit sagt es auf einen Blick: „Neu" = noch nie exportiert, „In Sync" = Stand im Repo ist aktuell, „Out of Sync" = seit dem letzten Push wurde im Pool-Manager gearbeitet.',
+      'Daneben steht das Datum des letzten Exports; dasselbe Datum findest du auch auf der Einheiten-Kachel und in Tab 1 der Einheit.',
+      'Bei „Out of Sync" genügt ein erneuter Push — der Delta-Abgleich schiebt nur die betroffenen Dateien nach.',
+      'Wer wann in einer Einheit gearbeitet hat, steht in Tab 1 der Einheit unter „Letzte Aktivitäten".',
+    ],
+  },
+  {
+    id: 'zip',
+    icon: Package,
+    title: '📦 Manuelle Übergabe per ZIP (Air-Gap)',
+    steps: [
+      'Wenn kein GitHub-Weg möglich ist: „Air-Gap-Paket herunterladen" erzeugt ein ZIP mit allen Struktur-Payloads und den zugehörigen Medien.',
+      'Das ZIP enthält dieselben Daten wie der Push — es ist nur der Transportweg per Hand.',
+      'Inhalt an die MBK übergeben; die Einheit bleibt dabei uneingeschränkt bearbeitbar.',
+    ],
+  },
+  {
+    id: 'tabs',
     icon: FileCode,
-    title: '✏️ Eine Aufgabe wurde geändert',
+    title: '📋 Einzelne Bausteine per Copy/Paste an die MBK',
     steps: [
-      'Tab 0 — Meta-System-Prompt einmal pro Sitzung an eine frische MBK senden.',
-      'Tab 2 — Aufgaben: nur das geänderte Item identifizieren (Out-of-Sync-Badge). Dieses Item kopieren.',
-      'MBK liefert eine neue task-<id>.html zurück.',
-      'Im bestehenden SCORM-ZIP genau diese eine Datei austauschen — alles andere bleibt unangetastet.',
-      'Im Header bestätigen, dass der Export erfolgreich war.',
-    ],
-  },
-  {
-    id: 'new-task',
-    icon: Sparkles,
-    title: '➕ Eine neue Aufgabe wurde hinzugefügt',
-    steps: [
-      'Tab 0 — Meta-System-Prompt senden.',
-      'Tab 1 — Struktur: hat sich geändert (neuer Eintrag in scorm_file_mapping). Kopieren und an MBK senden — sie liefert eine neue imsmanifest.xml.',
-      'Tab 2 — Aufgaben: das neue Item (Badge „Neu") kopieren — MBK liefert die neue task-<id>.html.',
-      'Im SCORM-ZIP sowohl das Manifest austauschen als auch die neue task-<id>.html hinzufügen.',
-    ],
-  },
-  {
-    id: 'task-deleted',
-    icon: Trash2,
-    title: '🗑️ Eine Aufgabe wurde gelöscht',
-    steps: [
-      'Operator-Action-Plan oben prüfen: Tombstones zeigen welche task-<id>.html im ZIP überflüssig geworden ist.',
-      'Tab 1 — Struktur: ist out of sync (Mapping-Eintrag fehlt). Kopieren und an MBK senden — neue imsmanifest.xml ohne den Eintrag.',
-      'Im SCORM-ZIP: Manifest austauschen, die ungenutzte task-<id>.html manuell löschen.',
-    ],
-  },
-  {
-    id: 'ki-task-changed',
-    icon: Sparkles,
-    title: '🤖 KI-Aufgabe wurde geändert (Briefing oder Lernziel)',
-    steps: [
-      'Tab 0 — Meta-System-Prompt senden.',
-      'Tab 3 — Globale KI: einmal pro Sitzung an die MBK übergeben (Stammdaten + Nomenklatur).',
-      'Tab 5 — KI-Aufgaben: das geänderte Item kopieren. Die MBK generiert eine neue task-<id>.html.',
-      'Im SCORM-ZIP nur die eine Datei tauschen.',
-    ],
-  },
-  {
-    id: 'systembaustein',
-    icon: ListChecks,
-    title: '🧱 Systembausteine',
-    steps: [
-      'Tab 4 ist aktuell als Platzhalter aktiv — die eigentliche Generierungs-Routine wird gerade mit der MBK-Entwicklung abgestimmt.',
-      'Bis dahin werden die Systembaustein-Anweisungen automatisch über Tab 1 (Struktur) und Tab 3 (Globale KI) an die MBK mitgegeben — es geht keine Information verloren.',
+      'Die Tabs unterhalb der Export-Karten geben jeden Baustein einzeln als JSON heraus: Meta-Prompt, Struktur, Aufgaben, Globale KI, Systembausteine, UI-Konfiguration.',
+      'Sinnvoll für Nacharbeit an einer einzelnen Aufgabe: Item kopieren, an die MBK senden, die zurückgelieferte Datei im Zielsystem austauschen.',
+      'Jeder Tab zeigt selbst an, ob sein Inhalt seit der letzten Übergabe abgewichen ist.',
     ],
   },
   {
@@ -129,10 +104,17 @@ const SCENARIOS = [
     icon: ScrollText,
     title: '🏫 Globale Änderung (Schul-Nomenklatur, MBK-Prompts)',
     steps: [
-      'Tab 3 (Globale KI) wird automatisch out-of-sync, sobald eine globale Quelle geändert wurde — auch in anderen Einheiten.',
-      'Tab 0 — Meta-System-Prompt senden.',
-      'Tab 3 — Globale KI: kopieren und an die MBK senden. Der system_context_hash ändert sich.',
-      'Anschließend alle KI-Aufgaben (Tab 5), die diese Globalwerte nutzen, ebenfalls neu generieren.',
+      'Der Tab „Globale KI" wird abweichend, sobald eine globale Quelle geändert wurde — das betrifft alle Einheiten gleichzeitig.',
+      'Globale KI erneut an die MBK übergeben; danach die KI-Aufgaben neu generieren, die diese Werte nutzen.',
+    ],
+  },
+  {
+    id: 'systembaustein',
+    icon: ListChecks,
+    title: '🧱 Systembausteine',
+    steps: [
+      'Systembausteine (Onboarding, Kompaktwissen, Lernlandkarte u. a.) laufen im eigenen Tab mit und werden zusätzlich über Struktur und Globale KI mitgegeben.',
+      'Bereits fertig aufbereitete Schüler-Inhalte werden als „fertige_inhalte" mitgeschickt und sind von der MBK 1:1 zu übernehmen.',
     ],
   },
 ];
@@ -144,12 +126,13 @@ export default function AnleitungModal({ open, onOpenChange, einheitId = null })
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListChecks className="w-5 h-5 text-primary" />
-            Anleitung — Export-Szenarien
+            Anleitung — Export
           </DialogTitle>
           <DialogDescription>
-            Nachschlagewerk für das Export-Team. Oben findest du den
-            kontextspezifischen Action Plan für die aktuell ausgewählte
-            Einheit, darunter die allgemeinen Drift-Szenarien zum Nachschlagen.
+            Oben der aktuelle Action Plan für die ausgewählte Einheit, darunter
+            die Abläufe zum Nachschlagen. Grundsatz: Ein Export ist jederzeit
+            möglich und zieht immer den aktuellen Stand — es gibt keine formale
+            Freigabe und keine Bearbeitungssperre mehr.
           </DialogDescription>
         </DialogHeader>
 
