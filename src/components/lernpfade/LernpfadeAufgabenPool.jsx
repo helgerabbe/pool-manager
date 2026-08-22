@@ -178,7 +178,6 @@ export default function LernpfadeAufgabenPool({
   selectedSystemBaustein = null,
   onSelectAufgabe,
   onSelectSystemBaustein,
-  onPreviewAufgabe,
 }) {
   // Reiter-Verhalten: genau eine Gruppe ist aktiv.
   const [activeFilter, setActiveFilter] = useState('lernpakete');
