@@ -15,7 +15,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Clock } from 'lucide-react';
+import { Pencil, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -57,21 +57,44 @@ export default function ExportContentTimestamp({ einheit }) {
     return t > 0 ? new Date(t) : null;
   }, [einheit, themenfelder, lernpakete, allgemeineAufgaben]);
 
+  const exportiert = einheit?.last_exported_at
+    ? new Date(einheit.last_exported_at)
+    : null;
+  const fmt = (d) => format(d, "dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de });
+
   return (
-    <div className="rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 flex items-start gap-3">
-      <Clock className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-blue-900">
-          Stand der Inhalte:{' '}
-          {stand
-            ? format(stand, "dd. MMMM yyyy 'um' HH:mm 'Uhr'", { locale: de })
-            : 'unbekannt'}
-        </p>
-        <p className="text-xs text-blue-700/80 mt-0.5">
-          Alle Übergabe-Pakete werden beim Kopieren live aus den aktuellen
-          Daten gebaut – sie sind immer auf diesem Stand. Es gibt keine
-          gespeicherten, veralteten Prompts.
-        </p>
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 flex items-start gap-3">
+        <Pencil className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-blue-700/90">
+            Letzte Bearbeitung dieser Einheit
+          </p>
+          <p className="text-sm font-semibold text-blue-900 mt-0.5">
+            {stand ? fmt(stand) : 'unbekannt'}
+          </p>
+          <p className="text-xs text-blue-700/80 mt-1">
+            Jüngste Änderung an Einheit, Themenfeldern, Lernpaketen oder
+            Aufgaben. Übergabe-Pakete werden immer live aus diesem Stand gebaut.
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-4 py-3 flex items-start gap-3">
+        <Upload className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-emerald-700/90">
+            Letzter Export dieser Einheit
+          </p>
+          <p className="text-sm font-semibold text-emerald-900 mt-0.5">
+            {exportiert ? fmt(exportiert) : 'Noch nie exportiert'}
+          </p>
+          <p className="text-xs text-emerald-700/80 mt-1">
+            {exportiert
+              ? 'Zeitpunkt der letzten Übertragung nach GitHub.'
+              : 'Diese Einheit wurde noch nicht nach GitHub übertragen.'}
+          </p>
+        </div>
       </div>
     </div>
   );
