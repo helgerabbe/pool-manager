@@ -147,11 +147,6 @@ export default function LernpfadeCockpit({
   const [arbeitsphaseModalOpen, setArbeitsphaseModalOpen] = useState(false);
   const [arbeitsphaseModalBusy, setArbeitsphaseModalBusy] = useState(false);
 
-  // Phase 3.5: Cascade-Delete-Dialog State.
-  // Wird nur gefüllt, wenn ein Bündel mit Kindern gelöscht werden soll.
-  // Leere Bündel werden ohne Modal direkt entfernt.
-  const [cascadeDialog, setCascadeDialog] = useState(null); // {sektorId, bundleInstanceId, bundleTitle, childCount}
-
   // Monitor-Selection: zentral – Pool und Architekt setzen wechselseitig.
   const [selectedAufgabeId, setSelectedAufgabeIdState] = useState(null);
   const [selectedSystemBausteinId, setSelectedSystemBausteinIdState] = useState(null);
@@ -893,6 +888,43 @@ export default function LernpfadeCockpit({
   // erst, wenn die Lehrkraft es bewusst aktiviert (Augen-Symbol).
   const dashboardBestaetigt =
     autoStatusMap?.[activeLernTyp] === AUTO_DASHBOARD_STATUS.BESTAETIGT;
+
+  // ── Drift-Auflösungen (Banner-Aktionen) ─────────────────────────────
+  const {
+    handleDriftAddSektor,
+    handleDriftRemoveSektor,
+    handleDriftRemoveItem,
+    handleDriftAddItem,
+  } = useDashboardDriftHandlers({
+    readOnly,
+    activeLernTyp,
+    updateKonfiguration,
+    dashboardBestaetigt,
+    toast,
+  });
+
+  // ── Bündel- und Element-Handler ─────────────────────────────────────
+  const {
+    cascadeDialog,
+    setCascadeDialog,
+    confirmCascadeDelete,
+    removeBundle: handleRemoveBundle,
+    handleSetBundleConfig,
+    handleSetBundleModus,
+    handleToggleItemAktiv,
+    handleSetLernpaketZugang,
+    handleAutoFillBundle,
+    handleRemoveSystemItem,
+  } = useDashboardBundleHandlers({
+    readOnly,
+    activeLernTyp,
+    konfigurationRef,
+    updateKonfiguration,
+    systemBausteineById,
+    aufgaben,
+    lernpakete,
+    toast,
+  });
 
   // ── Monitor-Selection ──────────────────────────────────────────────
   const selectedAufgabe = useMemo(
