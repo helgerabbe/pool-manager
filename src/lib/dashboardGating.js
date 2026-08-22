@@ -226,8 +226,12 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
       + 'einer Stelle die Wahl ("wähle selbst, welches der drei Lernpakete du '
       + 'zuerst machst"); in einem freien Sektor erzwingt ein sequenzielles '
       + 'Bündel eine feste Teil-Reihenfolge. Ist am Bündel kein Modus gesetzt, '
-      + 'gilt daher das GEGENTEIL des Sektor-Modus (Projekt-Bündel immer frei) — '
-      + 'ein Bündel mit demselben Modus wie sein Sektor wäre wirkungslos.',
+      + 'gilt daher das GEGENTEIL des Sektor-Modus (Projekt-Bündel immer frei). '
+      + 'Ausnahme: AUFGABEN-Bündel dürfen bewusst denselben Modus wie ihr Sektor '
+      + 'tragen — ein sequenzielles Aufgaben-Bündel im sequenziellen Sektor ist die '
+      + 'einzige Möglichkeit, "X von Y" mit fester Reihenfolge zu bauen (erste X '
+      + 'Pflicht, restliche freiwillig). Nur bei Lernpaket-Bündeln ist derselbe '
+      + 'Modus wie im Sektor wirkungslos.',
   },
   initial_status_rules: {
     description:

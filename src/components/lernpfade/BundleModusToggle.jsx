@@ -51,7 +51,13 @@ export default function BundleModusToggle({
   const effective = resolveBundleModus(modus, sektorModus, {
     istProjektBuendel: !editable,
   });
-  const gleichWieSektor = editable && effective === normalizeSektorModus(sektorModus);
+  // Aufgabenbündel dürfen bewusst DIESELBE Art wie der Abschnitt haben:
+  // Nur so lässt sich „3 von 5 Aufgaben, die ersten drei Pflicht, die letzten
+  // zwei freiwillig" in einem sequenziellen Abschnitt bauen. Nur bei
+  // Lernpaketbündeln ist die gleiche Art wirkungslos.
+  const istAufgabenBuendel = kind === 'aufgaben';
+  const gleichWieSektor =
+    editable && !istAufgabenBuendel && effective === normalizeSektorModus(sektorModus);
   const lockedToFrei = !editable; // projekte
   const isReadOnly = disabled || lockedToFrei;
 
@@ -72,11 +78,22 @@ export default function BundleModusToggle({
     'Projekt-Bündel sind immer frei wählbar.'
   ) : (
     <>
-      <strong>Wofür ist ein Bündel da?</strong> Es fasst zusammengehörende
-      Elemente zusammen und ermöglicht an dieser Stelle die{' '}
-      <em>andere</em> Bearbeitungsart als im übrigen Abschnitt. Genau darin
-      liegt sein Sinn – ein Bündel mit derselben Art wie der Abschnitt ändert
-      nichts.
+      {istAufgabenBuendel ? (
+        <>
+          <strong>Aufgabenbündel:</strong> Beide Arten sind hier sinnvoll.{' '}
+          <em>Frei</em> = der Schüler wählt aus den Aufgaben selbst aus.{' '}
+          <em>Sequenziell</em> = feste Reihenfolge – zusammen mit „X von Y" sind
+          damit z. B. die ersten drei Aufgaben Pflicht und die letzten zwei
+          freiwillig.
+        </>
+      ) : (
+        <>
+          <strong>Wofür ist ein Bündel da?</strong> Es fasst zusammengehörende
+          Elemente zusammen und ermöglicht an dieser Stelle die <em>andere</em>{' '}
+          Bearbeitungsart als im übrigen Abschnitt. Genau darin liegt sein Sinn –
+          ein Lernpaketbündel mit derselben Art wie der Abschnitt ändert nichts.
+        </>
+      )}
       <br />
       <br />
       Dieser Abschnitt ist <strong>{sektorSeq ? 'sequenziell' : 'frei'}</strong>.
