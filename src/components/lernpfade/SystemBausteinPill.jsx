@@ -25,6 +25,7 @@ import { GripVertical, X, Eye } from 'lucide-react';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
 import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlichControl';
+import { resolveBundleModus } from '@/lib/dashboardGating';
 import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
 
 // Phase 4: Nur das Aufgabenbündel zeigt das "X von Y"-Control. Lernpaket-
@@ -50,6 +51,8 @@ export default function SystemBausteinPill({
   onSetBundleConfig,
   // Phase C: Modus-Toggle an allen Bündel-Typen.
   onSetBundleModus,
+  // Modus des umgebenden Sektors — bestimmt den Bündel-Default (Gegenteil).
+  sektorModus,
 }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || refId;
@@ -154,6 +157,7 @@ export default function SystemBausteinPill({
                     <BundleModusToggle
                       acceptedTypes={baustein?.accepted_types}
                       modus={bundleConfig?.modus}
+                      sektorModus={sektorModus}
                       disabled={disabled}
                       onChange={onSetBundleModus}
                     />
@@ -162,6 +166,7 @@ export default function SystemBausteinPill({
                     <BundleErforderlichControl
                       childCount={bundleChildCount}
                       erforderlicheAnzahl={bundleConfig?.erforderliche_anzahl}
+                      modus={resolveBundleModus(bundleConfig?.modus, sektorModus)}
                       disabled={disabled}
                       onChange={onSetBundleConfig}
                     />
@@ -185,7 +190,7 @@ export default function SystemBausteinPill({
             {(isBundle || baustein?.admin_beschreibung) && (
               <TooltipContent side="top" className="max-w-xs text-xs leading-relaxed">
                 {isBundle
-                  ? `${titel}: Ein Container, der mehrere Elemente aufnimmt. Ziehe passende Aufgaben oder Lernpakete per Drag & Drop hinein.`
+                  ? `${titel}: Ein Container für zusammengehörende Elemente – ziehe passende Aufgaben oder Lernpakete per Drag & Drop hinein. Sein Zweck: an dieser Stelle die andere Bearbeitungsart als im Abschnitt ermöglichen (im sequenziellen Abschnitt eine freie Auswahl, im freien Abschnitt eine feste Reihenfolge). Details im Sequenziell/Frei-Schalter rechts.`
                   : baustein.admin_beschreibung}
               </TooltipContent>
             )}

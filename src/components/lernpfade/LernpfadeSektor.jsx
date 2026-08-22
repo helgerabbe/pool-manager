@@ -261,6 +261,7 @@ export default function LernpfadeSektor({
           }
           bundleConfig={item.bundle_config}
           bundleChildCount={Array.isArray(children) ? children.length : 0}
+          sektorModus={sektor.modus}
           onSetBundleConfig={
             onSetBundleConfig
               ? (val) => onSetBundleConfig(sektor.sektor_id, item.instance_id, val)

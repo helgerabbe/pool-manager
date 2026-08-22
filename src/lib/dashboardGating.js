@@ -18,8 +18,11 @@ import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
  *  gating-1.1.0: Sektor-Freischaltung (sektor_freischaltung-Regel +
  *  freischalt_bedingung pro Sektor).
  *  gating-1.2.0: Verbindliche Darstellungsregeln (darstellung) — gesperrte
- *  Elemente werden ausgegraut, nur das aktuelle Element ist farbig. */
-export const GATING_ENGINE_VERSION = 'gating-1.2.0';
+ *  Elemente werden ausgegraut, nur das aktuelle Element ist farbig.
+ *  gating-1.3.0: Bündel-Modus ist standardmäßig das GEGENTEIL des Sektor-Modus
+ *  (ein Bündel ermöglicht im Sektor bewusst die jeweils andere
+ *  Bearbeitungsart) + Exit-Regel für "X von Y" in sequenziellen Bündeln. */
+export const GATING_ENGINE_VERSION = 'gating-1.3.0';
 
 export const INITIAL_STATUS = Object.freeze({
   OFFEN: 'offen',
@@ -62,6 +65,21 @@ export function deriveRootInitialStatus(sektorModus) {
 }
 
 /**
+ * Effektiver Bündel-Modus (gating-1.3.0).
+ *
+ * Ein Bündel hat nur dann didaktischen Sinn, wenn es INNERHALB des Sektors die
+ * jeweils andere Bearbeitungsart ermöglicht (sequenzieller Sektor → freie
+ * Auswahl im Bündel und umgekehrt). Ist am Bündel nichts explizit gesetzt,
+ * gilt daher automatisch das Gegenteil des Sektor-Modus. Projekt-Bündel sind
+ * immer frei.
+ */
+export function resolveBundleModus(bundleModus, sektorModus, { istProjektBuendel = false } = {}) {
+  if (istProjektBuendel) return 'frei';
+  if (bundleModus === 'sequenziell' || bundleModus === 'frei') return bundleModus;
+  return normalizeSektorModus(sektorModus) === 'sequenziell' ? 'frei' : 'sequenziell';
+}
+
+/**
  * Leitet den Initial-Status für ein BÜNDEL-KIND ab (folgt dem Bündel,
  * überschreibt den Sektor).
  *   - Bündel sequenziell → 'offen'
@@ -90,16 +108,26 @@ export function isBundleContainer(baustein) {
  * @param {boolean} [args.istTest]     — true, wenn das Item ein Test/Diagnose ist
  * @returns {string} ABSCHLUSS_BEDINGUNG-Wert
  */
-export function deriveAbschlussBedingung({ item, baustein = null, istTest = false }) {
+export function deriveAbschlussBedingung({
+  item,
+  baustein = null,
+  istTest = false,
+  sektorModus = 'sequenziell',
+}) {
   // Bündel-Container.
   if (item?.type === 'system' && isBundleContainer(baustein)) {
-    const bundleModus = normalizeBundleModus(item?.bundle_config?.modus);
-    if (bundleModus === 'sequenziell') return ABSCHLUSS_BEDINGUNG.ALLE_KINDER;
-    // Freies Bündel: X-von-Y nur, wenn eine Schwelle gesetzt ist.
+    const bundleModus = resolveBundleModus(item?.bundle_config?.modus, sektorModus, {
+      istProjektBuendel:
+        getBundleKindByAcceptedTypes(baustein?.accepted_types) === 'projekte',
+    });
+    // Eine gesetzte Schwelle hat Vorrang — sie gilt AUCH im sequenziellen
+    // Bündel (die Kinder jenseits der Schwelle sind dort freiwillig, müssen
+    // aber weiterhin in der Reihenfolge angeboten werden).
     const erforderlich = item?.bundle_config?.erforderliche_anzahl;
     if (typeof erforderlich === 'number' && erforderlich > 0) {
       return ABSCHLUSS_BEDINGUNG.X_VON_Y;
     }
+    if (bundleModus === 'sequenziell') return ABSCHLUSS_BEDINGUNG.ALLE_KINDER;
     return ABSCHLUSS_BEDINGUNG.WEITER_BUTTON;
   }
 
@@ -143,7 +171,13 @@ export function annotateSektorItems({
     if (it?.type === 'system') {
       const baustein = bausteinById.get?.(it.ref_id);
       if (isBundleContainer(baustein) && it.instance_id) {
-        bundleModusByInstance.set(it.instance_id, normalizeBundleModus(it?.bundle_config?.modus));
+        bundleModusByInstance.set(
+          it.instance_id,
+          resolveBundleModus(it?.bundle_config?.modus, sektorModus, {
+            istProjektBuendel:
+              getBundleKindByAcceptedTypes(baustein?.accepted_types) === 'projekte',
+          })
+        );
       }
     }
   }
@@ -160,6 +194,7 @@ export function annotateSektorItems({
       item: it,
       baustein,
       istTest: !!istTestItem(it),
+      sektorModus,
     });
 
     return { ...it, initial_status, abschluss_bedingung };
@@ -186,7 +221,13 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
     buendel_override:
       'Ein Bündel-Container trägt einen eigenen Modus (sequenziell|frei), der NUR '
       + 'für seine Kinder gilt und den Sektor-Modus dort überschreibt. Der '
-      + 'Container selbst folgt dem Sektor-Modus.',
+      + 'Container selbst folgt dem Sektor-Modus. Zweck des Bündels ist genau '
+      + 'dieser Bruch: In einem sequenziellen Sektor öffnet ein freies Bündel an '
+      + 'einer Stelle die Wahl ("wähle selbst, welches der drei Lernpakete du '
+      + 'zuerst machst"); in einem freien Sektor erzwingt ein sequenzielles '
+      + 'Bündel eine feste Teil-Reihenfolge. Ist am Bündel kein Modus gesetzt, '
+      + 'gilt daher das GEGENTEIL des Sektor-Modus (Projekt-Bündel immer frei) — '
+      + 'ein Bündel mit demselben Modus wie sein Sektor wäre wirkungslos.',
   },
   initial_status_rules: {
     description:
@@ -210,7 +251,29 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
     interaktion: 'Aktiv, sobald die Aufgabe/das Lernpaket bearbeitet/abgegeben wurde.',
     absolviert: 'Aktiv, sobald ein Test/eine Diagnose absolviert wurde.',
     alle_kinder: 'Bündel sequenziell: aktiv, sobald alle Kinder "erledigt" sind.',
-    x_von_y: 'Bündel frei mit Schwelle: aktiv, sobald erforderliche_anzahl Kinder "erledigt" sind.',
+    x_von_y:
+      'Bündel mit Schwelle (erforderliche_anzahl): aktiv, sobald erforderliche_anzahl '
+      + 'Kinder "erledigt" sind. Gilt in freien UND in sequenziellen Bündeln.',
+  },
+  x_von_y_in_sequenziellem_buendel: {
+    description:
+      'Sonderfall (gating-1.3.0): sequenzielles Bündel MIT Schwelle, z. B. 3 von 5 '
+      + 'Aufgaben. Die Reihenfolge bleibt fest — die ersten erforderliche_anzahl '
+      + 'Kinder sind PFLICHT, alle weiteren sind FREIWILLIG, werden aber weiterhin '
+      + 'nur nacheinander freigeschaltet (kein freies Herausgreifen).',
+    darstellung:
+      'Freiwillige Kinder tragen sichtbar die Kennzeichnung "freiwillig" und sind '
+      + 'bis zu ihrer Freischaltung wie üblich ausgegraut.',
+    exit:
+      'Sobald die Pflichtmenge erfüllt ist, MUSS das Bündel einen Ausgang anbieten: '
+      + 'Am Übergang zum ersten freiwilligen Kind erscheint eine Abschlussfrage mit '
+      + 'zwei gleichwertigen Optionen — "Freiwillige Aufgabe bearbeiten" oder '
+      + '"Bündel abschließen". Wählt der Schüler den Abschluss, gilt das Bündel als '
+      + '"erledigt" und der Sektor läuft weiter; die freiwilligen Kinder bleiben '
+      + 'sichtbar und können später jederzeit nachgeholt werden. Diese Frage '
+      + 'wiederholt sich nach jedem bearbeiteten freiwilligen Kind, bis keine mehr '
+      + 'übrig sind. Ohne diesen Exit gäbe es im sequenziellen Bündel keinen Weg '
+      + 'heraus — er ist deshalb verbindlich.',
   },
   darstellung: {
     description:

@@ -31,13 +31,14 @@ import {
 } from '@/components/ui/tooltip';
 import {
   getBundleKindByAcceptedTypes,
-  getDefaultBundleModus,
   isBundleModusEditable,
 } from '@/lib/sektorTypen';
+import { resolveBundleModus, normalizeSektorModus } from '@/lib/dashboardGating';
 
 export default function BundleModusToggle({
   acceptedTypes,
   modus, // 'sequenziell' | 'frei' | undefined
+  sektorModus, // Modus des umgebenden Sektors ('sequenziell' | 'frei')
   disabled = false,
   onChange,
 }) {
@@ -45,7 +46,12 @@ export default function BundleModusToggle({
   if (!kind) return null;
 
   const editable = isBundleModusEditable(kind);
-  const effective = modus || getDefaultBundleModus(kind);
+  // Ohne eigene Einstellung gilt das GEGENTEIL des Sektor-Modus — nur so hat
+  // das Bündel überhaupt eine Wirkung (siehe dashboardGating v1.3.0).
+  const effective = resolveBundleModus(modus, sektorModus, {
+    istProjektBuendel: !editable,
+  });
+  const gleichWieSektor = editable && effective === normalizeSektorModus(sektorModus);
   const lockedToFrei = !editable; // projekte
   const isReadOnly = disabled || lockedToFrei;
 
@@ -61,11 +67,44 @@ export default function BundleModusToggle({
     onChange?.(val);
   };
 
-  const tooltipText = lockedToFrei
-    ? 'Projekt-Bündel sind immer frei wählbar.'
-    : effective === 'sequenziell'
-      ? 'Sequenziell: Schüler bearbeiten in fester Reihenfolge.'
-      : 'Frei: Schüler wählen die Reihenfolge selbst.';
+  const sektorSeq = normalizeSektorModus(sektorModus) === 'sequenziell';
+  const tooltipText = lockedToFrei ? (
+    'Projekt-Bündel sind immer frei wählbar.'
+  ) : (
+    <>
+      <strong>Wofür ist ein Bündel da?</strong> Es fasst zusammengehörende
+      Elemente zusammen und ermöglicht an dieser Stelle die{' '}
+      <em>andere</em> Bearbeitungsart als im übrigen Abschnitt. Genau darin
+      liegt sein Sinn – ein Bündel mit derselben Art wie der Abschnitt ändert
+      nichts.
+      <br />
+      <br />
+      Dieser Abschnitt ist <strong>{sektorSeq ? 'sequenziell' : 'frei'}</strong>.
+      {' '}
+      {effective === 'sequenziell' ? (
+        <>
+          Das Bündel ist <strong>sequenziell</strong>: Die Elemente darin
+          müssen in fester Reihenfolge bearbeitet werden, das jeweils nächste
+          ist bis dahin ausgegraut.
+        </>
+      ) : (
+        <>
+          Das Bündel ist <strong>frei</strong>: Sobald der Schüler hier
+          ankommt, sieht er alle Elemente gleichzeitig und wählt selbst, womit
+          er beginnt.
+        </>
+      )}
+      {gleichWieSektor && (
+        <>
+          <br />
+          <br />
+          ⚠ Aktuell entspricht das Bündel der Art des Abschnitts – es hat damit
+          keine Wirkung. Wechsle die Einstellung, oder ziehe die Elemente
+          einfach direkt in den Abschnitt.
+        </>
+      )}
+    </>
+  );
 
   return (
     <TooltipProvider delayDuration={300}>

@@ -29,6 +29,7 @@ import {
 export default function BundleErforderlichControl({
   childCount,
   erforderlicheAnzahl, // number | undefined
+  modus, // effektiver Bündel-Modus ('sequenziell' | 'frei')
   disabled = false,
   onChange, // (number | null) => void   null = "alle"
 }) {
@@ -117,6 +118,18 @@ export default function BundleErforderlichControl({
             <>
               Der Schüler muss <strong>{effectiveValue}</strong> von{' '}
               <strong>{childCount}</strong> Aufgaben bearbeiten.
+              {modus === 'sequenziell' && (
+                <>
+                  <br />
+                  <br />
+                  Weil dieses Bündel <strong>sequenziell</strong> ist, sind die
+                  ersten {effectiveValue} Aufgaben Pflicht und die übrigen{' '}
+                  {childCount - effectiveValue} <strong>freiwillig</strong> – sie
+                  werden aber weiterhin nur der Reihe nach angeboten. Nach der{' '}
+                  {effectiveValue}. Aufgabe fragt das Dashboard: freiwillige
+                  Aufgabe bearbeiten oder Bündel abschließen?
+                </>
+              )}
               <br />
               Klicke auf das ✦, um wieder „alle Pflicht" zu setzen.
             </>
