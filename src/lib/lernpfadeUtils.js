@@ -385,7 +385,7 @@ export function moveSektor(konfig, lernTyp, sektorId, direction) {
  * Entfernt nur Aufgaben-Items; System-Bausteine bleiben unangetastet, selbst
  * wenn deren ref_id zufällig identisch wäre.
  */
-export function removeAufgabeFromLernTyp(konfig, lernTyp, aufgabeId) {
+export function removeItemAbsoluteFromLernTyp(konfig, lernTyp, aufgabeId) {
   const next = getSektoren(konfig, lernTyp).map((s) => ({
     ...s,
     items: s.items.filter((it) => !(it.type === ITEM_TYPE.AUFGABE && it.ref_id === aufgabeId)),
