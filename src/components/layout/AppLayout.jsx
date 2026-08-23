@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -198,8 +198,8 @@ export default function AppLayout() {
                 <NavIconLink to="/mbk" icon={Cpu} label="MBK – Interne Builder-KI" isActive={isActive('/mbk')} />
               )}
 
-              {/* Dokumentation */}
-              <NavIconLink to="/docs" icon={FileText} label="Dokumentation" isActive={isActive('/docs')} />
+              {/* Hilfe: Assistent (mit Dokumentation dahinter) */}
+              <NavIconLink to="/docs" icon={LifeBuoy} label="Hilfe & Assistent" isActive={isActive('/docs')} />
 
               {/* Schülerbereich */}
               <NavIconLink to="/lernen" icon={GraduationCap} label="Schülerbereich" isActive={isActive('/lernen')} />

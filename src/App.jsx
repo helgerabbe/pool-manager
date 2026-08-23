@@ -32,6 +32,7 @@ const UnterrichtsstundeDetail = lazyWithRetry(() => import('@/pages/Unterrichtss
 const BasismodulViewManager = lazyWithRetry(() => import('@/components/basismodule/BasismodulViewManager'));
 const DocsLayout = lazyWithRetry(() => import('@/components/docs/DocsLayout'));
 const DocsIndex = lazyWithRetry(() => import('@/pages/DocsIndex'));
+const DocsAssistent = lazyWithRetry(() => import('@/pages/DocsAssistent'));
 const DocViewer = lazyWithRetry(() => import('@/pages/DocViewer'));
 import StudentArea from '@/pages/StudentArea';
 import PoolzeitStart from '@/pages/schueler/PoolzeitStart';
@@ -156,7 +157,8 @@ const AuthenticatedApp = () => {
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
           <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>
-            <Route index element={<DocsIndex />} />
+            <Route index element={<DocsAssistent />} />
+            <Route path="uebersicht" element={<DocsIndex />} />
             <Route path=":slug" element={<DocViewer />} />
           </Route>
 
