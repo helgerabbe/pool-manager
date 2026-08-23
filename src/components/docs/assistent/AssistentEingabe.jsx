@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Paperclip, Send, X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 export default function AssistentEingabe({ onSenden, busy, variant = 'footer' }) {
   const [text, setText] = useState('');
@@ -104,6 +105,14 @@ export default function AssistentEingabe({ onSenden, busy, variant = 'footer' })
           placeholder="Frag einfach: Wo finde ich …? Wie mache ich …? Ich habe hier eine Aufgabe und will …"
           rows={2}
           className="resize-none min-h-[44px]"
+        />
+
+        <SpeechInputButton
+          value={text}
+          onResult={setText}
+          disabled={busy || uploading}
+          maxSeconds={30}
+          className="self-center"
         />
 
         <Button
