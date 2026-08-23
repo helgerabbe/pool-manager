@@ -11,7 +11,7 @@ import { Paperclip, Send, X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useToast } from '@/components/ui/use-toast';
 
-export default function AssistentEingabe({ onSenden, busy }) {
+export default function AssistentEingabe({ onSenden, busy, variant = 'footer' }) {
   const [text, setText] = useState('');
   const [dateien, setDateien] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -46,7 +46,13 @@ export default function AssistentEingabe({ onSenden, busy }) {
   };
 
   return (
-    <div className="border-t border-border bg-card px-4 py-3">
+    <div
+      className={
+        variant === 'start'
+          ? 'bg-card px-4 py-3'
+          : 'border-t border-border bg-card px-4 py-3'
+      }
+    >
       {dateien.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-2">
           {dateien.map((d, i) => (

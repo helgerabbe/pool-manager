@@ -17,6 +17,7 @@
 
 import { base44 } from '@/api/base44Client';
 import { findeRelevanteKapitel, inhaltsverzeichnisText } from '@/lib/docsSuche';
+import { appOrteText, normalisiereOrte } from '@/lib/docsAppOrte';
 
 const ANTWORT_SCHEMA = {
   type: 'object',
@@ -33,6 +34,18 @@ const ANTWORT_SCHEMA = {
     rueckfrage: {
       type: ['string', 'null'],
       description: 'Optional: EINE Rückfrage, wenn die Antwort davon abhängt.',
+    },
+    orte: {
+      type: 'array',
+      description:
+        'Optional: Orte in der App, die die Lehrkraft direkt öffnen kann. NUR Pfade aus der Liste ORTE IN DER APP.',
+      items: {
+        type: 'object',
+        properties: {
+          pfad: { type: 'string' },
+          label: { type: 'string' },
+        },
+      },
     },
     quellen: {
       type: 'array',
@@ -83,11 +96,23 @@ DEINE ROLLE
 - Sei konkret und vorschlagend: „Du kannst dafür … nutzen" oder „Am schnellsten geht das so: …".
 - Wenn die Frage zu unklar ist, um sinnvoll zu antworten, stelle GENAU EINE Rückfrage (Feld rueckfrage) — antworte aber trotzdem so weit, wie es geht.
 - Nenne im Feld quellen die Kapitel, in denen die Lehrkraft es genauer nachlesen kann (nur die slugs aus dem Inhaltsverzeichnis, maximal drei).
+- Nenne im Feld orte die Stellen in der App, die die Lehrkraft direkt aufrufen kann („schau dir das hier an"), maximal drei — AUSSCHLIESSLICH Pfade aus der Liste ORTE IN DER APP.
+
+METHODISCH-DIDAKTISCHE BERATUNG (dein wichtigster Job)
+Viele Fragen sind KEINE Bedienungsfragen, sondern didaktische: „Ich habe hier eine Aufgabe / ein Material, und wie bekomme ich das jetzt sinnvoll in den Pool-Manager?" Dann gilt:
+1. Beschreibe zuerst kurz, was du im Material erkennst (z. B. „ein Schaubild mit zu benennenden Teilen", „Begriffe, die zu Definitionen passen", „eine offene Schreibaufgabe").
+2. Empfiehl daraus die konkret passende Aufgabenart bzw. Aktivität des Pool-Managers und begründe in einem Satz, warum sie didaktisch passt (deterministisch prüfbar vs. offen mit KI-Tutor, Input vs. Übung vs. Abschluss).
+3. Sage, WO das hingehört: Lernpaket-Phase (Input/Übung/Abschluss), Allgemeine Aufgabe (Ebene 1/2/3) oder Projektaufgabe — und in welche Intensitätsstufe(n).
+4. Nenne, was die Lehrkraft dafür inhaltlich vorbereiten muss (z. B. Bild + Beschriftungspunkte, Begriffspaare, Erwartungshorizont).
+5. Wenn mehrere Wege sinnvoll sind, nenne die beste Empfehlung zuerst und eine Alternative in einem Satz.
 
 WICHTIGE REGELN
-- Stütze dich AUSSCHLIESSLICH auf die Dokumentation unten. Erfinde keine Buttons, Tabs oder Funktionen.
+- Was die APP kann (Tabs, Buttons, Aufgabenarten, Abläufe), entnimmst du AUSSCHLIESSLICH der Dokumentation unten — erfinde keine Funktionen. Bei der didaktischen EINSCHÄTZUNG (welche Aufgabenart passt zu diesem Material, warum, in welcher Phase) darfst und sollst du dein pädagogisches Urteil einsetzen, solange du nur real existierende Aufgabenarten empfiehlst.
 - Steht die Antwort nicht in der Dokumentation, sage das offen und nenne das Kapitel, das am nächsten dran ist, oder verweise auf den „Problem melden"-Button.
 - Keine Fachchinesisch-Erklärungen über Datenbanken, Code oder Technik im Hintergrund.
+
+ORTE IN DER APP (nur diese Pfade darfst du im Feld orte verwenden):
+${appOrteText()}
 
 ALLE VERFÜGBAREN KAPITEL DER DOKUMENTATION:
 ${inhaltsverzeichnisText()}
@@ -113,14 +138,15 @@ Antworte ausschließlich als JSON.`;
     antwort: res?.antwort || 'Dazu habe ich in der Dokumentation nichts gefunden.',
     schritte: Array.isArray(res?.schritte) ? res.schritte : [],
     rueckfrage: res?.rueckfrage || null,
+    orte: normalisiereOrte(res?.orte),
     quellen: Array.isArray(res?.quellen) ? res.quellen.filter((q) => q?.slug) : [],
   };
 }
 
 /** Startvorschläge, damit die Lehrkraft nicht vor einem leeren Feld sitzt. */
 export const START_FRAGEN = [
-  'Wie lege ich eine neue Einheit an?',
-  'Ich habe ein Arbeitsblatt abfotografiert — was mache ich damit?',
-  'Warum kann ich meine Aufgabe nicht bearbeiten?',
+  'Ich habe hier ein Arbeitsblatt — welche Aufgabenart passt dazu?',
+  'Wie baue ich ein Lernpaket didaktisch sinnvoll auf?',
+  'Warum kann ich meine Aufgabe gerade nicht bearbeiten?',
   'Wie kommt meine Einheit zu den Schülern?',
 ];

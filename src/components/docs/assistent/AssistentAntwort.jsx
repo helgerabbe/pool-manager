@@ -7,16 +7,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, BookOpen, HelpCircle } from 'lucide-react';
+import { BookOpen, HelpCircle, ArrowRight } from 'lucide-react';
+import HelferleinBild from '@/components/docs/assistent/HelferleinBild';
 
 export default function AssistentAntwort({ nachricht }) {
-  const { antwort, schritte = [], rueckfrage, quellen = [] } = nachricht;
+  const { antwort, schritte = [], rueckfrage, quellen = [], orte = [] } = nachricht;
 
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-        <Sparkles className="w-4 h-4 text-primary" />
-      </div>
+      <HelferleinBild size="sm" />
 
       <div className="flex-1 min-w-0 space-y-3">
         <div className="rounded-xl bg-card border border-border px-4 py-3 text-sm leading-relaxed prose prose-sm max-w-none prose-p:my-1.5 prose-headings:mt-2 prose-headings:mb-1">
@@ -40,6 +39,21 @@ export default function AssistentAntwort({ nachricht }) {
           <div className="flex gap-2 rounded-xl border border-accent/40 bg-accent/5 px-4 py-3 text-sm">
             <HelpCircle className="w-4 h-4 text-accent shrink-0 mt-0.5" />
             <span className="font-medium">{rueckfrage}</span>
+          </div>
+        )}
+
+        {orte.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Direkt hinschauen:</span>
+            {orte.map((o) => (
+              <Link
+                key={o.pfad}
+                to={o.pfad}
+                className="text-xs font-medium px-2 py-1 rounded-md border border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 transition-colors inline-flex items-center gap-1"
+              >
+                {o.label} <ArrowRight className="w-3 h-3" />
+              </Link>
+            ))}
           </div>
         )}
 
