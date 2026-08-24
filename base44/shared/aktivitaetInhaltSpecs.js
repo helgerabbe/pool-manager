@@ -140,6 +140,81 @@ export const MASTER_TYP_SPEZIFIKATIONEN = {
       return { instruction: String(out?.instruction || ''), questions: qs };
     },
   },
+  // Test: eigenes Datenmodell mit Punkten, Bestehensgrenze und Feedback
+  // (siehe TestEditor.jsx). Fragetypen: mc | true_false.
+  'Test': {
+    schema: {
+      type: 'object',
+      properties: {
+        instruction: { type: 'string' },
+        passFeedback: { type: 'string' },
+        failFeedback: { type: 'string' },
+        questions: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              type: { type: 'string', enum: ['mc', 'true_false'] },
+              question: { type: 'string' },
+              points: { type: 'number' },
+              options: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: { text: { type: 'string' }, isCorrect: { type: 'boolean' } },
+                  required: ['text', 'isCorrect'],
+                },
+              },
+              correctAnswer: { type: 'boolean' },
+              explanation: { type: 'string' },
+            },
+            required: ['type', 'question', 'points'],
+          },
+        },
+      },
+      required: ['instruction', 'passFeedback', 'failFeedback', 'questions'],
+    },
+    regeln: [
+      'questions: 5–12 Fragen. type ist entweder "mc" (Multiple Choice) oder "true_false" (Richtig/Falsch).',
+      'Bei type="mc": options mit 3–4 Antworten, mindestens eine mit isCorrect=true. Bei type="true_false": correctAnswer (true/false) und eine kurze explanation.',
+      'points: 1 Punkt pro Frage, außer eine Frage ist deutlich aufwendiger (dann 2).',
+      'instruction: kurze Testanweisung. passFeedback / failFeedback: je ein motivierender Satz.',
+    ],
+    build: (out) => {
+      const qs = (Array.isArray(out?.questions) ? out.questions : [])
+        .filter((q) => q && String(q.question || '').trim() !== '')
+        .map((q) => {
+          const basis = {
+            id: crypto.randomUUID(),
+            type: q.type === 'true_false' ? 'true_false' : 'mc',
+            question: String(q.question).trim(),
+            points: Number(q.points) > 0 ? Number(q.points) : 1,
+          };
+          if (basis.type === 'true_false') {
+            return {
+              ...basis,
+              correctAnswer: q.correctAnswer === true,
+              explanation: String(q.explanation || ''),
+            };
+          }
+          const options = (Array.isArray(q.options) ? q.options : [])
+            .filter((o) => o && String(o.text || '').trim() !== '')
+            .map((o) => ({ text: String(o.text).trim(), isCorrect: o.isCorrect === true }));
+          if (options.length < 2 || !options.some((o) => o.isCorrect)) return null;
+          return { ...basis, options };
+        })
+        .filter(Boolean);
+      if (qs.length < 3) return null;
+      const gesamtpunkte = qs.reduce((s, q) => s + q.points, 0);
+      return {
+        instruction: String(out?.instruction || ''),
+        passingThreshold: Math.max(1, Math.round(gesamtpunkte * 0.6)),
+        passFeedback: String(out?.passFeedback || 'Sehr gut — du hast den Test bestanden!'),
+        failFeedback: String(out?.failFeedback || 'Noch nicht bestanden. Schau dir die Inhalte noch einmal an und versuche es erneut.'),
+        questions: qs,
+      };
+    },
+  },
 };
 
 // ── Normale Typen — Feldtypen & bekannte json-Felder ─────────────────
