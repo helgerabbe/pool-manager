@@ -17,12 +17,15 @@ import { Loader2, Send, Hammer, Wand2, User } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import WizardMaterialUpload from './WizardMaterialUpload';
 import WizardChatBauplan from './WizardChatBauplan';
+import WizardChatAenderungen from './WizardChatAenderungen';
 
 const MAX_INPUT_LENGTH = 5000;
 
 export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChange }) {
   const [messages, setMessages] = useState([]);
   const [bauplan, setBauplan] = useState(null);
+  // Etappe 2: Änderungsvorschläge an bestehenden Aktivitäten.
+  const [aenderungen, setAenderungen] = useState([]);
   const [materialien, setMaterialien] = useState([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
@@ -60,6 +63,13 @@ export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChan
       if (data?.error) throw new Error(data.error);
       setMessages((prev) => [...prev, { role: 'assistant', content: data.antwort || '' }]);
       if (data.bauplan) setBauplan(data.bauplan);
+      if (Array.isArray(data.aenderungen) && data.aenderungen.length > 0) {
+        // Neue Vorschläge ersetzen ältere zur gleichen Aktivität.
+        setAenderungen((prev) => {
+          const neueIds = new Set(data.aenderungen.map((a) => a.aktivitaet_id));
+          return [...prev.filter((a) => !neueIds.has(a.aktivitaet_id)), ...data.aenderungen];
+        });
+      }
     } catch (err) {
       console.error('[WizardChatPanel] chat failed', err);
       toast.error(err?.response?.data?.error || err?.message || 'Der Wizard konnte nicht antworten.');
@@ -83,32 +93,66 @@ export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChan
       },
       material_urls: (it.material_indizes || []).map((i) => materialien[i]).filter(Boolean),
     }));
-    if (items.length === 0) return;
+    if (items.length === 0 && aenderungen.length === 0) return;
     setBusyState(false, true);
     try {
-      const res = await base44.functions.invoke('applyLernpaketWizardProposal', {
-        lernpaketId: paket.id,
-        items,
-        mode: 'additive',
-        briefing: bauplan?.leitidee || '',
-      });
-      const data = res?.data || res;
-      if (!data?.success) {
-        toast.error(data?.error || 'Bau fehlgeschlagen.');
-        return;
+      let createdIds = [];
+      let anzahlNeu = 0;
+
+      if (items.length > 0) {
+        const res = await base44.functions.invoke('applyLernpaketWizardProposal', {
+          lernpaketId: paket.id,
+          items,
+          mode: 'additive',
+          briefing: bauplan?.leitidee || '',
+        });
+        const data = res?.data || res;
+        if (!data?.success) {
+          toast.error(data?.error || 'Bau fehlgeschlagen.');
+          return;
+        }
+        createdIds = (data.createdActivities || []).map((c) => c.id);
+        anzahlNeu = data.stats.items_created;
       }
-      const createdIds = (data.createdActivities || []).map((c) => c.id);
+
+      // Etappe 2: Beschreibungen bestehender Aktivitäten aktualisieren
+      // (Inhalte und Materialien bleiben unangetastet).
+      let anzahlGeaendert = 0;
+      for (const ae of aenderungen) {
+        try {
+          const akt = await base44.entities.LernpaketPhaseAktivitaet.get(ae.aktivitaet_id);
+          const bisher = akt?.ki_briefing && typeof akt.ki_briefing === 'object' ? akt.ki_briefing : {};
+          await base44.entities.LernpaketPhaseAktivitaet.update(ae.aktivitaet_id, {
+            ki_briefing: {
+              ...bisher,
+              variant: 'offen',
+              idee: ae.neue_beschreibung,
+              offen: { ...(bisher.offen || {}), funktionsweise: ae.neue_beschreibung },
+            },
+          });
+          anzahlGeaendert += 1;
+        } catch (err) {
+          console.error('[WizardChatPanel] Änderung fehlgeschlagen', ae.aktivitaet_id, err);
+        }
+      }
+
       const ideenkisteIds = (bauplan?.items || []).map((it) => it.ideenkiste_id).filter(Boolean);
       onApplied?.({ createdIds, ideenkisteIds });
+
+      const teile = [];
+      if (anzahlNeu > 0) teile.push(`${anzahlNeu} Aktivität${anzahlNeu !== 1 ? 'en' : ''} angelegt`);
+      if (anzahlGeaendert > 0) teile.push(`${anzahlGeaendert} Beschreibung${anzahlGeaendert !== 1 ? 'en' : ''} geändert`);
+      const zusammenfassung = teile.join(' und ');
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `✅ Erledigt — ich habe ${data.stats.items_created} Aktivität${data.stats.items_created !== 1 ? 'en' : ''} angelegt. Du findest sie jetzt in der Übersicht unten. Über den Inhalte-Generator kannst du die Inhalte automatisch ausarbeiten lassen — oder du bearbeitest die Aktivitäten direkt. Mit "Speichern & schließen" übernimmst du alles, mit "Abbrechen & verwerfen" wird es wieder entfernt.`,
+          content: `✅ Erledigt — ${zusammenfassung}. Du findest alles in der Übersicht unten. Über den Inhalte-Generator kannst du die Inhalte automatisch ausarbeiten lassen — oder du bearbeitest die Aktivitäten direkt. Mit "Speichern & schließen" übernimmst du alles, mit "Abbrechen & verwerfen" werden die neuen Aktivitäten wieder entfernt.`,
         },
       ]);
       setBauplan(null);
-      toast.success(`${data.stats.items_created} Aktivität${data.stats.items_created !== 1 ? 'en' : ''} angelegt.`);
+      setAenderungen([]);
+      toast.success(zusammenfassung.charAt(0).toUpperCase() + zusammenfassung.slice(1) + '.');
     } catch (err) {
       console.error('[WizardChatPanel] build failed', err);
       toast.error(err?.response?.data?.error || 'Fehler beim Bauen.');
@@ -125,6 +169,14 @@ export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChan
   };
 
   const anzahlItems = bauplan?.items?.length || 0;
+  const anzahlAenderungen = aenderungen.length;
+  const hatUmzusetzendes = anzahlItems > 0 || anzahlAenderungen > 0;
+  const umsetzenLabel = [
+    anzahlItems > 0 ? `${anzahlItems} neu` : null,
+    anzahlAenderungen > 0 ? `${anzahlAenderungen} geändert` : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   return (
     <section className="rounded-md border border-border bg-muted/20 p-4 space-y-3">
@@ -182,11 +234,16 @@ export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChan
 
       {/* Bauplan + Bau-Button */}
       <WizardChatBauplan bauplan={bauplan} onRemove={removeItem} disabled={busy} />
-      {anzahlItems > 0 && (
+      <WizardChatAenderungen
+        aenderungen={aenderungen}
+        onRemove={(i) => setAenderungen((prev) => prev.filter((_, idx) => idx !== i))}
+        disabled={busy}
+      />
+      {hatUmzusetzendes && (
         <div className="flex justify-end">
           <Button type="button" onClick={build} disabled={busy} className="gap-2">
             {isBuilding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />}
-            Bau das jetzt ({anzahlItems} Aktivität{anzahlItems !== 1 ? 'en' : ''})
+            Bau das jetzt ({umsetzenLabel})
           </Button>
         </div>
       )}

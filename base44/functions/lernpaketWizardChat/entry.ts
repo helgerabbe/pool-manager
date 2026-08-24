@@ -83,9 +83,20 @@ export default async function (req) {
       .map((k) => `- "${k.name}" (Phase: ${k.phase}): ${kurz(k.beschreibung, 160)}`)
       .join('\n');
 
-    const bestandListe = (bestand || [])
-      .filter((a) => a.sync_status !== 'to_delete')
-      .map((a) => `- ${katalogById.get(a.aktivitaet_id) || 'Unbekannt'} (${a.phase}${a.is_complete ? ', vollständig' : ', ohne Inhalt'})`)
+    // Bestand mit IDs — Grundlage für Änderungs-Vorschläge (Etappe 2).
+    const bestandLive = (bestand || []).filter((a) => a.sync_status !== 'to_delete');
+    const bestandById = new Map(bestandLive.map((a) => [a.id, a]));
+    const beschreibungVon = (a) =>
+      a.ki_briefing?.idee || a.ki_briefing?.offen?.funktionsweise || a.ki_briefing?.offen?.lernziel || '';
+    const bestandListe = bestandLive
+      .map(
+        (a) =>
+          `- id "${a.id}": ${katalogById.get(a.aktivitaet_id) || 'Unbekannt'} (${a.phase}, ${
+            a.is_complete ? 'Inhalt vorhanden' : 'noch ohne Inhalt'
+          }${a.content_status === 'approved' ? ', FREIGEGEBEN — nicht änderbar' : ''}) — Beschreibung: ${
+            kurz(beschreibungVon(a), 200) || '(keine)'
+          }`
+      )
       .join('\n');
 
     const ideenkisteListe = (ideenkiste || [])
@@ -105,7 +116,7 @@ KONTEXT:
 - Lernziele dieses Pakets: ${(lernziele || []).map((lz) => lz.formulierung_fachsprache).filter(Boolean).join(' | ') || '—'}
 - Einheiten-Beschreibung (Auszug): ${kurz(einheit.grundgeruest_rohtext, 2000) || '—'}
 
-BEREITS VORHANDENE Aktivitäten in diesem Paket (dein Bauplan ERGÄNZT sie, ersetze sie nicht):
+BEREITS VORHANDENE Aktivitäten in diesem Paket (neue Items ERGÄNZEN sie; ändern kannst du sie über "aenderungen"):
 ${bestandListe || '(noch keine)'}
 
 OFFENE IDEEN aus der Ideenkiste der Einheit (von der Lehrkraft gesammelt):
@@ -142,6 +153,11 @@ Deine Aufgabe:
      - material_indizes: Indizes der hochgeladenen Materialien, die zu dieser Aktivität gehören (sonst leeres Array).
      - ideenkiste_id: die id des Ideenkiste-Eintrags, falls das Item daraus entstanden ist (sonst leer).
    Die Aufgaben müssen von Schüler:innen OHNE Lehrkraft selbstständig bearbeitbar und überprüfbar sein.
+3. aenderungen: Wenn die Lehrkraft eine BESTEHENDE Aktivität anders haben möchte ("mach die Übung leichter", "der Test soll nur 5 Fragen haben"), trage die betroffene Aktivität hier ein — NICHT als neues Item. Pro Eintrag:
+   - aktivitaet_id: die id aus der Liste der vorhandenen Aktivitäten (nur diese ids, niemals erfinden; FREIGEGEBENE Aktivitäten sind ausgeschlossen).
+   - neue_beschreibung: die vollständig neu formulierte Aufgabenbeschreibung (nicht nur der Änderungswunsch) — so konkret, dass danach gearbeitet werden kann.
+   - begruendung: ein kurzer Satz, was du geändert hast.
+   Ändere nur, was die Lehrkraft wirklich möchte. Wenn eine dieser Aktivitäten schon Inhalt hat, weise in deiner Antwort darauf hin, dass die bestehenden Inhalte erhalten bleiben und nach der Änderung ggf. neu ausgearbeitet werden müssen. Löschen kannst du nichts — wenn du eine Aktivität für überflüssig hältst, sage es der Lehrkraft, sie entfernt sie selbst.
 Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
 
     const result = unwrapLLM(await base44.integrations.Core.InvokeLLM({
@@ -175,6 +191,18 @@ Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
             },
             required: ['items'],
           },
+          aenderungen: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                aktivitaet_id: { type: 'string' },
+                neue_beschreibung: { type: 'string' },
+                begruendung: { type: 'string' },
+              },
+              required: ['aktivitaet_id', 'neue_beschreibung'],
+            },
+          },
         },
         required: ['antwort', 'bauplan'],
       },
@@ -200,9 +228,29 @@ Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
         };
       });
 
+    // Änderungen (Etappe 2): nur echte, nicht freigegebene Aktivitäten dieses Pakets.
+    const aenderungen = (Array.isArray(result?.aenderungen) ? result.aenderungen : [])
+      .slice(0, MAX_ITEMS)
+      .map((ae) => {
+        const akt = bestandById.get(String(ae?.aktivitaet_id || ''));
+        const neu = String(ae?.neue_beschreibung || '').trim();
+        if (!akt || akt.content_status === 'approved' || !neu) return null;
+        return {
+          aktivitaet_id: akt.id,
+          aktivitaet_name: katalogById.get(akt.aktivitaet_id) || 'Aktivität',
+          phase: akt.phase,
+          hat_inhalt: akt.is_complete === true,
+          alte_beschreibung: beschreibungVon(akt),
+          neue_beschreibung: neu,
+          begruendung: String(ae?.begruendung || ''),
+        };
+      })
+      .filter(Boolean);
+
     return Response.json({
       antwort: result?.antwort || '',
       bauplan: { leitidee: String(result?.bauplan?.leitidee || ''), items },
+      aenderungen,
     });
   } catch (error) {
     console.error('[lernpaketWizardChat] Error:', error);
