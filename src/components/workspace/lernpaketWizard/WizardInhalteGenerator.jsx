@@ -17,18 +17,32 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Sparkles, Loader2, CheckCircle2, SkipForward, AlertTriangle, CircleDashed } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import WizardVariantenAnzahl from './WizardVariantenAnzahl';
 
 const PHASE_ICON = { Input: '📚', 'Übung': '✏️', Abschluss: '🎯' };
 
-export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katalog = [], disabled = false, onBusyChange }) {
+export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katalog = [], masterAufgaben = [], disabled = false, onBusyChange }) {
   const queryClient = useQueryClient();
   const [statuses, setStatuses] = useState({});
   const [isRunning, setIsRunning] = useState(false);
   // Auswahl: undefined = ausgewählt (Default: alle), explizit false = abgewählt.
   const [selection, setSelection] = useState({});
+  // Anzahl der KI-Varianten (Master-Aufgaben) je masterfähiger Aktivität.
+  const [varianten, setVarianten] = useState({});
 
+  const katalogEintragById = new Map(katalog.map((k) => [k.id, k]));
   const katalogById = new Map(katalog.map((k) => [k.id, k.name]));
-  const leere = aktivitaeten.filter((a) => a.is_complete !== true && a.content_status !== 'approved');
+  const istMasterfaehig = (a) => katalogEintragById.get(a.aktivitaet_id)?.supports_master === true;
+  const variantenVon = (a) => varianten[a.id] ?? 1;
+  // Masterfähige Aktivitäten OHNE Master-Aufgabe gelten als leer — auch wenn
+  // sie (fälschlich) als vollständig markiert sind.
+  const masterAnzahl = (id) =>
+    masterAufgaben.filter((m) => m.activity_id === id && m.sync_status !== 'to_delete').length;
+  const leere = aktivitaeten.filter(
+    (a) =>
+      a.content_status !== 'approved' &&
+      (a.is_complete !== true || (katalogEintragById.get(a.aktivitaet_id)?.supports_master === true && masterAnzahl(a.id) === 0))
+  );
 
   if (leere.length === 0) return null;
 
@@ -62,11 +76,17 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
     for (const a of ausgewaehlte) {
       setStatus(a.id, { state: 'running' });
       try {
-        const res = await base44.functions.invoke('generateWizardAktivitaetInhalt', { activityId: a.id });
+        const res = await base44.functions.invoke('generateWizardAktivitaetInhalt', {
+          activityId: a.id,
+          ...(istMasterfaehig(a) ? { varianten: variantenVon(a) } : {}),
+        });
         const data = res?.data || res;
         if (data?.success) {
           done += 1;
-          setStatus(a.id, { state: 'done' });
+          setStatus(a.id, {
+            state: 'done',
+            message: data.varianten > 1 ? `${data.varianten} Varianten als Master-Aufgaben angelegt.` : undefined,
+          });
         } else if (data?.skipped) {
           skipped += 1;
           setStatus(a.id, { state: 'skipped', message: data.reason });
@@ -170,6 +190,15 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
                     </p>
                   );
                 })()}
+                {beschreibbar && istMasterfaehig(a) && (
+                  <div className="mt-1">
+                    <WizardVariantenAnzahl
+                      value={variantenVon(a)}
+                      onChange={(n) => setVarianten((prev) => ({ ...prev, [a.id]: n }))}
+                      disabled={isRunning || disabled || !isSelected(a.id)}
+                    />
+                  </div>
+                )}
                 {Array.isArray(a.material_urls) && a.material_urls.length > 0 && (
                   <p className="text-[11px] text-muted-foreground leading-snug">
                     📎 {a.material_urls.length} Material{a.material_urls.length !== 1 ? 'ien' : ''} wird berücksichtigt
@@ -188,7 +217,9 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
         Die KI befüllt nur leere Aktivitäten — mit Inhalt oder freigegeben bleibt unangetastet. Voraussetzung ist
         eine Aufgabenbeschreibung (oben in der Übersicht ergänzbar); an der Aktivität hinterlegtes Material wird
         als inhaltliche Grundlage berücksichtigt. Für Video- und Link-Aktivitäten recherchiert die KI passende
-        Quellen im Internet (bevorzugt Studyflix) und prüft, ob der Link wirklich existiert. Nur Aktivitäten mit
+        Quellen im Internet (bevorzugt Studyflix) und prüft, ob der Link wirklich existiert. Bei Aufgabenformaten
+        mit Master-Aufgaben (z. B. Miniquiz, Test) legt die KI automatisch Master-Aufgaben an — du bestimmst je
+        Aktivität, wie viele inhaltlich verschiedene Varianten (1–8) erzeugt werden. Nur Aktivitäten mit
         Datei-/Bild-Pflichtfeldern werden übersprungen. Alles bleibt im Entwurfs-Status.
       </p>
     </div>

@@ -193,6 +193,8 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const { activityId } = body || {};
+    // Anzahl gewünschter Varianten (nur bei masterfähigen Aufgabenformaten).
+    const anzahlVarianten = Math.min(8, Math.max(1, Math.round(Number(body?.varianten) || 1)));
     if (!activityId) {
       return Response.json({ error: 'Missing activityId' }, { status: 400 });
     }
@@ -206,9 +208,9 @@ Deno.serve(async (req) => {
     if (activity.content_status === 'approved') {
       return Response.json({ success: false, skipped: true, reason: 'Aktivität ist freigegeben — wird nicht verändert.' });
     }
-    if (activity.is_complete === true) {
-      return Response.json({ success: false, skipped: true, reason: 'Aktivität ist bereits befüllt — wird nicht überschrieben.' });
-    }
+    // Der is_complete-Guard folgt weiter unten pro Pfad: bei masterfähigen
+    // Formaten entscheidet allein, ob schon Master-Aufgaben existieren
+    // (eine als "vollständig" markierte Aktivität ohne Master ist leer).
 
     // ── Zugriff prüfen (RLS via User-Kontext + Einheiten-Schreibrecht) ──
     const paket = await base44.entities.Lernpakete.get(activity.lernpaket_id).catch(() => null);
@@ -294,53 +296,79 @@ Deno.serve(async (req) => {
         });
       }
 
-      const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        prompt: JSON.stringify([
-          { role: 'system', content: SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: JSON.stringify({
-              kontext,
-              aktivitaet: aktivitaetInfo,
-              regeln: [...BASIS_REGELN, ...planRegeln, ...materialRegeln, ...spez.regeln],
-            }),
-          },
-        ]),
-        model: 'claude-sonnet-5',
-        ...(materialUrls.length > 0 ? { file_urls: materialUrls } : {}),
-        response_json_schema: spez.schema,
-      });
+      // Mehrere Varianten: eine LLM-Runde pro Variante, jeweils mit dem
+      // Hinweis, welche Inhalte bereits vergeben sind (echte Variantenvielfalt).
+      const erstellteVarianten = [];
+      for (let i = 0; i < anzahlVarianten; i += 1) {
+        const variantenRegeln = anzahlVarianten > 1
+          ? [
+              `Dies ist Variante ${i + 1} von ${anzahlVarianten} derselben Aufgabe: gleiches Lernziel, gleiche Aufgabenlogik, aber INHALTLICH ANDERE Beispiele (andere Wörter, Sätze, Fragen, Zahlen).`,
+              ...(erstellteVarianten.length > 0
+                ? [`Diese Inhalte sind bereits vergeben und dürfen NICHT wiederholt werden: ${JSON.stringify(erstellteVarianten).slice(0, 2500)}`]
+                : []),
+            ]
+          : [];
 
-      const unwrapped = unwrapLLM(llmResponse);
-      const fieldValues = spez.build(unwrapped);
-      if (!fieldValues) {
-        console.warn('[generateWizardAktivitaetInhalt] build failed, raw LLM response:', JSON.stringify(llmResponse).slice(0, 1500));
-        return Response.json({ success: false, error: 'KI-Inhalt unvollständig. Bitte erneut versuchen.' });
+        const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: JSON.stringify([
+            { role: 'system', content: SYSTEM_PROMPT },
+            {
+              role: 'user',
+              content: JSON.stringify({
+                kontext,
+                aktivitaet: aktivitaetInfo,
+                regeln: [...BASIS_REGELN, ...planRegeln, ...materialRegeln, ...spez.regeln, ...variantenRegeln],
+              }),
+            },
+          ]),
+          model: 'claude-sonnet-5',
+          ...(materialUrls.length > 0 ? { file_urls: materialUrls } : {}),
+          response_json_schema: spez.schema,
+        });
+
+        const unwrapped = unwrapLLM(llmResponse);
+        const fieldValues = spez.build(unwrapped);
+        if (!fieldValues) {
+          console.warn('[generateWizardAktivitaetInhalt] build failed, raw LLM response:', JSON.stringify(llmResponse).slice(0, 1500));
+          if (erstellteVarianten.length === 0) {
+            return Response.json({ success: false, error: 'KI-Inhalt unvollständig. Bitte erneut versuchen.' });
+          }
+          break; // bereits erzeugte Varianten bleiben erhalten
+        }
+
+        await base44.asServiceRole.entities.MasterAufgabe.create({
+          activity_id: activity.id,
+          lernpaket_id: activity.lernpaket_id,
+          titel: anzahlVarianten > 1 ? `KI-Entwurf ${i + 1}` : 'KI-Entwurf',
+          field_values: fieldValues,
+          reihenfolge: i,
+          is_complete: true,
+          content_status: 'draft',
+          sync_status: 'new',
+        });
+        erstellteVarianten.push(fieldValues);
       }
-
-      await base44.asServiceRole.entities.MasterAufgabe.create({
-        activity_id: activity.id,
-        lernpaket_id: activity.lernpaket_id,
-        titel: 'KI-Entwurf',
-        field_values: fieldValues,
-        reihenfolge: 0,
-        is_complete: true,
-        content_status: 'draft',
-        sync_status: 'new',
-      });
 
       await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(activity.id, {
         is_complete: true,
         sync_status: activity.sync_status === 'synced' ? 'modified' : activity.sync_status,
       });
 
-      console.log('[generateWizardAktivitaetInhalt] master created', { activity: activity.id, typ: katalogEintrag.name });
-      return Response.json({ success: true, is_complete: true, mode: 'master' });
+      console.log('[generateWizardAktivitaetInhalt] master created', {
+        activity: activity.id,
+        typ: katalogEintrag.name,
+        varianten: erstellteVarianten.length,
+      });
+      return Response.json({ success: true, is_complete: true, mode: 'master', varianten: erstellteVarianten.length });
     }
 
     // ═════════════════════════════════════════════════════════════════
     // Pfad B: Normaler Typ → field_values anhand form_schema befüllen
     // ═════════════════════════════════════════════════════════════════
+    if (activity.is_complete === true) {
+      return Response.json({ success: false, skipped: true, reason: 'Aktivität ist bereits befüllt — wird nicht überschrieben.' });
+    }
+
     const formSchema = Array.isArray(katalogEintrag.form_schema) ? katalogEintrag.form_schema : [];
     const existing = activity.field_values || {};
     const zuGenerieren = [];

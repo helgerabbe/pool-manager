@@ -775,6 +775,7 @@ export default function LernpaketWizardModal({
               paket={paket}
               aktivitaeten={bestandAktivitaeten}
               katalog={aktivitaetenKatalog}
+              masterAufgaben={masterAufgaben}
               disabled={isGenerating || isApplying || isDiscarding}
               onBusyChange={setInhalteBusy}
             />
