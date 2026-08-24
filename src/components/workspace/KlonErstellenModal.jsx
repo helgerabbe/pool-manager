@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Copy, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { buildKlonPromptSchema } from '@/lib/klonPromptSchema';
 
 export default function KlonErstellenModal({ open, onClose, master, klone, onKlonesCreated }) {
   const queryClient = useQueryClient();
@@ -60,106 +61,15 @@ export default function KlonErstellenModal({ open, onClose, master, klone, onKlo
    };
 
   // ── Option B: KI-Variationen ───────────────────────────────────────────────
-   const createAIVariations = async () => {
-     const fv = master.field_values || {};
-     const isLuecke = !!(fv.lueckentext);
-     const isSort = !!(fv.orderedItems);
-
-    let prompt, schema;
-
-    if (isLuecke) {
-      prompt = `ZWINGENDE REGEL FÜR LÜCKENTEXTE:
-
-    Du bist ein erfahrener Deutsch- und Fremdsprachenlehrer. Deine Aufgabe ist es, Lückentexte didaktisch sinnvoll zu variieren, ohne die Zielwörter zu verändern.
-
-    EINGABE:
-    Ein Lückentext, in dem bestimmte Wörter in eckigen Klammern [...] markiert sind. Diese Wörter sind UNVERÄNDERBAR.
-
-    KERNREGELN (ABSOLUT BINDEND):
-    1. Die Zielwörter in [...] dürfen NICHT verändert werden – weder in Zeitform, Numerus (Singular/Plural) noch in der Form. Sie bleiben exakt wie eingegeben.
-    2. Du musst alle Zielwörter in der exakt gleichen Reihenfolge und Form in den neuen Text integrieren.
-    3. Du darfst NUR die Satzstruktur, Formulierungen und den Satzbau ändern – aber nicht die inhaltlichen Fakten oder die Zielwörter selbst.
-    4. Der neue Text soll denselben didaktischen Zweck erfüllen und dieselben Konzepte abdecken wie das Original.
-
-    LÜCKENTEXT ZUM PARAPHRASIEREN:
-    ${fv.lueckentext}
-
-    BITTE ERSTELLE ${count} VARIATION(EN):
-    - Verändere Satzstruktur, Formulierungen und Wortstellung
-    - Behalte ALLE Zielwörter in [...] genau bei
-    - Behalte die inhaltliche Bedeutung bei
-    - Keine Erklärungen, nur den fertigen Text
-
-    Antworte als JSON mit einem "klone"-Array, jedes Element: { "lueckentext": string }`;
-      schema = {
-        type: 'object',
-        properties: {
-          klone: {
-            type: 'array',
-            items: { type: 'object', properties: { lueckentext: { type: 'string' } }, required: ['lueckentext'] },
-          },
-        },
-      };
-    } else if (isSort) {
-      prompt = `Du bist ein Pädagoge und generierst Sortierlisten-Aufgaben.
-
-    Hier ist eine Aufgabe mit einer sortierten Liste:
-    - Aufgabenstellung: "${fv.instruction}"
-    - Ursprüngliche Elemente (in korrekter Reihenfolge): ${JSON.stringify(fv.orderedItems)}
-    ${hint ? `- Thematischer Fokus: ${hint}` : ''}
-
-    Erstelle ${count} NEUE Sortierlisten zu verschiedenen Themen mit derselben Struktur und Schwierigkeit.
-
-    Anforderungen:
-    1. Jede neue Liste muss ${fv.orderedItems.length} Elemente haben
-    2. Die Elemente müssen bereits in der KORREKTEN REIHENFOLGE sortiert sein
-    3. Nutze verschiedene Themen, aber gleiches Sortierprinzip
-    4. Elemente sollten kurz (3-10 Wörter) sein
-    5. Altersgerecht und ansprechend
-
-    Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "orderedItems": [strings] }`;
-      schema = {
-        type: 'object',
-        properties: {
-          klone: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                instruction: { type: 'string' },
-                orderedItems: { type: 'array', items: { type: 'string' } },
-              },
-              required: ['instruction', 'orderedItems'],
-            },
-          },
-        },
-      };
-    } else {
-      prompt = [
-        `Erstelle ${count} didaktisch gleichwertige Variationen (Klone) dieser Lernaufgabe.`,
-        'Die Klone sollen dieselbe Struktur und dasselbe didaktische Niveau haben, aber unterschiedliche Begriffe/Inhalte verwenden.',
-        fv.instruction ? `Original-Anweisung: "${fv.instruction}"` : '',
-        fv.pairs ? `Original-Begriffspaare: ${JSON.stringify(fv.pairs)}` : '',
-        hint ? `Thematischer Fokus für die KI: ${hint}` : '',
-        'Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "pairs": [{left, right}][], "distractors": string[] }',
-      ].filter(Boolean).join('\n');
-      schema = {
-        type: 'object',
-        properties: {
-          klone: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                instruction: { type: 'string' },
-                pairs: { type: 'array', items: { type: 'object', properties: { left: { type: 'string' }, right: { type: 'string' } }, required: ['left', 'right'] } },
-                distractors: { type: 'array', items: { type: 'string' } },
-              },
-            },
-          },
-        },
-      };
+  // Prompt & Schema werden aus dem Format der Masteraufgabe abgeleitet, damit
+  // ein Klon immer dieselbe Struktur wie der Master hat (nur andere Inhalte).
+  const createAIVariations = async () => {
+    const fv = master.field_values || {};
+    const konfiguration = buildKlonPromptSchema(fv, count, hint);
+    if (!konfiguration) {
+      throw new Error('Für dieses Aufgabenformat sind KI-Variationen nicht möglich. Bitte exakte Kopien erstellen und manuell anpassen.');
     }
+    const { prompt, schema } = konfiguration;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,
