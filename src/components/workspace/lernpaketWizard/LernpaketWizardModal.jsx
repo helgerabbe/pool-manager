@@ -1,7 +1,9 @@
 /**
  * components/workspace/lernpaketWizard/LernpaketWizardModal.jsx
  *
- * "Aufgabeneditor" (Etappe 1, 2026-07-27) — vormals Lernpaket-Wizard.
+ * "Lernpaket-Wizard" (2026-08-24) — Chat-Einstieg (WizardChatPanel) als
+ * primärer Bau-Modus; der bisherige Schritt-für-Schritt-Vorschlags-Flow
+ * bleibt als klassischer Modus erreichbar.
  *
  * Aufbau:
  *   Kontext-Anker (Lernpaket + Lernziele) direkt unter dem Titel.
@@ -37,6 +39,7 @@ import WizardStepSection from './WizardStepSection';
 import AufgabeneditorUebersicht from './AufgabeneditorUebersicht';
 import WizardMaterialUpload from './WizardMaterialUpload';
 import WizardIdeenkisteAuswahl from './WizardIdeenkisteAuswahl';
+import WizardChatPanel from './WizardChatPanel';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 const MAX_BRIEFING_LENGTH = 5000;
@@ -79,6 +82,8 @@ export default function LernpaketWizardModal({
   const [isDiscarding, setIsDiscarding] = useState(false);
   // true, solange die Inhalte-Generierung läuft (blockiert Schließen).
   const [inhalteBusy, setInhalteBusy] = useState(false);
+  // true, solange der Wizard-Chat arbeitet (blockiert Schließen).
+  const [chatBusy, setChatBusy] = useState(false);
 
   // Freigegebene Lernpakete sind nicht bearbeitbar.
   const istFreigegeben = paket?.content_status === 'approved' && !!paket?.released_at;
@@ -410,20 +415,20 @@ export default function LernpaketWizardModal({
   };
 
   const handleClose = () => {
-    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy) return;
+    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy || chatBusy) return;
     onClose();
   };
 
   // Speichern & schließen: verwendete Ideenkiste-Einträge als integriert markieren.
   const handleSave = async () => {
-    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy) return;
+    if (isGenerating || isMapping || isApplying || isDiscarding || inhalteBusy || chatBusy) return;
     if (kisteZuIntegrieren.length > 0) {
       try {
         await base44.entities.AufgabenIdee.bulkUpdate(
           kisteZuIntegrieren.map((id) => ({
             id,
             status: 'integriert',
-            integriert_hinweis: `Im Aufgabeneditor in Lernpaket "${paket?.titel_des_pakets || ''}" übernommen`,
+            integriert_hinweis: `Im Lernpaket-Wizard in Lernpaket "${paket?.titel_des_pakets || ''}" übernommen`,
             integriert_am: new Date().toISOString(),
           }))
         );
@@ -446,10 +451,10 @@ export default function LernpaketWizardModal({
         <DialogHeader className="space-y-1">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Wand2 className="w-4 h-4 text-primary" />
-            Aufgabeneditor
+            Lernpaket-Wizard
           </DialogTitle>
           <DialogDescription className="text-xs leading-snug">
-            Überblick über alle Aufgaben dieses Lernpakets — mit KI-Unterstützung für neue Vorschläge und Inhalte.
+            Beschreibe im Gespräch, was in dieses Lernpaket soll — der Wizard plant mit dir und baut es dann komplett auf.
           </DialogDescription>
         </DialogHeader>
 
@@ -487,12 +492,27 @@ export default function LernpaketWizardModal({
             <p className="text-sm font-semibold text-foreground">Dieses Lernpaket ist freigegeben.</p>
             <p className="text-xs text-muted-foreground">
               Freigegebene Lernpakete können nicht bearbeitet werden. Hebe die Freigabe zuerst auf,
-              um den Aufgabeneditor zu nutzen.
+              um den Lernpaket-Wizard zu nutzen.
             </p>
           </div>
         ) : (
           <>
-            {/* Aktivitäten-Übersicht: das Herzstück des Editors */}
+            {/* Chat-Einstieg: der Lernpaket-Wizard als Gespräch */}
+            <WizardChatPanel
+              paket={paket}
+              disabled={busy || inhalteBusy}
+              onBusyChange={setChatBusy}
+              onApplied={({ createdIds, ideenkisteIds }) => {
+                setSessionCreatedIds((prev) => [...prev, ...createdIds]);
+                if (ideenkisteIds?.length > 0) {
+                  setKisteZuIntegrieren((prev) => [...new Set([...prev, ...ideenkisteIds])]);
+                }
+                refreshBestand();
+                queryClient.invalidateQueries({ queryKey: ['lernpakete'] });
+              }}
+            />
+
+            {/* Aktivitäten-Übersicht */}
             <section className="space-y-2">
               <h3 className="text-sm font-semibold text-foreground">Aktivitäten & Aufgaben in diesem Paket</h3>
               <AufgabeneditorUebersicht
@@ -504,16 +524,14 @@ export default function LernpaketWizardModal({
               />
               {!vorschlagOffen && (
                 <div className="flex justify-end">
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
                     onClick={() => setVorschlagOffen(true)}
-                    disabled={busy || inhalteBusy}
-                    className="gap-2"
+                    disabled={busy || inhalteBusy || chatBusy}
+                    className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline disabled:opacity-50"
                   >
-                    <Plus className="w-4 h-4" />
-                    Neue/weitere Aufgabenvorschläge erstellen
-                  </Button>
+                    Klassischer Schritt-für-Schritt-Modus
+                  </button>
                 </div>
               )}
             </section>
