@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Paperclip, Loader2, CheckCircle2, CircleDashed, MinusCircle, FileText, Layers, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import WizardBeschreibungEditor from './WizardBeschreibungEditor';
+import WizardMehrEntwuerfeButton from './WizardMehrEntwuerfeButton';
 
 const PHASE_ORDER = ['Input', 'Übung', 'Abschluss'];
 const PHASE_LABEL = { Input: '📚 Erarbeitung', 'Übung': '✏️ Übung', Abschluss: '🎯 Abschluss' };
@@ -217,6 +218,9 @@ export default function AufgabeneditorUebersicht({
                       <StatusBadge status={m.is_complete ? 'vollstaendig' : (hatWerte(m.field_values) ? 'bearbeitet' : 'leer')} />
                     </div>
                   ))}
+                  {istMasterfaehig && masters.length > 0 && (
+                    <WizardMehrEntwuerfeButton activity={a} disabled={disabled} onChanged={onChanged} />
+                  )}
                   {istMasterfaehig && masters.length === 0 && (
                     <div className="px-3 py-1.5 border-t border-border/60 bg-muted/20 pl-7 text-muted-foreground flex items-center gap-1.5">
                       <CircleDashed className="w-3 h-3" /> Noch keine Master-Aufgabe angelegt

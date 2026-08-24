@@ -288,7 +288,10 @@ Deno.serve(async (req) => {
         .filter({ activity_id: activity.id }, undefined, 100)
         .catch(() => []);
       const liveMasters = (vorhandeneMasters || []).filter((m) => m.sync_status !== 'to_delete');
-      if (liveMasters.length > 0) {
+      // `zusaetzlich`: bewusstes Nachlegen weiterer KI-Entwürfe durch die
+      // Lehrkraft — bestehende Master bleiben unangetastet.
+      const zusaetzlich = body?.zusaetzlich === true;
+      if (liveMasters.length > 0 && !zusaetzlich) {
         return Response.json({
           success: false,
           skipped: true,
@@ -298,13 +301,18 @@ Deno.serve(async (req) => {
 
       // Mehrere Varianten: eine LLM-Runde pro Variante, jeweils mit dem
       // Hinweis, welche Inhalte bereits vergeben sind (echte Variantenvielfalt).
+      // Beim Nachlegen zählen die bestehenden Master als bereits vergebene
+      // Inhalte mit, damit die neuen Entwürfe wirklich anders sind.
+      const bestandsInhalte = liveMasters.map((m) => m.field_values).filter(Boolean);
+      const startIndex = liveMasters.length;
       const erstellteVarianten = [];
       for (let i = 0; i < anzahlVarianten; i += 1) {
-        const variantenRegeln = anzahlVarianten > 1
+        const vergeben = [...bestandsInhalte, ...erstellteVarianten];
+        const variantenRegeln = anzahlVarianten > 1 || vergeben.length > 0
           ? [
-              `Dies ist Variante ${i + 1} von ${anzahlVarianten} derselben Aufgabe: gleiches Lernziel, gleiche Aufgabenlogik, aber INHALTLICH ANDERE Beispiele (andere Wörter, Sätze, Fragen, Zahlen).`,
-              ...(erstellteVarianten.length > 0
-                ? [`Diese Inhalte sind bereits vergeben und dürfen NICHT wiederholt werden: ${JSON.stringify(erstellteVarianten).slice(0, 2500)}`]
+              `Dies ist Variante ${startIndex + i + 1} derselben Aufgabe: gleiches Lernziel, gleiche Aufgabenlogik, aber INHALTLICH ANDERE Beispiele (andere Wörter, Sätze, Fragen, Zahlen).`,
+              ...(vergeben.length > 0
+                ? [`Diese Inhalte sind bereits vergeben und dürfen NICHT wiederholt werden: ${JSON.stringify(vergeben).slice(0, 3000)}`]
                 : []),
             ]
           : [];
@@ -339,9 +347,9 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.MasterAufgabe.create({
           activity_id: activity.id,
           lernpaket_id: activity.lernpaket_id,
-          titel: anzahlVarianten > 1 ? `KI-Entwurf ${i + 1}` : 'KI-Entwurf',
+          titel: `KI-Entwurf ${startIndex + i + 1}`,
           field_values: fieldValues,
-          reihenfolge: i,
+          reihenfolge: startIndex + i,
           is_complete: true,
           content_status: 'draft',
           sync_status: 'new',
