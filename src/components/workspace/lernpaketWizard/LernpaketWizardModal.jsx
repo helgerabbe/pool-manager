@@ -165,7 +165,9 @@ export default function LernpaketWizardModal({
     queryClient.invalidateQueries({ queryKey: ['wizard-bestand', paket.id] });
     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     queryClient.invalidateQueries({ queryKey: ['workspace-data'] });
-    queryClient.invalidateQueries({ queryKey: ['masterAufgaben', 'paket', paket.id] });
+    // Präfix-Invalidierung: trifft sowohl die Wizard-Query
+    // ['masterAufgaben','paket',id] als auch die des Menübaums ['masterAufgaben'].
+    queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
   };
 
   // ── Kreative Ideen sammeln (Recherche + freier Entwurf) ──────────
