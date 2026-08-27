@@ -32,6 +32,7 @@ import DashboardVorlagenTab from '@/components/admin/dashboardVorlage/DashboardV
 import GitHubConnectorCard from '@/components/admin/GitHubConnectorCard';
 import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorCard';
 import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
+import AnthropicConnectorCard from '@/components/admin/AnthropicConnectorCard';
 import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
@@ -287,6 +288,7 @@ export default function AdminSettings() {
           <GitHubConnectorCard />
           <GitHubTicketConnectorCard />
           <GitHubCssConnectorCard />
+          <AnthropicConnectorCard />
         </TabsContent>
 
         {/* Systembausteine (globaler Pool für Tab „Dashboards") */}

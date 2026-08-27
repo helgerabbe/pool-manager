@@ -31,7 +31,8 @@
             "$nin": [
               "github_css_connector",
               "github_ticket_connector",
-              "github_connector"
+              "github_connector",
+              "anthropic_connector"
             ]
           }
         }
