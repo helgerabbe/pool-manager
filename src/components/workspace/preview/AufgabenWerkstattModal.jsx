@@ -73,7 +73,6 @@ export default function AufgabenWerkstattModal({
         ? `Bau mir daraus eine interaktive Übungsaufgabe:\n\n${description.trim()}`
         : '',
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
