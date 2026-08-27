@@ -44,7 +44,7 @@ import ZuordnungstrainingReadOnly from '@/components/workspace/zuordnungstrainin
 import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
 import KIQuizModal from '@/components/workspace/KIQuizModal';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
-import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
+import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerkstattModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
 import KompaktwissenInfoBox from '@/components/workspace/KompaktwissenInfoBox';
@@ -423,11 +423,14 @@ export default function ActivityMasterPanel({
 
   // Offene Aufgabe: gerade in der Vorschau gezeigte Umsetzung als
   // "Vorschau-Vorlage" (Snapshot) einfrieren und an der Aktivität ablegen.
-  const persistOffeneSnapshot = async (html) => {
+  const persistOffeneSnapshot = async (html, fragment = '') => {
     const u = await base44.auth.me().catch(() => null);
     const newFieldValues = {
       ...fieldValues,
       approved_snapshot_html: html,
+      // Das Fragment ist die Fassung, die spaeter an die MBK uebergeben wird
+      // (ohne Dokumentgeruest). Leer bei aelteren Staenden.
+      ...(fragment ? { approved_fragment: fragment } : {}),
       snapshot_briefing: fieldValues.description || '',
       snapshot_approved_at: new Date().toISOString(),
       ...(u?.email ? { snapshot_approved_by: u.email } : {}),
@@ -1123,7 +1126,7 @@ export default function ActivityMasterPanel({
                   exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
                 />
                 {/* Schüler-Vorschau (Sandbox-Snapshot) */}
-                <OffeneAufgabePreviewModal
+                <AufgabenWerkstattModal
                   open={offenePreviewOpen}
                   onOpenChange={setOffenePreviewOpen}
                   description={fieldValues.description || ''}

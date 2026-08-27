@@ -14,7 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Wand2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
-import OffeneAufgabePreviewModal from '@/components/workspace/preview/OffeneAufgabePreviewModal';
+import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerkstattModal';
 
 export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry, stundeId }) {
   const queryClient = useQueryClient();
@@ -61,7 +61,7 @@ export default function StundenOffeneAufgabeVorschauButton({ phase, katalogEntry
         {snapshot ? 'Aufgabe ansehen' : 'Aufgabe jetzt generieren'}
       </Button>
 
-      <OffeneAufgabePreviewModal
+      <AufgabenWerkstattModal
         open={open}
         onOpenChange={setOpen}
         description={description}
