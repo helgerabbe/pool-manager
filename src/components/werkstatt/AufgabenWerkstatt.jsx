@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, PencilRuler } from 'lucide-react';
+import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, PencilRuler, FolderOpen } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -197,8 +197,9 @@ export default function AufgabenWerkstatt({
             {titel && <span className="text-xs font-normal text-slate-500 ml-1">· {titel}</span>}
           </DialogTitle>
           <p className="text-xs text-slate-500 mt-1">
-            Eine Aufgabe ist eine Folge von Schritten. Jeder Schritt hat seinen eigenen Typ —
-            links die Folge, in der Mitte die Schüleransicht, rechts der Schritt selbst.
+            {ansicht === 'einstieg'
+              ? 'Zuerst sammeln: Was haben Sie schon, und was soll passieren? Daraus entsteht der Ablauf.'
+              : 'Eine Aufgabe ist eine Folge von Schritten. Jeder Schritt hat seinen eigenen Typ — links die Folge, in der Mitte die Schüleransicht, rechts der Schritt selbst.'}
           </p>
         </DialogHeader>
 
@@ -367,24 +368,43 @@ export default function AufgabenWerkstatt({
         {/* ── Fußleiste ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200 shrink-0">
           <p className="text-xs text-slate-500">
-            {folge.schritte.length === 0
-              ? 'Noch keine Schritte'
-              : `${folge.schritte.length} Schritte${unfertige > 0 ? `, ${unfertige} noch unvollständig` : ''}`}
+            {ansicht === 'einstieg'
+              ? 'Material und Idee sammeln'
+              : (folge.schritte.length === 0
+                ? 'Noch keine Schritte'
+                : `${folge.schritte.length} Schritte${unfertige > 0 ? `, ${unfertige} noch unvollständig` : ''}`)}
             {folge.dirty && ' · nicht gespeichert'}
           </p>
           <div className="ml-auto flex items-center gap-2">
+            {/* Zurück zum Einstieg — Material und Idee bleiben erreichbar,
+                ohne dauerhaft Platz zu belegen. */}
+            {ansicht === 'werkstatt' && (
+              <Button variant="ghost" onClick={() => setAnsicht('einstieg')} className="gap-2 text-slate-600">
+                <FolderOpen className="w-4 h-4" />
+                Material &amp; Idee
+                {materialien.length > 0 && (
+                  <span className="rounded-full bg-slate-200 px-1.5 text-[10px] font-semibold">
+                    {materialien.length}
+                  </span>
+                )}
+              </Button>
+            )}
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Schließen
             </Button>
-            <Button
-              onClick={() => speichern.mutate()}
-              disabled={speichern.isPending || isReleased || folge.schritte.length === 0}
-              className="gap-2"
-            >
-              {speichern.isPending
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird gespeichert…</>
-                : <><Save className="w-4 h-4" /> Speichern</>}
-            </Button>
+            {/* Im Einstieg gibt es noch nichts zu speichern — der Weg führt
+                über "Weiter". */}
+            {ansicht === 'werkstatt' && (
+              <Button
+                onClick={() => speichern.mutate()}
+                disabled={speichern.isPending || isReleased || folge.schritte.length === 0}
+                className="gap-2"
+              >
+                {speichern.isPending
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Wird gespeichert…</>
+                  : <><Save className="w-4 h-4" /> Speichern</>}
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
