@@ -5,6 +5,7 @@ import {
   FolderOpen, Lightbulb, ChevronDown, ChevronRight, Sparkles, Loader2, PenLine,
 } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
+import { MicOff } from 'lucide-react';
 import MaterialSammlung from '@/components/werkstatt/MaterialSammlung';
 
 /**
@@ -36,6 +37,14 @@ export default function WerkstattEinstieg({
 }) {
   const [materialOffen, setMaterialOffen] = useState(true);
   const [ideeOffen, setIdeeOffen] = useState(true);
+
+  // SpeechInputButton rendert NICHTS, wenn der Browser keine Aufnahme kann
+  // (kein HTTPS, eingebettete Ansicht, fehlende Berechtigung). Ohne eigenen
+  // Hinweis verschwaende der Mikrofonknopf dann kommentarlos und wirkte
+  // kaputt — deshalb pruefen wir hier dieselbe Bedingung und sagen es.
+  const spracheMoeglich = typeof window !== 'undefined'
+    && !!navigator.mediaDevices?.getUserMedia
+    && typeof MediaRecorder !== 'undefined';
 
   const hatIdee = !!idee.trim();
   const anzahl = materialien.length;
@@ -94,20 +103,29 @@ export default function WerkstattEinstieg({
         </button>
         {ideeOffen && (
           <div className="px-4 pb-4 pt-3 border-t border-slate-100 space-y-3">
-            <div className="flex items-start gap-2">
-              <SpeechInputButton
-                value={idee}
-                onResult={onIdeeChange}
-                maxSeconds={90}
-                disabled={disabled}
-                label="Idee aufsprechen"
-                listeningLabel="Ich höre zu …"
-              />
-              <p className="text-xs text-slate-500 leading-relaxed pt-1.5">
-                Bis zu 90 Sekunden. Erzählen Sie einfach, als würden Sie es einer Kollegin
-                erklären — das Gesprochene landet danach im Feld und lässt sich dort noch ändern.
+            {spracheMoeglich ? (
+              <div className="flex items-start gap-2">
+                <SpeechInputButton
+                  value={idee}
+                  onResult={onIdeeChange}
+                  maxSeconds={90}
+                  disabled={disabled}
+                  label="Idee aufsprechen"
+                  listeningLabel="Ich höre zu …"
+                />
+                <p className="text-xs text-slate-500 leading-relaxed pt-1.5">
+                  Bis zu 90 Sekunden. Erzählen Sie einfach, als würden Sie es einer Kollegin
+                  erklären — das Gesprochene landet danach im Feld und lässt sich dort noch ändern.
+                </p>
+              </div>
+            ) : (
+              <p className="flex items-start gap-2 text-xs text-slate-500 leading-relaxed rounded-lg bg-slate-50 border border-slate-200 px-3 py-2">
+                <MicOff className="w-4 h-4 shrink-0 mt-0.5" />
+                Aufsprechen geht auf diesem Gerät gerade nicht — dafür braucht der Browser eine
+                gesicherte Verbindung und die Erlaubnis, das Mikrofon zu benutzen. Tippen
+                funktioniert genauso gut.
               </p>
-            </div>
+            )}
             <Textarea
               value={idee}
               onChange={(e) => onIdeeChange(e.target.value)}
