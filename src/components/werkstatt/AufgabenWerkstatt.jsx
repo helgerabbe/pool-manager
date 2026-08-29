@@ -5,18 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2, Hammer, Lock, Settings2 } from 'lucide-react';
+import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, PencilRuler } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import useSchrittfolge from '@/hooks/useSchrittfolge';
 import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
+import useStrukturVorschlag from '@/hooks/useStrukturVorschlag';
+import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 import SchrittListe from '@/components/schritte/SchrittListe';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalte';
+import StrukturPhase from '@/components/werkstatt/StrukturPhase';
 import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
 import MissionPicker from '@/components/missionen/MissionPicker';
-import { SCHRITT_TYPEN, istSchrittVollstaendig } from '@/lib/schrittTypen';
+import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
 import { fragmentZuDokument } from '@/lib/aufgabeFragment';
 
 /**
@@ -60,6 +63,9 @@ export default function AufgabenWerkstatt({
   const [gesamtdurchlauf, setGesamtdurchlauf] = useState(false);
   const [kopfOffen, setKopfOffen] = useState(false);
   const [eingabe, setEingabe] = useState('');
+  // Welcher Assistent unten rechts arbeitet: die Folge planen oder den
+  // offenen Schritt bauen. Ohne Schritte gibt es nur die Struktur-Phase.
+  const [rechtsUnten, setRechtsUnten] = useState('struktur');
 
   useEffect(() => {
     if (!open) return;
@@ -69,6 +75,7 @@ export default function AufgabenWerkstatt({
     setAufgabenstellung(initialData?.aufgabenstellung || '');
     setGesamtdurchlauf(false);
     setEingabe('');
+    setRechtsUnten('struktur');
   }, [open, initialData]);
 
   const schritt = folge.aktuellerSchritt;
