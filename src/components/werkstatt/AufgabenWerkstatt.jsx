@@ -236,11 +236,9 @@ export default function AufgabenWerkstatt({
           {/* Rechts: Schritt-Editor, darunter das Gespräch */}
           <div className="flex flex-col min-h-0 gap-3">
             <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4">
-              <SchrittEditor
-                schritt={schritt}
-                onChange={folge.aktuellenAendern}
-                onGespraechOeffnen={istOffenerSchritt ? () => {} : undefined}
-              />
+              {/* Kein onGespraechOeffnen: Bei einem offenen Schritt steht das
+                  Gespräch direkt darunter in derselben Spalte. */}
+              <SchrittEditor schritt={schritt} onChange={folge.aktuellenAendern} />
             </div>
 
             {istOffenerSchritt && (
