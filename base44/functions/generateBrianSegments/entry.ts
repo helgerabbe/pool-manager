@@ -175,13 +175,40 @@ Deno.serve(async (req) => {
     const sequenzSchritte = istSequenz && Array.isArray(task.sequenz_schritte)
       ? [...task.sequenz_schritte].sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
       : [];
+    // Beschriftung je Schritttyp. Muss zu src/lib/schrittTypen.js passen —
+    // bis 2026-08-29 wurde hier alles ausser 'material' pauschal als
+    // "Aufgabe" beschriftet, wodurch Brian nicht erkennen konnte, welche
+    // Schritte er ueberhaupt begleitet.
+    const SCHRITT_LABEL = {
+      material: 'Material',
+      aufgabe: 'Freitextfrage',
+      katalog: 'Aufgabenformat',
+      offen: 'Interaktive Aufgabe',
+      brian: 'Gespraech mit dir',
+      handlung: 'Arbeit am realen Material',
+      extern: 'Externe Seite',
+    };
     const sequenzStr = sequenzSchritte.length > 0
       ? sequenzSchritte
-          .map((s, i) => `${i + 1}. [${s.typ === 'material' ? 'Material' : 'Aufgabe'}] ${s.titel || 'Ohne Titel'}`)
+          .map((s, i) => {
+            const label = SCHRITT_LABEL[s.typ] || 'Schritt';
+            const zusatz = s.typ === 'brian' && s.brian?.learner_instruction
+              ? `\n     Auftrag an den Schueler: ${String(s.brian.learner_instruction).trim()}`
+              : '';
+            return `${i + 1}. [${label}] ${s.titel || 'Ohne Titel'}${zusatz}`;
+          })
           .join('\n')
       : '';
+
+    // Nur die 'brian'-Schritte werden von dir begleitet. Alle anderen laufen
+    // ohne dich — das muss im Prompt stehen, sonst mischt sich Brian in
+    // Schritte ein, die er gar nicht sieht.
+    const brianSchritte = sequenzSchritte.filter((s) => s.typ === 'brian');
+    const begleitHinweis = brianSchritte.length > 0
+      ? `\n\nDU BEGLEITEST NUR die mit [Gespraech mit dir] gekennzeichneten Schritte (${brianSchritte.length} von ${sequenzSchritte.length}). Die uebrigen Schritte bearbeitet der Schueler eigenstaendig in der Lernplattform; du siehst weder seine Eingaben dort noch die Ergebnisse. Frage nach, was er dort erarbeitet hat, statt es vorauszusetzen.`
+      : '\n\nIn dieser Sequenz ist KEIN Schritt fuer ein Gespraech mit dir vorgesehen. Halte dich zurueck und hilf nur, wenn der Schueler dich ausdruecklich fragt.';
     const sequenzBlock = sequenzStr
-      ? `\n\nDiese Aufgabe ist eine AUFGABENSEQUENZ mit fester Schritt-Reihenfolge:\n${sequenzStr}\n\nBegleite den Schüler Schritt für Schritt durch diese Abfolge. Beziehe dich auf das Material des jeweils vorherigen Schritts, wenn der Schüler feststeckt, und springe nicht voraus.`
+      ? `\n\nDiese Aufgabe ist eine AUFGABENSEQUENZ mit fester Schritt-Reihenfolge:\n${sequenzStr}${begleitHinweis}\n\nBeziehe dich auf das Material der vorherigen Schritte, wenn der Schüler feststeckt, und springe nicht voraus.`
       : '';
 
     // Projekt-Ablauf (nur für die KI, nicht schülersichtbar): Die Lehrkraft
@@ -291,7 +318,7 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollst�
             materialien: materialienStr,
             bewertungsrubriken: rubrikenStr,
             aufgabentyp: istSequenz
-              ? 'Aufgabensequenz (mehrschrittiger Ablauf Material ⇄ Aufgabe)'
+              ? 'Aufgabensequenz (geordnete Schrittfolge, der Typ sitzt am Schritt)'
               : (isEbene3 ? 'Projekt-/Anwendungsaufgabe (Ebene 3)' : 'Transfer-Aufgabe (Ebene 2)'),
             sequenz_schritte: sequenzStr || null,
             projekt_ablauf_interne_beschreibung: projektAblauf || null,
