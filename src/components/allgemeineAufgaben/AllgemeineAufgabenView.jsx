@@ -537,7 +537,7 @@ export default function AllgemeineAufgabenView({
   const [wizardOpen, setWizardOpen] = useState(false);
   const [ideenboxOpen, setIdeenboxOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
-  // 3-Wege-Picker (Handlungsaufgabe | KI-Tutor | Aufgabensequenz) – nur in Ebene 2.
+  // Aufgabenart-Picker (Handlung | digitale Aufgabe | externe Seite) – nur in Ebene 2.
   const [artPickerOpen, setArtPickerOpen] = useState(false);
   const [handlungViewOpen, setHandlungViewOpen] = useState(false);
   const [htmlEmbedViewOpen, setHtmlEmbedViewOpen] = useState(false);
@@ -748,7 +748,7 @@ export default function AllgemeineAufgabenView({
       // Ebene 3: Picker ueberspringen, Typ zwingend 'inhalt'.
       setCreateFormOpen(true);
     } else {
-      // Ebene 2: 3-Wege-Picker (Handlung | KI-Tutor | Sequenz).
+      // Ebene 2: Picker (Handlung | digitale Aufgabe | externe Seite).
       setArtPickerOpen(true);
     }
   };
