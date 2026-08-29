@@ -30,51 +30,49 @@ export default function useSchrittfolge(initialAufgabe) {
     setDirty(false);
   }, [initialAufgabe]);
 
+  /* Alle Änderungen rechnen mit dem aktuellen `schritte` und setzen den
+     neuen Zustand direkt. Bewusst KEINE Updater-Funktionen mit einem
+     setSelectedIndex darin: Updater müssen frei von Nebenwirkungen sein,
+     React ruft sie unter Umständen mehrfach auf. Alle Aufrufer hier sind
+     Ereignisbehandler, dort ist der Wert aus der Closure aktuell. */
+
   const hinzufuegen = useCallback((typ) => {
-    setSchritte((alt) => {
-      const neu = [...alt, leererSchritt(typ, alt.length)];
-      setSelectedIndex(neu.length - 1);
-      return neuNummerieren(neu);
-    });
+    const neu = neuNummerieren([...schritte, leererSchritt(typ, schritte.length)]);
+    setSchritte(neu);
+    setSelectedIndex(neu.length - 1);
     setDirty(true);
-  }, []);
+  }, [schritte]);
 
   /** Ersetzt einen Schritt vollständig. */
   const aendern = useCallback((index, neuerSchritt) => {
-    setSchritte((alt) => alt.map((s, i) => (i === index ? neuerSchritt : s)));
+    setSchritte(schritte.map((s, i) => (i === index ? neuerSchritt : s)));
     setDirty(true);
-  }, []);
+  }, [schritte]);
 
   /** Ändert nur den gerade ausgewählten Schritt. */
   const aktuellenAendern = useCallback((neuerSchritt) => {
-    setSchritte((alt) => alt.map((s, i) => (i === selectedIndex ? neuerSchritt : s)));
+    setSchritte(schritte.map((s, i) => (i === selectedIndex ? neuerSchritt : s)));
     setDirty(true);
-  }, [selectedIndex]);
+  }, [schritte, selectedIndex]);
 
   const loeschen = useCallback((index) => {
-    setSchritte((alt) => {
-      const neu = neuNummerieren(alt.filter((_, i) => i !== index));
-      setSelectedIndex((sel) => {
-        if (neu.length === 0) return -1;
-        if (sel > index) return sel - 1;
-        return Math.min(sel, neu.length - 1);
-      });
-      return neu;
-    });
+    const neu = neuNummerieren(schritte.filter((_, i) => i !== index));
+    setSchritte(neu);
+    if (neu.length === 0) setSelectedIndex(-1);
+    else if (selectedIndex > index) setSelectedIndex(selectedIndex - 1);
+    else setSelectedIndex(Math.min(selectedIndex, neu.length - 1));
     setDirty(true);
-  }, []);
+  }, [schritte, selectedIndex]);
 
   const verschieben = useCallback((von, nach) => {
-    setSchritte((alt) => {
-      if (von === nach || von < 0 || nach < 0 || von >= alt.length || nach >= alt.length) return alt;
-      const neu = [...alt];
-      const [bewegt] = neu.splice(von, 1);
-      neu.splice(nach, 0, bewegt);
-      setSelectedIndex(nach);
-      return neuNummerieren(neu);
-    });
+    if (von === nach || von < 0 || nach < 0 || von >= schritte.length || nach >= schritte.length) return;
+    const neu = [...schritte];
+    const [bewegt] = neu.splice(von, 1);
+    neu.splice(nach, 0, bewegt);
+    setSchritte(neuNummerieren(neu));
+    setSelectedIndex(nach);
     setDirty(true);
-  }, []);
+  }, [schritte]);
 
   const nachOben = useCallback((i) => verschieben(i, i - 1), [verschieben]);
   const nachUnten = useCallback((i) => verschieben(i, i + 1), [verschieben]);
@@ -85,7 +83,7 @@ export default function useSchrittfolge(initialAufgabe) {
    * der Lehrkraft, nicht ein Nebeneffekt des Bauens.
    */
   const fragmentUebernehmen = useCallback((index, fragment, snapshotHtml) => {
-    setSchritte((alt) => alt.map((s, i) => (i === index
+    setSchritte(schritte.map((s, i) => (i === index
       ? {
         ...s,
         status: SCHRITT_STATUS.UEBERNOMMEN,
@@ -98,21 +96,19 @@ export default function useSchrittfolge(initialAufgabe) {
       }
       : s)));
     setDirty(true);
-  }, []);
+  }, [schritte]);
 
   /**
    * Ersetzt die ganze Folge — für den Strukturvorschlag des Assistenten.
    * Vorhandene Schritte bleiben erhalten, wenn `anhaengen` gesetzt ist.
    */
   const folgeSetzen = useCallback((neueSchritte, { anhaengen = false } = {}) => {
-    setSchritte((alt) => {
-      const kombiniert = anhaengen ? [...alt, ...neueSchritte] : neueSchritte;
-      const nummeriert = neuNummerieren(kombiniert);
-      setSelectedIndex(nummeriert.length > 0 ? (anhaengen ? alt.length : 0) : -1);
-      return nummeriert;
-    });
+    const kombiniert = anhaengen ? [...schritte, ...neueSchritte] : neueSchritte;
+    const nummeriert = neuNummerieren(kombiniert);
+    setSchritte(nummeriert);
+    setSelectedIndex(nummeriert.length > 0 ? (anhaengen ? schritte.length : 0) : -1);
     setDirty(true);
-  }, []);
+  }, [schritte]);
 
   return {
     schritte,
