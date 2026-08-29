@@ -250,7 +250,10 @@ function leseSchritte(text, katalogNamen) {
       return;
     }
 
-    const eintrag = {
+    const eintrag: {
+      titel: string; typ: string; kurzbeschreibung: string;
+      dauer_minuten?: number; aktivitaet_name?: string;
+    } = {
       titel,
       typ,
       kurzbeschreibung: String(s?.kurzbeschreibung || '').trim(),
@@ -327,16 +330,15 @@ Deno.serve(async (req) => {
     // Ohne die echten Namen erfindet das Modell Formate, die es nicht gibt.
     // Nach Namen entdoppelt: der Katalog führt jede Aktivität einmal pro
     // Lernpaket-Phase, ein Schritt hat aber keine Phase.
-    let katalogNamen = [];
+    let katalogNamen: string[] = [];
     if (istStruktur) {
       const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog
         .list()
         .catch(() => []);
-      katalogNamen = [...new Set(
-        (katalog || [])
-          .filter((k) => k?.is_active !== false && k?.name)
-          .map((k) => String(k.name)),
-      )].sort((a, b) => a.localeCompare(b, 'de'));
+      const namen: string[] = (katalog || [])
+        .filter((k: any) => k?.is_active !== false && k?.name)
+        .map((k: any) => String(k.name));
+      katalogNamen = [...new Set(namen)].sort((a, b) => a.localeCompare(b, 'de'));
     }
     const systemStruktur = istStruktur ? baueStrukturPrompt(katalogNamen) : '';
 
