@@ -98,7 +98,7 @@ import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboa
  *     Vorhandenes wird 1:1 übernommen, die MBK schreibt nur, was leer ist.
  *     Zusätzlich sagt `inhalt_regel` der MBK genau das.
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.17.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.18.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1882,6 +1882,73 @@ export function buildTaskContentItemForLernpaket({
 }
 
 /**
+ * Bereitet die Schrittfolge einer allgemeinen Aufgabe für den Export auf.
+ *
+ * Je Schritt wird genau der Nutzdaten-Block mitgegeben, der zu seinem Typ
+ * gehört — nicht das ganze Schritt-Objekt. Zwei Gründe: Die MBK soll nicht
+ * raten müssen, welches Feld gilt, und interne Werkstatt-Zustände (Baustand,
+ * Planungsnotiz, Herkunft) haben im Kurs nichts zu suchen.
+ *
+ * Bei 'offen' geht das FRAGMENT hinaus, nicht der Snapshot: Die MBK setzt es
+ * in ihre eigene Hülle ein, das Vorschaudokument wäre dort nur Ballast.
+ *
+ * @param {object} aufgabe
+ * @param {{istKi: boolean}} opts  Im KI-Modus liefert Payload 4 die Inhalte.
+ * @returns {Array}
+ */
+export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) {
+  if (aufgabe?.aufgaben_modus !== 'sequenz') return [];
+  const roh = Array.isArray(aufgabe?.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
+
+  return [...roh]
+    .map((s, i) => ({ ...s, reihenfolge: Number.isFinite(s?.reihenfolge) ? s.reihenfolge : i }))
+    .sort((a, b) => a.reihenfolge - b.reihenfolge)
+    .map((s, i) => {
+      const basis = {
+        schritt_id: nullable(s?.id),
+        reihenfolge: i,
+        typ: nullable(s?.typ),
+        titel: nullable(s?.titel),
+      };
+      // Im KI-Modus kommen die Inhalte aus Payload 4 — hier nur das Gerüst.
+      if (istKi) return basis;
+
+      switch (s?.typ) {
+        case 'material':
+          return { ...basis, material: s?.material || null };
+        case 'aufgabe':
+          return { ...basis, aufgabe: s?.aufgabe || null };
+        case 'katalog':
+          return {
+            ...basis,
+            aktivitaet_id: nullable(s?.aktivitaet_id),
+            field_values: s?.field_values || {},
+          };
+        case 'offen':
+          return { ...basis, fragment: nullable(s?.offen?.fragment) };
+        case 'brian':
+          return {
+            ...basis,
+            brian_dialog: s?.brian
+              ? {
+                dialog_name: nullable(s.brian.dialog_name),
+                learner_instruction: nullable(s.brian.learner_instruction),
+                system_instruction: nullable(s.brian.system_instruction),
+                completion_rule: nullable(s.brian.completion_rule),
+              }
+              : null,
+          };
+        case 'handlung':
+          return { ...basis, handlung: s?.handlung || null };
+        case 'extern':
+          return { ...basis, extern: s?.extern || null };
+        default:
+          return basis;
+      }
+    });
+}
+
+/**
  * Erzeugt EINEN Item-Eintrag für Payload 3 zu einer AllgemeineAufgabe
  * (Ebene 2 oder 3). Im KI-Modus reichen wir nur Header + Briefing-Marker
  * durch — das eigentliche Briefing kommt in Payload 4.
@@ -1929,6 +1996,14 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
         completion_rule: nullable(aufgabe?.brian_completion_rule),
       }
       : null,
+
+    // airgap-1.18.0: Schrittfolge. Eine allgemeine Aufgabe ist keine Aufgabe
+    // mit einem Typ, sondern eine geordnete Folge von Schritten — der Typ
+    // sitzt am Schritt. Bis 1.17.0 fehlte die Folge im Export vollstaendig;
+    // Sequenz-Aufgaben kamen ohne ihre Schritte bei der MBK an.
+    // Leer bei Aufgaben im Modus 'einzeln'.
+    aufgaben_modus: aufgabe?.aufgaben_modus || 'einzeln',
+    sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi }),
 
     alt_text: nullable(aufgabe?.alt_text),
     // airgap-1.4.0: Metadaten für Header/Footer-Injection.
