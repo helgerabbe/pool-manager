@@ -10,7 +10,7 @@ import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
 import { fragmentZuDokument } from '@/lib/aufgabeFragment';
 import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
-import useAktivitaetenKatalogMap from '@/hooks/useAktivitaetenKatalogMap';
+import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 
 /** Erkennt YouTube-Video-IDs. */
 function youtubeEmbed(url) {
@@ -255,7 +255,7 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
   // Schüler-Seite zu finden. Nur laden, wenn wirklich ein solcher Schritt
   // in der Folge steckt.
   const brauchtKatalog = schritte.some((s) => s?.typ === SCHRITT_TYPEN.KATALOG);
-  const { katalogMap } = useAktivitaetenKatalogMap({ enabled: brauchtKatalog });
+  const { katalogMap } = useAktivitaetenKatalog({ enabled: brauchtKatalog });
 
   const standardAufgabe =
     'Bearbeite die folgende Aufgabensequenz Schritt für Schritt. Lies dir zuerst das Material durch und bearbeite dann die dazugehörigen Aufgaben.';
