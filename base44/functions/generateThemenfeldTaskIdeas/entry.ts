@@ -145,7 +145,7 @@ function buildGrundgeruestBlock(einheit) {
 
 function normalizeIdeas(rawIdeas, forcedMission = null) {
   const validMissions = new Set(Object.keys(MISSIONEN));
-  const fallbackMission = validMissions.has(forcedMission) ? forcedMission : 'transfer';
+  const fallbackMission = validMissions.has(forcedMission) ? forcedMission : 'anwendung';
   return (Array.isArray(rawIdeas) ? rawIdeas : []).slice(0, 5).map((idea) => {
     const mission = forcedMission && validMissions.has(forcedMission)
       ? forcedMission

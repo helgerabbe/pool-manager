@@ -5,7 +5,7 @@
  * `lib/missionen.js` als Single Source of Truth zu.
  *
  * Props:
- *   - missionId: string|null  Slug der Mission (z. B. 'transfer'). Bei null/
+ *   - missionId: string|null  Slug der Kategorie (z. B. 'anwendung'). Bei null/
  *                              unbekannten Werten rendert die Komponente nichts
  *                              (außer `showFallback=true`).
  *   - size:      'sm'|'md'    Größe des Badges (Default 'md').
