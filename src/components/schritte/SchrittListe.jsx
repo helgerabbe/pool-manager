@@ -41,8 +41,14 @@ const STATUS_TITEL = {
   [SCHRITT_STATUS.UEBERNOMMEN]: 'Übernommen',
 };
 
-/** Eine Kachel in der Schrittleiste. */
-function SchrittKachel({ schritt, index, total, isSelected, onSelect, onDelete, onMoveUp, onMoveDown }) {
+/**
+ * Eine Kachel in der Schrittleiste.
+ *
+ * Ein Klick WÄHLT den Schritt aus (die Vorschau daneben springt mit). Der
+ * Inhalt wird über den Bearbeiten-Knopf geöffnet — bewusst getrennt, damit
+ * das Umsortieren nicht ständig ein Fenster aufreißt.
+ */
+function SchrittKachel({ schritt, index, total, isSelected, onSelect, onOpen, onDelete, onMoveUp, onMoveDown }) {
   const typInfo = getSchrittTyp(schritt.typ);
   const Icon = TYP_ICONS[schritt.typ] || FileText;
   const status = schrittStatus(schritt);
@@ -60,6 +66,7 @@ function SchrittKachel({ schritt, index, total, isSelected, onSelect, onDelete, 
           : 'border-border bg-card hover:bg-muted/50',
       )}
       onClick={() => onSelect(index)}
+      onDoubleClick={() => onOpen?.(index)}
     >
       <GripVertical className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
       <span
@@ -77,6 +84,13 @@ function SchrittKachel({ schritt, index, total, isSelected, onSelect, onDelete, 
         </p>
       </div>
       <div className="flex items-center gap-0.5 shrink-0">
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpen?.(index); }}
+          className="px-1.5 py-0.5 rounded text-[11px] font-medium border border-border bg-background hover:bg-muted mr-0.5"
+          title="Inhalt dieses Schritts bearbeiten"
+        >
+          Bearbeiten
+        </button>
         <button
           onClick={(e) => { e.stopPropagation(); onMoveUp(index); }}
           disabled={index === 0}
@@ -118,6 +132,7 @@ export default function SchrittListe({
   schritte = [],
   selectedIndex,
   onSelect,
+  onOpen,
   onAdd,
   onDelete,
   onMoveUp,
@@ -128,7 +143,7 @@ export default function SchrittListe({
       <div className="flex-1 min-h-0 overflow-y-auto space-y-2 pr-1">
         {schritte.length === 0 ? (
           <p className="text-xs text-muted-foreground italic px-1 py-6 text-center leading-relaxed">
-            Noch keine Schritte. Legen Sie unten einen an — oder lassen Sie sich rechts im Gespräch
+            Noch keine Schritte. Legen Sie unten einen an — oder lassen Sie sich unten im Gespräch
             eine Schrittfolge vorschlagen.
           </p>
         ) : (
@@ -140,6 +155,7 @@ export default function SchrittListe({
               total={schritte.length}
               isSelected={i === selectedIndex}
               onSelect={onSelect}
+              onOpen={onOpen}
               onDelete={onDelete}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}

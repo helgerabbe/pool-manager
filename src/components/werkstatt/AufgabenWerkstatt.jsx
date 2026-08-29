@@ -18,7 +18,7 @@ import StrukturPhase from '@/components/werkstatt/StrukturPhase';
 import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import SchrittFenster from '@/components/werkstatt/SchrittFenster';
 import MissionPicker from '@/components/missionen/MissionPicker';
-import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
+import { istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
 
 /**
  * AufgabenWerkstatt
