@@ -28,6 +28,7 @@ export default function OffenerSchrittGespraech({
   aufgabeId,
   kontext,
   isReleased = false,
+  uebernehmenLabel = 'Diesen Stand in den Schritt übernehmen',
   onUebernehmen,   // (fragment, snapshotHtml) => void
 }) {
   const gen = useAufgabenGenerator({
@@ -72,7 +73,7 @@ export default function OffenerSchrittGespraech({
   };
 
   return (
-    <>
+    <div className="flex flex-col min-h-0 flex-1 gap-2">
       <GespraechsSpalte
         gen={gen}
         eingabe={eingabe}
@@ -95,10 +96,10 @@ export default function OffenerSchrittGespraech({
         />
         {gen.fragment && (
           <Button onClick={uebernehmen} disabled={gen.busy || isReleased} className="gap-2 w-full">
-            Diesen Stand in den Schritt übernehmen
+            {uebernehmenLabel}
           </Button>
         )}
       </div>
-    </>
+    </div>
   );
 }
