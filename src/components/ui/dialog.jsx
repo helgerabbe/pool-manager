@@ -14,29 +14,38 @@ const DialogPortal = DialogPrimitive.Portal
 
 const DialogClose = DialogPrimitive.Close
 
-const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
+/**
+ * z-Ebenen: Der Standarddialog liegt auf 9999, sein Overlay auf 9998.
+ * Ein Dialog IM Dialog (z. B. das Schritt-Fenster der Aufgabenwerkstatt)
+ * muss darueber liegen, sonst oeffnet er sich unsichtbar dahinter. Dafuer
+ * gibt es die Eigenschaft `zIndex` — nicht per className loesbar, weil die
+ * Basis-Ebene inline gesetzt ist und Inline-Stile jede Klasse schlagen.
+ */
+const DIALOG_Z_DEFAULT = 9999;
+
+const DialogOverlay = React.forwardRef(({ className, zIndex = DIALOG_Z_DEFAULT - 1, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      "fixed inset-0 z-[9998] bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      "fixed inset-0 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
       className
     )}
     {...props} />
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
-const DialogContent = React.forwardRef(({ className, children, ...props }, ref) => (
+const DialogContent = React.forwardRef(({ className, children, zIndex = DIALOG_Z_DEFAULT, ...props }, ref) => (
   <DialogPortal>
-    <DialogOverlay />
+    <DialogOverlay zIndex={zIndex - 1} />
     <DialogPrimitive.Content
       ref={ref}
-      style={{ 
+      style={{
         backgroundColor: 'white',
         position: 'fixed',
         left: '50%',
         top: '50%',
         transform: 'translate(-50%, -50%)',
-        zIndex: 9999
+        zIndex,
       }}
       className={cn(
         "grid w-full max-w-lg gap-4 border border-border p-6 shadow-lg rounded-lg",
