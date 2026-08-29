@@ -42,19 +42,26 @@
     },
     "sequenz_schritte": {
       "type": "array",
-      "description": "Schritte einer Aufgabensequenz (Material/Aufgabe in fester Reihenfolge). Der eigentliche Schritt-Inhalt liegt je nach Typ in `material` bzw. `aufgabe`.",
+      "description": "Geordnete Schrittfolge der Aufgabe. Der TYP sitzt am Schritt, nicht an der Aufgabe (Konzept 2026-08-29). Sortierung ueber 'reihenfolge'. Je nach 'typ' ist genau EIN Nutzdaten-Block gefuellt: material | aufgabe | katalog (aktivitaet_id + field_values) | offen | brian | handlung | extern. Alt-Typen 'material' und 'aufgabe' bleiben gueltig und unveraendert - Bestandssequenzen laufen ohne Migration weiter. Schritte ohne 'status' sind Altbestand und gelten als 'uebernommen'.",
       "items": {
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "Stabile UID des Schritts. Referenz fuer Schuelerfortschritt und Werkstatt-Staende - niemals der Array-Index."
           },
           "typ": {
             "type": "string",
             "enum": [
               "material",
-              "aufgabe"
-            ]
+              "aufgabe",
+              "katalog",
+              "offen",
+              "brian",
+              "handlung",
+              "extern"
+            ],
+            "description": "Schritttyp. 'material' und 'aufgabe' sind die urspruenglichen Typen der Aufgabensequenz und bleiben unveraendert gueltig."
           },
           "reihenfolge": {
             "type": "number"
@@ -64,7 +71,7 @@
           },
           "material": {
             "type": "object",
-            "description": "Inhalt eines Material-Schritts.",
+            "description": "Nur bei typ='material': reiner Inhalt ohne Aufgabenstellung.",
             "properties": {
               "material_typ": {
                 "type": "string",
@@ -97,7 +104,7 @@
           },
           "aufgabe": {
             "type": "object",
-            "description": "Inhalt eines Aufgaben-Schritts.",
+            "description": "Nur bei typ='aufgabe': Freitextfrage mit Musterloesung oder KI-Feedback. NICHT typ='offen'.",
             "properties": {
               "aufgabenstellung": {
                 "type": "string"
@@ -119,8 +126,165 @@
               }
             },
             "additionalProperties": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "geplant",
+              "gebaut",
+              "uebernommen"
+            ],
+            "default": "geplant",
+            "description": "Baustand des Schritts. Fehlender Wert = Altbestand, gilt als 'uebernommen'."
+          },
+          "plan": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Ergebnis der Struktur-Phase.",
+            "properties": {
+              "kurzbeschreibung": {
+                "type": "string"
+              },
+              "lernziel": {
+                "type": "string"
+              },
+              "dauer_minuten": {
+                "type": "number"
+              }
+            }
+          },
+          "herkunft": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Dreierregel: 'katalog' | 'galerie' (noch nicht umgesetzt) | 'neu'.",
+            "properties": {
+              "quelle": {
+                "type": "string",
+                "enum": [
+                  "katalog",
+                  "galerie",
+                  "neu"
+                ]
+              },
+              "vorlage_id": {
+                "type": "string"
+              }
+            }
+          },
+          "aktivitaet_id": {
+            "type": "string",
+            "description": "Nur bei typ='katalog': FK zum AktivitaetenKatalog."
+          },
+          "field_values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='katalog': formatgleich zu LernpaketPhaseAktivitaet.field_values."
+          },
+          "offen": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='offen': HTML-Fragment (div.aufgabe) aus der Aufgabenwerkstatt.",
+            "properties": {
+              "fragment": {
+                "type": "string"
+              },
+              "snapshot_html": {
+                "type": "string"
+              },
+              "snapshot_url": {
+                "type": "string"
+              },
+              "uebernommen_am": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "brian": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='brian': Feldschnitt identisch zu StundenSequenz.brian.",
+            "properties": {
+              "aufgabenstellung": {
+                "type": "string"
+              },
+              "erwartungshorizont": {
+                "type": "string"
+              },
+              "tutor_persona": {
+                "type": "string",
+                "enum": [
+                  "standard",
+                  "unterstuetzend",
+                  "streng",
+                  "restriktiv"
+                ],
+                "default": "standard"
+              },
+              "tutor_persona_zusatz": {
+                "type": "string"
+              },
+              "dialog_name": {
+                "type": "string"
+              },
+              "learner_instruction": {
+                "type": "string"
+              },
+              "system_instruction": {
+                "type": "string"
+              },
+              "completion_rule": {
+                "type": "string"
+              },
+              "generiert_am": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          },
+          "handlung": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='handlung': reales Material, schuelerseitig nur Bestaetigen-Knopf.",
+            "properties": {
+              "arbeitsauftrag": {
+                "type": "string"
+              },
+              "material_hinweis": {
+                "type": "string"
+              },
+              "datei_url": {
+                "type": "string"
+              },
+              "datei_name": {
+                "type": "string"
+              },
+              "bestaetigungstext": {
+                "type": "string"
+              }
+            }
+          },
+          "extern": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='extern': eingebettete externe Seite (z. B. GeoGebra).",
+            "properties": {
+              "url": {
+                "type": "string"
+              },
+              "titel": {
+                "type": "string"
+              },
+              "hoehe": {
+                "type": "number"
+              },
+              "hinweis": {
+                "type": "string"
+              }
+            }
           }
-        }
+        },
+        "additionalProperties": true
       },
       "default": []
     },
@@ -267,7 +431,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "description": "free_text | book_ref | pdf | image"
+            "description": "free_text | book_ref | pdf | image | link"
           },
           "label": {
             "type": "string",
