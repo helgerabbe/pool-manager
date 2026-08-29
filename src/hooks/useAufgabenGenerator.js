@@ -56,6 +56,22 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     setIndex((alt) => (i >= 0 && i < staende.length ? i : alt));
   }, [staende.length]);
 
+  /**
+   * Setzt das Fragment von außen — für das Zurückspringen auf einen dauerhaft
+   * gespeicherten Stand aus einer früheren Sitzung. Der Stand wird als neuer
+   * Eintrag angehängt statt die Liste zu überschreiben: Zurückspringen soll
+   * nichts wegwerfen, was man danach vielleicht wieder braucht.
+   */
+  const setzeFragment = useCallback((neuesFragment, label = 'Geladener Stand') => {
+    const text = String(neuesFragment || '');
+    if (!text.trim()) return;
+    setStaende((alt) => {
+      const neu = [...alt, { fragment: text, label, zeit: new Date().toISOString() }];
+      setIndex(neu.length - 1);
+      return neu;
+    });
+  }, []);
+
   const senden = useCallback(async (nachricht) => {
     const text = String(nachricht || '').trim();
     if (!text || busy) return;
@@ -159,6 +175,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     warnungen,
     senden,
     springeZu,
+    setzeFragment,
     abbrechen,
   };
 }
