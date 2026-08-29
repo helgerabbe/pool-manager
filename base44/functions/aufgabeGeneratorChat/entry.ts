@@ -214,6 +214,70 @@ function wendeEditsAn(fragment, edits) {
   return { fragment: aktuell, warnungen };
 }
 
+const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlung', 'extern']);
+
+/**
+ * Liest den <schritte>-Block als geprüfte Liste.
+ *
+ * Bewusst streng: ein Schritt mit unbekanntem Typ oder ohne Titel wird
+ * VERWORFEN, nicht repariert. Ein stillschweigend zurechtgebogener Vorschlag
+ * wäre schlimmer als ein fehlender — die Lehrkraft sieht sonst etwas, das
+ * niemand so gemeint hat. Was aussortiert wurde, wird gemeldet.
+ */
+function leseSchritte(text, katalogNamen) {
+  const roh = tagInhalt(text, 'schritte');
+  if (!roh) return { schritte: null, warnungen: [] };
+
+  let liste;
+  try {
+    liste = JSON.parse(saeubere(roh));
+  } catch (_e) {
+    return { schritte: null, warnungen: ['Der Vorschlag war nicht lesbar. Frag am besten noch einmal nach.'] };
+  }
+  if (!Array.isArray(liste)) {
+    return { schritte: null, warnungen: ['Der Vorschlag hatte nicht die erwartete Form.'] };
+  }
+
+  const bekannt = new Set(katalogNamen);
+  const warnungen = [];
+  const schritte = [];
+
+  liste.forEach((s, i) => {
+    const titel = String(s?.titel || '').trim();
+    const typ = String(s?.typ || '').trim();
+    if (!titel || !ERLAUBTE_TYPEN.has(typ)) {
+      warnungen.push(`Vorschlag ${i + 1} war unbrauchbar und wurde ausgelassen.`);
+      return;
+    }
+
+    const eintrag = {
+      titel,
+      typ,
+      kurzbeschreibung: String(s?.kurzbeschreibung || '').trim(),
+    };
+
+    const dauer = Number(s?.dauer_minuten);
+    if (Number.isFinite(dauer) && dauer > 0) eintrag.dauer_minuten = Math.round(dauer);
+
+    if (typ === 'katalog') {
+      const name = String(s?.aktivitaet_name || '').trim();
+      // Ein erfundener Formatname wäre eine tote Referenz. Dann lieber den
+      // Schritt als "offen" durchreichen — die Lehrkraft sieht die Absicht
+      // und kann selbst ein Format wählen.
+      if (name && bekannt.has(name)) {
+        eintrag.aktivitaet_name = name;
+      } else {
+        eintrag.typ = 'offen';
+        warnungen.push(`Für „${titel}“ wurde ein Format vorgeschlagen, das es nicht gibt (${name || 'ohne Namen'}). Der Schritt steht jetzt als offene Aufgabe da.`);
+      }
+    }
+
+    schritte.push(eintrag);
+  });
+
+  return { schritte, warnungen };
+}
+
 /** Entfernt versehentliche Codefences um ein Fragment herum. */
 function saeubere(code) {
   let s = String(code || '').trim();
