@@ -305,6 +305,7 @@ Deno.serve(async (req) => {
     const fragment = typeof body.fragment === 'string' ? body.fragment : '';
     const verlauf = Array.isArray(body.verlauf) ? body.verlauf.slice(-MAX_VERLAUF) : [];
     const kontext = body.kontext && typeof body.kontext === 'object' ? body.kontext : {};
+    const istStruktur = String(body.modus || 'aufgabe') === 'struktur';
 
     if (!nachricht) {
       return Response.json({ error: 'nachricht ist erforderlich.' }, { status: 400 });
@@ -321,6 +322,23 @@ Deno.serve(async (req) => {
     const modell = String(cfg.modell || '').trim() || DEFAULT_MODELL;
     if (!apiKey) return Response.json({ error: 'Kein Anthropic-Zugang hinterlegt.' }, { status: 503 });
     if (cfg.aktiv === false) return Response.json({ error: 'Anthropic-Zugang ist ausgeschaltet.' }, { status: 503 });
+
+    // ── Katalogformate laden (nur Struktur-Modus) ──────────────────────
+    // Ohne die echten Namen erfindet das Modell Formate, die es nicht gibt.
+    // Nach Namen entdoppelt: der Katalog führt jede Aktivität einmal pro
+    // Lernpaket-Phase, ein Schritt hat aber keine Phase.
+    let katalogNamen = [];
+    if (istStruktur) {
+      const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog
+        .list()
+        .catch(() => []);
+      katalogNamen = [...new Set(
+        (katalog || [])
+          .filter((k) => k?.is_active !== false && k?.name)
+          .map((k) => String(k.name)),
+      )].sort((a, b) => a.localeCompare(b, 'de'));
+    }
+    const systemStruktur = istStruktur ? baueStrukturPrompt(katalogNamen) : '';
 
     // ── Nachrichten zusammenstellen ────────────────────────────────────
     const kontextZeilen = [
@@ -348,9 +366,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const letzte = fragment
-      ? `BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`
-      : `AUFGABE DER LEHRKRAFT:\n${nachricht}`;
+    let letzte;
+    if (istStruktur) {
+      const bisher = Array.isArray(body.schritte) && body.schritte.length
+        ? `BISHERIGER VORSCHLAG:\n${JSON.stringify(body.schritte, null, 2)}\n\n---\n\n`
+        : '';
+      letzte = `${bisher}WUNSCH DER LEHRKRAFT:\n${nachricht}`;
+    } else {
+      letzte = fragment
+        ? `BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`
+        : `AUFGABE DER LEHRKRAFT:\n${nachricht}`;
+    }
     messages.push({ role: 'user', content: letzte });
 
     // ═══════════════════════════════════════════════════════════════════
