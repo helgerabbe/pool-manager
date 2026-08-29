@@ -105,6 +105,27 @@ export default function AufgabenWerkstatt({
     gen.senden(t);
   };
 
+  /* ── Struktur-Phase ──────────────────────────────────────────────────
+     Plant die Folge, baut nichts. Der Katalog wird gebraucht, um die vom
+     Assistenten genannten Formatnamen in echte IDs aufzulösen. */
+  const { katalogListe } = useAktivitaetenKatalog();
+  const struktur = useStrukturVorschlag({
+    kontext: {
+      einheit: initialData?.einheit_titel,
+      beschreibung: aufgabenstellung || titel || '',
+    },
+  });
+
+  const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
+    const { schritte, hinweise } = vorschlagZuSchritten(vorschlag, katalogListe);
+    folge.folgeSetzen(schritte, { anhaengen });
+    hinweise.forEach((h) => toast.warning(h));
+    toast.success(anhaengen
+      ? `${schritte.length} Schritte angehängt.`
+      : `Folge mit ${schritte.length} Schritten übernommen.`);
+    setRechtsUnten('schritt');
+  };
+
   // Einen im Gespräch gebauten Stand in den Schritt übernehmen.
   const standUebernehmen = () => {
     if (!gen.fragment || folge.selectedIndex < 0) return;
