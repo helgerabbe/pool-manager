@@ -269,25 +269,57 @@ export default function AufgabenWerkstatt({
               <SchrittEditor schritt={schritt} onChange={folge.aktuellenAendern} />
             </div>
 
-            {istOffenerSchritt && (
-              <>
-                <GespraechsSpalte
-                  gen={gen}
-                  eingabe={eingabe}
-                  onEingabe={setEingabe}
-                  onAbschicken={abschicken}
-                  disabled={isReleased}
-                  className="min-h-[240px] max-h-[36vh]"
-                  platzhalter="Was soll dieser Schritt können?"
-                  leerText="Beschreiben Sie, was die Schüler in diesem Schritt tun sollen — ich baue daraus eine erste Fassung."
-                />
-                {gen.fragment && (
-                  <Button onClick={standUebernehmen} disabled={gen.busy || isReleased} className="gap-2 shrink-0">
-                    Diesen Stand in den Schritt übernehmen
+            {/* Unten rechts: entweder die Folge planen oder den offenen
+                Schritt bauen. Umschaltbar, solange beides möglich ist. */}
+            <div className="shrink-0 flex flex-col min-h-0 gap-2" style={{ maxHeight: '44vh' }}>
+              <div className="flex items-center gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  variant={rechtsUnten === 'struktur' ? 'default' : 'ghost'}
+                  className="h-7 gap-1.5 text-xs"
+                  onClick={() => setRechtsUnten('struktur')}
+                >
+                  <ListOrdered className="w-3 h-3" /> Schrittfolge planen
+                </Button>
+                {istOffenerSchritt && (
+                  <Button
+                    size="sm"
+                    variant={rechtsUnten === 'schritt' ? 'default' : 'ghost'}
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => setRechtsUnten('schritt')}
+                  >
+                    <PencilRuler className="w-3 h-3" /> Diesen Schritt bauen
                   </Button>
                 )}
-              </>
-            )}
+              </div>
+
+              {rechtsUnten === 'struktur' ? (
+                <StrukturPhase
+                  struktur={struktur}
+                  hatSchritte={folge.schritte.length > 0}
+                  onUebernehmen={vorschlagUebernehmen}
+                  disabled={isReleased}
+                />
+              ) : istOffenerSchritt ? (
+                <>
+                  <GespraechsSpalte
+                    gen={gen}
+                    eingabe={eingabe}
+                    onEingabe={setEingabe}
+                    onAbschicken={abschicken}
+                    disabled={isReleased}
+                    className="flex-1 min-h-[220px]"
+                    platzhalter="Was soll dieser Schritt können?"
+                    leerText="Beschreiben Sie, was die Schüler in diesem Schritt tun sollen — ich baue daraus eine erste Fassung."
+                  />
+                  {gen.fragment && (
+                    <Button onClick={standUebernehmen} disabled={gen.busy || isReleased} className="gap-2 shrink-0">
+                      Diesen Stand in den Schritt übernehmen
+                    </Button>
+                  )}
+                </>
+              ) : null}
+            </div>
           </div>
         </div>
 
