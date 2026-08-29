@@ -373,7 +373,24 @@ Deno.serve(async (req) => {
       const bisher = Array.isArray(body.schritte) && body.schritte.length
         ? `BISHERIGER VORSCHLAG:\n${JSON.stringify(body.schritte, null, 2)}\n\n---\n\n`
         : '';
-      letzte = `${bisher}WUNSCH DER LEHRKRAFT:\n${nachricht}`;
+
+      // Materialsammlung der Lehrkraft. Bewusst nur, was als TEXT vorliegt:
+      // Bezeichnung, Typ, eingefuegter Text, Link-Adresse. Inhalte von PDFs
+      // und Bildern werden (noch) nicht ausgelesen — das Modell darf also
+      // nicht so tun, als kenne es sie, deshalb steht der Hinweis dabei.
+      const materialien = Array.isArray(body.materialien) ? body.materialien : [];
+      const materialBlock = materialien.length
+        ? `VORHANDENES MATERIAL DER LEHRKRAFT (${materialien.length}):\n`
+          + materialien.map((m: any, i: number) => {
+            const teile = [`${i + 1}. [${m?.type || 'unbekannt'}] ${m?.label || 'ohne Bezeichnung'}`];
+            if (m?.url) teile.push(`   Adresse: ${m.url}`);
+            if (m?.content) teile.push(`   Inhalt: ${String(m.content).slice(0, 1500)}`);
+            return teile.join('\n');
+          }).join('\n')
+          + `\n\nDu siehst von Dateien und Bildern NUR die Bezeichnung, nicht den Inhalt. Beziehe dich auf dieses Material, wenn es passt (etwa als Material-Schritt oder als Quelle einer Buchaufgabe), aber behaupte nie, du haettest es gelesen.\n\n---\n\n`
+        : '';
+
+      letzte = `${bisher}${materialBlock}WUNSCH DER LEHRKRAFT:\n${nachricht}`;
     } else {
       letzte = fragment
         ? `BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`

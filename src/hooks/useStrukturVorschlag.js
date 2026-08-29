@@ -60,7 +60,7 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
     setWarnungen([]);
   }, []);
 
-  const senden = useCallback(async (nachricht) => {
+  const senden = useCallback(async (nachricht, { materialien = [] } = {}) => {
     const text = String(nachricht || '').trim();
     if (!text || busy) return;
 
@@ -94,6 +94,7 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
           modus: 'struktur',
           nachricht: text,
           schritte: vorschlag || [],
+          materialien,
           verlauf: verlaufFuerApi,
           kontext,
         }),
