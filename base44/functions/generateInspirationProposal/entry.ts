@@ -6,8 +6,8 @@
  * Aufgaben-Entwurf, gesteuert über drei Briefing-Parameter:
  *
  *   - mission_type   : einer der 6 Mission-Slugs (Pflicht)
- *                      → 'problem' | 'entdeckung' | 'recherche' |
- *                        'anwendung' | 'transfer' | 'kreativitaet'
+ *                      → 'erstbegegnung' | 'erarbeitung' |
+ *                        'sicherung' | 'anwendung'
  *   - material_level : 0 = rein kognitiv | 1 = minimal (Default) |
  *                      2 = moderat | 3 = aufwändiges Setup
  *   - fokus          : optionaler Freitext der Lehrkraft
@@ -43,43 +43,32 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 // IMPORTS). Wir spiegeln die didaktische Essenz inline. Bei Änderungen an
 // lib/missionen.js bitte synchron halten.
 const MISSION_DEFINITIONEN = {
-  problem: {
-    label: 'Den Funken zünden',
-    kern: 'Alltagsbezug & Motivation',
+  erstbegegnung: {
+    label: 'Erstbegegnung',
+    kern: 'Vorwissen aktivieren & Bedeutsamkeit erkennen',
     instruktion:
-      'Die Aufgabe knüpft an einen lebensnahen Alltagskonflikt oder ein konkretes Problem aus der Lebenswelt der Schüler an. Sie wirkt motivierend, weckt Neugier und macht klar, WARUM sich die Beschäftigung mit dem Thema lohnt. Vermeide trockene Lehrbuchformulierungen.',
+      'Die Aufgabe ist die ERSTE Begegnung mit dem Thema — die Schüler haben es noch nicht gelernt. Sie knüpft an einen lebensnahen Alltagskonflikt oder ein konkretes Problem aus der Lebenswelt an, weckt Neugier und macht klar, WARUM sich die Beschäftigung damit lohnt. Setze kein Fachwissen voraus und vermeide trockene Lehrbuchformulierungen.',
   },
-  entdeckung: {
-    label: 'Selber rausfinden lassen',
-    kern: 'Induktion & Regelbildung',
+  erarbeitung: {
+    label: 'Erarbeitung',
+    kern: 'Das Neue selbst erschließen',
     instruktion:
-      'Die Aufgabe ist induktiv angelegt: Schüler sollen anhand von Beispielen, Beobachtungen oder Material eine Regel/ein Prinzip SELBST entdecken — nicht erklärt bekommen. Stelle keine fertige Erklärung bereit, sondern lade zum aktiven Schlussfolgern ein.',
+      'Die Schüler erarbeiten sich das Neue SELBST — entweder induktiv (anhand von Beispielen, Beobachtungen oder Material eine Regel/ein Prinzip entdecken) oder über Quellen (Lehrbuch, Texte, Grafiken, Videos auswerten, vergleichen, ordnen). Stelle keine fertige Erklärung bereit, sondern gib einen klaren Arbeitsauftrag mit präzisen Leitfragen.',
   },
-  recherche: {
-    label: 'Informationen checken',
-    kern: 'Informationsbeschaffung & Quellen',
+  sicherung: {
+    label: 'Sicherung',
+    kern: 'Im bekannten Kontext festigen',
     instruktion:
-      'Die Aufgabe verlangt aktive Informationsbeschaffung (Lehrbuch, Internet, Quellen). Schüler müssen Fakten finden, vergleichen oder die Glaubwürdigkeit von Quellen prüfen. Gib einen klaren Recherche-Auftrag mit präzisen Leitfragen.',
+      'Die Aufgabe festigt bereits eingeführtes Wissen in einem bekannten Kontext. Sie ist klar, eindeutig lösbar und zielt auf Sicherheit und Routine, nicht auf Transfer. Gerne mit konkreten Beispielen oder kleinen Übungseinheiten.',
   },
   anwendung: {
-    label: 'Zeigen, was man kann',
-    kern: 'Wissen im bekannten Kontext festigen',
+    label: 'Anwendung',
+    kern: 'Transfer & eigenes Produkt',
     instruktion:
-      'Die Aufgabe festigt bereits eingeführtes Wissen in einem bekannten Kontext. Sie ist klar, eindeutig lösbar und zielt auf Sicherheit/Routine, nicht auf Transfer. Gerne mit konkreten Beispielen oder kleinen Übungseinheiten.',
-  },
-  transfer: {
-    label: 'In neue Welten übertragen',
-    kern: 'Wissen im neuen Kontext anwenden',
-    instruktion:
-      'Die Aufgabe verlangt expliziten Transfer auf einen NEUEN, fachfremden oder unerwarteten Kontext. Schüler müssen Bekanntes auf Unbekanntes übertragen. Der neue Kontext muss klar erkennbar anders sein als der Lernkontext.',
-  },
-  kreativitaet: {
-    label: 'Etwas Eigenes erschaffen',
-    kern: 'Schöpferische Gestaltung & Deep Dive',
-    instruktion:
-      'Die Aufgabe ist offen-schöpferisch: Schüler erschaffen etwas Eigenes (Text, Plakat, Modell, Story, Hörspiel, …). Es gibt mehrere richtige Lösungswege. Gib Gestaltungsfreiheit statt enger Vorgaben.',
+      'Die Aufgabe verlangt echten Transfer auf einen NEUEN, unerwarteten oder fachfremden Kontext — oder die Schüler erschaffen mit dem Gelernten etwas Eigenes (Text, Plakat, Modell, Story, Hörspiel, …). Der neue Kontext muss klar erkennbar anders sein als der Lernkontext; bei gestalterischen Aufgaben gilt: mehrere richtige Lösungswege, Gestaltungsfreiheit statt enger Vorgaben.',
   },
 };
+
 
 // ── Material-Level-Definitionen ───────────────────────────────────────────
 const MATERIAL_LEVEL_INSTRUKTIONEN = {
