@@ -45,12 +45,12 @@ export default function MissionFilterSelect({
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="h-8 text-xs gap-1.5">
         <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-        <SelectValue placeholder="Filter nach Mission" />
+        <SelectValue placeholder="Filter nach Kategorie" />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value={FILTER_ALL}>
           <span className="flex items-center gap-2 w-full">
-            <span>Alle Missionen</span>
+            <span>Alle Kategorien</span>
             {renderCount('all')}
           </span>
         </SelectItem>
@@ -67,7 +67,7 @@ export default function MissionFilterSelect({
           <SelectItem value={FILTER_NONE}>
             <span className="flex items-center gap-2 w-full">
               <span aria-hidden="true">⚠️</span>
-              <span>Ohne Mission</span>
+              <span>Ohne Kategorie</span>
               {renderCount(FILTER_NONE)}
             </span>
           </SelectItem>

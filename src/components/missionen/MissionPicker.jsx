@@ -1,12 +1,11 @@
 /**
- * MissionPicker — 6er-Kachel-Auswahl im Edit-Dialog (`AufgabeCreateView`).
+ * MissionPicker — Kachel-Auswahl der Aufgabenkategorie im Edit-Dialog.
  *
- * Zeigt alle 6 Missionen als anklickbare Kacheln. Eine zusätzliche
- * "Keine Mission"-Option erlaubt es, das Feld bewusst leer zu lassen
- * (Phase 3 "Silent Sidekick" greift dann beim Speichern).
+ * Zeigt alle Kategorien aus lib/missionen als anklickbare Kacheln. Das Feld
+ * darf bewusst leer bleiben.
  *
  * Props:
- *   - value:    string|null      aktuell ausgewählte Mission-ID (oder null)
+ *   - value:    string|null      aktuell ausgewählte Kategorie (oder null)
  *   - onChange: (id|null) => void
  *   - disabled: boolean
  */
@@ -21,7 +20,7 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
       <div className="flex items-center justify-between">
         <label className="text-sm font-medium flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          Mission der Aufgabe
+          Kategorie der Aufgabe
           <span className="text-xs font-normal text-muted-foreground">(optional)</span>
         </label>
         {value && !disabled && (
@@ -36,7 +35,7 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
       </div>
 
       <p className="text-[11px] text-muted-foreground">
-        Welches Gefühl soll die Aufgabe bei den Lernenden auslösen?
+        Wo im Unterrichtsverlauf steht diese Aufgabe?
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
