@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,12 @@ import useSchrittfolge from '@/hooks/useSchrittfolge';
 import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useStrukturVorschlag from '@/hooks/useStrukturVorschlag';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
+import useWerkstattStaende from '@/hooks/useWerkstattStaende';
 import SchrittListe from '@/components/schritte/SchrittListe';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalte';
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
+import StaendeLeiste from '@/components/werkstatt/StaendeLeiste';
 import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
@@ -102,9 +104,40 @@ export default function AufgabenWerkstatt({
     startFragment: istOffenerSchritt ? (schritt?.offen?.fragment || '') : '',
   });
 
+  /* ── Dauerhafte Zwischenstände ────────────────────────────────────────
+     Der Generator hält seine Stände nur in der Sitzung. Jeder neu erzeugte
+     Stand wandert zusätzlich in einen eigenen Datensatz, damit die Lehrkraft
+     auch morgen noch zurückspringen kann. */
+  const werkstattStaende = useWerkstattStaende({
+    aufgabeId: initialData?.id,
+    schrittId: istOffenerSchritt ? schritt?.id : null,
+  });
+
+  // Merkt sich, wie viele Sitzungsstände schon gesichert wurden — sonst
+  // würde jeder Rerender denselben Stand erneut schreiben.
+  const gesichertBisRef = useRef(0);
+  const letzteNachrichtRef = useRef('');
+
+  useEffect(() => {
+    gesichertBisRef.current = 0;
+  }, [schritt?.id]);
+
+  useEffect(() => {
+    if (!werkstattStaende.aktiv || gen.busy) return;
+    if (gen.staende.length <= gesichertBisRef.current) return;
+    const frisch = gen.staende.slice(gesichertBisRef.current);
+    gesichertBisRef.current = gen.staende.length;
+    frisch.forEach((st) => {
+      // Geladene Stände nicht erneut sichern — sie stehen bereits in der Liste.
+      if (st.label === 'Geladener Stand') return;
+      werkstattStaende.hinzufuegen(st.fragment, { anlass: letzteNachrichtRef.current });
+    });
+  }, [gen.staende, gen.busy, werkstattStaende]);
+
   const abschicken = () => {
     const t = eingabe.trim();
     if (!t || gen.busy) return;
+    letzteNachrichtRef.current = t;
     setEingabe('');
     gen.senden(t);
   };
