@@ -267,11 +267,10 @@ export default function AufgabenWerkstatt({
             />
           </div>
         ) : (
-          <>
-        {/* ── Zwei Spalten: Struktur links, Schülersicht rechts ─────────
-            Der INHALT eines Schritts wird nicht hier, sondern im
-            SchrittFenster bearbeitet (Ebene 3). Diese Seite ist für den
-            Ablauf zuständig: anlegen, löschen, umsortieren. */}
+        /* Zwei Spalten: Struktur links, Schülersicht rechts. Der INHALT
+           eines Schritts wird nicht hier, sondern im SchrittFenster
+           bearbeitet (Ebene 3). Diese Seite ist für den Ablauf zuständig:
+           anlegen, löschen, umsortieren. */
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,420px)_1fr] gap-4 pt-4 flex-1 min-h-0">
           {/* Links: Schrittfolge + Ablaufplanung */}
           <div className="flex flex-col min-h-0 gap-3">
@@ -327,6 +326,7 @@ export default function AufgabenWerkstatt({
             onGesamtdurchlaufChange={setGesamtdurchlauf}
           />
         </div>
+        )}
 
         {/* ── Fußleiste ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200 shrink-0">
