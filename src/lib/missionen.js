@@ -1,16 +1,27 @@
 /**
- * lib/missionen.js — Single Source of Truth für die 6 didaktischen Missionen.
+ * lib/missionen.js — Single Source of Truth für die 4 Aufgabenkategorien.
  *
- * Epic: Intelligentes Aufgaben-Management & Didaktische Typisierung.
+ * Umstellung 2026-08-29: Aus den ursprünglich sechs "Missionen" sind vier
+ * Kategorien entlang des Unterrichtsverlaufs geworden. Die Migration der
+ * Bestandsdaten ist abgeschlossen:
  *
- * Scope-Regel (siehe Epic, Frage A):
- *   `mission_type` gilt AUSSCHLIESSLICH für AllgemeineAufgabe-Datensätze mit
+ *   problem                  → erstbegegnung
+ *   entdeckung, recherche    → erarbeitung
+ *   transfer, kreativitaet   → anwendung
+ *   anwendung (alt)          → einzeln verteilt auf sicherung / anwendung
+ *
+ * Der Slug `anwendung` hat dabei seine Bedeutung geändert: früher hieß er
+ * "Anwenden & Sichern", heute nur noch Anwendung. Alle 28 Altbestände wurden
+ * vor der Umdeutung von Hand zugeordnet, deshalb ist der Wert eindeutig.
+ *
+ * Scope-Regel (unverändert):
+ *   `mission_type` gilt für AllgemeineAufgabe-Datensätze mit
  *     - aufgaben_typ ∈ {inhalt, handlung}     UND
  *     - anforderungsebene ∈ {'1 - Basis', '2 - Transfer'}.
- *   Lernpakete (Tab 3), Projekte (Tab 6) und reine Container (buendel,
- *   projekt_anker, auswahl_buendel, prozess) sind ausgenommen. Bei diesen
- *   Datensätzen bleibt das Feld `null` und wird im UI ausgeblendet
- *   (siehe `isMissionApplicable` weiter unten).
+ *   Lernpakete, Projekte und reine Container bleiben `null`, das UI blendet
+ *   die Auswahl aus (siehe `isMissionApplicable`).
+ *   Achtung: Sobald der Aufgabentyp am SCHRITT sitzt statt an der Aufgabe,
+ *   verliert die typ-Bedingung ihren Sinn und muss neu gefasst werden.
  *
  * Konventionen:
  *   - Werte (Keys) sind SLUGS in Kleinbuchstaben, exakt passend zum Enum
@@ -21,31 +32,28 @@
  *   - Hex-Farben dienen als Fallback (z. B. für inline-styles oder das
  *     4px-Streifen-Element via CSS-Variable).
  *
- * Farbschema (final freigegeben durch Planungsabteilung):
- *   1 problem      → Amber      (#F59E0B) – warm, energetisch
- *   2 entdeckung   → Emerald    (#10B981) – Wachstum, Entdeckung
- *   3 recherche    → Blue       (#3B82F6) – klassisches Info-Blau
- *   4 anwendung    → Violet     (#8B5CF6) – ruhige Bestätigung
- *   5 transfer     → Pink       (#EC4899) – dynamischer Aufbruch
- *   6 kreativitaet → Orange     (#F97316) – kreativ, expressiv
+ * Farbschema:
+ *   1 erstbegegnung → Amber   (#F59E0B) – warm, energetisch
+ *   2 erarbeitung   → Emerald (#10B981) – Wachstum, Entdeckung
+ *   3 sicherung     → Violet  (#8B5CF6) – ruhige Bestätigung
+ *   4 anwendung     → Pink    (#EC4899) – dynamischer Aufbruch
  */
 
 export const MISSION_TYPES = Object.freeze({
-  PROBLEM: 'problem',
-  ENTDECKUNG: 'entdeckung',
-  RECHERCHE: 'recherche',
+  ERSTBEGEGNUNG: 'erstbegegnung',
+  ERARBEITUNG: 'erarbeitung',
+  SICHERUNG: 'sicherung',
   ANWENDUNG: 'anwendung',
-  TRANSFER: 'transfer',
-  KREATIVITAET: 'kreativitaet',
 });
 
 /**
- * Konfiguration jeder Mission. Die Reihenfolge in diesem Objekt entspricht
- * der Anzeige-Reihenfolge in Pickern und Filterleisten.
+ * Konfiguration jeder Kategorie. Die Reihenfolge in diesem Array entspricht
+ * der Anzeige-Reihenfolge in Pickern und Filterleisten und folgt dem
+ * Unterrichtsverlauf.
  *
  * Felder:
  *   - id          : Slug (= DB-Wert, identisch zum Enum in AllgemeineAufgabe.json)
- *   - label       : Handlungsorientierte UI-Bezeichnung (Lehrkraft-Sprache)
+ *   - label       : UI-Bezeichnung (Lehrkraft-Sprache)
  *   - emoji       : Single-Character-Emoji für Inline-Anzeige
  *   - kern        : Didaktischer Kern (Tooltip / Subtitle)
  *   - hex         : Primärfarbe als Hex (Fallback / CSS-Variable)
@@ -61,10 +69,10 @@ export const MISSION_TYPES = Object.freeze({
  */
 export const MISSIONEN = Object.freeze([
   {
-    id: MISSION_TYPES.PROBLEM,
-    label: 'Vorwissen aktivieren & Bedeutsamkeit erkennen',
+    id: MISSION_TYPES.ERSTBEGEGNUNG,
+    label: 'Erstbegegnung',
     emoji: '💡',
-    kern: 'Schüler:innen begegnen dem Thema in einer Alltagssituation, bevor sie es gelernt haben. Sie entwickeln ein Verständnis für die Relevanz des Themas.',
+    kern: 'Schüler:innen begegnen dem Thema zum ersten Mal, bevor sie es gelernt haben — meist über eine Alltagssituation. Vorwissen wird aktiviert, die Bedeutsamkeit des Themas wird sichtbar.',
     hex: '#F59E0B',
     colorName: 'amber',
     classes: {
@@ -77,10 +85,10 @@ export const MISSIONEN = Object.freeze([
     },
   },
   {
-    id: MISSION_TYPES.ENTDECKUNG,
-    label: 'Induktive Erkundung',
+    id: MISSION_TYPES.ERARBEITUNG,
+    label: 'Erarbeitung',
     emoji: '🔍',
-    kern: 'Schüler:innen erarbeiten an Beispielen selbstständig eine Regel oder ein Prinzip — vom Einzelfall zur Verallgemeinerung.',
+    kern: 'Schüler:innen erschließen sich das Neue selbst — an Beispielen eine Regel entdecken oder aus Texten, Grafiken und Videos Informationen gewinnen und ordnen.',
     hex: '#10B981',
     colorName: 'emerald',
     classes: {
@@ -93,26 +101,10 @@ export const MISSIONEN = Object.freeze([
     },
   },
   {
-    id: MISSION_TYPES.RECHERCHE,
-    label: 'Quellen erschließen',
-    emoji: '🌐',
-    kern: 'Schüler:innen arbeiten mit Texten, Grafiken oder Videos und beantworten Leitfragen. Sie lernen, Informationen zu erschließen und zu ordnen.',
-    hex: '#3B82F6',
-    colorName: 'blue',
-    classes: {
-      stripe: 'bg-blue-500',
-      badge: 'bg-blue-50 text-blue-800 border-blue-200',
-      chip: 'bg-blue-500 text-white border-blue-500',
-      chipIdle: 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50',
-      tile: 'border-blue-200 hover:border-blue-400 hover:bg-blue-50',
-      tileActive: 'border-blue-500 bg-blue-50 ring-2 ring-blue-300',
-    },
-  },
-  {
-    id: MISSION_TYPES.ANWENDUNG,
-    label: 'Anwenden & Sichern',
+    id: MISSION_TYPES.SICHERUNG,
+    label: 'Sicherung',
     emoji: '✅',
-    kern: 'Schüler:innen wenden Gelerntes routiniert im bekannten Kontext an und festigen ihr Wissen.',
+    kern: 'Schüler:innen üben das Gelernte im bekannten Kontext, bis es sitzt. Ziel ist Routine und Sicherheit, nicht Transfer.',
     hex: '#8B5CF6',
     colorName: 'violet',
     classes: {
@@ -125,10 +117,10 @@ export const MISSIONEN = Object.freeze([
     },
   },
   {
-    id: MISSION_TYPES.TRANSFER,
-    label: 'Transfer & Vernetzung',
+    id: MISSION_TYPES.ANWENDUNG,
+    label: 'Anwendung',
     emoji: '🚀',
-    kern: 'Schüler:innen übertragen ihr Wissen auf einen neuen Kontext oder verknüpfen es mit anderen Inhalten — Flexibilität des Wissens zeigt sich.',
+    kern: 'Schüler:innen übertragen ihr Wissen auf einen neuen Kontext oder erschaffen damit ein eigenes Produkt. Hier zeigt sich, wie flexibel das Gelernte ist.',
     hex: '#EC4899',
     colorName: 'pink',
     classes: {
@@ -138,22 +130,6 @@ export const MISSIONEN = Object.freeze([
       chipIdle: 'bg-white text-pink-700 border-pink-200 hover:bg-pink-50',
       tile: 'border-pink-200 hover:border-pink-400 hover:bg-pink-50',
       tileActive: 'border-pink-500 bg-pink-50 ring-2 ring-pink-300',
-    },
-  },
-  {
-    id: MISSION_TYPES.KREATIVITAET,
-    label: 'Kreative Gestaltung',
-    emoji: '🎨',
-    kern: 'Schüler:innen erschaffen ein eigenes Produkt (Text, Modell, Präsentation, Video, Plakat) mit Gestaltungsspielraum.',
-    hex: '#F97316',
-    colorName: 'orange',
-    classes: {
-      stripe: 'bg-orange-500',
-      badge: 'bg-orange-50 text-orange-800 border-orange-200',
-      chip: 'bg-orange-500 text-white border-orange-500',
-      chipIdle: 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50',
-      tile: 'border-orange-200 hover:border-orange-400 hover:bg-orange-50',
-      tileActive: 'border-orange-500 bg-orange-50 ring-2 ring-orange-300',
     },
   },
 ]);
@@ -167,7 +143,7 @@ const MISSION_BY_ID = Object.freeze(
 );
 
 /**
- * Gibt die Mission-Konfiguration zu einer ID zurück, oder `null` wenn die ID
+ * Gibt die Kategorie-Konfiguration zu einer ID zurück, oder `null` wenn die ID
  * fehlt/unbekannt ist. Niemals werfen — die UI muss tolerant bleiben.
  */
 export function getMission(id) {
@@ -176,7 +152,7 @@ export function getMission(id) {
 }
 
 /**
- * Hübsches Inline-Display: "💡 Den Funken zünden". Nutzt Fallbacks für
+ * Hübsches Inline-Display: "💡 Erstbegegnung". Nutzt Fallbacks für
  * unbekannte/null-Werte, damit die UI nie kaputtgeht.
  */
 export function formatMissionLabel(id, { withEmoji = true } = {}) {
@@ -186,9 +162,8 @@ export function formatMissionLabel(id, { withEmoji = true } = {}) {
 }
 
 /**
- * Scope-Helper: Soll für diese Aufgabe die Mission-Auswahl überhaupt
- * angezeigt werden? Implementiert exakt die im Epic festgelegte Regel
- * (Frage A, präzisiert durch Planungsabteilung).
+ * Scope-Helper: Soll für diese Aufgabe die Kategorie-Auswahl überhaupt
+ * angezeigt werden?
  *
  * @param {object} aufgabe - AllgemeineAufgabe-Record (oder Subset davon)
  * @returns {boolean}
