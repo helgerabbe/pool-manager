@@ -214,6 +214,68 @@ function wendeEditsAn(fragment, edits) {
   return { fragment: aktuell, warnungen };
 }
 
+/** Höchstens so viele Materialien werden als Datei angehängt. */
+const MAX_ANHAENGE = 4;
+/** Größere Dateien werden übersprungen (Anthropic-Grenze, Kosten, Tempo). */
+const MAX_ANHANG_BYTES = 4 * 1024 * 1024;
+
+/**
+ * Holt Material-Dateien und macht daraus Anthropic-Inhaltsblöcke.
+ *
+ * Serverseitig geholt statt per URL durchgereicht: Base44-Upload-Adressen
+ * sind nicht zwingend von außen erreichbar, und ein Anbieterwechsel soll
+ * nicht daran scheitern.
+ *
+ * Bewusst genügsam — nur Bilder und PDFs, höchstens vier Stück, jeweils
+ * höchstens 4 MB. Alles andere (Links, eingefügter Text) steht ohnehin schon
+ * als Text im Prompt. Was übersprungen wird, kommt in `uebersprungen`, damit
+ * das Modell nicht so tut, als hätte es die Datei gesehen.
+ */
+async function ladeMaterialAnhaenge(materialien: any[]) {
+  const bloecke: any[] = [];
+  const gelesen: string[] = [];
+  const uebersprungen: string[] = [];
+
+  const kandidaten = (materialien || []).filter((m) => m?.url
+    && (m?.type === 'image' || m?.type === 'pdf'));
+
+  for (const m of kandidaten) {
+    const name = String(m.label || 'Material');
+    if (bloecke.length >= MAX_ANHAENGE) { uebersprungen.push(`${name} (zu viele Dateien)`); continue; }
+    try {
+      const res = await fetch(m.url);
+      if (!res.ok) { uebersprungen.push(`${name} (nicht abrufbar)`); continue; }
+
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (buf.byteLength > MAX_ANHANG_BYTES) { uebersprungen.push(`${name} (zu groß)`); continue; }
+
+      const kopfTyp = (res.headers.get('content-type') || '').split(';')[0].trim();
+      const istPdf = m.type === 'pdf' || kopfTyp === 'application/pdf';
+      const mediaType = istPdf
+        ? 'application/pdf'
+        : (kopfTyp.startsWith('image/') ? kopfTyp : 'image/png');
+
+      // Base64 in Blöcken kodieren — String.fromCharCode(...alles) sprengt
+      // bei großen Dateien den Aufrufstapel.
+      let binaer = '';
+      for (let i = 0; i < buf.length; i += 8192) {
+        binaer += String.fromCharCode(...buf.subarray(i, i + 8192));
+      }
+      const daten = btoa(binaer);
+
+      bloecke.push({
+        type: istPdf ? 'document' : 'image',
+        source: { type: 'base64', media_type: mediaType, data: daten },
+      });
+      gelesen.push(name);
+    } catch (_e) {
+      uebersprungen.push(`${name} (Fehler beim Laden)`);
+    }
+  }
+
+  return { bloecke, gelesen, uebersprungen };
+}
+
 const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlung', 'extern']);
 
 /**
