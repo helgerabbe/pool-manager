@@ -1,9 +1,16 @@
-import { useState, useCallback } from 'react';
-import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink, EyeOff, Copy, Sparkles, MessageCircleQuestion } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink, EyeOff, Sparkles, MessageCircleQuestion, AlertTriangle, Hand, MonitorPlay, PencilRuler } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import HinweisBox from './HinweisBox';
+import KITutorSeite from './KITutorSeite';
+import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
+import { fragmentZuDokument } from '@/lib/aufgabeFragment';
+import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
+import useSnapshotHtml from '@/hooks/useSnapshotHtml';
+import useAktivitaetenKatalogMap from '@/hooks/useAktivitaetenKatalogMap';
 
 /** Erkennt YouTube-Video-IDs. */
 function youtubeEmbed(url) {
@@ -120,27 +127,148 @@ function MaterialBlock({ material }) {
 }
 
 /**
+ * Offener Schritt: in der Aufgabenwerkstatt erzeugtes HTML-Fragment.
+ *
+ * Das Fragment wird für die Anzeige in ein vollständiges Dokument verpackt
+ * (lib/aufgabeFragment) und in einem abgeschotteten iframe gezeigt. Bewusst
+ * OHNE allow-same-origin: die Aufgabe darf ihr eigenes Skript ausführen,
+ * kommt aber nicht an die App heran.
+ */
+function OffenerSchrittBlock({ offen }) {
+  const { html: dateiHtml } = useSnapshotHtml(offen?.snapshot_url || '');
+  const dokument = useMemo(() => {
+    if (offen?.snapshot_html) return offen.snapshot_html;
+    if (dateiHtml) return dateiHtml;
+    if (offen?.fragment) return fragmentZuDokument(offen.fragment);
+    return '';
+  }, [offen?.snapshot_html, offen?.fragment, dateiHtml]);
+
+  if (!dokument) {
+    return <p className="text-sm text-muted-foreground italic">Für diesen Schritt ist noch keine Aufgabe gebaut.</p>;
+  }
+
+  return (
+    <div className="rounded-xl overflow-hidden border border-border bg-card">
+      <iframe
+        srcDoc={dokument}
+        title="Aufgabe"
+        className="w-full min-h-[420px] border-0"
+        sandbox="allow-scripts allow-forms allow-popups"
+      />
+    </div>
+  );
+}
+
+/** Handlungsschritt: Arbeit an realem Material, nur Bestätigung. */
+function HandlungBlock({ handlung }) {
+  const h = handlung || {};
+  return (
+    <div className="space-y-3">
+      {h.arbeitsauftrag && (
+        <div className="rounded-xl border border-border bg-card p-4 text-sm whitespace-pre-wrap leading-relaxed">
+          {h.arbeitsauftrag}
+        </div>
+      )}
+      {h.material_hinweis && (
+        <HinweisBox>
+          <p className="font-semibold mb-1">Das brauchst du dafür</p>
+          <p>{h.material_hinweis}</p>
+        </HinweisBox>
+      )}
+      {h.datei_url && (
+        <div className="rounded-xl border border-border bg-card p-4 text-center">
+          <a href={h.datei_url} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+            {h.datei_name || 'Arbeitsblatt öffnen'}
+          </a>
+        </div>
+      )}
+      {!h.arbeitsauftrag && !h.material_hinweis && !h.datei_url && (
+        <p className="text-sm text-muted-foreground italic">Kein Arbeitsauftrag hinterlegt.</p>
+      )}
+    </div>
+  );
+}
+
+/** Externer Schritt: eingebettete fremde Seite (z. B. GeoGebra). */
+function ExternBlock({ extern }) {
+  const e = extern || {};
+  if (!e.url) {
+    return <p className="text-sm text-muted-foreground italic">Für diesen Schritt ist noch keine Seite hinterlegt.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      {e.hinweis && <HinweisBox>{e.hinweis}</HinweisBox>}
+      <div className="rounded-xl overflow-hidden border border-border bg-card">
+        <iframe
+          src={e.url}
+          title={e.titel || 'Externe Seite'}
+          className="w-full border-0"
+          style={{ height: e.hoehe ? `${e.hoehe}px` : '480px' }}
+          allowFullScreen
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+      <p className="text-xs text-muted-foreground break-all">
+        <a href={e.url} target="_blank" rel="noopener noreferrer" className="underline">
+          In neuem Tab öffnen
+        </a>
+      </p>
+    </div>
+  );
+}
+
+/**
  * Schüler-Aktivität „Aufgabensequenz".
  *
- * Zeigt eine Abfolge von Material- und Aufgabenschritten, die streng
- * nacheinander abgearbeitet werden. Jeder Schritt wird einzeln angezeigt,
- * mit "Weiter" / "Zurück"-Navigation. Am letzten Schritt erscheint "Erledigt".
+ * Zeigt eine geordnete Schrittfolge, die nacheinander abgearbeitet wird.
+ * Der Typ sitzt am Schritt (siehe lib/schrittTypen): material, aufgabe,
+ * katalog, offen, brian, handlung, extern.
+ *
+ * Zwei Darstellungsarten:
+ *   - Schritte, die im Rahmen dieser Seite gezeigt werden (material,
+ *     aufgabe, offen, handlung, extern) — mit der Navigation unten.
+ *   - Schritte, die an eine eigene Schüler-Seite delegieren (katalog über
+ *     lib/aktivitaetSeitenMap, brian über KITutorSeite). Diese Seiten
+ *     bringen ihre eigene Navigation mit; die Sequenz reicht ihnen nur
+ *     „weiter" und „zurück" durch und blendet die eigene Leiste aus.
+ *
+ * Liest beide Speicherorte: `field_values.sequenz_schritte` (Katalog-
+ * Aktivität „Aufgabensequenz") und `sequenz_schritte` direkt an der
+ * AllgemeineAufgabe.
  */
 export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onBack }) {
   const fv = aktivitaet?.field_values || {};
-  const schritte = Array.isArray(fv.sequenz_schritte) ? fv.sequenz_schritte : [];
+  const schritte = useMemo(() => schritteAusAufgabe(aktivitaet), [aktivitaet]);
   const [currentStep, setCurrentStep] = useState(0);
   const [antworten, setAntworten] = useState({});
   const [loesungSichtbar, setLoesungSichtbar] = useState({}); // pro schritt.id → boolean
 
   const step = schritte[currentStep] || null;
-  const istMaterial = step?.typ === 'material';
-  const istAufgabe = step?.typ === 'aufgabe';
+  const typ = step?.typ || SCHRITT_TYPEN.MATERIAL;
+  const typInfo = getSchrittTyp(typ);
+  const istMaterial = typ === SCHRITT_TYPEN.MATERIAL;
+  const istAufgabe = typ === SCHRITT_TYPEN.AUFGABE;
   const isFirst = currentStep === 0;
   const isLast = currentStep === schritte.length - 1;
 
+  // Katalog-Schritte brauchen den Namen der Aktivität, um die passende
+  // Schüler-Seite zu finden. Nur laden, wenn wirklich ein solcher Schritt
+  // in der Folge steckt.
+  const brauchtKatalog = schritte.some((s) => s?.typ === SCHRITT_TYPEN.KATALOG);
+  const { katalogMap } = useAktivitaetenKatalogMap({ enabled: brauchtKatalog });
+
   const standardAufgabe =
     'Bearbeite die folgende Aufgabensequenz Schritt für Schritt. Lies dir zuerst das Material durch und bearbeite dann die dazugehörigen Aufgaben.';
+
+  const weiter = useCallback(() => {
+    if (isLast) onErledigt?.();
+    else setCurrentStep((prev) => prev + 1);
+  }, [isLast, onErledigt]);
+
+  const zurueck = useCallback(() => {
+    if (isFirst) onBack?.();
+    else setCurrentStep((prev) => prev - 1);
+  }, [isFirst, onBack]);
 
   /** Baut einen KI-Frage-Prompt aus dem Kontext der Aufgabensequenz zusammen. */
   const baueKiFragePrompt = useCallback(() => {
@@ -214,6 +342,95 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
     );
   }
 
+  /* Schritt-Indikator — über beiden Darstellungsarten gleich. */
+  const indikator = (
+    <div className="shrink-0 mb-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+          Schritt {currentStep + 1} von {schritte.length}
+        </span>
+        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+          typInfo?.classes?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
+        }`}>
+          {typInfo?.kurz || 'Schritt'}
+        </span>
+      </div>
+      <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+        <div
+          className="h-full bg-primary rounded-full transition-all duration-300"
+          style={{ width: `${((currentStep + 1) / schritte.length) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+
+  /* ── Delegierende Schritte: eigene Seite mit eigener Navigation ───────── */
+
+  if (typ === SCHRITT_TYPEN.KATALOG) {
+    const kat = katalogMap[step.aktivitaet_id];
+    const Seite = getAktivitaetSeite(kat?.name);
+    return (
+      <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+        {indikator}
+        <div className="flex-1 min-h-0">
+          {Seite ? (
+            <Seite
+              aktivitaet={{ id: step.id, aktivitaet_id: step.aktivitaet_id, field_values: step.field_values || {} }}
+              kat={kat}
+              busy={busy}
+              onErledigt={weiter}
+              onBack={zurueck}
+            />
+          ) : (
+            <div className="h-full flex flex-col">
+              <div className="flex-1 flex items-center justify-center text-center px-4">
+                <p className="text-sm text-amber-700 inline-flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  {kat?.name
+                    ? `Für „${kat.name}“ ist die Schüleransicht noch nicht hinterlegt.`
+                    : 'Für diesen Schritt ist noch kein Aufgabenformat ausgewählt.'}
+                </p>
+              </div>
+              <div className="pt-5 shrink-0 grid grid-cols-2 gap-3">
+                <Button variant="outline" className="gap-2" onClick={zurueck} disabled={busy}>
+                  <ArrowLeft className="w-4 h-4" /> {isFirst ? 'Zurück zum Lernpaket' : 'Zurück'}
+                </Button>
+                <Button className="gap-2" onClick={weiter} disabled={busy}>
+                  {isLast ? 'Erledigt' : 'Weiter'} <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (typ === SCHRITT_TYPEN.BRIAN) {
+    const b = step.brian || {};
+    return (
+      <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+        {indikator}
+        <div className="flex-1 min-h-0">
+          <KITutorSeite
+            aktivitaet={{ id: step.id, field_values: { instruction: b.learner_instruction || b.aufgabenstellung || '' } }}
+            kat={{ name: b.dialog_name || 'KI-Tutor Aufgabe (Brian)' }}
+            busy={busy}
+            onErledigt={weiter}
+            onBack={zurueck}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Schritte im eigenen Rahmen ───────────────────────────────────────── */
+
+  const istHandlung = typ === SCHRITT_TYPEN.HANDLUNG;
+  const weiterLabel = istHandlung
+    ? (step.handlung?.bestaetigungstext || 'Erledigt – ich habe das gemacht')
+    : (isLast ? 'Erledigt' : 'Weiter');
+
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
       {/* Aufgabenstellung */}
@@ -221,30 +438,9 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
         {fv.aufgabentext || standardAufgabe}
       </AufgabenstellungBox>
 
-      {/* Schritt-Indikator */}
-      <div className="shrink-0 mb-4">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Schritt {currentStep + 1} von {schritte.length}
-          </span>
-          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-            istMaterial
-              ? 'bg-blue-50 text-blue-700 border-blue-200'
-              : 'bg-amber-50 text-amber-700 border-amber-200'
-          }`}>
-            {istMaterial ? 'Material' : 'Aufgabe'}
-          </span>
-        </div>
-        {/* Fortschrittsbalken */}
-        <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / schritte.length) * 100}%` }}
-          />
-        </div>
-      </div>
+      {indikator}
 
-      {/* Inhalt – Material oder Aufgabe */}
+      {/* Inhalt */}
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="pb-2">
           {istMaterial && (
@@ -258,6 +454,44 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
                 </span>
               </div>
               <MaterialBlock material={step.material || {}} />
+            </div>
+          )}
+
+          {typ === SCHRITT_TYPEN.OFFEN && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-violet-100 text-violet-700 shrink-0">
+                  <PencilRuler className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-semibold">{step.titel || 'Aufgabe'}</span>
+              </div>
+              <OffenerSchrittBlock offen={step.offen} />
+            </div>
+          )}
+
+          {istHandlung && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-amber-100 text-amber-700 shrink-0">
+                  <Hand className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-semibold">{step.titel || 'Handlungsaufgabe'}</span>
+              </div>
+              <HandlungBlock handlung={step.handlung} />
+            </div>
+          )}
+
+          {typ === SCHRITT_TYPEN.EXTERN && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-rose-100 text-rose-700 shrink-0">
+                  <MonitorPlay className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-semibold">
+                  {step.titel || step.extern?.titel || 'Externe Seite'}
+                </span>
+              </div>
+              <ExternBlock extern={step.extern} />
             </div>
           )}
 
@@ -311,7 +545,6 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
                     </p>
                   </div>
 
-                  {/* KI-Frage-Prompt Button */}
                   <Button
                     variant="outline"
                     size="sm"
@@ -350,35 +583,21 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
 
       {/* Navigation */}
       <div className="pt-5 shrink-0 grid grid-cols-2 gap-3">
-        <Button
-          variant="outline"
-          className="gap-2"
-          onClick={() => isFirst ? onBack() : setCurrentStep(prev => prev - 1)}
-          disabled={busy}
-        >
+        <Button variant="outline" className="gap-2" onClick={zurueck} disabled={busy}>
           <ArrowLeft className="w-4 h-4" />
           {isFirst ? 'Zurück zum Lernpaket' : 'Zurück'}
         </Button>
 
-        {isLast ? (
-          <Button
-            className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-            disabled={busy}
-            onClick={onErledigt}
-          >
-            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            Erledigt
-          </Button>
-        ) : (
-          <Button
-            className="gap-2"
-            onClick={() => setCurrentStep(prev => prev + 1)}
-            disabled={busy}
-          >
-            Weiter
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        )}
+        <Button
+          className={`gap-2 ${(isLast || istHandlung) ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+          onClick={weiter}
+          disabled={busy}
+        >
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" />
+            : (isLast || istHandlung) ? <CheckCircle2 className="w-4 h-4" /> : null}
+          {weiterLabel}
+          {!isLast && !istHandlung && <ArrowRight className="w-4 h-4" />}
+        </Button>
       </div>
     </div>
   );
