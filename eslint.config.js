@@ -9,6 +9,7 @@ export default [
     files: [
       "src/components/**/*.{js,mjs,cjs,jsx}",
       "src/pages/**/*.{js,mjs,cjs,jsx}",
+      "src/hooks/**/*.{js,mjs,cjs,jsx}",
       "src/Layout.jsx",
     ],
     ignores: ["src/lib/**/*", "src/components/ui/**/*"],
@@ -55,6 +56,10 @@ export default [
         { ignore: ["cmdk-input-wrapper", "toast-close"] },
       ],
       "react-hooks/rules-of-hooks": "error",
+      // 2026-08-29 eingeschaltet: Eine Umbenennung hatte eine Fundstelle
+      // uebersehen (setSequenzBuilderOpen), der Build lief trotzdem durch und
+      // die Ansicht stuerzte erst zur Laufzeit ab. Diese Regel faengt das.
+      "no-undef": "error",
     },
   },
 ];
