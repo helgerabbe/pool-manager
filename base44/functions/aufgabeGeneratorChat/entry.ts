@@ -486,7 +486,7 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════════════
     // ── ADAPTER: Anthropic Messages API (anbieterspezifisch) ───────────
     // ═══════════════════════════════════════════════════════════════════
-    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+    const ruf = (msgs: any[]) => fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -497,10 +497,25 @@ Deno.serve(async (req) => {
         model: modell,
         max_tokens: MAX_TOKENS,
         system: istStruktur ? systemStruktur : SYSTEM_PROMPT_AUFGABE,
-        messages,
+        messages: msgs,
         stream: true,
       }),
     });
+
+    let upstream = await ruf(messages);
+
+    // Nicht jedes Modell nimmt PDFs oder Bilder an. Scheitert der Aufruf MIT
+    // Anhaengen, versuchen wir es ohne — eine Schrittfolge ohne gesichtetes
+    // Material ist immer noch besser als eine Fehlermeldung. Die Lehrkraft
+    // erfaehrt es ueber den Hinweis im Prompt-Text.
+    if (!upstream.ok && anhaengeBloecke.length > 0) {
+      const ohneAnhang = [...messages];
+      ohneAnhang[ohneAnhang.length - 1] = {
+        role: 'user',
+        content: `${letzte}\n\nHINWEIS: Die beigefuegten Dateien konnten nicht verarbeitet werden. Du kennst von ihnen nur die Bezeichnung — behaupte nicht, du haettest sie gelesen.`,
+      };
+      upstream = await ruf(ohneAnhang);
+    }
 
     if (!upstream.ok || !upstream.body) {
       let detail = '';
