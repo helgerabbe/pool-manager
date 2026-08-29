@@ -1,0 +1,47 @@
+{
+  "description": "Zwischenstand eines Schritts aus der Aufgabenwerkstatt (2026-08-29). Jeder im Gespr\u00e4ch erzeugte Stand eines Schritts vom Typ 'offen' wird hier abgelegt, damit die Lehrkraft auch nach dem Schliessen der Werkstatt auf fr\u00fchere Fassungen zur\u00fcckspringen kann. Ein Datensatz je Stand, sortiert \u00fcber 'nummer'. Bewusst NICHT im Aufgaben-Datensatz: sechs offene Schritte mit je einem Dutzend St\u00e4nden w\u00e4ren dort ein Vielfaches der Nutzdaten. Aufr\u00e4umen: Die Werkstatt h\u00e4lt je Schritt nur die letzten St\u00e4nde und l\u00f6scht \u00e4ltere.",
+  "name": "AufgabeWerkstattStand",
+  "properties": {
+    "anlass": {
+      "description": "Womit die Lehrkraft diesen Stand ausgel\u00f6st hat - ihre Nachricht an den Assistenten, gek\u00fcrzt. Hilft beim Wiederfinden.",
+      "type": "string"
+    },
+    "aufgabe_id": {
+      "description": "FK zur AllgemeineAufgabe.",
+      "type": "string"
+    },
+    "fragment": {
+      "description": "Das HTML-Fragment dieses Standes (div.aufgabe, kein Dokumentger\u00fcst).",
+      "type": "string"
+    },
+    "label": {
+      "description": "Beschriftung in der St\u00e4ndeleiste, z. B. 'Erste Fassung' oder 'Stand 3'.",
+      "type": "string"
+    },
+    "nummer": {
+      "description": "Laufende Nummer des Standes innerhalb des Schritts, beginnend bei 1. Bestimmt die Sortierung und die Beschriftung.",
+      "type": "number"
+    },
+    "schritt_id": {
+      "description": "Stabile UID des Schritts innerhalb von AllgemeineAufgabe.sequenz_schritte. KEIN Array-Index - die Reihenfolge kann sich jederzeit \u00e4ndern.",
+      "type": "string"
+    },
+    "uebernommen": {
+      "default": false,
+      "description": "True, wenn genau dieser Stand in den Schritt \u00fcbernommen wurde.",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "aufgabe_id",
+    "schritt_id",
+    "nummer"
+  ],
+  "rls": {
+    "create": {},
+    "delete": {},
+    "read": {},
+    "update": {}
+  },
+  "type": "object"
+}
