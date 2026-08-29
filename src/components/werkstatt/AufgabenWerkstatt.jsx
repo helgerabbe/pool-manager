@@ -80,6 +80,10 @@ export default function AufgabenWerkstatt({
 
   const schritt = folge.aktuellerSchritt;
   const istOffenerSchritt = schritt?.typ === SCHRITT_TYPEN.OFFEN;
+  // Nur ein offener Schritt lässt sich bauen. Steht die Auswahl auf einem
+  // anderen Typ, fällt die untere Spalte auf die Struktur-Phase zurück —
+  // sonst bliebe der Umschalter auf einem Zustand stehen, der nichts zeigt.
+  const modusUnten = (rechtsUnten === 'schritt' && istOffenerSchritt) ? 'schritt' : 'struktur';
 
   /* ── Gespräch ──────────────────────────────────────────────────────────
      Der Assistent arbeitet immer am gerade offenen Schritt. Wechselt die
@@ -275,7 +279,7 @@ export default function AufgabenWerkstatt({
               <div className="flex items-center gap-1 shrink-0">
                 <Button
                   size="sm"
-                  variant={rechtsUnten === 'struktur' ? 'default' : 'ghost'}
+                  variant={modusUnten === 'struktur' ? 'default' : 'ghost'}
                   className="h-7 gap-1.5 text-xs"
                   onClick={() => setRechtsUnten('struktur')}
                 >
@@ -284,7 +288,7 @@ export default function AufgabenWerkstatt({
                 {istOffenerSchritt && (
                   <Button
                     size="sm"
-                    variant={rechtsUnten === 'schritt' ? 'default' : 'ghost'}
+                    variant={modusUnten === 'schritt' ? 'default' : 'ghost'}
                     className="h-7 gap-1.5 text-xs"
                     onClick={() => setRechtsUnten('schritt')}
                   >
@@ -293,14 +297,14 @@ export default function AufgabenWerkstatt({
                 )}
               </div>
 
-              {rechtsUnten === 'struktur' ? (
+              {modusUnten === 'struktur' ? (
                 <StrukturPhase
                   struktur={struktur}
                   hatSchritte={folge.schritte.length > 0}
                   onUebernehmen={vorschlagUebernehmen}
                   disabled={isReleased}
                 />
-              ) : istOffenerSchritt ? (
+              ) : (
                 <>
                   <GespraechsSpalte
                     gen={gen}
@@ -318,7 +322,7 @@ export default function AufgabenWerkstatt({
                     </Button>
                   )}
                 </>
-              ) : null}
+              )}
             </div>
           </div>
         </div>
