@@ -11,7 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
-  schrittStatus, istSchrittVollstaendig, getSchrittTyp,
+  schrittStatus, istSchrittVollstaendig, getSchrittTyp, vorschlagZuSchritten,
   SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU,
 } from '@/lib/schrittTypen';
 
@@ -151,5 +151,62 @@ describe('Typ-Register', () => {
   it('gibt bei unbekannten Werten null zurück statt zu werfen', () => {
     expect(getSchrittTyp('gibtesnicht')).toBeNull();
     expect(getSchrittTyp(null)).toBeNull();
+  });
+});
+
+describe('vorschlagZuSchritten', () => {
+  const katalog = [
+    { id: 'k-uebung', name: 'Lückentext', phase: 'Übung' },
+    { id: 'k-input', name: 'Lückentext', phase: 'Input' },
+    { id: 'k-buch', name: 'Lehrwerk/Quelle', phase: 'Input' },
+  ];
+
+  it('löst Formatnamen gegen den Katalog auf', () => {
+    const { schritte, hinweise } = vorschlagZuSchritten(
+      [{ titel: 'Begriffe füllen', typ: 'katalog', aktivitaet_name: 'Lehrwerk/Quelle' }],
+      katalog,
+    );
+    expect(schritte[0].typ).toBe(SCHRITT_TYPEN.KATALOG);
+    expect(schritte[0].aktivitaet_id).toBe('k-buch');
+    expect(hinweise).toHaveLength(0);
+  });
+
+  it('bevorzugt bei Phasen-Dubletten die Übungs-Variante', () => {
+    const { schritte } = vorschlagZuSchritten(
+      [{ titel: 'X', typ: 'katalog', aktivitaet_name: 'Lückentext' }],
+      katalog,
+    );
+    expect(schritte[0].aktivitaet_id).toBe('k-uebung');
+  });
+
+  it('macht aus einem erfundenen Format eine offene Aufgabe statt einer toten Referenz', () => {
+    const { schritte, hinweise } = vorschlagZuSchritten(
+      [{ titel: 'Kreuzworträtsel', typ: 'katalog', aktivitaet_name: 'Kreuzworträtsel' }],
+      katalog,
+    );
+    expect(schritte[0].typ).toBe(SCHRITT_TYPEN.OFFEN);
+    expect(schritte[0].aktivitaet_id).toBeUndefined();
+    expect(hinweise).toHaveLength(1);
+  });
+
+  it('setzt alle Schritte auf geplant und übernimmt Titel und Kurzbeschreibung', () => {
+    const { schritte } = vorschlagZuSchritten([
+      { titel: 'Einstieg', typ: 'material', kurzbeschreibung: 'Bild zeigen', dauer_minuten: 5 },
+      { titel: 'Gespräch', typ: 'brian', kurzbeschreibung: 'Diskutieren' },
+    ], katalog);
+    expect(schritte.map((s) => s.status)).toEqual([SCHRITT_STATUS.GEPLANT, SCHRITT_STATUS.GEPLANT]);
+    expect(schritte[0].titel).toBe('Einstieg');
+    expect(schritte[0].plan.kurzbeschreibung).toBe('Bild zeigen');
+    expect(schritte[0].plan.dauer_minuten).toBe(5);
+    expect(schritte[1].plan.dauer_minuten).toBeNull();
+    expect(schritte.map((s) => s.reihenfolge)).toEqual([0, 1]);
+  });
+
+  it('verträgt leeren Vorschlag und leeren Katalog', () => {
+    expect(vorschlagZuSchritten([], []).schritte).toEqual([]);
+    expect(vorschlagZuSchritten(undefined, undefined).schritte).toEqual([]);
+    // Ohne Katalog wird jeder Katalog-Vorschlag zur offenen Aufgabe.
+    const { schritte } = vorschlagZuSchritten([{ titel: 'A', typ: 'katalog', aktivitaet_name: 'X' }], []);
+    expect(schritte[0].typ).toBe(SCHRITT_TYPEN.OFFEN);
   });
 });
