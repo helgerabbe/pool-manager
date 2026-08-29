@@ -371,6 +371,7 @@ Deno.serve(async (req) => {
     const verlauf = Array.isArray(body.verlauf) ? body.verlauf.slice(-MAX_VERLAUF) : [];
     const kontext = body.kontext && typeof body.kontext === 'object' ? body.kontext : {};
     const istStruktur = String(body.modus || 'aufgabe') === 'struktur';
+    let anhaengeBloecke: any[] = [];
 
     if (!nachricht) {
       return Response.json({ error: 'nachricht ist erforderlich.' }, { status: 400 });
@@ -441,6 +442,23 @@ Deno.serve(async (req) => {
       // und Bildern werden (noch) nicht ausgelesen — das Modell darf also
       // nicht so tun, als kenne es sie, deshalb steht der Hinweis dabei.
       const materialien = Array.isArray(body.materialien) ? body.materialien : [];
+      const anhang = await ladeMaterialAnhaenge(materialien);
+      anhaengeBloecke = anhang.bloecke;
+
+      // Was tatsaechlich mitgeschickt wurde, darf das Modell auswerten. Was
+      // nicht gelesen werden konnte, muss es ausdruecklich wissen — sonst
+      // erfindet es Inhalte zu einem Dateinamen.
+      const leseHinweis = [
+        anhang.gelesen.length
+          ? `Die folgenden Dateien liegen dieser Nachricht bei und darfst du auswerten: ${anhang.gelesen.join(', ')}.`
+          : '',
+        anhang.uebersprungen.length
+          ? `NICHT gelesen werden konnten: ${anhang.uebersprungen.join(', ')}. Von diesen kennst du nur die Bezeichnung — behaupte nie, du haettest sie gesehen.`
+          : '',
+        'Von Materialien ohne beiliegende Datei kennst du nur Bezeichnung, Text und Adresse.',
+        'Beziehe vorhandenes Material ein, wenn es passt (etwa als Material-Schritt oder als Quelle einer Buchaufgabe).',
+      ].filter(Boolean).join(' ');
+
       const materialBlock = materialien.length
         ? `VORHANDENES MATERIAL DER LEHRKRAFT (${materialien.length}):\n`
           + materialien.map((m: any, i: number) => {
@@ -449,8 +467,8 @@ Deno.serve(async (req) => {
             if (m?.content) teile.push(`   Inhalt: ${String(m.content).slice(0, 1500)}`);
             return teile.join('\n');
           }).join('\n')
-          + `\n\nDu siehst von Dateien und Bildern NUR die Bezeichnung, nicht den Inhalt. Beziehe dich auf dieses Material, wenn es passt (etwa als Material-Schritt oder als Quelle einer Buchaufgabe), aber behaupte nie, du haettest es gelesen.\n\n---\n\n`
-        : '';
+          + `\n\n${leseHinweis}\n\n---\n\n`
+          : '';
 
       letzte = `${bisher}${materialBlock}WUNSCH DER LEHRKRAFT:\n${nachricht}`;
     } else {
@@ -458,7 +476,12 @@ Deno.serve(async (req) => {
         ? `BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`
         : `AUFGABE DER LEHRKRAFT:\n${nachricht}`;
     }
-    messages.push({ role: 'user', content: letzte });
+    // Mit Anhängen wird die letzte Nachricht zu einer Blockliste: erst die
+    // Dateien, dann der Text — so bezieht sich der Auftrag auf das, was
+    // darüber steht.
+    messages.push(anhaengeBloecke.length
+      ? { role: 'user', content: [...anhaengeBloecke, { type: 'text', text: letzte }] }
+      : { role: 'user', content: letzte });
 
     // ═══════════════════════════════════════════════════════════════════
     // ── ADAPTER: Anthropic Messages API (anbieterspezifisch) ───────────
