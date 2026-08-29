@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,19 +10,15 @@ import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
 import useSchrittfolge from '@/hooks/useSchrittfolge';
-import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useStrukturVorschlag from '@/hooks/useStrukturVorschlag';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
-import useWerkstattStaende from '@/hooks/useWerkstattStaende';
 import SchrittListe from '@/components/schritte/SchrittListe';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalte';
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
-import StaendeLeiste from '@/components/werkstatt/StaendeLeiste';
-import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
+import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
-import { fragmentZuDokument } from '@/lib/aufgabeFragment';
 
 /**
  * AufgabenWerkstatt
@@ -64,7 +60,6 @@ export default function AufgabenWerkstatt({
   const [aufgabenstellung, setAufgabenstellung] = useState('');
   const [gesamtdurchlauf, setGesamtdurchlauf] = useState(false);
   const [kopfOffen, setKopfOffen] = useState(false);
-  const [eingabe, setEingabe] = useState('');
   // Welcher Assistent unten rechts arbeitet: die Folge planen oder den
   // offenen Schritt bauen. Ohne Schritte gibt es nur die Struktur-Phase.
   const [rechtsUnten, setRechtsUnten] = useState('struktur');
@@ -76,7 +71,6 @@ export default function AufgabenWerkstatt({
     setMissionType(initialData?.mission_type || null);
     setAufgabenstellung(initialData?.aufgabenstellung || '');
     setGesamtdurchlauf(false);
-    setEingabe('');
     setRechtsUnten('struktur');
   }, [open, initialData]);
 
@@ -294,33 +288,16 @@ export default function AufgabenWerkstatt({
                   disabled={isReleased}
                 />
               ) : (
-                <>
-                  <GespraechsSpalte
-                    gen={gen}
-                    eingabe={eingabe}
-                    onEingabe={setEingabe}
-                    onAbschicken={abschicken}
-                    disabled={isReleased}
-                    className="flex-1 min-h-[220px]"
-                    platzhalter="Was soll dieser Schritt können?"
-                    leerText="Beschreiben Sie, was die Schüler in diesem Schritt tun sollen — ich baue daraus eine erste Fassung."
-                  />
-                  <div className="shrink-0 space-y-2">
-                    <StaendeLeiste
-                      staende={werkstattStaende.staende}
-                      isLoading={werkstattStaende.isLoading}
-                      aktiv={werkstattStaende.aktiv}
-                      aktuellesFragment={gen.fragment}
-                      disabled={gen.busy || isReleased}
-                      onLaden={(st) => gen.setzeFragment(st.fragment, 'Geladener Stand')}
-                    />
-                    {gen.fragment && (
-                      <Button onClick={standUebernehmen} disabled={gen.busy || isReleased} className="gap-2 w-full">
-                        Diesen Stand in den Schritt übernehmen
-                      </Button>
-                    )}
-                  </div>
-                </>
+                // key: erzwingt ein frisches Gespräch je Schritt — siehe
+                // Kommentar in OffenerSchrittGespraech.
+                <OffenerSchrittGespraech
+                  key={schritt.id}
+                  schritt={schritt}
+                  aufgabeId={initialData?.id}
+                  kontext={generatorKontext}
+                  isReleased={isReleased}
+                  onUebernehmen={standUebernehmen}
+                />
               )}
             </div>
           </div>
