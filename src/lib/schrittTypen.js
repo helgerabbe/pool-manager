@@ -249,6 +249,59 @@ export function schritteAusAufgabe(quelle) {
     .map((s, i) => ({ ...s, reihenfolge: i }));
 }
 
+/**
+ * Wandelt den Strukturvorschlag des Assistenten in echte Schritte um.
+ *
+ * Der Assistent nennt Katalogformate beim NAMEN (er kennt keine IDs). Hier
+ * wird der Name gegen den Katalog aufgelöst. Findet sich kein Eintrag, wird
+ * der Schritt als offene Aufgabe angelegt statt mit einer toten Referenz —
+ * die Absicht bleibt sichtbar, die Lehrkraft wählt selbst ein Format.
+ *
+ * Alle erzeugten Schritte stehen auf 'geplant': Ein Vorschlag ist noch keine
+ * Entscheidung, und der Baustand soll nicht behaupten, es sei schon etwas
+ * gebaut.
+ *
+ * @param {Array} vorschlag     Liste aus useStrukturVorschlag
+ * @param {Array} katalogListe  Aktivitätenkatalog (für die Namensauflösung)
+ * @returns {{ schritte: Array, hinweise: string[] }}
+ */
+export function vorschlagZuSchritten(vorschlag = [], katalogListe = []) {
+  const nachName = {};
+  (katalogListe || []).forEach((k) => {
+    if (!k?.name) return;
+    // Bei Phasen-Dubletten gewinnt "Übung" — siehe useAktivitaetenKatalog.
+    if (!nachName[k.name] || (k.phase === 'Übung' && nachName[k.name].phase !== 'Übung')) {
+      nachName[k.name] = k;
+    }
+  });
+
+  const hinweise = [];
+  const schritte = (vorschlag || []).map((v, i) => {
+    let typ = v?.typ;
+    let aktivitaet = null;
+
+    if (typ === SCHRITT_TYPEN.KATALOG) {
+      aktivitaet = nachName[v?.aktivitaet_name];
+      if (!aktivitaet) {
+        hinweise.push(`Für „${v?.titel || `Schritt ${i + 1}`}“ gibt es das Format „${v?.aktivitaet_name || '—'}“ nicht. Der Schritt steht jetzt als offene Aufgabe da.`);
+        typ = SCHRITT_TYPEN.OFFEN;
+      }
+    }
+
+    const schritt = leererSchritt(typ, i);
+    schritt.titel = String(v?.titel || '').trim();
+    schritt.plan = {
+      kurzbeschreibung: String(v?.kurzbeschreibung || '').trim(),
+      lernziel: '',
+      dauer_minuten: Number.isFinite(v?.dauer_minuten) ? v.dauer_minuten : null,
+    };
+    if (aktivitaet) schritt.aktivitaet_id = aktivitaet.id;
+    return schritt;
+  });
+
+  return { schritte: neuNummerieren(schritte), hinweise };
+}
+
 /** Nummeriert eine Folge nach dem Umsortieren neu durch. */
 export function neuNummerieren(schritte) {
   return (schritte || []).map((s, i) => ({ ...s, reihenfolge: i }));
