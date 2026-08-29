@@ -1055,7 +1055,7 @@ export default function AllgemeineAufgabenView({
           eingehängt — Rückfallhebel für die ersten Wochen im Echtbetrieb. */}
       <AufgabenWerkstatt
         open={werkstattOpen}
-        onOpenChange={setSequenzBuilderOpen}
+        onOpenChange={setWerkstattOpen}
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingSequenz}
