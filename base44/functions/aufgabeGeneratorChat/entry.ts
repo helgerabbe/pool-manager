@@ -465,32 +465,44 @@ Deno.serve(async (req) => {
             }
           }
 
-          // ── Auswertung: Fragment neu bauen oder patchen ──────────────
+          // ── Auswertung ───────────────────────────────────────────────
           const antwort = tagInhalt(roh, 'antwort') || 'Fertig.';
-          const edits = leseEdits(roh);
-          const komplettNeu = tagInhalt(roh.replace(/<edit>[\s\S]*?<\/edit>/gi, ''), 'neu');
 
-          let neuesFragment = fragment;
-          let warnungen = [];
-          let geaendert = false;
+          if (istStruktur) {
+            const res = leseSchritte(roh, katalogNamen);
+            controller.enqueue(enc.encode(sseEvent('ergebnis', {
+              antwort,
+              schritte: res.schritte,
+              geaendert: !!res.schritte,
+              warnungen: res.warnungen,
+              tokens,
+            })));
+          } else {
+            const edits = leseEdits(roh);
+            const komplettNeu = tagInhalt(roh.replace(/<edit>[\s\S]*?<\/edit>/gi, ''), 'neu');
 
-          if (komplettNeu) {
-            neuesFragment = saeubere(komplettNeu);
-            geaendert = true;
-          } else if (edits.length && fragment) {
-            const res = wendeEditsAn(fragment, edits);
-            neuesFragment = res.fragment;
-            warnungen = res.warnungen;
-            geaendert = res.fragment !== fragment;
+            let neuesFragment = fragment;
+            let warnungen = [];
+            let geaendert = false;
+
+            if (komplettNeu) {
+              neuesFragment = saeubere(komplettNeu);
+              geaendert = true;
+            } else if (edits.length && fragment) {
+              const res = wendeEditsAn(fragment, edits);
+              neuesFragment = res.fragment;
+              warnungen = res.warnungen;
+              geaendert = res.fragment !== fragment;
+            }
+
+            controller.enqueue(enc.encode(sseEvent('ergebnis', {
+              antwort,
+              fragment: neuesFragment,
+              geaendert,
+              warnungen,
+              tokens,
+            })));
           }
-
-          controller.enqueue(enc.encode(sseEvent('ergebnis', {
-            antwort,
-            fragment: neuesFragment,
-            geaendert,
-            warnungen,
-            tokens,
-          })));
         } catch (err) {
           controller.enqueue(enc.encode(sseEvent('fehler', { error: err.message })));
         } finally {
