@@ -167,6 +167,8 @@ export default function AufgabenWerkstatt({
   const standUebernehmen = () => {
     if (!gen.fragment || folge.selectedIndex < 0) return;
     folge.fragmentUebernehmen(folge.selectedIndex, gen.fragment, fragmentZuDokument(gen.fragment));
+    const passend = werkstattStaende.staende.find((st) => st.fragment === gen.fragment);
+    if (passend) werkstattStaende.alsUebernommenMarkieren(passend.id);
     toast.success('Stand in den Schritt übernommen. Zum Sichern noch speichern.');
   };
 
@@ -349,11 +351,21 @@ export default function AufgabenWerkstatt({
                     platzhalter="Was soll dieser Schritt können?"
                     leerText="Beschreiben Sie, was die Schüler in diesem Schritt tun sollen — ich baue daraus eine erste Fassung."
                   />
-                  {gen.fragment && (
-                    <Button onClick={standUebernehmen} disabled={gen.busy || isReleased} className="gap-2 shrink-0">
-                      Diesen Stand in den Schritt übernehmen
-                    </Button>
-                  )}
+                  <div className="shrink-0 space-y-2">
+                    <StaendeLeiste
+                      staende={werkstattStaende.staende}
+                      isLoading={werkstattStaende.isLoading}
+                      aktiv={werkstattStaende.aktiv}
+                      aktuellesFragment={gen.fragment}
+                      disabled={gen.busy || isReleased}
+                      onLaden={(st) => gen.setzeFragment(st.fragment, 'Geladener Stand')}
+                    />
+                    {gen.fragment && (
+                      <Button onClick={standUebernehmen} disabled={gen.busy || isReleased} className="gap-2 w-full">
+                        Diesen Stand in den Schritt übernehmen
+                      </Button>
+                    )}
+                  </div>
                 </>
               )}
             </div>
