@@ -272,25 +272,57 @@ export default function AufgabenWerkstatt({
           </div>
         ) : (
           <>
-        {/* ── Die drei Spalten ──────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(360px,1fr)_minmax(360px,1fr)] gap-4 pt-4 flex-1 min-h-0">
-          {/* Links: Schrittfolge */}
-          <div className="flex flex-col min-h-0 rounded-xl border border-slate-200 bg-white p-3">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 shrink-0">
-              Schritte
-            </p>
-            <SchrittListe
-              schritte={folge.schritte}
-              selectedIndex={folge.selectedIndex}
-              onSelect={folge.setSelectedIndex}
-              onAdd={folge.hinzufuegen}
-              onDelete={folge.loeschen}
-              onMoveUp={folge.nachOben}
-              onMoveDown={folge.nachUnten}
-            />
+        {/* ── Zwei Spalten: Struktur links, Schülersicht rechts ─────────
+            Der INHALT eines Schritts wird nicht hier, sondern im
+            SchrittFenster bearbeitet (Ebene 3). Diese Seite ist für den
+            Ablauf zuständig: anlegen, löschen, umsortieren. */}
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,420px)_1fr] gap-4 pt-4 flex-1 min-h-0">
+          {/* Links: Schrittfolge + Ablaufplanung */}
+          <div className="flex flex-col min-h-0 gap-3">
+            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white p-3">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 shrink-0">
+                Ablauf der Aufgabe
+              </p>
+              <SchrittListe
+                schritte={folge.schritte}
+                selectedIndex={folge.selectedIndex}
+                onSelect={folge.setSelectedIndex}
+                onOpen={(i) => { folge.setSelectedIndex(i); setSchrittFensterOffen(true); }}
+                onAdd={folge.hinzufuegen}
+                onDelete={folge.loeschen}
+                onMoveUp={folge.nachOben}
+                onMoveDown={folge.nachUnten}
+              />
+            </div>
+
+            {/* Der Assistent bleibt erreichbar, nimmt aber zugeklappt keinen
+                Platz weg — auf dieser Seite geht es meist um Feinschliff. */}
+            <div className="shrink-0 rounded-xl border border-slate-200 bg-white overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setPlanerOffen((o) => !o)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
+              >
+                {planerOffen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                <ListOrdered className="w-4 h-4 text-violet-600 shrink-0" />
+                <span className="text-xs font-semibold text-slate-700">
+                  Ablauf mit dem Assistenten ändern
+                </span>
+              </button>
+              {planerOffen && (
+                <div className="px-3 pb-3 border-t border-slate-100 pt-3 max-h-[42vh] flex flex-col">
+                  <StrukturPhase
+                    struktur={struktur}
+                    hatSchritte={folge.schritte.length > 0}
+                    onUebernehmen={vorschlagUebernehmen}
+                    disabled={isReleased}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Mitte: Schülervorschau */}
+          {/* Rechts: Schülervorschau des gewählten Schritts */}
           <SchuelerVorschauSpalte
             schritte={folge.schritte}
             selectedIndex={folge.selectedIndex}
@@ -298,72 +330,7 @@ export default function AufgabenWerkstatt({
             gesamtdurchlauf={gesamtdurchlauf}
             onGesamtdurchlaufChange={setGesamtdurchlauf}
           />
-
-          {/* Rechts: Schritt-Editor, darunter das Gespräch */}
-          <div className="flex flex-col min-h-0 gap-3">
-            <div className="flex-1 min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4">
-              {/* Kein onGespraechOeffnen: Bei einem offenen Schritt steht das
-                  Gespräch direkt darunter in derselben Spalte. */}
-              <SchrittEditor schritt={schritt} onChange={folge.aktuellenAendern} />
-            </div>
-
-            {/* Unten rechts: entweder die Folge planen oder den offenen
-                Schritt bauen. Umschaltbar, solange beides möglich ist. */}
-            <div className="shrink-0 flex flex-col min-h-0 gap-2" style={{ maxHeight: '44vh' }}>
-              {/* Der Umschalter erscheint nur, wenn es wirklich etwas zu
-                  schalten gibt — also wenn ein offener Schritt ausgewählt ist.
-                  Sonst stünde dort ein Knopf, der aussieht wie ein Knopf, aber
-                  auf nichts reagiert. */}
-              {istOffenerSchritt ? (
-                <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    size="sm"
-                    variant={modusUnten === 'struktur' ? 'default' : 'ghost'}
-                    className="h-7 gap-1.5 text-xs"
-                    onClick={() => setRechtsUnten('struktur')}
-                  >
-                    <ListOrdered className="w-3 h-3" /> Schrittfolge planen
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={modusUnten === 'schritt' ? 'default' : 'ghost'}
-                    className="h-7 gap-1.5 text-xs"
-                    onClick={() => setRechtsUnten('schritt')}
-                  >
-                    <PencilRuler className="w-3 h-3" /> Diesen Schritt bauen
-                  </Button>
-                </div>
-              ) : (
-                <p className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  <ListOrdered className="w-3.5 h-3.5" /> Schrittfolge planen
-                </p>
-              )}
-
-              {modusUnten === 'struktur' ? (
-                <StrukturPhase
-                  struktur={struktur}
-                  hatSchritte={folge.schritte.length > 0}
-                  onUebernehmen={vorschlagUebernehmen}
-                  disabled={isReleased}
-                />
-              ) : (
-                // key: erzwingt ein frisches Gespräch je Schritt — siehe
-                // Kommentar in OffenerSchrittGespraech.
-                <OffenerSchrittGespraech
-                  key={schritt.id}
-                  schritt={schritt}
-                  aufgabeId={initialData?.id}
-                  kontext={generatorKontext}
-                  isReleased={isReleased}
-                  onUebernehmen={standUebernehmen}
-                />
-              )}
-            </div>
-          </div>
         </div>
-
-          </>
-        )}
 
         {/* ── Fußleiste ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200 shrink-0">
