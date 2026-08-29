@@ -20,7 +20,7 @@ import AufgabenArtPicker from '@/components/allgemeineAufgaben/AufgabenArtPicker
 import HandlungAufgabeView from '@/components/allgemeineAufgaben/HandlungAufgabeView';
 import HtmlEmbedAufgabeView from '@/components/allgemeineAufgaben/HtmlEmbedAufgabeView';
 import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview';
-import SequenzBuilder from '@/components/allgemeineAufgaben/SequenzBuilder';
+import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
@@ -1053,14 +1053,17 @@ export default function AllgemeineAufgabenView({
         }}
       />
 
-      {/* SequenzBuilder (Aufgabensequenz) */}
-      <SequenzBuilder
+      {/* Aufgaben-Werkstatt (Schrittfolge). Ersetzt den SequenzBuilder,
+          2026-08-29. Die alte Datei liegt noch im Repo, ist aber nicht mehr
+          eingehängt — Rückfallhebel für die ersten Wochen im Echtbetrieb. */}
+      <AufgabenWerkstatt
         open={sequenzBuilderOpen}
         onOpenChange={setSequenzBuilderOpen}
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingSequenz}
         defaultAnforderungsebene={anforderungsebene}
+        isReleased={editingSequenz?.content_status === 'approved'}
         onSuccess={() => {
           setSequenzBuilderOpen(false);
           setEditingSequenz(null);
