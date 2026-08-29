@@ -10,9 +10,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2, Lightbulb, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks, Code2 } from 'lucide-react';
+import { Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks, Code2 } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
-import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
@@ -23,7 +22,6 @@ import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
-import InlineBasisLernzielSelector from '@/components/allgemeineAufgaben/InlineBasisLernzielSelector';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -53,7 +51,6 @@ const AKTIVITAETEN_HELP = {
   ],
   docsSlug: 'ebene-2-allgemeine-aufgaben',
 };
-import MissionStripe from '@/components/missionen/MissionStripe';
 import MissionFilterSelect, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterSelect';
 import { isMissionApplicable, getMission } from '@/lib/missionen';
 
