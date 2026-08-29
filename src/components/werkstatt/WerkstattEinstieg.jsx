@@ -147,8 +147,8 @@ export default function WerkstattEinstieg({
         </p>
         {anzahl > 0 && (
           <p className="text-xs text-violet-800">
-            Hinweis: Der Assistent sieht Ihre Materialien vorerst nur mit Bezeichnung und
-            eingefügtem Text. Inhalte von PDFs und Bildern liest er noch nicht mit.
+            Bilder und PDFs schaut der Assistent sich an — bis zu vier Dateien, jeweils höchstens
+            4 MB. Größere und andere Dateitypen kennt er nur mit Bezeichnung; Links folgt er nicht.
           </p>
         )}
         <div className="flex flex-wrap items-center gap-3">
