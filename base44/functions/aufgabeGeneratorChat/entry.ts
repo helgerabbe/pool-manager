@@ -24,9 +24,19 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
  *   <neu>…vollständiges Fragment…</neu>              (nur beim ersten Bau)
  *   <edit><alt>…</alt><neu>…</neu></edit>            (beliebig oft, bei Änderungen)
  *
- * Request  (POST): { nachricht, fragment?, verlauf?, kontext? }
+ * ZWEI MODI (2026-08-29):
+ *   modus='aufgabe'  (Vorgabe) — baut das Fragment EINES offenen Schritts.
+ *   modus='struktur'           — schlägt die SCHRITTFOLGE einer allgemeinen
+ *                                Aufgabe vor, als Text, ohne irgendetwas zu
+ *                                bauen. Das ist bewusst der erste Halt: eine
+ *                                Folge zu besprechen dauert Sekunden, sie zu
+ *                                bauen Minuten.
+ *
+ * Request  (POST): { nachricht, modus?, fragment?, verlauf?, kontext? }
  * Response (SSE):  event: chunk    → { text }
- *                  event: ergebnis → { antwort, fragment, geaendert, warnungen, tokens }
+ *                  event: ergebnis → { antwort, tokens,
+ *                                      … modus='aufgabe':  fragment, geaendert, warnungen
+ *                                      … modus='struktur': schritte[] }
  *                  event: fehler   → { error }
  *
  * ── AUSTAUSCHBARKEIT ──────────────────────────────────────────────────────
@@ -45,7 +55,7 @@ const ALLOWED_ROLES = new Set(['Administrator', 'Fachschaftsleitung', 'Fachlehrk
 // ═══════════════════════════════════════════════════════════════════════
 // Systemanweisung — die feste Bauordnung für jede erzeugte Aufgabe.
 // ═══════════════════════════════════════════════════════════════════════
-const SYSTEM_PROMPT = `Du bist der Aufgaben-Baumeister einer schulischen Lernplattform. Gemeinsam mit einer Lehrkraft entwickelst du im Gespräch eine interaktive Übungsaufgabe für Schüler:innen.
+const SYSTEM_PROMPT_AUFGABE = `Du bist der Aufgaben-Baumeister einer schulischen Lernplattform. Gemeinsam mit einer Lehrkraft entwickelst du im Gespräch eine interaktive Übungsaufgabe für Schüler:innen.
 
 # WAS DU BAUST
 Ein HTML-FRAGMENT — kein vollständiges Dokument.
@@ -231,7 +241,7 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: modell,
         max_tokens: MAX_TOKENS,
-        system: SYSTEM_PROMPT,
+        system: istStruktur ? systemStruktur : SYSTEM_PROMPT_AUFGABE,
         messages,
         stream: true,
       }),
