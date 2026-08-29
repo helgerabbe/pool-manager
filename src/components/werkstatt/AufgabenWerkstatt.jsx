@@ -87,10 +87,9 @@ export default function AufgabenWerkstatt({
   // sonst bliebe der Umschalter auf einem Zustand stehen, der nichts zeigt.
   const modusUnten = (rechtsUnten === 'schritt' && istOffenerSchritt) ? 'schritt' : 'struktur';
 
-  /* ── Gespräch ──────────────────────────────────────────────────────────
-     Der Assistent arbeitet immer am gerade offenen Schritt. Wechselt die
-     Lehrkraft den Schritt, beginnt ein neues Gespräch — sonst würde der
-     Verlauf des einen Schritts die Antworten zum nächsten verfälschen. */
+  /* Kontext für den Assistenten. Der Bau eines offenen Schritts läuft in
+     OffenerSchrittGespraech — dort, mit key je Schritt, damit das Gespräch
+     beim Schrittwechsel neu beginnt. */
   const generatorKontext = useMemo(() => ({
     beschreibung: schritt?.plan?.kurzbeschreibung || aufgabenstellung || '',
     einheit: initialData?.einheit_titel,
@@ -98,49 +97,6 @@ export default function AufgabenWerkstatt({
     schritt_nummer: folge.selectedIndex >= 0 ? folge.selectedIndex + 1 : null,
     schritte_gesamt: folge.schritte.length,
   }), [schritt, aufgabenstellung, initialData, folge.selectedIndex, folge.schritte.length]);
-
-  const gen = useAufgabenGenerator({
-    kontext: generatorKontext,
-    startFragment: istOffenerSchritt ? (schritt?.offen?.fragment || '') : '',
-  });
-
-  /* ── Dauerhafte Zwischenstände ────────────────────────────────────────
-     Der Generator hält seine Stände nur in der Sitzung. Jeder neu erzeugte
-     Stand wandert zusätzlich in einen eigenen Datensatz, damit die Lehrkraft
-     auch morgen noch zurückspringen kann. */
-  const werkstattStaende = useWerkstattStaende({
-    aufgabeId: initialData?.id,
-    schrittId: istOffenerSchritt ? schritt?.id : null,
-  });
-
-  // Merkt sich, wie viele Sitzungsstände schon gesichert wurden — sonst
-  // würde jeder Rerender denselben Stand erneut schreiben.
-  const gesichertBisRef = useRef(0);
-  const letzteNachrichtRef = useRef('');
-
-  useEffect(() => {
-    gesichertBisRef.current = 0;
-  }, [schritt?.id]);
-
-  useEffect(() => {
-    if (!werkstattStaende.aktiv || gen.busy) return;
-    if (gen.staende.length <= gesichertBisRef.current) return;
-    const frisch = gen.staende.slice(gesichertBisRef.current);
-    gesichertBisRef.current = gen.staende.length;
-    frisch.forEach((st) => {
-      // Geladene Stände nicht erneut sichern — sie stehen bereits in der Liste.
-      if (st.label === 'Geladener Stand') return;
-      werkstattStaende.hinzufuegen(st.fragment, { anlass: letzteNachrichtRef.current });
-    });
-  }, [gen.staende, gen.busy, werkstattStaende]);
-
-  const abschicken = () => {
-    const t = eingabe.trim();
-    if (!t || gen.busy) return;
-    letzteNachrichtRef.current = t;
-    setEingabe('');
-    gen.senden(t);
-  };
 
   /* ── Struktur-Phase ──────────────────────────────────────────────────
      Plant die Folge, baut nichts. Der Katalog wird gebraucht, um die vom
@@ -164,11 +120,9 @@ export default function AufgabenWerkstatt({
   };
 
   // Einen im Gespräch gebauten Stand in den Schritt übernehmen.
-  const standUebernehmen = () => {
-    if (!gen.fragment || folge.selectedIndex < 0) return;
-    folge.fragmentUebernehmen(folge.selectedIndex, gen.fragment, fragmentZuDokument(gen.fragment));
-    const passend = werkstattStaende.staende.find((st) => st.fragment === gen.fragment);
-    if (passend) werkstattStaende.alsUebernommenMarkieren(passend.id);
+  const standUebernehmen = (fragment, snapshotHtml) => {
+    if (folge.selectedIndex < 0) return;
+    folge.fragmentUebernehmen(folge.selectedIndex, fragment, snapshotHtml);
     toast.success('Stand in den Schritt übernommen. Zum Sichern noch speichern.');
   };
 
