@@ -9,6 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { buildSequenzSchritteFuerExport } from '@/lib/mbkAirGapPayloads';
 import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
   schrittStatus, istSchrittVollstaendig, getSchrittTyp, vorschlagZuSchritten,
@@ -208,5 +209,69 @@ describe('vorschlagZuSchritten', () => {
     // Ohne Katalog wird jeder Katalog-Vorschlag zur offenen Aufgabe.
     const { schritte } = vorschlagZuSchritten([{ titel: 'A', typ: 'katalog', aktivitaet_name: 'X' }], []);
     expect(schritte[0].typ).toBe(SCHRITT_TYPEN.OFFEN);
+  });
+});
+
+describe('buildSequenzSchritteFuerExport (MBK-Payload)', () => {
+  it('liefert nichts fuer Aufgaben im Modus einzeln', () => {
+    expect(buildSequenzSchritteFuerExport({ aufgaben_modus: 'einzeln', sequenz_schritte: [{ id: 'x', typ: 'material' }] })).toEqual([]);
+    expect(buildSequenzSchritteFuerExport(null)).toEqual([]);
+  });
+
+  it('sortiert und nummeriert die Schritte lueckenlos', () => {
+    const out = buildSequenzSchritteFuerExport({
+      aufgaben_modus: 'sequenz',
+      sequenz_schritte: [
+        { id: 'b', typ: 'material', reihenfolge: 5, material: { material_typ: 'text', inhalt: 'B' } },
+        { id: 'a', typ: 'material', reihenfolge: 1, material: { material_typ: 'text', inhalt: 'A' } },
+      ],
+    });
+    expect(out.map((s) => s.schritt_id)).toEqual(['a', 'b']);
+    expect(out.map((s) => s.reihenfolge)).toEqual([0, 1]);
+  });
+
+  it('gibt je Typ genau den passenden Nutzdaten-Block aus', () => {
+    const schritte = [
+      { id: 's1', typ: 'katalog', reihenfolge: 0, aktivitaet_id: 'k1', field_values: { buchtitel: 'X' } },
+      { id: 's2', typ: 'offen', reihenfolge: 1, offen: { fragment: '<div class="aufgabe"></div>', snapshot_html: '<html>gross</html>' } },
+      { id: 's3', typ: 'brian', reihenfolge: 2, brian: { dialog_name: 'D', learner_instruction: 'L', system_instruction: 'S', completion_rule: 'C' } },
+      { id: 's4', typ: 'handlung', reihenfolge: 3, handlung: { arbeitsauftrag: 'Miss' } },
+      { id: 's5', typ: 'extern', reihenfolge: 4, extern: { url: 'https://x' } },
+    ];
+    const out = buildSequenzSchritteFuerExport({ aufgaben_modus: 'sequenz', sequenz_schritte: schritte });
+
+    expect(out[0].aktivitaet_id).toBe('k1');
+    expect(out[0].field_values).toEqual({ buchtitel: 'X' });
+    // Fragment ja, Vorschau-Snapshot nein.
+    expect(out[1].fragment).toContain('class="aufgabe"');
+    expect(out[1].snapshot_html).toBeUndefined();
+    expect(out[2].brian_dialog.learner_instruction).toBe('L');
+    expect(out[3].handlung.arbeitsauftrag).toBe('Miss');
+    expect(out[4].extern.url).toBe('https://x');
+  });
+
+  it('laesst interne Werkstatt-Zustaende draussen', () => {
+    const out = buildSequenzSchritteFuerExport({
+      aufgaben_modus: 'sequenz',
+      sequenz_schritte: [{
+        id: 's1', typ: 'offen', reihenfolge: 0,
+        status: 'uebernommen',
+        plan: { kurzbeschreibung: 'interne Notiz' },
+        herkunft: { quelle: 'neu' },
+        offen: { fragment: '<div class="aufgabe"></div>' },
+      }],
+    });
+    expect(out[0].status).toBeUndefined();
+    expect(out[0].plan).toBeUndefined();
+    expect(out[0].herkunft).toBeUndefined();
+  });
+
+  it('liefert im KI-Modus nur das Geruest, weil Payload 4 die Inhalte bringt', () => {
+    const out = buildSequenzSchritteFuerExport({
+      aufgaben_modus: 'sequenz',
+      sequenz_schritte: [{ id: 's1', typ: 'brian', reihenfolge: 0, brian: { learner_instruction: 'L' } }],
+    }, { istKi: true });
+    expect(out[0].typ).toBe('brian');
+    expect(out[0].brian_dialog).toBeUndefined();
   });
 });
