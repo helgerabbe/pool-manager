@@ -997,7 +997,7 @@ export default function AllgemeineAufgabenView({
         onSaveIdea={handleSaveIdee}
       />
 
-      {/* 3-Wege-Picker (Handlung | KI-Tutor | Aufgabensequenz) */}
+      {/* Aufgabenart-Picker (Handlung / digitale Aufgabe / externe Seite) */}
       <AufgabenArtPicker
         open={artPickerOpen}
         onOpenChange={setArtPickerOpen}
@@ -1011,11 +1011,12 @@ export default function AllgemeineAufgabenView({
           } else if (art === 'externe_html_seite') {
             setEditingHtmlEmbed(null);
             setHtmlEmbedViewOpen(true);
-          } else {
-            // 'inhalt': bestehender KI-Tutor-Dialog
-            setEditingAufgabe(null);
-            setCreateFormOpen(true);
           }
+          // Der frühere Zweig 'inhalt' (KI-Tutor-Einzelaufgabe) entfällt für
+          // NEUE Aufgaben — ein Brian-Gespräch ist jetzt ein Schritttyp in der
+          // Werkstatt. Bestehende Aufgaben dieses Typs öffnen weiterhin den
+          // alten Dialog (siehe onEdit weiter oben), nur anlegen kann man sie
+          // nicht mehr.
         }}
       />
 
