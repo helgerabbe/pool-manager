@@ -8,7 +8,6 @@
  */
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { findExistingPrompt } from '@/lib/exportPromptSync';
 import { MBK_TEMPLATE_VERSION } from '@/lib/exportPromptTemplates';
 
 export function useExportPrompts(einheitId) {

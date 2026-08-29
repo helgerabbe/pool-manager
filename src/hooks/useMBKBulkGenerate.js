@@ -21,7 +21,6 @@ import {
   isPromptOutOfSync,
   isErstellungspaketBlocked,
   findExistingPrompt,
-  LERNTYP_KEYS,
   lookupSourceMaxTimestampFromIndex,
 } from '@/lib/exportPromptSync';
 import { buildBulkPlan, planToWritePayload, buildMarkdownBundle } from '@/lib/exportPromptBulkPlan';

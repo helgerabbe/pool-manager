@@ -21,7 +21,7 @@
  * );
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useCrossTabSync, CrossTabMessageTypes } from '@/hooks/useCrossTabSync';
 import { v4 as uuidv4 } from 'npm:uuid';
 
