@@ -1,19 +1,30 @@
 /**
  * AufgabenArtPicker.jsx
  *
- * Einmaliger 3-Wege-Picker beim Klick auf "+ Neue Aufgabe" (Ebene 2).
- * Ersetzt die alte zweistufige Auswahl (AufgabenModusPicker → AufgabenTypPicker).
+ * Der Picker beim Klick auf "+ Neue Aufgabe" (Ebene 2).
  *
- * Drei Aufgabentypen:
- * 1. Handlungsaufgabe       – physische Aufgabe ohne KI-Tutor-Kontext
- * 2. KI-Tutor-Aufgabe       – digitale Einzelaufgabe mit vollem Brian-Support
- * 3. Aufgabensequenz        – mehrschrittige KI-Tutor-Abfolge (Material ⇄ Aufgabe)
+ * Drei Wege — die Unterscheidung ist DIDAKTISCH, nicht technisch. Sie sagt
+ * der Lehrkraft, wo die Aufgabe stattfindet:
+ * 1. Handlungsaufgabe     – am realen Material, offline
+ * 2. Externe HTML-Seite   – auf einer fremden Seite (GeoGebra, LearningApps)
+ * 3. Digitale Aufgabe     – in der Lernplattform; oeffnet die Aufgaben-Werkstatt
+ *
+ * Umstellung 2026-08-29: Die frühere vierte Wahl "KI-Tutor-Aufgabe" ist
+ * entfallen. Ein Brian-Gespräch ist keine eigene Aufgabenart mehr, sondern
+ * ein SCHRITTTYP: Eine Aufgabe, die nur aus einem Brian-Gespräch besteht, ist
+ * eine Schrittfolge mit genau einem Schritt — und lässt sich jederzeit um
+ * einen Lesetext oder eine Übung davor erweitern, ohne den Typ zu wechseln.
+ *
+ * Die Handlungsaufgabe gibt es damit BEWUSST doppelt: hier als eigene Art
+ * (Abkürzung für "passiert komplett offline") und in der Werkstatt als
+ * Schritttyp (für gemischte Folgen mit einem realen Zwischenschritt). Das ist
+ * Absicht, keine Dublette — bitte nicht zusammenlegen.
  */
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Package, FileText, ListOrdered, Code2 } from 'lucide-react';
+import { Package, ListOrdered, Code2 } from 'lucide-react';
 
 const ARTEN = [
   {
@@ -30,23 +41,10 @@ const ARTEN = [
     text: 'text-emerald-900',
   },
   {
-    value: 'inhalt',
-    label: 'KI-Tutor-Aufgabe',
-    description:
-      'Digitale Einzelaufgabe. Brian.study kennt die Inhalte und kann den Schüler gezielt unterstützen. Mit Lernzielanalyse, Erwartungshorizont und KI-Prompt.',
-    icon: FileText,
-    border: 'border-blue-200',
-    bg: 'bg-blue-50/60',
-    hover: 'hover:border-blue-400 hover:bg-blue-100/80',
-    iconBg: 'bg-blue-100',
-    iconText: 'text-blue-700',
-    text: 'text-blue-900',
-  },
-  {
     value: 'sequenz',
-    label: 'Aufgabensequenz',
+    label: 'Digitale Aufgabe',
     description:
-      'Mehrere Schritte in fester Reihenfolge: Materialien und Aufgaben wechseln sich ab. Ideal für Quellenarbeit in Geschichte, Politik & Co.',
+      'Die Schüler arbeiten in der Lernplattform. In der Werkstatt bauen Sie die Aufgabe aus Schritten — ein Lesetext, eine Übung aus dem Katalog, ein Gespräch mit Brian, eine eingebettete Seite. Auch eine Aufgabe mit nur einem Schritt ist völlig in Ordnung.',
     icon: ListOrdered,
     border: 'border-violet-200',
     bg: 'bg-violet-50/60',
@@ -103,7 +101,7 @@ export default function AufgabenArtPicker({ open, onOpenChange, onSelect }) {
         <DialogHeader>
           <DialogTitle>Welche Art von Aufgabe möchten Sie erstellen?</DialogTitle>
           <p className="text-sm text-muted-foreground mt-1">
-            Wählen Sie zwischen einer physischen Handlungsaufgabe, einer digitalen KI-Tutor-Aufgabe oder einer mehrschrittigen Aufgabensequenz.
+            Die Frage ist vor allem: Wo lösen die Schüler diese Aufgabe?
           </p>
         </DialogHeader>
 
