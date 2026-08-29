@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, PencilRuler, FolderOpen } from 'lucide-react';
+import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -13,11 +13,10 @@ import useSchrittfolge from '@/hooks/useSchrittfolge';
 import useStrukturVorschlag from '@/hooks/useStrukturVorschlag';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 import SchrittListe from '@/components/schritte/SchrittListe';
-import SchrittEditor from '@/components/schritte/SchrittEditor';
 import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalte';
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
 import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
-import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
+import SchrittFenster from '@/components/werkstatt/SchrittFenster';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
 
@@ -67,9 +66,9 @@ export default function AufgabenWerkstatt({
   const [ansicht, setAnsicht] = useState('einstieg');
   const [gesamtdurchlauf, setGesamtdurchlauf] = useState(false);
   const [kopfOffen, setKopfOffen] = useState(false);
-  // Welcher Assistent unten rechts arbeitet: die Folge planen oder den
-  // offenen Schritt bauen. Ohne Schritte gibt es nur die Struktur-Phase.
-  const [rechtsUnten, setRechtsUnten] = useState('struktur');
+  // Ebene 3: Fenster zum Bearbeiten EINES Schritts.
+  const [schrittFensterOffen, setSchrittFensterOffen] = useState(false);
+  const [planerOffen, setPlanerOffen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -80,7 +79,8 @@ export default function AufgabenWerkstatt({
     setMaterialien(Array.isArray(initialData?.materialien) ? initialData.materialien : []);
     setIdee('');
     setGesamtdurchlauf(false);
-    setRechtsUnten('struktur');
+    setSchrittFensterOffen(false);
+    setPlanerOffen(false);
     // Eine Aufgabe, die schon Schritte hat, wird bearbeitet, nicht neu
     // begonnen — dann direkt in die Werkstatt.
     const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
@@ -89,15 +89,9 @@ export default function AufgabenWerkstatt({
   }, [open, initialData]);
 
   const schritt = folge.aktuellerSchritt;
-  const istOffenerSchritt = schritt?.typ === SCHRITT_TYPEN.OFFEN;
-  // Nur ein offener Schritt lässt sich bauen. Steht die Auswahl auf einem
-  // anderen Typ, fällt die untere Spalte auf die Struktur-Phase zurück —
-  // sonst bliebe der Umschalter auf einem Zustand stehen, der nichts zeigt.
-  const modusUnten = (rechtsUnten === 'schritt' && istOffenerSchritt) ? 'schritt' : 'struktur';
 
-  /* Kontext für den Assistenten. Der Bau eines offenen Schritts läuft in
-     OffenerSchrittGespraech — dort, mit key je Schritt, damit das Gespräch
-     beim Schrittwechsel neu beginnt. */
+  /* Kontext für den Assistenten beim Bau eines offenen Schritts. Gebaut wird
+     im SchrittFenster (Ebene 3), nicht hier. */
   const generatorKontext = useMemo(() => ({
     beschreibung: schritt?.plan?.kurzbeschreibung || aufgabenstellung || '',
     einheit: initialData?.einheit_titel,
@@ -144,14 +138,16 @@ export default function AufgabenWerkstatt({
       ? `${schritte.length} Schritte angehängt.`
       : `Folge mit ${schritte.length} Schritten übernommen.`);
     setAnsicht('werkstatt');
-    setRechtsUnten('schritt');
+    setPlanerOffen(false);
   };
 
   // Einen im Gespräch gebauten Stand in den Schritt übernehmen.
-  const standUebernehmen = (fragment, snapshotHtml) => {
+  /** Ergebnis aus dem Schritt-Fenster zurück in die Folge schreiben. */
+  const schrittUebernehmen = (neuerSchritt) => {
     if (folge.selectedIndex < 0) return;
-    folge.fragmentUebernehmen(folge.selectedIndex, fragment, snapshotHtml);
-    toast.success('Stand in den Schritt übernommen. Zum Sichern noch speichern.');
+    folge.aendern(folge.selectedIndex, neuerSchritt);
+    setSchrittFensterOffen(false);
+    toast.success('Schritt übernommen. Zum Sichern noch speichern.');
   };
 
   /* ── Speichern ─────────────────────────────────────────────────────── */
@@ -375,6 +371,19 @@ export default function AufgabenWerkstatt({
           </div>
         </div>
       </DialogContent>
+
+      {/* Ebene 3 — liegt über diesem Dialog (siehe zIndex in SchrittFenster). */}
+      <SchrittFenster
+        open={schrittFensterOffen && !!schritt}
+        schritt={schritt}
+        nummer={folge.selectedIndex + 1}
+        aufgabeId={initialData?.id}
+        aufgabenstellung={aufgabenstellung}
+        kontext={generatorKontext}
+        isReleased={isReleased}
+        onUebernehmen={schrittUebernehmen}
+        onAbbrechen={() => setSchrittFensterOffen(false)}
+      />
     </Dialog>
   );
 }
