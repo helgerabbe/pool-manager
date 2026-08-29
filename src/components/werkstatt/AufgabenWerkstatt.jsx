@@ -58,6 +58,12 @@ export default function AufgabenWerkstatt({
   const [themenfeldId, setThemenfeldId] = useState(null);
   const [missionType, setMissionType] = useState(null);
   const [aufgabenstellung, setAufgabenstellung] = useState('');
+  const [materialien, setMaterialien] = useState([]);
+  const [idee, setIdee] = useState('');
+  // 'einstieg' = Material + Idee, 'werkstatt' = Schrittfolge bearbeiten.
+  // Der Wechsel passiert, sobald es Schritte gibt (oder die Lehrkraft ihn
+  // ausdrücklich verlangt), nicht als eigener Bedienschritt.
+  const [ansicht, setAnsicht] = useState('einstieg');
   const [gesamtdurchlauf, setGesamtdurchlauf] = useState(false);
   const [kopfOffen, setKopfOffen] = useState(false);
   // Welcher Assistent unten rechts arbeitet: die Folge planen oder den
@@ -70,8 +76,15 @@ export default function AufgabenWerkstatt({
     setThemenfeldId(initialData?.themenfeld_id || null);
     setMissionType(initialData?.mission_type || null);
     setAufgabenstellung(initialData?.aufgabenstellung || '');
+    setMaterialien(Array.isArray(initialData?.materialien) ? initialData.materialien : []);
+    setIdee('');
     setGesamtdurchlauf(false);
     setRechtsUnten('struktur');
+    // Eine Aufgabe, die schon Schritte hat, wird bearbeitet, nicht neu
+    // begonnen — dann direkt in die Werkstatt.
+    const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
+      && initialData.sequenz_schritte.length > 0;
+    setAnsicht(hatSchritte ? 'werkstatt' : 'einstieg');
   }, [open, initialData]);
 
   const schritt = folge.aktuellerSchritt;
@@ -103,6 +116,25 @@ export default function AufgabenWerkstatt({
     },
   });
 
+  /**
+   * Einstieg → Vorschlag. Die Idee ist die Nachricht, die Materialien gehen
+   * als Kontext mit. Die Ansicht wechselt erst, wenn ein Vorschlag da ist —
+   * sonst stünde die Lehrkraft vor einer leeren Werkstatt und wüsste nicht,
+   * ob noch etwas kommt.
+   */
+  const ablaufVorschlagen = () => {
+    const text = idee.trim();
+    if (!text && materialien.length === 0) {
+      toast.error('Erzählen Sie kurz, worum es gehen soll — oder legen Sie die Folge selbst an.');
+      return;
+    }
+    struktur.senden(
+      text || 'Ich habe nur Material, aber noch keine ausformulierte Idee. Schlag mir auf dieser Grundlage einen Ablauf vor.',
+      { materialien },
+    );
+    setAnsicht('werkstatt');
+  };
+
   const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
     const { schritte, hinweise } = vorschlagZuSchritten(vorschlag, katalogListe);
     folge.folgeSetzen(schritte, { anhaengen });
@@ -110,6 +142,7 @@ export default function AufgabenWerkstatt({
     toast.success(anhaengen
       ? `${schritte.length} Schritte angehängt.`
       : `Folge mit ${schritte.length} Schritten übernommen.`);
+    setAnsicht('werkstatt');
     setRechtsUnten('schritt');
   };
 
@@ -127,6 +160,7 @@ export default function AufgabenWerkstatt({
     titel: titel || null,
     mission_type: missionType || null,
     aufgabenstellung: aufgabenstellung || null,
+    materialien,
     sequenz_schritte: folge.schritte,
   });
 
