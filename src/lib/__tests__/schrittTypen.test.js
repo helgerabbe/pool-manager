@@ -1,5 +1,3 @@
-/* eslint-disable no-undef */
-/* global describe, it, expect */
 /**
  * schrittTypen.test.js
  *
@@ -10,6 +8,7 @@
  * direkt vs. field_values der Katalog-Aktivität „Aufgabensequenz").
  */
 
+import { describe, it, expect } from 'vitest';
 import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
   schrittStatus, istSchrittVollstaendig, getSchrittTyp,
