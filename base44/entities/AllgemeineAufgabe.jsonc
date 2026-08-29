@@ -127,16 +127,12 @@
     "mission_type": {
       "type": "string",
       "enum": [
-        "problem",
-        "entdeckung",
-        "recherche",
-        "anwendung",
-        "transfer",
-        "kreativitaet",
         "erstbegegnung",
         "erarbeitung",
-        "sicherung"
-      ]
+        "sicherung",
+        "anwendung"
+      ],
+      "description": "Aufgabenkategorie (2026-08-29: von sechs Missionen auf vier Kategorien reduziert). Einzelquelle der Labels/Farben: src/lib/missionen.js"
     },
     "verlinkte_lernpaket_ids": {
       "type": "array",

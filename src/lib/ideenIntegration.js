@@ -47,7 +47,7 @@ Beschreibung: ${idee.beschreibung || '(keine)'}
 Notierter Aufgabenform-Vorschlag: ${idee.aufgabentyp_vorschlag || '(keiner)'}
 
 MÖGLICHE INTEGRATIONSZIELE:
-1. "allgemeine_aufgabe" (Ebene 2, Transfer): offene Aufgabe auf Einheitenebene mit KI-Tutor. Braucht: titel, aufgabenstellung (aus Schülersicht, vollständig ausformuliert), erwartungshorizont (was muss eine gute Antwort enthalten), mission_type (problem|entdeckung|recherche|anwendung|transfer|kreativitaet), schwierigkeitsgrad (1-3), optional themenfeld_id aus der Liste oben.
+1. "allgemeine_aufgabe" (Ebene 2, Transfer): offene Aufgabe auf Einheitenebene mit KI-Tutor. Braucht: titel, aufgabenstellung (aus Schülersicht, vollständig ausformuliert), erwartungshorizont (was muss eine gute Antwort enthalten), mission_type (erstbegegnung|erarbeitung|sicherung|anwendung), schwierigkeitsgrad (1-3), optional themenfeld_id aus der Liste oben.
 2. "projektaufgabe" (Ebene 3): produktorientierte Anwendungs- oder Projektaufgabe. Braucht: titel, aufgabenstellung, erwartungshorizont, aufgabentyp_projekt ("Anwendungsaufgabe" für kürzere fokussierte, "Projektaufgabe" für umfangreiche produktorientierte Aufgaben).
 3. "lernpaket_empfehlung": Die Idee ist eine kurze, automatisch auswertbare Übung und gehört in ein Lernpaket (Ebene 1). Diese Inhalte werden NICHT automatisch angelegt — empfiehl das passende lernpaket_id aus der Liste und nenne in empfehlung_text namentlich das passende Format aus der Aufgabengalerie (AUSSCHLIESSLICH aus dieser Liste wählen):
 ${katalogListe}
@@ -71,7 +71,7 @@ Antworte ausschließlich als JSON.`;
         titel: { type: 'string' },
         aufgabenstellung: { type: 'string' },
         erwartungshorizont: { type: 'string' },
-        mission_type: { type: 'string', enum: ['problem', 'entdeckung', 'recherche', 'anwendung', 'transfer', 'kreativitaet'] },
+        mission_type: { type: 'string', enum: ['erstbegegnung', 'erarbeitung', 'sicherung', 'anwendung'] },
         schwierigkeitsgrad: { type: 'integer', enum: [1, 2, 3] },
         themenfeld_id: { type: ['string', 'null'] },
         aufgabentyp_projekt: { type: 'string', enum: ['Anwendungsaufgabe', 'Projektaufgabe'] },

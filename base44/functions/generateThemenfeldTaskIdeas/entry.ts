@@ -1,12 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const MISSIONEN = {
-  problem: 'Den Funken zünden — Alltagsbezug, Motivation, echtes Problem',
-  entdeckung: 'Selber rausfinden lassen — Muster, Regeln oder Prinzipien selbst entdecken',
-  recherche: 'Informationen checken — Quellen finden, prüfen, vergleichen',
-  anwendung: 'Zeigen, was man kann — Wissen sicher in bekanntem Kontext anwenden',
-  transfer: 'In neue Welten übertragen — Wissen auf neue Kontexte übertragen',
-  kreativitaet: 'Etwas Eigenes erschaffen — offenes Produkt, Gestaltung, Deep Dive',
+  erstbegegnung: 'Erstbegegnung — Alltagsbezug, Vorwissen aktivieren, Bedeutsamkeit zeigen',
+  erarbeitung: 'Erarbeitung — Regeln selbst entdecken oder Quellen erschließen und ordnen',
+  sicherung: 'Sicherung — im bekannten Kontext üben, bis es sitzt',
+  anwendung: 'Anwendung — auf neue Kontexte übertragen oder ein eigenes Produkt erschaffen',
 };
 
 const RESPONSE_SCHEMA = {
