@@ -545,7 +545,7 @@ export default function AllgemeineAufgabenView({
   const [handlungViewOpen, setHandlungViewOpen] = useState(false);
   const [htmlEmbedViewOpen, setHtmlEmbedViewOpen] = useState(false);
   const [editingHtmlEmbed, setEditingHtmlEmbed] = useState(null);
-  const [sequenzBuilderOpen, setSequenzBuilderOpen] = useState(false);
+  const [werkstattOpen, setWerkstattOpen] = useState(false);
   const [editingSequenz, setEditingSequenz] = useState(null);
   const isEbene3 = anforderungsebene === '3 - Projekt';
   // Mission-Filter für die Sidebar (nur in Ebene 2 sinnvoll). FILTER_ALL = alle.
@@ -870,7 +870,7 @@ export default function AllgemeineAufgabenView({
                   onEdit={(a) => {
                     if (a.aufgaben_modus === 'sequenz') {
                       setEditingSequenz(a);
-                      setSequenzBuilderOpen(true);
+                      setWerkstattOpen(true);
                     } else if (a.aufgaben_typ === 'handlung') {
                       setEditingAufgabe(a);
                       setHandlungViewOpen(true);
@@ -914,7 +914,7 @@ export default function AllgemeineAufgabenView({
                   onEdit={(a) => {
                     if (a.aufgaben_modus === 'sequenz') {
                       setEditingSequenz(a);
-                      setSequenzBuilderOpen(true);
+                      setWerkstattOpen(true);
                     } else if (a.aufgaben_typ === 'handlung') {
                       setEditingAufgabe(a);
                       setHandlungViewOpen(true);
@@ -1007,7 +1007,7 @@ export default function AllgemeineAufgabenView({
         onSelect={(art) => {
           if (art === 'sequenz') {
             setEditingSequenz(null);
-            setSequenzBuilderOpen(true);
+            setWerkstattOpen(true);
           } else if (art === 'handlung') {
             setEditingAufgabe(null);
             setHandlungViewOpen(true);
@@ -1057,7 +1057,7 @@ export default function AllgemeineAufgabenView({
           2026-08-29. Die alte Datei liegt noch im Repo, ist aber nicht mehr
           eingehängt — Rückfallhebel für die ersten Wochen im Echtbetrieb. */}
       <AufgabenWerkstatt
-        open={sequenzBuilderOpen}
+        open={werkstattOpen}
         onOpenChange={setSequenzBuilderOpen}
         einheitId={einheitId}
         themenfelder={themenfelder}
@@ -1065,7 +1065,7 @@ export default function AllgemeineAufgabenView({
         defaultAnforderungsebene={anforderungsebene}
         isReleased={editingSequenz?.content_status === 'approved'}
         onSuccess={() => {
-          setSequenzBuilderOpen(false);
+          setWerkstattOpen(false);
           setEditingSequenz(null);
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
         }}
