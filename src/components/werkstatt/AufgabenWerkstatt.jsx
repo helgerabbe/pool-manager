@@ -259,16 +259,20 @@ export default function AufgabenWerkstatt({
             {/* Unten rechts: entweder die Folge planen oder den offenen
                 Schritt bauen. Umschaltbar, solange beides möglich ist. */}
             <div className="shrink-0 flex flex-col min-h-0 gap-2" style={{ maxHeight: '44vh' }}>
-              <div className="flex items-center gap-1 shrink-0">
-                <Button
-                  size="sm"
-                  variant={modusUnten === 'struktur' ? 'default' : 'ghost'}
-                  className="h-7 gap-1.5 text-xs"
-                  onClick={() => setRechtsUnten('struktur')}
-                >
-                  <ListOrdered className="w-3 h-3" /> Schrittfolge planen
-                </Button>
-                {istOffenerSchritt && (
+              {/* Der Umschalter erscheint nur, wenn es wirklich etwas zu
+                  schalten gibt — also wenn ein offener Schritt ausgewählt ist.
+                  Sonst stünde dort ein Knopf, der aussieht wie ein Knopf, aber
+                  auf nichts reagiert. */}
+              {istOffenerSchritt ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    size="sm"
+                    variant={modusUnten === 'struktur' ? 'default' : 'ghost'}
+                    className="h-7 gap-1.5 text-xs"
+                    onClick={() => setRechtsUnten('struktur')}
+                  >
+                    <ListOrdered className="w-3 h-3" /> Schrittfolge planen
+                  </Button>
                   <Button
                     size="sm"
                     variant={modusUnten === 'schritt' ? 'default' : 'ghost'}
@@ -277,8 +281,12 @@ export default function AufgabenWerkstatt({
                   >
                     <PencilRuler className="w-3 h-3" /> Diesen Schritt bauen
                   </Button>
-                )}
-              </div>
+                </div>
+              ) : (
+                <p className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  <ListOrdered className="w-3.5 h-3.5" /> Schrittfolge planen
+                </p>
+              )}
 
               {modusUnten === 'struktur' ? (
                 <StrukturPhase
