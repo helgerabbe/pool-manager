@@ -16,6 +16,7 @@ import SchrittListe from '@/components/schritte/SchrittListe';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalte';
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
+import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { SCHRITT_TYPEN, istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
@@ -255,6 +256,21 @@ export default function AufgabenWerkstatt({
           )}
         </div>
 
+        {ansicht === 'einstieg' ? (
+          <div className="flex-1 min-h-0 overflow-y-auto pt-4">
+            <WerkstattEinstieg
+              materialien={materialien}
+              onMaterialienChange={setMaterialien}
+              idee={idee}
+              onIdeeChange={setIdee}
+              onVorschlagen={ablaufVorschlagen}
+              onSelbstAnlegen={() => setAnsicht('werkstatt')}
+              busy={struktur.busy}
+              disabled={isReleased}
+            />
+          </div>
+        ) : (
+          <>
         {/* ── Die drei Spalten ──────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-[260px_minmax(360px,1fr)_minmax(360px,1fr)] gap-4 pt-4 flex-1 min-h-0">
           {/* Links: Schrittfolge */}
@@ -344,6 +360,9 @@ export default function AufgabenWerkstatt({
             </div>
           </div>
         </div>
+
+          </>
+        )}
 
         {/* ── Fußleiste ─────────────────────────────────────────────────── */}
         <div className="flex items-center gap-3 pt-3 mt-3 border-t border-slate-200 shrink-0">
