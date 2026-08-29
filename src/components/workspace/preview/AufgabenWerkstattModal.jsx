@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import {
-  Sparkles, Loader2, Check, Send, History, AlertTriangle, Lock, Monitor, Eye,
+  Sparkles, Loader2, Check, History, Lock, Monitor, Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
+import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
 import {
   fragmentZuDokument, dokumentZuFragment, pruefeFragment,
 } from '@/lib/aufgabeFragment';
@@ -61,7 +61,6 @@ export default function AufgabenWerkstattModal({
   const [eingabe, setEingabe] = useState('');
   const [speichert, setSpeichert] = useState(false);
   const [gespeichertHinweis, setGespeichertHinweis] = useState(false);
-  const verlaufRef = useRef(null);
 
   // Beim Öffnen den ersten Auftrag vorbereiten, aber nicht abschicken —
   // die Lehrkraft soll ihn noch ergänzen können.
@@ -74,10 +73,6 @@ export default function AufgabenWerkstattModal({
         : '',
     );
   }, [open]);
-
-  useEffect(() => {
-    verlaufRef.current?.scrollTo({ top: verlaufRef.current.scrollHeight, behavior: 'smooth' });
-  }, [gen.verlauf.length, gen.teilAntwort]);
 
   const abschicken = () => {
     const t = eingabe.trim();
@@ -130,85 +125,14 @@ export default function AufgabenWerkstattModal({
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,2fr)_3fr] gap-4 pt-3 min-h-0">
-          {/* ── Gespräch ─────────────────────────────────────────────── */}
-          <div className="flex flex-col min-h-0 rounded-xl border border-slate-200 bg-white">
-            <div
-              ref={verlaufRef}
-              className="flex-1 min-h-[340px] max-h-[58vh] overflow-y-auto p-3 space-y-3"
-            >
-              {gen.verlauf.length === 0 && !gen.busy && (
-                <p className="text-sm text-slate-500 py-8 px-2 text-center">
-                  Sag einfach, was die Schüler:innen üben sollen. Wenn etwas fehlt, frage ich nach —
-                  sonst baue ich eine erste Fassung, an der wir weiterarbeiten.
-                </p>
-              )}
-
-              {gen.verlauf.map((m, i) => (
-                <div
-                  key={i}
-                  className={m.rolle === 'lehrkraft'
-                    ? 'ml-8 rounded-lg bg-violet-50 border border-violet-100 px-3 py-2 text-sm whitespace-pre-wrap'
-                    : 'mr-8 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm whitespace-pre-wrap'}
-                >
-                  {m.text}
-                </div>
-              ))}
-
-              {gen.busy && (
-                <div className="mr-8 rounded-lg bg-slate-50 border border-slate-200 px-3 py-2 text-sm whitespace-pre-wrap">
-                  {gen.teilAntwort || (
-                    <span className="inline-flex items-center gap-2 text-slate-500">
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" /> denkt nach…
-                    </span>
-                  )}
-                </div>
-              )}
-
-              {gen.fehler && (
-                <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900 flex gap-2">
-                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>{gen.fehler}</span>
-                </div>
-              )}
-
-              {gen.warnungen.map((w, i) => (
-                <div key={`w${i}`} className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs text-amber-900">
-                  {w} — sag mir am besten noch einmal in anderen Worten, was geändert werden soll.
-                </div>
-              ))}
-            </div>
-
-            {/* Eingabe */}
-            <div className="border-t border-slate-200 p-3 space-y-2">
-              <Textarea
-                value={eingabe}
-                onChange={(e) => setEingabe(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) abschicken();
-                }}
-                placeholder="Was sollen die Schüler:innen sehen und tun?"
-                className="min-h-[80px] resize-none text-sm"
-                disabled={isReleased}
-              />
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={abschicken}
-                  disabled={!eingabe.trim() || gen.busy || isReleased}
-                  className="gap-2 bg-violet-600 hover:bg-violet-700"
-                >
-                  {gen.busy
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Arbeitet…</>
-                    : <><Send className="w-4 h-4" /> Abschicken</>}
-                </Button>
-                {gen.busy && (
-                  <Button variant="ghost" onClick={gen.abbrechen} className="text-slate-500">
-                    Abbrechen
-                  </Button>
-                )}
-                <span className="text-[11px] text-slate-400 ml-auto">Strg + Enter</span>
-              </div>
-            </div>
-          </div>
+          <GespraechsSpalte
+            gen={gen}
+            eingabe={eingabe}
+            onEingabe={setEingabe}
+            onAbschicken={abschicken}
+            disabled={isReleased}
+            className="min-h-[340px] max-h-[58vh]"
+          />
 
           {/* ── Vorschau ─────────────────────────────────────────────── */}
           <div className="flex flex-col min-h-0 gap-3">
