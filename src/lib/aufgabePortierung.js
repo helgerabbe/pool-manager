@@ -21,6 +21,76 @@
 
 import { neueSchrittId, SCHRITT_TYPEN, SCHRITT_STATUS } from '@/lib/schrittTypen';
 
+/**
+ * Alte Ergebnisformen auf die Kennungen aus lib/abgabeFormate abbilden.
+ *
+ * Nur EINDEUTIGE Entsprechungen — alles andere wandert wortgleich in
+ * `custom_format`. Lieber die Formulierung der Lehrkraft im Klartext stehen
+ * lassen, als sie in eine Schublade zu raten, die nicht passt: „Mischform /
+ * Offen" ist eben kein Format aus unserer Liste.
+ */
+const ERGEBNISFORM_ZU_KENNUNG = {
+  'Fließtext / Essay': 'text',
+  'Präsentation / Folien': 'presentation',
+  'Schema / Konzept-Map / Zeichnung': 'graphic',
+};
+
+/**
+ * Baut aus den Abgabe-Feldern der Aufgabe einen Abgabe-Schritt.
+ *
+ * Zwei Systeme sind im Bestand gewachsen: die älteren Textfelder
+ * `ergebnis_form` / `ergebnis_dateiformat` und die neueren `output_formats` /
+ * `custom_format` der Projektaufgaben. Beide müssen mit — 95 der Aufgaben
+ * haben mindestens eines davon gefüllt.
+ *
+ * @returns {{schritt: object|null, uebernommen: string[]}}
+ */
+export function baueAbgabeSchrittAusAufgabe(aufgabe, reihenfolge = 1) {
+  const formate = Array.isArray(aufgabe?.output_formats) ? [...aufgabe.output_formats] : [];
+  const eigene = [];
+
+  if (aufgabe?.custom_format?.trim()) eigene.push(aufgabe.custom_format.trim());
+
+  const form = aufgabe?.ergebnis_form?.trim();
+  if (form) {
+    const kennung = ERGEBNISFORM_ZU_KENNUNG[form];
+    if (kennung) {
+      if (!formate.includes(kennung)) formate.push(kennung);
+    } else {
+      eigene.push(form);
+    }
+  }
+
+  const dateiformat = aufgabe?.ergebnis_dateiformat?.trim() || '';
+
+  if (formate.length === 0 && eigene.length === 0 && !dateiformat) {
+    return { schritt: null, uebernommen: [] };
+  }
+
+  const uebernommen = [];
+  if (formate.length) uebernommen.push(`Ergebnisform (${formate.length} Format(e))`);
+  if (eigene.length) uebernommen.push(`eigene Angabe „${eigene.join(', ')}"`);
+  if (dateiformat) uebernommen.push(`Dateiformat „${dateiformat}"`);
+
+  return {
+    schritt: {
+      id: neueSchrittId(),
+      typ: SCHRITT_TYPEN.ABGABE,
+      reihenfolge,
+      titel: 'Ergebnis abgeben',
+      status: SCHRITT_STATUS.UEBERNOMMEN,
+      plan: { kurzbeschreibung: '', lernziel: '', dauer_minuten: null },
+      abgabe: {
+        formate,
+        custom_format: eigene.join(', '),
+        dateiformat,
+        hinweis: '',
+      },
+    },
+    uebernommen: [`Abgabe als eigener Schritt: ${uebernommen.join(', ')}`],
+  };
+}
+
 /** Lässt sich diese Aufgabe portieren? */
 export function istPortierbar(aufgabe) {
   if (!aufgabe) return false;
@@ -100,9 +170,16 @@ export function baueBrianSchrittAusAufgabe(aufgabe) {
  */
 export function baueAenderungFuerPortierung(aufgabe) {
   const { schritt, uebernommen, hinweise } = baueBrianSchrittAusAufgabe(aufgabe);
+  const schritte = [schritt];
+
+  // Die Abgabe ist im neuen Modell ein eigener Schritt und gehört ans Ende:
+  // erst arbeiten, dann abgeben.
+  const abgabe = baueAbgabeSchrittAusAufgabe(aufgabe, 1);
+  if (abgabe.schritt) schritte.push(abgabe.schritt);
+
   return {
-    aenderung: { aufgaben_modus: 'sequenz', sequenz_schritte: [schritt] },
-    uebernommen,
+    aenderung: { aufgaben_modus: 'sequenz', sequenz_schritte: schritte },
+    uebernommen: [...uebernommen, ...abgabe.uebernommen],
     hinweise,
   };
 }
