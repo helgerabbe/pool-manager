@@ -47,6 +47,7 @@ export default function AufgabenWerkstatt({
   einheitId,
   themenfelder = [],
   initialData = null,
+  defaultThemenfeldId = null,
   defaultAnforderungsebene = '2 - Transfer',
   isReleased = false,
   onSuccess,
@@ -73,7 +74,9 @@ export default function AufgabenWerkstatt({
   useEffect(() => {
     if (!open) return;
     setTitel(initialData?.titel || '');
-    setThemenfeldId(initialData?.themenfeld_id || null);
+    // Beim Anlegen aus einem Themenfeld heraus ist die Antwort schon klar —
+    // die Lehrkraft hat gerade "Neue Aufgabe zu diesem Themenfeld" gedrückt.
+    setThemenfeldId(initialData?.themenfeld_id || defaultThemenfeldId || null);
     setMissionType(initialData?.mission_type || null);
     setAufgabenstellung(initialData?.aufgabenstellung || '');
     setMaterialien(Array.isArray(initialData?.materialien) ? initialData.materialien : []);
@@ -86,7 +89,7 @@ export default function AufgabenWerkstatt({
     const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
       && initialData.sequenz_schritte.length > 0;
     setAnsicht(hatSchritte ? 'werkstatt' : 'einstieg');
-  }, [open, initialData]);
+  }, [open, initialData, defaultThemenfeldId]);
 
   const schritt = folge.aktuellerSchritt;
 

@@ -1060,6 +1060,7 @@ export default function AllgemeineAufgabenView({
         einheitId={einheitId}
         themenfelder={themenfelder}
         initialData={editingSequenz}
+        defaultThemenfeldId={neuThemenfeldId}
         defaultAnforderungsebene={anforderungsebene}
         isReleased={editingSequenz?.content_status === 'approved'}
         onSuccess={() => {
