@@ -4,7 +4,7 @@
  * Inhaltsbereich-Übersicht für ein in der Sidebar gewähltes Themenfeld
  * (Tab „Allgemeine Aufgaben"). Zeigt:
  *   - Titel des Themenfelds + Anzahl vorhandener Aufgaben
- *   - Die drei Erstell-Aktionen (Neue Aufgabe / KI-Ideenbox / Mit KI entwerfen)
+ *   - Die Erstell-Aktion (Neue Aufgabe — enthält den KI-Assistenten)
  *   - Eine klickbare Liste der bereits angelegten Aufgaben
  *
  * Lehrkräfte denken in Themenfeldern — dieser Anker macht den Einstieg
@@ -16,8 +16,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   Plus,
-  Lightbulb,
-  Wand2,
   Folder,
   Lock,
   PenLine,
@@ -108,30 +106,20 @@ export default function ThemenfeldUebersichtPanel({
         {/* Erstell-Aktionen */}
         {kannBearbeiten && (
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Ein Eingang statt drei (2026-08-30). Die frueheren Knoepfe
+                "KI-Ideenbox oeffnen" und "Mit KI entwerfen" sind entfallen:
+                Der KI-Assistent steckt jetzt in der Aufgabenwerkstatt, und
+                gesammelte Ideen lassen sich dort im Einstieg uebernehmen
+                (siehe WerkstattEinstieg / useOffeneAufgabenIdeen). Der
+                Zusatz in Klammern sagt das, damit niemand den zweiten
+                Eingang sucht. */}
             <Button onClick={() => onNeueAufgabe?.(istOhneThemenfeld ? null : themenfeld?.id)} className="gap-2">
               <Plus className="w-4 h-4" />
               Neue Aufgabe{istOhneThemenfeld ? '' : ' zu diesem Themenfeld'}
+              {!isEbene3 && (
+                <span className="font-normal opacity-80">(inkl. KI-Assistent)</span>
+              )}
             </Button>
-            {!isEbene3 && (
-              <>
-                <Button
-                  variant="outline"
-                  onClick={onOpenIdeenbox}
-                  className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50 hover:text-slate-950"
-                >
-                  <Lightbulb className="w-4 h-4" />
-                  KI-Ideenbox öffnen
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={onOpenWizard}
-                  className="gap-2 border-blue-300 text-blue-700 hover:bg-blue-50 hover:text-slate-950"
-                >
-                  <Wand2 className="w-4 h-4" />
-                  Mit KI entwerfen
-                </Button>
-              </>
-            )}
           </div>
         )}
 
