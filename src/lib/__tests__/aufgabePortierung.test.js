@@ -128,3 +128,72 @@ describe('baueAenderungFuerPortierung', () => {
     expect(aenderung.lernzielanalyse).toBeUndefined();
   });
 });
+
+describe('Abgabe bei der Portierung', () => {
+  it('uebernimmt die neueren output_formats unveraendert', () => {
+    const { aenderung, uebernommen } = baueAenderungFuerPortierung({
+      ...alt, output_formats: ['presentation'], custom_format: '',
+      ergebnis_form: null, ergebnis_dateiformat: null,
+    });
+    const abgabe = aenderung.sequenz_schritte.find((s) => s.typ === 'abgabe');
+    expect(abgabe.abgabe.formate).toEqual(['presentation']);
+    expect(uebernommen.join(' ')).toContain('Abgabe als eigener Schritt');
+  });
+
+  it('bildet eindeutige Ergebnisformen auf Kennungen ab', () => {
+    for (const [text, kennung] of [
+      ['Fließtext / Essay', 'text'],
+      ['Präsentation / Folien', 'presentation'],
+      ['Schema / Konzept-Map / Zeichnung', 'graphic'],
+    ]) {
+      const { aenderung } = baueAenderungFuerPortierung({
+        ...alt, output_formats: [], custom_format: '', ergebnis_form: text, ergebnis_dateiformat: null,
+      });
+      const abgabe = aenderung.sequenz_schritte.find((s) => s.typ === 'abgabe');
+      expect(abgabe.abgabe.formate).toEqual([kennung]);
+      expect(abgabe.abgabe.custom_format).toBe('');
+    }
+  });
+
+  it('laesst uneindeutige Formen WORTGLEICH stehen, statt zu raten', () => {
+    for (const text of ['Mischform / Offen', 'Stichpunktartige Übersicht', 'Tabelle / Matrix']) {
+      const { aenderung } = baueAenderungFuerPortierung({
+        ...alt, output_formats: [], custom_format: '', ergebnis_form: text, ergebnis_dateiformat: null,
+      });
+      const abgabe = aenderung.sequenz_schritte.find((s) => s.typ === 'abgabe');
+      expect(abgabe.abgabe.formate).toEqual([]);
+      expect(abgabe.abgabe.custom_format).toBe(text);
+    }
+  });
+
+  it('nimmt das Dateiformat mit', () => {
+    const { aenderung } = baueAenderungFuerPortierung({
+      ...alt, output_formats: [], custom_format: '',
+      ergebnis_form: 'Fließtext / Essay', ergebnis_dateiformat: 'Textdokument (Word/PDF)',
+    });
+    const abgabe = aenderung.sequenz_schritte.find((s) => s.typ === 'abgabe');
+    expect(abgabe.abgabe.dateiformat).toBe('Textdokument (Word/PDF)');
+  });
+
+  it('setzt den Abgabe-Schritt ans ENDE, nach dem Gespraech', () => {
+    const { aenderung } = baueAenderungFuerPortierung({
+      ...alt, output_formats: ['audio'], ergebnis_form: null, ergebnis_dateiformat: null, custom_format: '',
+    });
+    expect(aenderung.sequenz_schritte.map((s) => s.typ)).toEqual(['brian', 'abgabe']);
+    expect(aenderung.sequenz_schritte.map((s) => s.reihenfolge)).toEqual([0, 1]);
+  });
+
+  it('legt KEINEN Abgabe-Schritt an, wenn nichts hinterlegt ist', () => {
+    const { aenderung } = baueAenderungFuerPortierung({
+      ...alt, output_formats: [], custom_format: '', ergebnis_form: null, ergebnis_dateiformat: null,
+    });
+    expect(aenderung.sequenz_schritte).toHaveLength(1);
+    expect(aenderung.sequenz_schritte[0].typ).toBe('brian');
+  });
+
+  it('aendert die Zahl der Brian-Dialoge nicht — der Abgabe-Schritt ist keiner', () => {
+    const mitAbgabe = { ...alt, output_formats: ['presentation'] };
+    const portiert = { ...mitAbgabe, ...baueAenderungFuerPortierung(mitAbgabe).aenderung };
+    expect(sammleBrianDialoge([portiert])).toHaveLength(1);
+  });
+});
