@@ -6,13 +6,33 @@
  * - Sanfte Übergänge (transition-all duration-300)
  * - Klare visuelle Rückmeldung des Status
  * - Wiederverwendbar in allen Bearbeitungs-Modals
+ *
+ * NICHT ueberall sinnvoll: Wird ein Aufgaben-Editor aus der Aufgaben-Werkstatt
+ * heraus geoeffnet, gibt es nichts freizugeben — dort wird die AUFGABE als
+ * Ganzes freigegeben, nicht jeder Schritt darin. Bis 2026-08-31 stand der
+ * Schalter dort trotzdem und tat nichts: Der Aufrufer verwirft content_status.
+ *
+ * Statt die Eigenschaft durch acht Modals durchzureichen, entscheidet der
+ * Kontext: Wer den Schalter nicht anbieten will, umschliesst seine Kinder mit
+ * <FreigabeAusblenden>. Der Schalter blendet sich dann selbst aus — auch ueber
+ * Portale hinweg, weil React-Context dem Komponentenbaum folgt.
  */
 
 import React from 'react';
 import { CheckCircle2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const FreigabeContext = React.createContext(false);
+
+/** Umschliesst Bereiche, in denen es nichts freizugeben gibt. */
+export function FreigabeAusblenden({ children }) {
+  return <FreigabeContext.Provider value>{children}</FreigabeContext.Provider>;
+}
+
 export default function ReleaseStatusToggle({ isReleased, onToggle, disabled = false }) {
+  const ausgeblendet = React.useContext(FreigabeContext);
+  if (ausgeblendet) return null;
+
   return (
     <div className="w-full">
       {/* Kompakte Toggle-Karte (ca. halbe Höhe ggü. der vorigen Version,

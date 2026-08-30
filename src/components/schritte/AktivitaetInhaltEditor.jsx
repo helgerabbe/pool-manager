@@ -13,6 +13,7 @@ import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import { editorTyp, editorKnopfText } from '@/lib/aktivitaetEditorMap';
+import { FreigabeAusblenden } from '@/components/workspace/ReleaseStatusToggle';
 
 /**
  * AktivitaetInhaltEditor
@@ -28,6 +29,13 @@ import { editorTyp, editorKnopfText } from '@/lib/aktivitaetEditorMap';
  *
  * Alle Editoren haben denselben Vertrag: `initialData` hinein,
  * `onSave(fieldValues)` heraus.
+ *
+ * Keine Freigabe hier: Die Editoren bringen einen Schalter „Entwurf / für
+ * Export freigegeben" mit. Der gehoert in die Welt der Lernpakete, wo eine
+ * einzelne Aktivitaet freigegeben wird. Eine allgemeine Aufgabe wird dagegen
+ * ALS GANZES freigegeben — die einzelnen Schritte darin einzeln freizugeben
+ * waere umstaendlich und ergaebe keinen Sinn. Der Schalter wird deshalb
+ * ausgeblendet (siehe FreigabeAusblenden).
  *
  * Verschachtelung: Diese Editoren sind selbst Dialoge. Werden sie aus einem
  * Dialog heraus geöffnet (Schritt-Fenster der Werkstatt), rechnen sie ihre
@@ -85,6 +93,7 @@ export default function AktivitaetInhaltEditor({
         </Button>
       </div>
 
+      <FreigabeAusblenden>
       {typ === 'lueckentext' && <LueckentextWysiwygModal {...gemeinsam} />}
       {typ === 'sortierung' && <SortingListModal {...gemeinsam} />}
       {typ === 'match' && <MatchTermsModal {...gemeinsam} />}
@@ -113,6 +122,7 @@ export default function AktivitaetInhaltEditor({
           onSave={({ content_data }) => speichern(content_data)}
         />
       )}
+      </FreigabeAusblenden>
     </div>
   );
 }
