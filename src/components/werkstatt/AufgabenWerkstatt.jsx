@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, Loader2, Hammer, Lock, Settings2, ListOrdered, FolderOpen, ChevronDown, ChevronRight } from 'lucide-react';
+import { Save, Loader2, Hammer, Lock, ListOrdered, FolderOpen, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -96,6 +96,7 @@ export default function AufgabenWerkstatt({
      die Schritte ja noch leer sind. Sobald es ans Füllen geht, dreht sich
      das um. */
   const arbeitetAmAblauf = planerOffen || folge.schritte.length === 0;
+  const gewaehlteKategorie = getMission(missionType);
 
   /* Kontext für den Assistenten beim Bau eines offenen Schritts. Gebaut wird
      im SchrittFenster (Ebene 3), nicht hier. */
@@ -219,46 +220,63 @@ export default function AufgabenWerkstatt({
           </div>
         )}
 
-        {/* Kopfdaten der Aufgabe — eingeklappt, weil sie selten angefasst werden. */}
-        <div className="pt-3 shrink-0">
-          <div className="flex items-center gap-3">
+        {/* Kopfdaten. Titel und Themenfeld nebeneinander — das Themenfeld
+            ist beim Anlegen ohnehin meist schon bekannt, weil die Lehrkraft
+            aus einem Themenfeld heraus kommt. Die Kategorie sitzt im
+            Akkordeon, zeigt ihren Wert aber im zugeklappten Zustand an. */}
+        <div className="pt-3 shrink-0 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Input
               value={titel}
               onChange={(e) => setTitel(e.target.value)}
               placeholder="Titel der Aufgabe"
-              className="max-w-md bg-white"
+              className="flex-1 min-w-[220px] max-w-md bg-white"
               disabled={isReleased}
             />
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 text-slate-600"
-              onClick={() => setKopfOffen((o) => !o)}
+            <Select
+              value={themenfeldId || 'keins'}
+              onValueChange={(v) => setThemenfeldId(v === 'keins' ? null : v)}
+              disabled={isReleased}
             >
-              <Settings2 className="w-4 h-4" />
-              {kopfOffen ? 'Angaben zuklappen' : 'Themenfeld & Kategorie'}
+              <SelectTrigger className="w-[220px] bg-white">
+                <SelectValue placeholder="Kein Themenfeld" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="keins">Kein Themenfeld</SelectItem>
+                {themenfelder.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>{t.titel || t.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 bg-white"
+              onClick={() => setKopfOffen((o) => !o)}
+              disabled={isReleased}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              {gewaehlteKategorie
+                ? <>{gewaehlteKategorie.emoji} {gewaehlteKategorie.label}</>
+                : 'Noch keine Kategorie gewählt'}
+              {kopfOffen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </Button>
           </div>
 
           {kopfOffen && (
-            <div className="mt-3 grid grid-cols-1 lg:grid-cols-2 gap-4 rounded-xl border border-slate-200 bg-white p-4">
-              <div className="space-y-2">
-                <Label>Themenfeld</Label>
-                <Select
-                  value={themenfeldId || 'keins'}
-                  onValueChange={(v) => setThemenfeldId(v === 'keins' ? null : v)}
-                  disabled={isReleased}
-                >
-                  <SelectTrigger><SelectValue placeholder="Kein Themenfeld" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="keins">Kein Themenfeld</SelectItem>
-                    {themenfelder.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>{t.titel || t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <MissionPicker value={missionType} onChange={setMissionType} disabled={isReleased} />
+            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+              <p className="text-[11px] text-slate-500">
+                Wo im Unterrichtsverlauf steht diese Aufgabe? (optional)
+              </p>
+              {/* Nach der Wahl klappt der Kasten zu — die Entscheidung ist
+                  getroffen und steht ab dann im Knopf darüber. */}
+              <MissionPicker
+                kompakt
+                value={missionType}
+                onChange={(v) => { setMissionType(v); setKopfOffen(false); }}
+                disabled={isReleased}
+              />
             </div>
           )}
         </div>
