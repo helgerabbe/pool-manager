@@ -5,7 +5,7 @@ import {
   FolderOpen, Lightbulb, ChevronDown, ChevronRight, Sparkles, Loader2, PenLine,
 } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
-import { MicOff, Inbox } from 'lucide-react';
+import { MicOff, Inbox, Sparkles as SparklesIcon } from 'lucide-react';
 import MaterialSammlung from '@/components/werkstatt/MaterialSammlung';
 import useOffeneAufgabenIdeen from '@/hooks/useOffeneAufgabenIdeen';
 
@@ -29,6 +29,7 @@ import useOffeneAufgabenIdeen from '@/hooks/useOffeneAufgabenIdeen';
 export default function WerkstattEinstieg({
   einheitId,
   onIdeeUebernehmen,
+  onGeneratorOeffnen,
   materialien = [],
   onMaterialienChange,
   idee = '',
@@ -181,6 +182,27 @@ export default function WerkstattEinstieg({
               className="min-h-[130px] text-sm"
               disabled={disabled}
             />
+
+            {/* Der Fall „ich muss eine Aufgabe machen und habe noch gar
+                nichts". Der Generator ist ein Werkzeug, kein eigener Weg —
+                er füllt dieses Feld oder parkt für später. */}
+            {onGeneratorOeffnen && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-2.5">
+                <p className="text-xs text-slate-600 flex-1 min-w-[200px]">
+                  Noch keine Idee? Lassen Sie sich welche vorschlagen — passend zum Themenfeld.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 border-amber-300 text-amber-700 hover:bg-amber-50"
+                  onClick={onGeneratorOeffnen}
+                  disabled={disabled}
+                >
+                  <SparklesIcon className="w-3.5 h-3.5" />
+                  Ideen vorschlagen lassen
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </section>
