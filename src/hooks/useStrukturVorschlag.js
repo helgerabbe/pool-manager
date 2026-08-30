@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { base44 } from '@/api/base44Client';
+import { fehlerText, verbindungsFehlerText } from '@/lib/assistentFehler';
 
 /**
  * useStrukturVorschlag
@@ -43,6 +44,10 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
   const [teilAntwort, setTeilAntwort] = useState('');
   const [busy, setBusy] = useState(false);
   const [fehler, setFehler] = useState(null);
+  // Bei einem Fehler geht die getippte Nachricht sonst verloren — die
+  // Lehrkraft müsste alles neu formulieren. Sie wird hier aufbewahrt und
+  // von der Gesprächsspalte als "Nochmal versuchen" angeboten.
+  const [fehlgeschlagen, setFehlgeschlagen] = useState(null);
   const [warnungen, setWarnungen] = useState([]);
   const abortRef = useRef(null);
 
@@ -100,12 +105,14 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
         }),
         onopen: async (res) => {
           if (res.ok && res.headers.get('content-type')?.includes('text/event-stream')) return;
-          let msg = `Der Assistent antwortet nicht (HTTP ${res.status}).`;
+          let detail = '';
           try {
             const body = await res.json();
-            if (body?.error) msg = body.error;
+            if (body?.error) detail = String(body.error);
           } catch { /* ignorieren */ }
-          throw new Error(msg);
+          const fehler = new Error(fehlerText(res.status, detail));
+          fehler.uebersetzt = true;
+          throw fehler;
         },
         onmessage: (ev) => {
           if (ev.event === 'chunk') {

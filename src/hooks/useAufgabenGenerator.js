@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
 import { base44 } from '@/api/base44Client';
+import { fehlerText, verbindungsFehlerText } from '@/lib/assistentFehler';
 
 /**
  * useAufgabenGenerator
@@ -40,6 +41,10 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
   const [teilAntwort, setTeilAntwort] = useState('');  // strömt während der Antwort
   const [busy, setBusy] = useState(false);
   const [fehler, setFehler] = useState(null);
+  // Bei einem Fehler geht die getippte Nachricht sonst verloren — die
+  // Lehrkraft müsste alles neu formulieren. Sie wird hier aufbewahrt und
+  // von der Gesprächsspalte als "Nochmal versuchen" angeboten.
+  const [fehlgeschlagen, setFehlgeschlagen] = useState(null);
   const [warnungen, setWarnungen] = useState([]);
   const abortRef = useRef(null);
 
