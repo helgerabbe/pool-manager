@@ -16,6 +16,7 @@ import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalt
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
 import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import SchrittFenster from '@/components/werkstatt/SchrittFenster';
+import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
 import { getMission } from '@/lib/missionen';
@@ -70,6 +71,7 @@ export default function AufgabenWerkstatt({
   // Ebene 3: Fenster zum Bearbeiten EINES Schritts.
   const [schrittFensterOffen, setSchrittFensterOffen] = useState(false);
   const [planerOffen, setPlanerOffen] = useState(false);
+  const [generatorOffen, setGeneratorOffen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -84,6 +86,7 @@ export default function AufgabenWerkstatt({
     setGesamtdurchlauf(false);
     setSchrittFensterOffen(false);
     setPlanerOffen(false);
+    setGeneratorOffen(false);
     // Eine Aufgabe, die schon Schritte hat, wird bearbeitet, nicht neu
     // begonnen — dann direkt in die Werkstatt.
     const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
@@ -164,6 +167,23 @@ export default function AufgabenWerkstatt({
       ]);
     }
     toast.success('Idee übernommen.');
+  };
+
+  /**
+   * Ergebnis des Ideengenerators. Primäres Ziel ist HIER das Ideenfeld —
+   * eine fertige Aufgabe anzulegen wäre unsinnig, wir bauen ja gerade eine.
+   * Das zweite Ziel (Sammelbox) bringt der Generator selbst mit.
+   */
+  const generierteIdeeUebernehmen = (idee2) => {
+    const text = [
+      idee2?.titel,
+      idee2?.aufgabenstellung || idee2?.beschreibung,
+      idee2?.didaktischer_hinweis ? `Hinweis: ${idee2.didaktischer_hinweis}` : '',
+    ].filter(Boolean).join('\n\n');
+    setIdee((alt) => (alt.trim() ? `${alt.trim()}\n\n${text}` : text));
+    if (!titel.trim() && idee2?.titel) setTitel(idee2.titel);
+    if (!missionType && idee2?.mission_type) setMissionType(idee2.mission_type);
+    setGeneratorOffen(false);
   };
 
   const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
@@ -311,6 +331,7 @@ export default function AufgabenWerkstatt({
             <WerkstattEinstieg
               einheitId={einheitId}
               onIdeeUebernehmen={ideeUebernehmen}
+              onGeneratorOeffnen={() => setGeneratorOffen(true)}
               materialien={materialien}
               onMaterialienChange={setMaterialien}
               idee={idee}
@@ -430,6 +451,23 @@ export default function AufgabenWerkstatt({
           </div>
         </div>
       </DialogContent>
+
+      {/* Ideengenerator — liegt über der Werkstatt. Kann nie gleichzeitig
+          mit dem Schritt-Fenster offen sein: der eine gehört zum Einstieg,
+          das andere zur Werkstatt-Ansicht. */}
+      <ThemenfeldIdeenModal
+        open={generatorOffen}
+        onOpenChange={setGeneratorOffen}
+        zIndex={10001}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        defaultThemenfeldId={themenfeldId}
+        anforderungsebene={defaultAnforderungsebene}
+        onSaveIdea={generierteIdeeUebernehmen}
+        primaerLabel="In dieses Feld übernehmen"
+        primaerLabelFertig="Übernommen"
+        primaerErfolg="Idee ins Feld übernommen."
+      />
 
       {/* Ebene 3 — liegt über diesem Dialog (siehe zIndex in SchrittFenster). */}
       <SchrittFenster
