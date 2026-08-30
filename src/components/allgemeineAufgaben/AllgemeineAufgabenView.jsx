@@ -25,6 +25,7 @@ import HandlungAufgabeView from '@/components/allgemeineAufgaben/HandlungAufgabe
 import HtmlEmbedAufgabeView from '@/components/allgemeineAufgaben/HtmlEmbedAufgabeView';
 import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
+import PortierungButton from '@/components/allgemeineAufgaben/PortierungButton';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
 import PublishAllgemeineAufgabeButton from '@/components/allgemeineAufgaben/PublishAllgemeineAufgabeButton';
@@ -349,6 +350,16 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                   <Edit className="w-4 h-4" />
                   Bearbeiten
                 </Button>
+              )}
+              {/* Altaufgabe → Werkstatt. Erscheint nur bei Einzelaufgaben vom
+                  Typ 'inhalt' und nur, solange sie nicht freigegeben sind —
+                  eine freigegebene Aufgabe wird nicht nebenbei umgebaut. */}
+              {!isApproved && !istImExport && (
+                <PortierungButton
+                  aufgabe={aufgabe}
+                  kannBearbeiten={kannBearbeiten}
+                  onFertig={() => onEdit({ ...aufgabe, aufgaben_modus: 'sequenz' })}
+                />
               )}
               {!isApproved && (
                 <Button
