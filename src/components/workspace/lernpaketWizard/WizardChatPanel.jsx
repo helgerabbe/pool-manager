@@ -189,7 +189,7 @@ export default function WizardChatPanel({ paket, disabled, onApplied, onBusyChan
         <p className="text-xs text-muted-foreground leading-snug">
           Beschreibe einfach, was du dir für dieses Paket vorstellst — welche Aufgaben, welcher
           Ablauf, welche Materialien du schon hast (unten anhängen). Der Wizard kennt Einheit,
-          Lernziele und deinen Ideenspeicher, macht Vorschläge und pflegt einen Bauplan. Wenn alles
+          Lernziele und dein Aufgaben-Depot, macht Vorschläge und pflegt einen Bauplan. Wenn alles
           passt, klickst du auf <strong>„Bau das jetzt"</strong> und alles wird angelegt.
         </p>
       )}

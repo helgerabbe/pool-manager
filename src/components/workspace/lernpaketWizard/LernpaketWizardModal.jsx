@@ -266,7 +266,7 @@ export default function LernpaketWizardModal({
       const pick = (arr) => (arr || []).filter((it) => selectedIds.has(it.id)).map(({ idee, beschreibung, ziel }) => ({ idee, beschreibung, ziel }));
       const res = await base44.functions.invoke('generateLernpaketAktivitaeten', {
         lernpaketId: paket.id,
-        briefing: briefing.trim() || 'Setze die ausgewählten Ideen aus dem Ideenspeicher passend zu Lernpaket und Lernzielen um.',
+        briefing: briefing.trim() || 'Setze die ausgewählten Ideen aus dem Aufgaben-Depot passend zu Lernpaket und Lernzielen um.',
         strukturModus: hatBestand ? strukturModus : 'neu',
         stage: 'mapping',
         entwurf: {
@@ -437,7 +437,7 @@ export default function LernpaketWizardModal({
         queryClient.invalidateQueries({ queryKey: ['aufgabenIdeen'] });
       } catch (err) {
         console.error('[LernpaketWizardModal] ideenkiste update failed', err);
-        toast.error('Status im Ideenspeicher konnte nicht aktualisiert werden.');
+        toast.error('Status im Aufgaben-Depot konnte nicht aktualisiert werden.');
       }
     }
     onClose();
@@ -591,13 +591,13 @@ export default function LernpaketWizardModal({
                 {hatIdeenkiste && (
                   <WizardStepSection
                     nummer={stepIdeenkiste}
-                    titel="Aus dem Ideenspeicher übernehmen (optional)"
+                    titel="Aus dem Aufgaben-Depot übernehmen (optional)"
                     rechts={<span className="text-xs text-muted-foreground">{kisteSelected.size} ausgewählt</span>}
                   >
                     <p className="text-xs text-muted-foreground leading-snug">
-                      Bereitliegende Ideen aus dem Ideenspeicher dieser Einheit. Ausgewählte Ideen werden bei der
+                      Bereitliegende Ideen aus dem Aufgaben-Depot dieser Einheit. Ausgewählte Ideen werden bei der
                       Umsetzung in passende Aktivitäten übersetzt — inklusive ihrer Materialien. Beim Speichern
-                      werden sie im Ideenspeicher als integriert markiert.
+                      werden sie im Aufgaben-Depot als integriert markiert.
                     </p>
                     <WizardIdeenkisteAuswahl
                       eintraege={ideenkisteEintraege}
@@ -619,7 +619,7 @@ export default function LernpaketWizardModal({
                           className="gap-2"
                         >
                           {isMapping ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                          Nur Ideenspeicher umsetzen ({kisteSelected.size})
+                          Nur Depot-Ideen umsetzen ({kisteSelected.size})
                         </Button>
                       </div>
                     )}

@@ -18,7 +18,7 @@ import { speichereIdeeInKiste, baueIdeenBeschreibung } from '@/lib/ideenkisteUeb
  * Der Name: In der Oberfläche hieß das lange "Aufgabenassistent", im Code
  * "Ideenkiste", in der Datenbank "Sammelbox" — drei Namen, und keiner sagte,
  * was es tut. Es assistiert nicht, es speichert. Deshalb heißt es in der
- * Oberfläche jetzt durchgängig Ideenspeicher (2026-08-30). Dateinamen und
+ * Oberfläche jetzt durchgängig Aufgaben-Depot (2026-08-30). Dateinamen und
  * Bezeichner blieben absichtlich unverändert: Eine Umbenennung quer durch
  * ein Dutzend Dateien wäre reines Risiko ohne Gewinn für die Lehrkraft.
  *
@@ -52,7 +52,7 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500" />
-            Ideenspeicher
+            Aufgaben-Depot
           </SheetTitle>
           <SheetDescription>
             Hier liegen Aufgaben-Ideen, die noch keinen Platz haben. Sammeln Sie sie, wann immer
@@ -148,9 +148,9 @@ export default function IdeenkistePanel({ open, onOpenChange, einheitId, einheit
         einheitId={einheitId}
         themenfelder={themenfelder}
         zweitZielAnzeigen={false}
-        primaerLabel="In den Ideenspeicher legen"
-        primaerLabelFertig="Im Ideenspeicher"
-        primaerErfolg="Idee liegt jetzt im Ideenspeicher."
+        primaerLabel="Ins Aufgaben-Depot legen"
+        primaerLabelFertig="Im Aufgaben-Depot"
+        primaerErfolg="Idee liegt jetzt im Aufgaben-Depot."
         onSaveIdea={async (idea) => {
           await speichereIdeeInKiste({
             einheitId,

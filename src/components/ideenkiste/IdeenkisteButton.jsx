@@ -24,11 +24,11 @@ export default function IdeenkisteButton({ einheitId, einheit = null, kannBearbe
     <>
       <button
         onClick={() => setOpen(true)}
-        title="Ideenspeicher: Aufgaben-Ideen sammeln und später an der passenden Stelle einsetzen"
+        title="Aufgaben-Depot: Ideen für Aufgaben sammeln und später an der passenden Stelle einsetzen"
         className="shrink-0 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
       >
         <Sparkles className="w-3.5 h-3.5" />
-        Ideenspeicher
+        Aufgaben-Depot
         {offeneAnzahl > 0 && (
           <span className="flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-amber-500 text-white text-[10px] font-bold">
             {offeneAnzahl}

@@ -5,7 +5,7 @@
  *
  * Deshalb sind beide Ziele Eigenschaften, keine feste Verdrahtung:
  *   onSaveIdea      primaeres Ziel, Beschriftung ueber `primaerLabel`
- *   (Ideenspeicher) zweites Ziel, immer die Sammelbox (Entity AufgabenIdee).
+ *   (Aufgaben-Depot) zweites Ziel, immer die Sammelbox (Entity AufgabenIdee).
  *                   Abschaltbar ueber `zweitZielAnzeigen` — im Speicher selbst
  *                   waeren beide Ziele dasselbe.
  *
@@ -82,7 +82,7 @@ function IdeaCard({
         {zweitZielAnzeigen && (
           <Button size="sm" variant="outline" onClick={onSaveToKiste} disabled={kisteSaved || kisteSaving} className="gap-2 w-full sm:w-auto">
             {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
-            {kisteSaved ? 'Im Ideenspeicher' : 'In den Ideenspeicher'}
+            {kisteSaved ? 'Im Aufgaben-Depot' : 'Ins Aufgaben-Depot'}
           </Button>
         )}
       </div>
@@ -103,7 +103,7 @@ export default function ThemenfeldIdeenModal({
   primaerLabel = 'Idee merken',
   primaerLabelFertig = 'Gemerkte Idee',
   primaerErfolg = 'Idee wurde als Entwurf gemerkt.',
-  // Aus dem Ideenspeicher heraus waeren beide Ziele dasselbe — dann bleibt
+  // Aus dem Aufgaben-Depot heraus waeren beide Ziele dasselbe — dann bleibt
   // nur das primaere stehen.
   zweitZielAnzeigen = true,
   // Verschachtelt in einem anderen Dialog: hoehere Ebene noetig, sonst
@@ -204,9 +204,9 @@ export default function ThemenfeldIdeenModal({
       });
       queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
       setKisteSavedKeys((prev) => new Set(prev).add(`${index}-${idea.titel}`));
-      toast.success('Idee liegt jetzt im Ideenspeicher.');
+      toast.success('Idee liegt jetzt im Aufgaben-Depot.');
     } catch (err) {
-      toast.error(err?.message || 'Idee konnte nicht in den Ideenspeicher gelegt werden.');
+      toast.error(err?.message || 'Idee konnte nicht ins Aufgaben-Depot gelegt werden.');
     } finally {
       setKisteSavingIndex(null);
     }

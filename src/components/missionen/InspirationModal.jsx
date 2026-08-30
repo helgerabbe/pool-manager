@@ -116,9 +116,9 @@ export default function InspirationModal({
       });
       queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
       setKisteSaved(true);
-      toast.success('Vorschlag liegt jetzt im Ideenspeicher.');
+      toast.success('Vorschlag liegt jetzt im Aufgaben-Depot.');
     } catch (err) {
-      toast.error(err?.message || 'Vorschlag konnte nicht in den Ideenspeicher gelegt werden.');
+      toast.error(err?.message || 'Vorschlag konnte nicht ins Aufgaben-Depot gelegt werden.');
     } finally {
       setKisteSaving(false);
     }
@@ -216,7 +216,7 @@ export default function InspirationModal({
               className="gap-2"
             >
               {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
-              {kisteSaved ? 'Im Ideenspeicher' : 'In den Ideenspeicher'}
+              {kisteSaved ? 'Im Aufgaben-Depot' : 'Ins Aufgaben-Depot'}
             </Button>
           )}
           <Button onClick={handleAccept} disabled={!hasProposal || loading} className="gap-2">
