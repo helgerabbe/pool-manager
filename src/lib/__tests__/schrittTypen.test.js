@@ -86,8 +86,11 @@ describe('istSchrittVollstaendig', () => {
   });
 
   it('prüft die übrigen Typen an ihrem Pflichtfeld', () => {
-    expect(istSchrittVollstaendig({ typ: 'brian', brian: { learner_instruction: 'Tu dies' } })).toBe(true);
+    const vollstaendig = { dialog_name: 'D', learner_instruction: 'Tu dies', system_instruction: 'S', completion_rule: 'C' };
+    expect(istSchrittVollstaendig({ typ: 'brian', brian: vollstaendig })).toBe(true);
     expect(istSchrittVollstaendig({ typ: 'brian', brian: { dialog_name: 'nur ein Name' } })).toBe(false);
+    // Brian braucht alle vier — drei genuegen nicht.
+    expect(istSchrittVollstaendig({ typ: 'brian', brian: { ...vollstaendig, completion_rule: '' } })).toBe(false);
     expect(istSchrittVollstaendig({ typ: 'handlung', handlung: { arbeitsauftrag: 'Miss nach' } })).toBe(true);
     expect(istSchrittVollstaendig({ typ: 'extern', extern: { url: 'https://x' } })).toBe(true);
     expect(istSchrittVollstaendig({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Warum?' } })).toBe(true);

@@ -204,8 +204,15 @@ export function istSchrittVollstaendig(schritt) {
     }
     case SCHRITT_TYPEN.OFFEN:
       return !!(schritt.offen?.fragment?.trim() || schritt.offen?.snapshot_html?.trim());
-    case SCHRITT_TYPEN.BRIAN:
-      return !!schritt.brian?.learner_instruction?.trim();
+    case SCHRITT_TYPEN.BRIAN: {
+      // Brian braucht ALLE VIER Felder — mit dreien kann er das Gespräch
+      // nicht führen. Die Lernenden-Anweisung allein reichte früher, das war
+      // zu großzügig: Ein Schritt galt als fertig, obwohl beim Export nichts
+      // Brauchbares herauskam.
+      const b = schritt.brian || {};
+      return !!(b.dialog_name?.trim() && b.learner_instruction?.trim()
+        && b.system_instruction?.trim() && b.completion_rule?.trim());
+    }
     case SCHRITT_TYPEN.HANDLUNG:
       return !!schritt.handlung?.arbeitsauftrag?.trim();
     case SCHRITT_TYPEN.EXTERN:
