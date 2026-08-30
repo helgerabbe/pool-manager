@@ -15,15 +15,35 @@ import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import ErwartungshorizontDateiFeld from '@/components/allgemeineAufgaben/ErwartungshorizontDateiFeld';
 import { toast } from 'sonner';
 
+/**
+ * Zwei Betriebsarten — gleiche Regel wie im LernzielAnalysePanel:
+ *
+ *   AUFGABE (Vorgabe) — liest und speichert `aufgabe.erwartungshorizont`
+ *   direkt in die Datenbank.
+ *
+ *   ENTWURF — mit `wert` und `onWertChange` arbeitet das Panel auf einem
+ *   Entwurf und speichert nichts selbst. Das braucht der Brian-Schritt: Dort
+ *   gilt eine Änderung erst mit „Übernehmen".
+ *
+ * `aufgabenstellungOverride` und `loesungDateiUrl` schärfen die Erzeugung auf
+ * das einzelne Gespräch statt auf die ganze Aufgabe.
+ */
 export default function ErwartungshorizontTab({
   aufgabe,
   einheit,
   mappedLernziele = [],
   mappedBasisLernziele = [],
   kannBearbeiten = false,
+  wert,
+  onWertChange,
+  aufgabenstellungOverride = '',
+  loesungDateiUrl = null,
 }) {
+  const imEntwurfsModus = typeof onWertChange === 'function';
   const queryClient = useQueryClient();
-  const [editText, setEditText] = useState(aufgabe?.erwartungshorizont || '');
+  const [editText, setEditText] = useState(
+    (typeof onWertChange === 'function' ? wert : aufgabe?.erwartungshorizont) || '',
+  );
   const [isDirty, setIsDirty] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [wasGenerated, setWasGenerated] = useState(false);
@@ -31,7 +51,9 @@ export default function ErwartungshorizontTab({
 
   const isEbene2 = aufgabe?.anforderungsebene === '2 - Transfer';
   const isEbene3 = aufgabe?.anforderungsebene === '3 - Projekt';
-  const hasErwartungshorizont = isEbene2 || isEbene3;
+  // Im Entwurfsmodus (Brian-Schritt) gibt es immer einen Erwartungshorizont —
+  // die Ebenenlogik gilt nur für den Reiter an der Aufgabe.
+  const hasErwartungshorizont = imEntwurfsModus || isEbene2 || isEbene3;
 
   // Dialog-State für Zusatzinfos
   const [showContextDialog, setShowContextDialog] = useState(false);
@@ -50,16 +72,29 @@ export default function ErwartungshorizontTab({
   });
 
   const handleSave = () => {
+    if (imEntwurfsModus) {
+      onWertChange(editText);
+      setIsDirty(false);
+      toast.success('Erwartungshorizont übernommen. Zum Sichern noch speichern.');
+      return;
+    }
     updateMutation.mutate({ erwartungshorizont: editText });
   };
+
+  // Woraus erzeugt wird: beim Brian-Schritt aus DESSEN Aufgabenstellung und
+  // Lösungsdatei, sonst aus denen der Aufgabe.
+  const basisAufgabenstellung = aufgabenstellungOverride || aufgabe?.aufgabenstellung || '';
+  const basisLoesungDatei = imEntwurfsModus
+    ? (loesungDateiUrl || null)
+    : (aufgabe?.erwartungshorizont_datei_url || null);
 
   const doGenerate = async (additionalContext = '') => {
     setIsGenerating(true);
     setShowContextDialog(false);
     try {
       const aufgabenstellungMitKontext = additionalContext?.trim()
-        ? `${aufgabe.aufgabenstellung}\n\nZusätzlicher Kontext: ${additionalContext}`
-        : aufgabe.aufgabenstellung;
+        ? `${basisAufgabenstellung}\n\nZusätzlicher Kontext: ${additionalContext}`
+        : basisAufgabenstellung;
 
       const response = await base44.functions.invoke('generateErwartungshorizont', {
         aufgabenstellung: aufgabenstellungMitKontext,
@@ -68,7 +103,7 @@ export default function ErwartungshorizontTab({
           title: lz.title
         })),
         lernpakete: [],
-        loesung_datei_url: aufgabe.erwartungshorizont_datei_url || null,
+        loesung_datei_url: basisLoesungDatei,
       });
 
       if (response.data?.erwartungshorizont) {
@@ -93,7 +128,7 @@ export default function ErwartungshorizontTab({
     setIsGenerating(true);
     try {
       const response = await base44.functions.invoke('generateErwartungshorizont', {
-        aufgabenstellung: aufgabe.aufgabenstellung,
+        aufgabenstellung: basisAufgabenstellung,
         lernziele: mappedLernziele.map(lz => ({
           formulierung_fachsprache: lz.formulierung_fachsprache || lz.title,
           title: lz.title
@@ -101,7 +136,7 @@ export default function ErwartungshorizontTab({
         lernpakete: [],
         bisheriger_entwurf: editText,
         nachbesserung: refinementText,
-        loesung_datei_url: aufgabe.erwartungshorizont_datei_url || null,
+        loesung_datei_url: basisLoesungDatei,
       });
       if (response.data?.erwartungshorizont) {
         setEditText(response.data.erwartungshorizont);
