@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { aufgabeBedientLernziel } from '@/lib/aufgabeLernziele';
 
 /**
  * Exportiert alle relevanten Daten einer Lerneinheit in ein Moodle-freundliches JSON-Format.
@@ -52,9 +53,13 @@ export async function generateMoodleLandkarteJSON(einheitId) {
 
         zieleFuerPaket.forEach(lz => {
           // Finde verknüpfte Allgemeine Aufgaben (Ebene 2)
+          // Drei Quellen, siehe lib/aufgabeLernziele: die alte Mapping-
+          // Tabelle (Bestandsdaten), die KI-Analyse an der Aufgabe und die
+          // Analyse an den Brian-Schritten. Vorher wurde nur die Tabelle
+          // gelesen — alles seit der Umstellung Erstellte fehlte hier.
           const verknuepfteAufgaben = allgemeineAufgaben.filter(a =>
-            mappings.some(m => m.aufgabe_id === a.id && m.lernziel_id === lz.id) &&
-            a.anforderungsebene === '2 - Transfer'
+            a.anforderungsebene === '2 - Transfer' &&
+            aufgabeBedientLernziel(a, lz.id, mappings)
           );
 
           stationen.push({
