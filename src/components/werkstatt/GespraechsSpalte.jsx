@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, AlertTriangle } from 'lucide-react';
+import { Loader2, Send, AlertTriangle, RotateCcw } from 'lucide-react';
 
 /**
  * GespraechsSpalte
@@ -68,9 +68,40 @@ export default function GespraechsSpalte({
         )}
 
         {gen.fehler && (
-          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-900 flex gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>{gen.fehler}</span>
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 space-y-2">
+            <p className="text-sm text-amber-900 flex gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{gen.fehler}</span>
+            </p>
+            {/* Der getippte Text ist nicht verloren — er steht hier und geht
+                auf einen Klick erneut raus. Ohne das müsste die Lehrkraft
+                alles neu formulieren, und genau daran scheitert Geduld. */}
+            {gen.fehlgeschlagen && (
+              <>
+                <p className="rounded border border-amber-200 bg-white/70 px-2 py-1.5 text-xs text-slate-700 line-clamp-3">
+                  {gen.fehlgeschlagen}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    onClick={gen.nochmalVersuchen}
+                    disabled={gen.busy || disabled}
+                    className="gap-2"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" /> Nochmal versuchen
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-slate-600"
+                    onClick={() => onEingabe(gen.fehlgeschlagen)}
+                    disabled={gen.busy || disabled}
+                  >
+                    Text zum Bearbeiten zurückholen
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 

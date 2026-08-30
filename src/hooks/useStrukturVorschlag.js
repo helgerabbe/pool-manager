@@ -48,6 +48,9 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
   // Lehrkraft müsste alles neu formulieren. Sie wird hier aufbewahrt und
   // von der Gesprächsspalte als "Nochmal versuchen" angeboten.
   const [fehlgeschlagen, setFehlgeschlagen] = useState(null);
+  // Die Materialien gehoerten zur gescheiterten Anfrage — beim Wiederholen
+  // muessen sie wieder mit, sonst entsteht ein anderer Vorschlag.
+  const letzteOptionenRef = useRef({});
   const [warnungen, setWarnungen] = useState([]);
   const abortRef = useRef(null);
 
@@ -71,6 +74,7 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
 
     setFehler(null);
     setFehlgeschlagen(null);
+    letzteOptionenRef.current = { materialien };
     setWarnungen([]);
     setBusy(true);
     setTeilAntwort('');
@@ -158,7 +162,7 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
 
   /** Die zuletzt gescheiterte Nachricht erneut schicken. */
   const nochmalVersuchen = useCallback(() => {
-    if (fehlgeschlagen) senden(fehlgeschlagen);
+    if (fehlgeschlagen) senden(fehlgeschlagen, letzteOptionenRef.current);
   }, [fehlgeschlagen, senden]);
 
   return {
