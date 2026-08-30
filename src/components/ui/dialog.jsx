@@ -14,12 +14,20 @@ const DialogPortal = DialogPrimitive.Portal
 
 const DialogClose = DialogPrimitive.Close
 
-/**
- * z-Ebenen: Der Standarddialog liegt auf 9999, sein Overlay auf 9998.
- * Ein Dialog IM Dialog (z. B. das Schritt-Fenster der Aufgabenwerkstatt)
- * muss darueber liegen, sonst oeffnet er sich unsichtbar dahinter. Dafuer
- * gibt es die Eigenschaft `zIndex` — nicht per className loesbar, weil die
- * Basis-Ebene inline gesetzt ist und Inline-Stile jede Klasse schlagen.
+/*
+ * EBENEN-ORDNUNG (dieselbe Tabelle steht in select/dropdown-menu/popover/tooltip)
+ *   9998   Overlay eines Dialogs
+ *   9999   Dialog (Grundebene)
+ *  10001   Dialog IM Dialog — der Aufrufer setzt `zIndex`
+ *  20000   Popover-Schicht: Select, Dropdown, Popover, Tooltip
+ *
+ * Ein Dialog im Dialog muss ueber seinem Eltern-Dialog liegen, sonst oeffnet
+ * er sich unsichtbar dahinter. Loesbar nur ueber die Eigenschaft `zIndex`,
+ * nicht per className: Die Grundebene wird inline gesetzt, und Inline-Stile
+ * schlagen jede Klasse.
+ *
+ * Wer eine weitere Ebene braucht, traegt sie HIER in die Tabelle ein, statt
+ * eine Zahl daneben zu raten.
  */
 const DIALOG_Z_DEFAULT = 9999;
 
