@@ -1,3 +1,15 @@
+/*
+ * ⚠️ NICHT MEHR EINGEBUNDEN (Stand 2026-08-30) — Loeschkandidat.
+ *
+ * Der Einstieg "KI-Ideenbox oeffnen" in AllgemeineAufgabenView ist entfallen.
+ * Gesammelte Ideen (Entity AufgabenIdee) werden jetzt im Einstieg der
+ * Aufgabenwerkstatt uebernommen: hooks/useOffeneAufgabenIdeen.js und
+ * components/werkstatt/WerkstattEinstieg.jsx. Angelegt werden Ideen
+ * weiterhin im Aufgabenassistenten (components/ideenkiste/).
+ *
+ * Diese Datei bleibt vorerst liegen, falls die Werkstatt sich im Alltag
+ * nicht bewaehrt. Loeschen, sobald das geklaert ist.
+ */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
