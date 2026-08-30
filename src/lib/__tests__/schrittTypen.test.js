@@ -13,6 +13,7 @@ import { buildSequenzSchritteFuerExport } from '@/lib/mbkAirGapPayloads';
 import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
   schrittStatus, istSchrittVollstaendig, getSchrittTyp, vorschlagZuSchritten,
+  schrittBeschriftung, schrittZusammenfassung,
   SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU,
 } from '@/lib/schrittTypen';
 
@@ -316,5 +317,44 @@ describe('Galerie-Schritte (Stufe 2 der Dreierregel)', () => {
     expect(istSchrittVollstaendig({
       typ: 'katalog', aktivitaet_id: 'k1', field_values: { buchtitel: 'X' },
     })).toBe(true);
+  });
+});
+
+describe('Übersichtstexte für Schritte', () => {
+  it('nennt bei Katalog-Schritten das Format, nicht den Typ', () => {
+    const s = { typ: 'katalog', aktivitaet_id: 'k1' };
+    expect(schrittBeschriftung(s, null, 'Miniquiz')).toBe('Miniquiz');
+    // Galerie-Vorlage gewinnt gegen den Formatnamen — sie ist genauer.
+    expect(schrittBeschriftung(
+      { typ: 'katalog', field_values: { galerie_name: 'Zeitleiste' } }, null, 'Aktivitätengalerie',
+    )).toBe('Zeitleiste');
+  });
+
+  it('unterscheidet Material-Arten', () => {
+    expect(schrittBeschriftung({ typ: 'material', material: { material_typ: 'video' } })).toBe('Video');
+    expect(schrittBeschriftung({ typ: 'material', material: { material_typ: 'pdf' } })).toBe('PDF');
+  });
+
+  it('faellt auf die Typbezeichnung zurueck', () => {
+    expect(schrittBeschriftung({ typ: 'brian' })).toBe('Brian');
+    expect(schrittBeschriftung({ typ: 'handlung' })).toBe('Handlung');
+  });
+
+  it('fasst je Typ die richtige Quelle zusammen', () => {
+    expect(schrittZusammenfassung({ typ: 'brian', brian: { learner_instruction: 'Diskutiere X' } })).toBe('Diskutiere X');
+    expect(schrittZusammenfassung({ typ: 'handlung', handlung: { arbeitsauftrag: 'Miss nach' } })).toBe('Miss nach');
+    expect(schrittZusammenfassung({ typ: 'extern', extern: { url: 'https://x' } })).toBe('https://x');
+    expect(schrittZusammenfassung({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Warum?' } })).toBe('Warum?');
+    // Offene Aufgabe: das Fragment taugt nicht als Text, also die Planungsnotiz.
+    expect(schrittZusammenfassung({ typ: 'offen', plan: { kurzbeschreibung: 'Einstieg bauen' } })).toBe('Einstieg bauen');
+  });
+
+  it('erfindet nichts, wenn es nichts gibt', () => {
+    expect(schrittZusammenfassung({ typ: 'offen' })).toBe('');
+    expect(schrittZusammenfassung(null)).toBe('');
+  });
+
+  it('normalisiert Zeilenumbrueche zu einer Zeile', () => {
+    expect(schrittZusammenfassung({ typ: 'handlung', handlung: { arbeitsauftrag: ' Miss\n\n  nach ' } })).toBe('Miss nach');
   });
 });
