@@ -137,7 +137,13 @@ const ThemenfeldGroup = React.memo(function ThemenfeldGroup({ themenfeld, lernzi
 });
 
 // ── Haupt-Component ──
-export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, onComplete, kannBearbeiten = false }) {
+/**
+ * @param {string|null} schrittId  Gehört diese Zuordnung zu einem Brian-SCHRITT?
+ *   Dann werden neue Verknüpfungen daran gebunden, und angezeigt wird, was zu
+ *   diesem Schritt gehört PLUS was an der ganzen Aufgabe hängt (Bestandsfall).
+ *   Ohne Angabe verhält sich alles wie bisher — Zuordnung auf Aufgabenebene.
+ */
+export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, onComplete, kannBearbeiten = false, schrittId = null }) {
   const queryClient = useQueryClient();
   const draftKey = `aufgaben-mapping-${aufgabe?.id}`;
   
@@ -170,11 +176,15 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
     enabled: !!einheitId,
   });
 
-  const { data: existingMappings = [] } = useQuery({
+  const { data: alleMappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeMappings', aufgabe?.id],
     queryFn: () => aufgabe?.id ? getMappingsByAufgabe(aufgabe.id) : Promise.resolve([]),
     enabled: !!aufgabe?.id,
   });
+  const existingMappings = useMemo(
+    () => filterMappingsFuerSchritt(alleMappings, schrittId),
+    [alleMappings, schrittId],
+  );
 
   // Basis-Vorwissen: Lernziele der Einheiten-Basismodule (ist_basismodul=true),
   // normalisiert mit `.text`, damit Dropzone/Badges weiter funktionieren.
@@ -191,11 +201,15 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
       .map((lz) => ({ ...lz, text: lz.formulierung_fachsprache }));
   }, [basismodulEinheiten, lernpakete, alleLernziele]);
 
-  const { data: existingBasisMappings = [] } = useQuery({
+  const { data: alleBasisMappings = [] } = useQuery({
     queryKey: ['allgemeineAufgabeBasisMappings', aufgabe?.id],
     queryFn: () => aufgabe?.id ? getBasisMappingsByAufgabe(aufgabe.id) : Promise.resolve([]),
     enabled: !!aufgabe?.id,
   });
+  const existingBasisMappings = useMemo(
+    () => filterMappingsFuerSchritt(alleBasisMappings, schrittId),
+    [alleBasisMappings, schrittId],
+  );
 
   // Sync DB-Mappings mit lokalen Daten (bei Tab-Wechsel)
   useEffect(() => {
@@ -208,7 +222,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
 
   // Mutations
   const createMappingMutation = useMutation({
-    mutationFn: (data) => createMapping(data.aufgabe_id, data.lernziel_id),
+    mutationFn: (data) => createMapping(data.aufgabe_id, data.lernziel_id, null, data.schritt_id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeMappings'] });
       triggerSaved();
@@ -225,7 +239,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
 
   // Basis-Mappings (Vorwissen) – analog zu den regulären Lernzielen.
   const createBasisMappingMutation = useMutation({
-    mutationFn: ({ aufgabeId, basisLernzielId }) => createBasisMapping(aufgabeId, basisLernzielId),
+    mutationFn: ({ aufgabeId, basisLernzielId, schrittId: sid }) => createBasisMapping(aufgabeId, basisLernzielId, sid),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgabeBasisMappings'] });
       triggerSaved();
@@ -262,6 +276,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
           await createBasisMappingMutation.mutateAsync({
             aufgabeId: aufgabe.id,
             basisLernzielId: basisLz.id,
+            schrittId,
           });
         } catch (err) {
           setMappedBasisLernziele((prev) => prev.filter((lz) => lz.id !== basisLz.id));
@@ -292,6 +307,7 @@ export default function AufgabeKompetenzMapping({ aufgabe, einheit, einheitId, o
         await createMappingMutation.mutateAsync({
           aufgabe_id: aufgabe.id,
           lernziel_id: lernziel.id,
+          schritt_id: schrittId,
         });
       } catch (err) {
         setMappedLernziele((prev) => prev.filter((lz) => lz.id !== lernziel.id));
