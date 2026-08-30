@@ -47,7 +47,7 @@ import ThemenfeldUebersichtPanel from '@/components/allgemeineAufgaben/Themenfel
 const AKTIVITAETEN_HELP = {
   title: 'Allgemeine Aufgaben (Transfer)',
   description:
-    'Hier erstellst und verwaltest du die allgemeinen Transfer-Aufgaben der Einheit, gruppiert nach Themenfeld. Wähle links eine Aufgabe aus, um sie rechts in den Reitern (Kernangaben, Lernzielanalyse, Erwartungshorizont, KI-Tutor-Prompt) zu bearbeiten.',
+    'Hier erstellst und verwaltest du die allgemeinen Aufgaben der Einheit, gruppiert nach Themenfeld. Neue Aufgaben entstehen in der Aufgaben-Werkstatt; ältere Einzelaufgaben lassen sich mit „In die Werkstatt übernehmen" umstellen.',
   features: [
     'Aufgaben links nach Themenfeld gruppiert – klick dich durch',
     'Neue Aufgabe manuell anlegen oder per KI entwerfen',
@@ -867,13 +867,24 @@ export default function AllgemeineAufgabenView({
 
             {/* Tabs für Angaben & Kompetenzen.
                 Handlungsaufgaben: nur "Kernangaben" (kein KI-Kontext nötig). */}
-            {(selectedAufgabe.aufgaben_typ === 'handlung' || selectedAufgabe.aufgaben_typ === 'externe_html_seite') ? (
+            {/* Ohne KI-Kontext (Handlung, externe Seite) — und seit 2026-08-31
+                auch bei SEQUENZEN: Dort liegen Lernziele, Erwartungshorizont
+                und die Brian-Felder am jeweiligen Brian-Schritt, nicht an der
+                Aufgabe. Die drei Reiter wären dort leere Hüllen.
+                Für die noch nicht portierten Einzelaufgaben bleiben sie der
+                einzige Zugang — sie verschwinden, sobald die letzte über
+                „In die Werkstatt übernehmen" umgestellt ist. */}
+            {(selectedAufgabe.aufgaben_typ === 'handlung'
+              || selectedAufgabe.aufgaben_typ === 'externe_html_seite'
+              || selectedAufgabe.aufgaben_modus === 'sequenz') ? (
               <main className="flex-1 overflow-y-auto">
                 <div className="px-6 pt-3 pb-2">
                   <p className="text-xs text-muted-foreground italic">
-                    {selectedAufgabe.aufgaben_typ === 'externe_html_seite'
-                      ? 'Externe HTML-Seite – Didaktik wird durch die externe Seite gesteuert.'
-                      : 'Handlungsaufgabe – kein KI-Tutor-Kontext erforderlich.'}
+                    {selectedAufgabe.aufgaben_modus === 'sequenz'
+                      ? 'Aufgabensequenz – Lernziele, Erwartungshorizont und Brian-Felder liegen am jeweiligen Schritt. Zum Bearbeiten die Werkstatt öffnen.'
+                      : selectedAufgabe.aufgaben_typ === 'externe_html_seite'
+                        ? 'Externe HTML-Seite – Didaktik wird durch die externe Seite gesteuert.'
+                        : 'Handlungsaufgabe – kein KI-Tutor-Kontext erforderlich.'}
                   </p>
                 </div>
                 <AllgemeineAngabenPanel
