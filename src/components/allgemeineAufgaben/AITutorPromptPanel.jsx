@@ -144,6 +144,21 @@ function ErwartungshorizontSection({ aufgabe }) {
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
+/**
+ * Zwei Betriebsarten — gleiche Regel wie bei Lernzielanalyse und
+ * Erwartungshorizont:
+ *
+ *   AUFGABE (Vorgabe) — liest und speichert die vier Brian-Felder an der
+ *   Aufgabe, direkt in die Datenbank.
+ *
+ *   ENTWURF — mit `brianWerte` und `onBrianChange` arbeitet das Panel auf
+ *   einem Entwurf. Das braucht der Brian-SCHRITT: Brian arbeitet pro Dialog,
+ *   jeder Schritt trägt deshalb seine eigenen vier Felder.
+ *
+ * `erzeugungsKontext` überschreibt, WORAUS erzeugt wird — beim Schritt seine
+ * eigene Aufgabenstellung, sein Erwartungshorizont und seine Lernziele statt
+ * derer der ganzen Aufgabe.
+ */
 export default function AITutorPromptPanel({
   aufgabe,
   mappedLernziele = [],
@@ -155,7 +170,11 @@ export default function AITutorPromptPanel({
   alleBasisLernziele = [],
   einheit,
   kannBearbeiten = false,
+  brianWerte,
+  onBrianChange,
+  erzeugungsKontext = null,
 }) {
+  const imEntwurfsModus = typeof onBrianChange === 'function';
   const queryClient = useQueryClient();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -190,10 +209,25 @@ export default function AITutorPromptPanel({
 
   // Erwartungshorizont ist nur für allgemeine Aufgaben (nicht Ebene 3) erforderlich
   const istProjektaufgabe = aufgabe?.anforderungsebene === '3 - Projekt';
-  const hatErwartungshorizont = !!(aufgabe?.erwartungshorizont?.trim() || aufgabe?.musterloesung?.trim());
+  const hatErwartungshorizont = imEntwurfsModus
+    ? !!erzeugungsKontext?.erwartungshorizont?.trim()
+    : !!(aufgabe?.erwartungshorizont?.trim() || aufgabe?.musterloesung?.trim());
 
   // Felder aus Aufgabe laden wenn sich aufgabe.id ändert
   useEffect(() => {
+    if (imEntwurfsModus) {
+      const b = brianWerte || {};
+      setSegments({
+        brian_dialog_name: b.dialog_name || '',
+        brian_learner_instruction: b.learner_instruction || b.aufgabenstellung || '',
+        brian_system_instruction: b.system_instruction || '',
+        brian_completion_rule: b.completion_rule || 'Der Dialog ist beendet, wenn die Aufgabe vollständig und korrekt bearbeitet wurde.',
+        tutor_persona: b.tutor_persona || 'standard',
+        tutor_persona_zusatz: b.tutor_persona_zusatz || '',
+      });
+      setIsDirty(false);
+      return;
+    }
     if (!aufgabe) return;
     setSegments({
       brian_dialog_name: aufgabe.brian_dialog_name || aufgabe.titel || '',
@@ -204,7 +238,7 @@ export default function AITutorPromptPanel({
       tutor_persona_zusatz: aufgabe.tutor_persona_zusatz || '',
     });
     setIsDirty(false);
-  }, [aufgabe?.id]);
+  }, [aufgabe?.id, imEntwurfsModus]);
 
   const updateField = (field, value) => {
     setSegments(prev => ({ ...prev, [field]: value }));
