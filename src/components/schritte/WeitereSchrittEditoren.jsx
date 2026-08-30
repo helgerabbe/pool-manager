@@ -281,7 +281,7 @@ export function AbgabeSchrittEditor({ schritt, onChange }) {
         <Textarea
           value={a.hinweis || ''}
           onChange={(e) => setA('hinweis', e.target.value)}
-          placeholder="z. B. „Nenne im Dateinamen deinen Namen und die Klasse.""
+          placeholder="z. B. Nenne im Dateinamen deinen Namen und die Klasse."
           className="min-h-[70px]"
         />
       </div>
