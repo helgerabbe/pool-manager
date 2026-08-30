@@ -15,7 +15,7 @@ import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
   schrittStatus, istSchrittVollstaendig, getSchrittTyp, vorschlagZuSchritten,
   schrittBeschriftung, schrittZusammenfassung,
-  SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU, leererSchritt as _ls,
+  SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU,
 } from '@/lib/schrittTypen';
 
 describe('schritteAusAufgabe', () => {
