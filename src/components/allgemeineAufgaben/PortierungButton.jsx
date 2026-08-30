@@ -27,15 +27,19 @@ export default function PortierungButton({ aufgabe, kannBearbeiten = false, onFe
   const queryClient = useQueryClient();
 
   const portieren = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const { aenderung } = baueAenderungFuerPortierung(aufgabe);
-      return updateAllgemeineAufgabe(aufgabe.id, aenderung);
+      await updateAllgemeineAufgabe(aufgabe.id, aenderung);
+      // Die fertige Aufgabe MIT Schritten zurückgeben. Ohne sie hielte die
+      // Werkstatt die Aufgabe für leer und zeigte den Einstieg mit Material
+      // und Ideenbox — obwohl der Ablauf längst steht.
+      return { ...aufgabe, ...aenderung };
     },
-    onSuccess: () => {
+    onSuccess: (portierteAufgabe) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setOffen(false);
       toast.success('Aufgabe umgewandelt. Sie öffnet sich jetzt in der Werkstatt.');
-      onFertig?.();
+      onFertig?.(portierteAufgabe);
     },
     onError: (err) => toast.error('Umwandeln fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler')),
   });

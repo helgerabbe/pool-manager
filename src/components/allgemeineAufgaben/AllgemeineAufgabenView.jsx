@@ -358,7 +358,9 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                 <PortierungButton
                   aufgabe={aufgabe}
                   kannBearbeiten={kannBearbeiten}
-                  onFertig={() => onEdit({ ...aufgabe, aufgaben_modus: 'sequenz' })}
+                  // Die portierte Aufgabe MIT ihren Schritten weiterreichen,
+                  // damit die Werkstatt direkt den Ablauf zeigt.
+                  onFertig={(portiert) => onEdit(portiert)}
                 />
               )}
               {!isApproved && (
