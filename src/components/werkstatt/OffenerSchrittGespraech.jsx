@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
 import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useWerkstattStaende from '@/hooks/useWerkstattStaende';
 import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
@@ -22,14 +21,19 @@ import { fragmentZuDokument } from '@/lib/aufgabeFragment';
  *   - die Sitzungsstände des Generators (schnell, flüchtig)
  *   - die gespeicherten Stände als eigene Datensätze (überleben das Fenster)
  * Jeder neu erzeugte Sitzungsstand wird einmal gesichert.
+ *
+ * Der jeweils aktuelle Stand fließt SOFORT in den Entwurf des Schritts —
+ * ohne Zwischenbestätigung. Vorher gab es dafür einen eigenen Knopf, und die
+ * Vorschau daneben blieb bis zu dessen Klick leer: Der Assistent meldete
+ * „fertig", rechts stand „noch keine Aufgabe gebaut". Eine Bestätigung
+ * genügt, und das ist „Übernehmen" am Fuß des Fensters.
  */
 export default function OffenerSchrittGespraech({
   schritt,
   aufgabeId,
   kontext,
   isReleased = false,
-  uebernehmenLabel = 'Diesen Stand in den Schritt übernehmen',
-  onUebernehmen,   // (fragment, snapshotHtml) => void
+  onFragment,   // (fragment, snapshotHtml) => void — fließt in den Entwurf
 }) {
   const gen = useAufgabenGenerator({
     kontext,
@@ -65,12 +69,17 @@ export default function OffenerSchrittGespraech({
     gen.senden(t);
   };
 
-  const uebernehmen = () => {
-    if (!gen.fragment) return;
-    onUebernehmen(gen.fragment, fragmentZuDokument(gen.fragment));
-    const passend = staende.staende.find((st) => st.fragment === gen.fragment);
+  // Neuer Stand → sofort in den Entwurf, damit die Vorschau ihn zeigt.
+  // Läuft auch beim Zurückspringen auf einen früheren Stand.
+  const letztesGemeldetesRef = useRef(null);
+  useEffect(() => {
+    const f = gen.fragment;
+    if (!f || gen.busy || f === letztesGemeldetesRef.current) return;
+    letztesGemeldetesRef.current = f;
+    onFragment?.(f, fragmentZuDokument(f));
+    const passend = staende.staende.find((st) => st.fragment === f);
     if (passend) staende.alsUebernommenMarkieren(passend.id);
-  };
+  }, [gen.fragment, gen.busy, onFragment, staende]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1 gap-2">
@@ -94,10 +103,11 @@ export default function OffenerSchrittGespraech({
           disabled={gen.busy || isReleased}
           onLaden={(st) => gen.setzeFragment(st.fragment, 'Geladener Stand')}
         />
-        {gen.fragment && (
-          <Button onClick={uebernehmen} disabled={gen.busy || isReleased} className="gap-2 w-full">
-            {uebernehmenLabel}
-          </Button>
+        {gen.fragment && !gen.busy && (
+          <p className="text-xs text-emerald-700">
+            Der aktuelle Stand steht rechts in der Vorschau. Mit „Übernehmen“ unten wird er Teil
+            des Schritts.
+          </p>
         )}
       </div>
     </div>

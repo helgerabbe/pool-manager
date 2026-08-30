@@ -104,8 +104,7 @@ export default function SchrittFenster({
                 aufgabeId={aufgabeId}
                 kontext={kontext}
                 isReleased={isReleased}
-                uebernehmenLabel="Diesen Stand verwenden"
-                onUebernehmen={(fragment, snapshotHtml) => setEntwurf((e) => ({
+                onFragment={(fragment, snapshotHtml) => setEntwurf((e) => ({
                   ...e,
                   offen: { ...(e.offen || {}), fragment, snapshot_html: snapshotHtml },
                 }))}
