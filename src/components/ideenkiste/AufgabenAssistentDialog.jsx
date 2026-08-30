@@ -82,7 +82,7 @@ export default function AufgabenAssistentDialog({ open, onOpenChange, einheit, o
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-amber-500" />
-            Aufgabenassistent — Aufgabe erstellen
+            Ideenspeicher — Aufgabe erstellen
           </DialogTitle>
           <DialogDescription>
             Beschreiben Sie, welche Aufgabe Sie machen möchten, und/oder laden Sie Material hoch
