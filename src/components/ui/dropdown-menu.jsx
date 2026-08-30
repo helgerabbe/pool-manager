@@ -1,3 +1,16 @@
+/*
+ * EBENEN-ORDNUNG (siehe auch ui/dialog.jsx)
+ *   9998   Overlay eines Dialogs
+ *   9999   Dialog (Grundebene)
+ *  10001   Dialog IM Dialog (Aufrufer setzt zIndex)
+ *  20000   Popover-Schicht: Select, Dropdown, Popover, Tooltip
+ *
+ * Popover-artige Elemente liegen IMMER ueber allen Dialogen — sie gehoeren
+ * zu einem Bedienelement INNERHALB eines Dialogs und waeren darunter
+ * unbedienbar. Bitte hier keine Einzelwerte mehr raten: Genau das hat schon
+ * zweimal zu unsichtbaren Menues gefuehrt (Dropdown im Dialog 2026-08-29,
+ * Select im Schritt-Fenster 2026-08-31).
+ */
 import * as React from "react"
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
@@ -10,11 +23,6 @@ const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
 const DropdownMenuGroup = DropdownMenuPrimitive.Group
 
-// z-[10000], nicht z-50: DialogContent setzt inline zIndex 9999, das Overlay
-// 9998. Beide Ebenen liegen im Portal an <body>, ein Menü mit z-50 öffnet sich
-// also UNSICHTBAR hinter dem Dialog. select.jsx wurde 2026 aus demselben Grund
-// schon angehoben — hier war es noch offen (gefunden 2026-08-29 in der
-// Aufgaben-Werkstatt).
 const DropdownMenuPortal = DropdownMenuPrimitive.Portal
 
 const DropdownMenuSub = DropdownMenuPrimitive.Sub
@@ -41,7 +49,7 @@ const DropdownMenuSubContent = React.forwardRef(({ className, ...props }, ref) =
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-[10000] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      "z-[20000] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
       className
     )}
     {...props} />
@@ -55,7 +63,7 @@ const DropdownMenuContent = React.forwardRef(({ className, sideOffset = 4, ...pr
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-[10000] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        "z-[20000] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className
       )}
