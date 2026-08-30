@@ -206,7 +206,7 @@ export default function ThemenfeldIdeenModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
+      <DialogContent zIndex={zIndex} className="sm:max-w-5xl max-h-[92vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Lightbulb className="w-5 h-5 text-amber-500" />
