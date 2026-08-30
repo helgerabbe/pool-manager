@@ -114,10 +114,26 @@ const SCHRITT_TYPEN_BESCHREIBUNG = `- "katalog": ein fertiges, deterministisches
 - "handlung": Arbeit an echtem Material außerhalb des Bildschirms (messen, bauen, befragen). Schülerseitig nur ein Bestätigen-Knopf.
 - "extern": eine eingebettete fremde Seite, typischerweise GeoGebra.`;
 
-function baueStrukturPrompt(katalogNamen) {
+function baueStrukturPrompt(katalogNamen, galerieEintraege = []) {
   const katalog = katalogNamen.length
     ? katalogNamen.map((n) => `  - ${n}`).join('\n')
     : '  (Katalog konnte nicht geladen werden — schlage dann keinen "katalog"-Schritt vor.)';
+
+  // Die Galerie ist KEIN eigener Schritttyp: Ein Galerie-Eintrag wird ein
+  // Katalog-Schritt vom Format "Aktivitätengalerie". Die App baut ihn nicht
+  // selbst — sie uebergibt Galerie-ID und Inhaltstext, die MBK setzt daraus
+  // die fertige Aktivitaet zusammen.
+  const galerie = galerieEintraege.length
+    ? `\n# FERTIGE VORLAGEN AUS DER AKTIVITÄTEN-GALERIE
+Diese Vorlagen sind bereits gebaut und müssen nur mit Inhalten gefüllt werden. Passt eine davon, ist sie fast immer die besere Wahl als eine neu gebaute offene Aufgabe.
+${galerieEintraege.map((g) => {
+      const teile = [`  - "${g.name}" (id: ${g.id})`];
+      if (g.kurzbeschreibung) teile.push(`    ${String(g.kurzbeschreibung).slice(0, 300)}`);
+      return teile.join('\n');
+    }).join('\n')}
+
+Willst du eine dieser Vorlagen vorschlagen, nimm typ "katalog" mit aktivitaet_name "Aktivitätengalerie" und gib zusaetzlich "galerie_id" und "galerie_name" an. Nenne in der kurzbeschreibung, WARUM diese Vorlage passt.\n`
+    : '';
 
   return `Du planst gemeinsam mit einer Lehrkraft den AUFBAU einer Unterrichtsaufgabe für Schüler:innen.
 
@@ -131,12 +147,14 @@ ${SCHRITT_TYPEN_BESCHREIBUNG}
 
 # DIE REGEL FÜR DIE TYPWAHL — in dieser Reihenfolge
 1. Passt ein Format aus dem Aktivitätenkatalog? Dann nimm "katalog" und nenne das Format beim Namen.
-2. Braucht es echtes Material, eine fremde Seite oder ein Gespräch? Dann "handlung", "extern" oder "brian".
-3. Erst wenn nichts davon trägt: "offen".
+2. Sonst: Gibt es eine fertige Vorlage in der Aktivitäten-Galerie? Dann nimm sie (siehe unten) — sie ist gebaut und getestet.
+3. Braucht es echtes Material, eine fremde Seite oder ein Gespräch? Dann "handlung", "extern" oder "brian".
+4. Erst wenn nichts davon trägt: "offen".
 Greife NICHT reflexhaft zu "offen". Eine Aufgabe, die zu drei Vierteln aus Katalogformaten besteht, ist der Lehrkraft mehr wert als eine, die komplett neu gebaut werden muss.
 
 # VERFÜGBARE KATALOGFORMATE
 ${katalog}
+${galerie}
 
 # WIE DU ANTWORTEST
 Antworte IMMER in diesem Format, ohne Markdown-Codefences:
@@ -154,6 +172,7 @@ Regeln für <schritte>:
 - "titel": kurz, sehen später die Schüler:innen.
 - "typ": genau einer der oben genannten Werte.
 - "aktivitaet_name": NUR bei typ "katalog", und NUR ein Name aus der Liste oben, zeichengenau.
+- "galerie_id"/"galerie_name": NUR bei aktivitaet_name "Aktivitätengalerie", und NUR eine id aus der Galerie-Liste, zeichengenau.
 - "kurzbeschreibung": ein Satz für die Lehrkraft, was in diesem Schritt passiert. Nicht schülersichtbar.
 - "dauer_minuten": grobe Schätzung als Zahl, oder weglassen.
 - Reine Rückfragen: nur <antwort>, ohne <schritte>.
