@@ -22,22 +22,6 @@ import { sammleBrianDialoge, istVeraltet } from '@/lib/brianDialoge';
 
 // ── Brian-relevante Aufgabentypen ──
 // Nur KI-Tutor-Aufgaben ('inhalt', inkl. Sequenz-Modus) brauchen Brian.
-// Handlungsaufgaben und externe HTML-Seiten laufen ohne Brian; Meta-Typen
-// (buendel, prozess, projekt_anker, auswahl_buendel) haben keinen Dialog.
-function istBrianAufgabe(a) {
-  return (a.aufgaben_typ || 'inhalt') === 'inhalt';
-}
-
-// ── Segment-Status Checker ──
-function isPromptReady(aufgabe) {
-  return !!(
-    aufgabe.brian_dialog_name?.trim() &&
-    aufgabe.brian_learner_instruction?.trim() &&
-    aufgabe.brian_system_instruction?.trim() &&
-    aufgabe.brian_completion_rule?.trim()
-  );
-}
-
 // ── Segment-Copy-Button ──
 function SegmentCopyButton({ label, value }) {
   const [copied, setCopied] = useState(false);
