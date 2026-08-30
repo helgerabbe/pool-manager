@@ -296,6 +296,18 @@ export function vorschlagZuSchritten(vorschlag = [], katalogListe = []) {
       dauer_minuten: Number.isFinite(v?.dauer_minuten) ? v.dauer_minuten : null,
     };
     if (aktivitaet) schritt.aktivitaet_id = aktivitaet.id;
+
+    // Vorschlag aus der Aktivitäten-Galerie: Die Vorlage wird gleich
+    // eingetragen, den Übergabetext füllt die Lehrkraft später im
+    // Schritt-Fenster. Herkunft 'galerie' hält fest, woher der Schritt kam.
+    if (v?.galerie_id) {
+      schritt.field_values = {
+        ...(schritt.field_values || {}),
+        galerie_id: String(v.galerie_id),
+        galerie_name: String(v.galerie_name || ''),
+      };
+      schritt.herkunft = { quelle: 'galerie', vorlage_id: String(v.galerie_id) };
+    }
     return schritt;
   });
 
