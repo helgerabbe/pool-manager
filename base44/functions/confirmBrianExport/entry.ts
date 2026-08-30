@@ -1,6 +1,13 @@
 /**
  * confirmBrianExport.js
  *
+ * Setzt den Uebertragungsstand nach Brian.
+ *
+ * ZWEI EBENEN (2026-08-31): Ohne `schritt_id` gilt der Stand fuer die ganze
+ * Aufgabe (Einzelaufgabe, wie bisher). Mit `schritt_id` fuer genau EINEN
+ * Brian-Schritt einer Folge — Brian legt pro Dialog eine Aufgabe an, also
+ * werden mehrere Schritte einer Folge einzeln uebertragen.
+ *
  * Setzt `brian_sync_status='synced'` (+ `brian_synced_at`) auf einer
  * `AllgemeineAufgabe` und löst im SELBEN Update den Dual-Lock auf,
  * sobald auch der Moodle-Export fertig ist
@@ -66,7 +73,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { aufgabe_id, brian_dialog_id, brian_url } = await req.json();
+    const { aufgabe_id, brian_dialog_id, brian_url, schritt_id } = await req.json();
     if (!aufgabe_id) {
       return Response.json({ error: 'aufgabe_id erforderlich' }, { status: 400 });
     }
@@ -95,17 +102,50 @@ Deno.serve(async (req) => {
     const moodleAlreadySynced =
       aufgabe.moodle_sync_status === 'synced' || aufgabe.sync_status === 'synced';
 
-    const updatePayload = {
-      brian_sync_status: 'synced',
-      brian_synced_at: now,
-    };
-    // Brian-Rückkanal (2026-07-25): ID/URL der Aufgabe in Brian.study — wird
-    // in den Moodle-Export-Payload durchgereicht (Deep-Link aus Moodle-HTML).
-    if (typeof brian_dialog_id === 'string' && brian_dialog_id.trim()) {
-      updatePayload.brian_dialog_id = brian_dialog_id.trim();
-    }
-    if (typeof brian_url === 'string' && brian_url.trim()) {
-      updatePayload.brian_url = brian_url.trim();
+    const dialogId = typeof brian_dialog_id === 'string' ? brian_dialog_id.trim() : '';
+    const dialogUrl = typeof brian_url === 'string' ? brian_url.trim() : '';
+
+    const updatePayload: Record<string, any> = {};
+
+    if (schritt_id) {
+      // Ein Brian-SCHRITT einer Aufgabensequenz. Brian legt pro Dialog eine
+      // eigene Aufgabe an — zwei Schritte derselben Folge sind zwei Dialoge
+      // und werden einzeln uebertragen. Der Status gehoert deshalb an den
+      // Schritt, nicht an die Aufgabe.
+      const schritte = Array.isArray(aufgabe.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
+      const treffer = schritte.find((s: any) => s?.id === schritt_id);
+      if (!treffer) {
+        return Response.json(
+          { error: `Schritt ${schritt_id} gehoert nicht zu dieser Aufgabe.` },
+          { status: 400 },
+        );
+      }
+      if (treffer.typ !== 'brian') {
+        return Response.json(
+          { error: 'Nur Brian-Schritte koennen nach Brian uebertragen werden.' },
+          { status: 400 },
+        );
+      }
+      updatePayload.sequenz_schritte = schritte.map((s: any) => (s.id === schritt_id
+        ? {
+          ...s,
+          brian: {
+            ...(s.brian || {}),
+            sync_status: 'synced',
+            synced_at: now,
+            ...(dialogId ? { dialog_id: dialogId } : {}),
+            ...(dialogUrl ? { url: dialogUrl } : {}),
+          },
+        }
+        : s));
+    } else {
+      // Einzelaufgabe: alles bleibt an der Aufgabe, wie seit jeher.
+      updatePayload.brian_sync_status = 'synced';
+      updatePayload.brian_synced_at = now;
+      // Brian-Rückkanal (2026-07-25): ID/URL der Aufgabe in Brian.study — wird
+      // in den Moodle-Export-Payload durchgereicht (Deep-Link aus Moodle-HTML).
+      if (dialogId) updatePayload.brian_dialog_id = dialogId;
+      if (dialogUrl) updatePayload.brian_url = dialogUrl;
     }
     let lockReleased = false;
     if (moodleAlreadySynced) {
