@@ -214,6 +214,56 @@ function wendeEditsAn(fragment, edits) {
   return { fragment: aktuell, warnungen };
 }
 
+/**
+ * Laedt das Manifest der Aktivitaeten-Galerie (GitHub-Repository, konfiguriert
+ * ueber Systemeinstellungen 'github_connector').
+ *
+ * ROBUST GEGEN AUSFALL, und zwar mit Absicht: Ist der Connector nicht
+ * eingerichtet, das Token abgelaufen oder GitHub nicht erreichbar, gibt diese
+ * Funktion eine leere Liste zurueck und der Ablaufvorschlag entsteht ohne
+ * Galerie-Vorschlaege. Ein abgelaufenes Token darf nicht den ganzen
+ * Generator lahmlegen — die Lehrkraft wuerde den Zusammenhang nie erraten.
+ *
+ * Stand 2026-08-30: Der Zugriff scheitert an einer Organisationsregel von
+ * GitHub (fein abgestufte Token duerfen nicht laenger als 366 Tage laufen).
+ * Sobald ein neues Token hinterlegt ist, greift dieser Weg ohne weitere
+ * Aenderung.
+ */
+async function ladeGalerieEintraege(base44) {
+  try {
+    const settings = await base44.asServiceRole.entities.Systemeinstellungen
+      .filter({ schluessel: 'github_connector' })
+      .catch(() => []);
+    const cfg = settings?.[0]?.wert_text ? JSON.parse(settings[0].wert_text) : null;
+    if (!cfg?.owner || !cfg?.repo || !cfg?.access_token || !cfg?.file_path) return [];
+
+    const branch = cfg.branch || 'main';
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.file_path}?ref=${branch}`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${cfg.access_token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+    if (!res.ok) return [];
+
+    const file = await res.json();
+    const b64 = String(file.content || '').replace(/\s/g, '');
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    const manifest = JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    const alle = Array.isArray(manifest?.aktivitaeten) ? manifest.aktivitaeten : [];
+
+    // Gleiche Sichtbarkeitsregel wie im Galerie-Browser der App: Gibt es das
+    // Flag, zaehlt es; gibt es keins, sind alle sichtbar.
+    const hatFlag = alle.some((a: any) => a?.galerie_sichtbar === true);
+    return (hatFlag ? alle.filter((a: any) => a?.galerie_sichtbar === true) : alle)
+      .filter((a: any) => a?.id && a?.name);
+  } catch (_e) {
+    return [];
+  }
+}
+
 /** Höchstens so viele Materialien werden als Datei angehängt. */
 const MAX_ANHAENGE = 4;
 /** Größere Dateien werden übersprungen (Anthropic-Grenze, Kosten, Tempo). */
