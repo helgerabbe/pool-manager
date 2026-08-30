@@ -9,7 +9,7 @@ import FreitextSchrittEditor from '@/components/schritte/FreitextSchrittEditor';
 import KatalogSchrittEditor from '@/components/schritte/KatalogSchrittEditor';
 import OffenSchrittEditor from '@/components/schritte/OffenSchrittEditor';
 import {
-  BrianSchrittEditor, HandlungSchrittEditor, ExternSchrittEditor,
+  BrianSchrittEditor, HandlungSchrittEditor, ExternSchrittEditor, AbgabeSchrittEditor,
 } from '@/components/schritte/WeitereSchrittEditoren';
 import { HinweisText } from '@/components/schritte/SchrittHinweis';
 
@@ -57,6 +57,8 @@ export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen })
         return <HandlungSchrittEditor schritt={schritt} onChange={onChange} />;
       case SCHRITT_TYPEN.EXTERN:
         return <ExternSchrittEditor schritt={schritt} onChange={onChange} />;
+      case SCHRITT_TYPEN.ABGABE:
+        return <AbgabeSchrittEditor schritt={schritt} onChange={onChange} />;
       default:
         return (
           <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">

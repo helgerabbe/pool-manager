@@ -5,6 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MaterialDateiFeld from '@/components/allgemeineAufgaben/MaterialDateiFeld';
 import { HinweisText } from '@/components/schritte/SchrittHinweis';
+import { ABGABE_FORMATE, abgabeSatz } from '@/lib/abgabeFormate';
+import { cn } from '@/lib/utils';
 
 /**
  * Editoren der übrigen Schritttypen.
@@ -203,6 +205,93 @@ export function ExternSchrittEditor({ schritt, onChange }) {
           placeholder="480"
         />
       </div>
+    </div>
+  );
+}
+
+/* ── Ergebnisabgabe ────────────────────────────────────────────────────── */
+
+/**
+ * Legt fest, WAS die Schüler:innen abgeben sollen — nicht, wo.
+ *
+ * Der Pool-Manager nimmt keine Dateien entgegen; hochgeladen wird in Moodle.
+ * Dieser Schritt kündigt die Abgabe an der richtigen Stelle der Aufgabe an
+ * und gibt die Angaben im Payload an die MBK weiter, die beides verbindet.
+ */
+export function AbgabeSchrittEditor({ schritt, onChange }) {
+  const a = schritt.abgabe || {};
+  const formate = a.formate || [];
+  const setA = (feld, wert) => onChange({ ...schritt, abgabe: { ...a, [feld]: wert } });
+
+  const umschalten = (id) => setA(
+    'formate',
+    formate.includes(id) ? formate.filter((f) => f !== id) : [...formate, id],
+  );
+
+  const vorschau = abgabeSatz(formate, a.custom_format);
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-2">
+        <Label>Was soll abgegeben werden?</Label>
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {ABGABE_FORMATE.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => umschalten(f.id)}
+              className={cn(
+                'flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border-2 transition-all',
+                formate.includes(f.id)
+                  ? 'border-teal-500 bg-teal-50 text-teal-800'
+                  : 'border-border bg-card text-muted-foreground hover:border-teal-300',
+              )}
+            >
+              <span className="text-lg">{f.emoji}</span>
+              <span className="text-[11px] leading-tight text-center">{f.label}</span>
+            </button>
+          ))}
+        </div>
+        <HinweisText>Mehrfachauswahl möglich.</HinweisText>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Etwas anderes (optional)</Label>
+        <Input
+          value={a.custom_format || ''}
+          onChange={(e) => setA('custom_format', e.target.value)}
+          placeholder="z. B. ein Plakat auf Papier"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Dateiformat (optional)</Label>
+        <Input
+          value={a.dateiformat || ''}
+          onChange={(e) => setA('dateiformat', e.target.value)}
+          placeholder="z. B. PDF"
+        />
+        <HinweisText>
+          Wo genau hochgeladen wird, regelt Moodle — das müssen Sie hier nicht angeben.
+        </HinweisText>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Hinweis für die Schüler:innen (optional)</Label>
+        <Textarea
+          value={a.hinweis || ''}
+          onChange={(e) => setA('hinweis', e.target.value)}
+          placeholder="z. B. „Nenne im Dateinamen deinen Namen und die Klasse.""
+          className="min-h-[70px]"
+        />
+      </div>
+
+      {vorschau && (
+        <div className="rounded-lg border border-teal-200 bg-teal-50 px-3 py-2">
+          <p className="text-[11px] font-semibold text-teal-900 uppercase tracking-wide">So lesen es die Schüler:innen</p>
+          <p className="mt-0.5 text-sm text-teal-900">{vorschau}</p>
+        </div>
+      )}
     </div>
   );
 }
