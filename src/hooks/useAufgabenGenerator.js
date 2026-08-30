@@ -82,6 +82,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     if (!text || busy) return;
 
     setFehler(null);
+    setFehlgeschlagen(null);
     setWarnungen([]);
     setBusy(true);
     setTeilAntwort('');
@@ -116,12 +117,14 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
         }),
         onopen: async (res) => {
           if (res.ok && res.headers.get('content-type')?.includes('text/event-stream')) return;
-          let msg = `Der Generator antwortet nicht (HTTP ${res.status}).`;
+          let detail = '';
           try {
             const body = await res.json();
-            if (body?.error) msg = body.error;
+            if (body?.error) detail = String(body.error);
           } catch { /* ignorieren */ }
-          throw new Error(msg);
+          const fehler = new Error(fehlerText(res.status, detail));
+          fehler.uebersetzt = true;
+          throw fehler;
         },
         onmessage: (ev) => {
           if (ev.event === 'chunk') {
@@ -156,11 +159,16 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
       });
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        setFehler(err?.message || 'Verbindung zum Generator abgebrochen.');
-        setVerlauf((v) => [...v, {
-          rolle: 'ki',
-          text: 'Da ist etwas schiefgegangen. Versuch es bitte noch einmal.',
-        }]);
+        setFehler(err?.uebersetzt ? err.message : verbindungsFehlerText(err));
+        // Die unbeantwortete Frage wieder aus dem Verlauf nehmen und für
+        // "Nochmal versuchen" aufheben. Sonst stünde sie doppelt da, sobald
+        // die Lehrkraft es erneut schickt — und ohne Aufheben wäre der
+        // getippte Text verloren.
+        setVerlauf((v) => {
+          const letzter = v[v.length - 1];
+          return letzter?.rolle === 'lehrkraft' && letzter.text === text ? v.slice(0, -1) : v;
+        });
+        setFehlgeschlagen(text);
       }
     } finally {
       setBusy(false);
