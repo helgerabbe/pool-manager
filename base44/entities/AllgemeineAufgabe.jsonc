@@ -207,7 +207,8 @@
             "description": "Nur bei typ='brian': ein KI-Tutor-Gespraech. Brian arbeitet PRO DIALOG, deshalb traegt jeder Brian-Schritt seinen eigenen vollstaendigen Durchlauf: Lernzielanalyse, Erwartungshorizont und die vier Brian-Felder, die daraus erzeugt werden. Feldschnitt ansonsten identisch zu StundenSequenz.brian.",
             "properties": {
               "aufgabenstellung": {
-                "type": "string"
+                "type": "string",
+                "description": "Was die Schueler in diesem Gespraech tun sollen. Grundlage fuer Lernzielanalyse, Erwartungshorizont und die Erzeugung der vier Brian-Felder."
               },
               "erwartungshorizont": {
                 "type": "string"
@@ -252,6 +253,33 @@
               },
               "erwartungshorizont_datei_name": {
                 "type": "string"
+              },
+              "aufgaben_bild_url": {
+                "type": "string",
+                "description": "Optionales Aufgabenbild dieses Gespraechs."
+              },
+              "materialien": {
+                "type": "array",
+                "default": [],
+                "description": "Zusaetzliche Materialien DIESES Gespraechs (gleiche Form wie AllgemeineAufgabe.materialien).",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "properties": {
+                    "type": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "content": {
+                      "type": "string"
+                    },
+                    "url": {
+                      "type": "string"
+                    }
+                  }
+                }
               }
             }
           },
