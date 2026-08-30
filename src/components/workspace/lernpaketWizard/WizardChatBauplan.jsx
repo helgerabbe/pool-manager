@@ -42,7 +42,7 @@ export default function WizardChatBauplan({ bauplan, onRemove, disabled }) {
                     <span className="text-xs font-medium text-foreground">{it.aktivitaetstyp}</span>
                     {it.ideenkiste_id && (
                       <Badge variant="outline" className="text-[9px] px-1 py-0 bg-amber-50 text-amber-700 border-amber-200">
-                        Ideenkiste
+                        Ideenspeicher
                       </Badge>
                     )}
                     {it.material_indizes?.length > 0 && (

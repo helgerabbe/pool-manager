@@ -819,7 +819,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} istPrivat={einheit?.sichtbarkeit === 'privat'} />
               </div>
-              {/* Ideenkiste: einheitenweite Aufgaben-Sammelbox (Etappe 1) */}
+              {/* Ideenspeicher: einheitenweite Ablage für Aufgaben-Ideen. Dateiname
+                  und Bezeichner heißen weiterhin "Ideenkiste", siehe
+                  IdeenkistePanel. */}
               {!isBasismodul && (
                 <IdeenkisteButton
                   einheitId={selectedEinheitId}
