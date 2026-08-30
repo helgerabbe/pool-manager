@@ -8,16 +8,20 @@
  *   - value:    string|null      aktuell ausgewählte Kategorie (oder null)
  *   - onChange: (id|null) => void
  *   - disabled: boolean
+ *   - kompakt:  boolean           alle Kacheln in EINER Reihe, ohne Überschrift
+ *                                 und ohne Beschreibungstext. Für Stellen, an
+ *                                 denen die Auswahl in einem Akkordeon sitzt
+ *                                 und die Erklärung schon darüber steht.
  */
 import React from 'react';
 import { MISSIONEN } from '@/lib/missionen';
 import { Sparkles, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function MissionPicker({ value, onChange, disabled = false }) {
+export default function MissionPicker({ value, onChange, disabled = false, kompakt = false }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className={cn('flex items-center justify-between', kompakt && 'hidden')}>
         <label className="text-sm font-medium flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
           Kategorie der Aufgabe
@@ -34,11 +38,15 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
         )}
       </div>
 
-      <p className="text-[11px] text-muted-foreground">
-        Wo im Unterrichtsverlauf steht diese Aufgabe?
-      </p>
+      {!kompakt && (
+        <p className="text-[11px] text-muted-foreground">
+          Wo im Unterrichtsverlauf steht diese Aufgabe?
+        </p>
+      )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <div className={kompakt
+        ? 'grid grid-cols-2 sm:grid-cols-4 gap-2'
+        : 'grid grid-cols-2 sm:grid-cols-3 gap-2'}>
         {MISSIONEN.map((m) => {
           const isActive = value === m.id;
           return (
@@ -48,6 +56,7 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
               onClick={() => !disabled && onChange(m.id)}
               disabled={disabled}
               aria-pressed={isActive}
+              title={kompakt ? m.kern : undefined}
               className={cn(
                 'relative flex flex-col items-start gap-1 p-2.5 rounded-lg border-2 text-left transition-all',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
@@ -63,7 +72,9 @@ export default function MissionPicker({ value, onChange, disabled = false }) {
                 <span aria-hidden="true">{m.emoji}</span>
               </div>
               <div className="text-xs font-semibold leading-snug">{m.label}</div>
-              <div className="text-[10px] text-muted-foreground leading-snug">{m.kern}</div>
+              {!kompakt && (
+                <div className="text-[10px] text-muted-foreground leading-snug">{m.kern}</div>
+              )}
             </button>
           );
         })}
