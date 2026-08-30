@@ -83,13 +83,37 @@ function aggregateAtLeastNGreen(statuses, requiredGreen) {
  *
  * Beachtet sowohl moodle_sync_status als auch das legacy sync_status-Feld.
  */
+/**
+ * Uebertragungsstand aller Brian-Gespraeche einer Aufgabe, zusammengefasst.
+ *
+ * Seit ein Brian-Gespraech ein SCHRITT sein kann (2026-08-31), traegt eine
+ * Aufgabe unter Umstaenden mehrere Dialoge mit eigenem Status. Fuer die Ampel
+ * gilt die strengere Lesart:
+ *   - 'modified', sobald EIN Gespraech geaendert wurde
+ *   - 'synced' nur, wenn ALLE uebertragen sind — sonst faende die Lehrkraft
+ *     eine gruene Aufgabe vor, von der die Haelfte noch nicht in Brian liegt
+ * Aufgaben ohne Brian-Schritte behalten das Feld an der Aufgabe.
+ */
+function brianStandDerAufgabe(aufgabe) {
+  const schritte = Array.isArray(aufgabe?.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
+  const dialoge = aufgabe?.aufgaben_modus === 'sequenz'
+    ? schritte.filter((s) => s?.typ === 'brian')
+    : [];
+  if (dialoge.length === 0) return aufgabe?.brian_sync_status;
+
+  const staende = dialoge.map((s) => s?.brian?.sync_status || 'new');
+  if (staende.includes('modified')) return 'modified';
+  if (staende.every((st) => st === 'synced')) return 'synced';
+  return 'new';
+}
+
 export function getFlatAufgabeStatus(aufgabe) {
   if (!aufgabe) return AMPEL.RED;
   const isApproved = aufgabe.content_status === 'approved';
   if (!isApproved) return AMPEL.RED;
   const isModified =
     aufgabe.moodle_sync_status === 'modified' ||
-    aufgabe.brian_sync_status === 'modified' ||
+    brianStandDerAufgabe(aufgabe) === 'modified' ||
     aufgabe.sync_status === 'modified';
   return isModified ? AMPEL.YELLOW : AMPEL.GREEN;
 }
@@ -232,7 +256,7 @@ export function isExportFreigegeben(item, ctx = {}) {
   if (!aufgabe) return false;
   return (
     aufgabe.moodle_sync_status === 'synced' ||
-    aufgabe.brian_sync_status === 'synced' ||
+    brianStandDerAufgabe(aufgabe) === 'synced' ||
     aufgabe.sync_status === 'synced'
   );
 }

@@ -290,6 +290,18 @@ function mapAllgemeineAufgabeForExport(a) {
     content_status: a.content_status,
     moodle_sync_status: a.moodle_sync_status,
     brian_sync_status: a.brian_sync_status,
+    // Bei Aufgabensequenzen kann es mehrere Brian-Gespraeche mit eigenem
+    // Stand geben — die MBK braucht sie einzeln, nicht zusammengefasst.
+    brian_dialoge: (a.aufgaben_modus === 'sequenz' && Array.isArray(a.sequenz_schritte))
+      ? a.sequenz_schritte
+        .filter((s) => s?.typ === 'brian')
+        .map((s) => ({
+          schritt_id: s.id || null,
+          sync_status: s.brian?.sync_status || 'new',
+          dialog_id: s.brian?.dialog_id || null,
+          url: s.brian?.url || null,
+        }))
+      : undefined,
     updated_date: a.updated_date,
   };
 
