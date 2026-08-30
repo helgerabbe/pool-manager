@@ -38,6 +38,8 @@ export default function ErwartungshorizontTab({
   onWertChange,
   aufgabenstellungOverride = '',
   loesungDateiUrl = null,
+  loesungDateiName = '',
+  onDateiChange,
 }) {
   const imEntwurfsModus = typeof onWertChange === 'function';
   const queryClient = useQueryClient();
@@ -268,15 +270,18 @@ export default function ErwartungshorizontTab({
 
         {/* Vorhandene Lösung als Datei (PDF, Word, Bild, Screenshot) */}
         <ErwartungshorizontDateiFeld
-          fileUrl={aufgabe.erwartungshorizont_datei_url}
-          fileName={aufgabe.erwartungshorizont_datei_name}
+          fileUrl={imEntwurfsModus ? loesungDateiUrl : aufgabe.erwartungshorizont_datei_url}
+          fileName={imEntwurfsModus ? loesungDateiName : aufgabe.erwartungshorizont_datei_name}
           disabled={!kannBearbeiten}
-          onChange={({ url, name }) =>
+          onChange={({ url, name }) => {
+            // Im Entwurfsmodus gehört die Lösungsdatei zum Schritt und wird
+            // vom Aufrufer verwaltet — hier wird nichts gespeichert.
+            if (imEntwurfsModus) { onDateiChange?.({ url: url || null, name: name || null }); return; }
             updateMutation.mutate({
               erwartungshorizont_datei_url: url || null,
               erwartungshorizont_datei_name: name || null,
-            })
-          }
+            });
+          }}
         />
 
         {/* Textarea */}
