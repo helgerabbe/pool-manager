@@ -354,7 +354,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
               {/* Altaufgabe → Werkstatt. Erscheint nur bei Einzelaufgaben vom
                   Typ 'inhalt' und nur, solange sie nicht freigegeben sind —
                   eine freigegebene Aufgabe wird nicht nebenbei umgebaut. */}
-              {!isApproved && !istImExport && (
+              {!isApproved && aufgabe.sync_status !== 'pending' && (
                 <PortierungButton
                   aufgabe={aufgabe}
                   kannBearbeiten={kannBearbeiten}
