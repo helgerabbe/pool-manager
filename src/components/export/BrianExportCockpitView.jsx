@@ -257,7 +257,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
       });
 
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      setUebertragenAufgabe(null);
+      setUebertragenDialog(null);
 
       if (result.data?.lock_released) {
         toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
@@ -355,7 +355,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
 
       <BrianUebertragenDialog
         open={!!uebertragenDialog}
-        onOpenChange={(open) => { if (!open) setUebertragenAufgabe(null); }}
+        onOpenChange={(open) => { if (!open) setUebertragenDialog(null); }}
         aufgabe={uebertragenDialog?.aufgabe}
         onConfirm={handleConfirmUebertragen}
         isSaving={isSaving}
