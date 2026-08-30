@@ -112,7 +112,8 @@ const SCHRITT_TYPEN_BESCHREIBUNG = `- "katalog": ein fertiges, deterministisches
 - "offen": eine interaktive Aufgabe, die eigens gebaut werden muss. Nur wenn KEIN Katalogformat passt — das Bauen kostet Zeit.
 - "brian": ein Gespräch mit dem KI-Tutor. Für offene, diskursive Aufgaben ohne eindeutige Lösung.
 - "handlung": Arbeit an echtem Material außerhalb des Bildschirms (messen, bauen, befragen). Schülerseitig nur ein Bestätigen-Knopf.
-- "extern": eine eingebettete fremde Seite, typischerweise GeoGebra.`;
+- "extern": eine eingebettete fremde Seite, typischerweise GeoGebra.
+- "abgabe": sagt den Schülern, in welcher Form sie ihr Ergebnis abgeben sollen (Text, Präsentation, Bild, Audio …). Nimmt selbst nichts entgegen — hochgeladen wird im Kurs. Sinnvoll am ENDE einer Aufgabe, die ein Produkt verlangt.`;
 
 function baueStrukturPrompt(katalogNamen, galerieEintraege = []) {
   const katalog = katalogNamen.length
@@ -345,7 +346,7 @@ async function ladeMaterialAnhaenge(materialien: any[]) {
   return { bloecke, gelesen, uebersprungen };
 }
 
-const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlung', 'extern']);
+const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlung', 'extern', 'abgabe']);
 
 /**
  * Liest den <schritte>-Block als geprüfte Liste.

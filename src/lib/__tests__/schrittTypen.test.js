@@ -10,11 +10,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { buildSequenzSchritteFuerExport } from '@/lib/mbkAirGapPayloads';
+import { abgabeSatz } from '@/lib/abgabeFormate';
 import {
   schritteAusAufgabe, neuNummerieren, leererSchritt, neueSchrittId,
   schrittStatus, istSchrittVollstaendig, getSchrittTyp, vorschlagZuSchritten,
   schrittBeschriftung, schrittZusammenfassung,
-  SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU,
+  SCHRITT_TYPEN, SCHRITT_STATUS, SCHRITT_TYPEN_NEU, leererSchritt as _ls,
 } from '@/lib/schrittTypen';
 
 describe('schritteAusAufgabe', () => {
@@ -356,5 +357,48 @@ describe('Übersichtstexte für Schritte', () => {
 
   it('normalisiert Zeilenumbrueche zu einer Zeile', () => {
     expect(schrittZusammenfassung({ typ: 'handlung', handlung: { arbeitsauftrag: ' Miss\n\n  nach ' } })).toBe('Miss nach');
+  });
+});
+
+describe('Ergebnisabgabe-Schritt', () => {
+  it('braucht mindestens ein Format oder eine eigene Angabe', () => {
+    expect(istSchrittVollstaendig({ typ: 'abgabe', abgabe: { formate: [] } })).toBe(false);
+    expect(istSchrittVollstaendig({ typ: 'abgabe', abgabe: { formate: ['text'] } })).toBe(true);
+    expect(istSchrittVollstaendig({ typ: 'abgabe', abgabe: { formate: [], custom_format: 'Plakat' } })).toBe(true);
+    // Nur ein Hinweis sagt noch nicht, WAS abgegeben wird.
+    expect(istSchrittVollstaendig({ typ: 'abgabe', abgabe: { hinweis: 'Bis Freitag' } })).toBe(false);
+  });
+
+  it('wird als leerer Schritt korrekt angelegt', () => {
+    const s = leererSchritt('abgabe', 0);
+    expect(s.abgabe).toEqual({ formate: [], custom_format: '', hinweis: '', dateiformat: '' });
+    expect(istSchrittVollstaendig(s)).toBe(false);
+  });
+
+  it('fasst die Abgabe als Satz zusammen', () => {
+    expect(schrittZusammenfassung({ typ: 'abgabe', abgabe: { formate: ['presentation', 'image'] } }))
+      .toBe('Gib eine Präsentation und ein Bild ab.');
+  });
+
+  it('wird für neue Schritte angeboten', () => {
+    expect(SCHRITT_TYPEN_NEU.map((t) => t.id)).toContain('abgabe');
+  });
+});
+
+describe('abgabeSatz', () => {
+  it('bildet Ein-, Zwei- und Mehrfachauswahl korrekt ab', () => {
+    expect(abgabeSatz(['text'])).toBe('Gib einen geschriebenen Text ab.');
+    expect(abgabeSatz(['text', 'audio'])).toBe('Gib einen geschriebenen Text und eine Tonaufnahme ab.');
+    expect(abgabeSatz(['text', 'image', 'audio']))
+      .toBe('Gib einen geschriebenen Text, ein Bild und eine Tonaufnahme ab.');
+  });
+
+  it('nimmt eine eigene Angabe mit auf', () => {
+    expect(abgabeSatz(['text'], 'ein Plakat')).toBe('Gib einen geschriebenen Text und ein Plakat ab.');
+  });
+
+  it('liefert nichts bei leerer Auswahl', () => {
+    expect(abgabeSatz([], '')).toBe('');
+    expect(abgabeSatz()).toBe('');
   });
 });
