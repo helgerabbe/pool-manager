@@ -4,7 +4,7 @@ import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getAllLernziele } from '@/services/LernzielService';
-import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask, createAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
+import { getAufgabenByEinheit, getMappingsByAufgabe, deleteAllgemeineAufgabe, lockTask, unlockTask } from '@/services/AllgemeineAufgabeService';
 import { getAllBasisLernziele, getAllBasismodule, getAllBasislernpakete } from '@/services/BasisLernzielService';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,8 +28,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
-import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
-import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
+// STILLGELEGT 2026-08-30 — beide Einstiege sind entfallen, siehe Block am
+// Ende dieser Datei. Wieder einkommentieren, falls die Werkstatt doch nicht
+// trägt; sonst samt der ungenutzten Komponenten löschen.
+// import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
+// import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import HelpBadge from '@/components/ui/HelpBadge';
 import HelpDialog from '@/components/ui/HelpDialog';
 import MissionBadge from '@/components/missionen/MissionBadge';
@@ -534,8 +537,6 @@ export default function AllgemeineAufgabenView({
   const [createFormOpen, setCreateFormOpen] = useState(false);
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
-  const [wizardOpen, setWizardOpen] = useState(false);
-  const [ideenboxOpen, setIdeenboxOpen] = useState(false);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
   // Aufgabenart-Picker (Handlung | digitale Aufgabe | externe Seite) – nur in Ebene 2.
   const [artPickerOpen, setArtPickerOpen] = useState(false);
@@ -661,30 +662,6 @@ export default function AllgemeineAufgabenView({
     });
     return counts;
   }, [allgemeineAufgaben]);
-
-  const handleSaveIdee = async (idea) => {
-    const materialHinweis = idea.required_materials
-      ? `Materialaufwand: ${idea.required_materials}`
-      : '';
-
-    await createAllgemeineAufgabe({
-      einheit_id: einheitId,
-      anforderungsebene,
-      aufgaben_typ: 'inhalt',
-      themenfeld_id: idea.themenfeld_id || null,
-      titel: idea.titel,
-      aufgabenstellung: idea.aufgabenstellung,
-      mission_type: anforderungsebene === '3 - Projekt' ? null : (idea.mission_type || null),
-      schwierigkeitsgrad: idea.schwierigkeitsgrad || null,
-      hinweise_zum_material: materialHinweis,
-      erwartungshorizont: idea.didaktischer_hinweis
-        ? `Ideen-Notiz der KI: ${idea.didaktischer_hinweis}`
-        : null,
-      content_status: 'draft',
-      sync_status: 'new',
-    });
-    queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
-  };
 
   // Aufgaben nach Mission-Filter einschränken (vor der Themenfeld-Gruppierung).
   const aufgabenNachFilter = useMemo(() => {
@@ -986,14 +963,6 @@ export default function AllgemeineAufgabenView({
         )}
       </div>
 
-      <ThemenfeldIdeenModal
-        open={ideenboxOpen}
-        onOpenChange={setIdeenboxOpen}
-        einheitId={einheitId}
-        themenfelder={themenfelder}
-        anforderungsebene={anforderungsebene}
-        onSaveIdea={handleSaveIdee}
-      />
 
       {/* Aufgabenart-Picker (Handlung / digitale Aufgabe / externe Seite) */}
       <AufgabenArtPicker
@@ -1069,26 +1038,6 @@ export default function AllgemeineAufgabenView({
       />
 
       {/* KI-Wizard – erstellt immer Inhalts-Aktivitäten (aufgaben_typ='inhalt'). */}
-      <AiTaskWizardModal
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        taskType={anforderungsebene === '3 - Projekt' ? 'Projektaufgabe' : 'Allgemeine Aufgabe (Transfer)'}
-        onSave={async ({ titel, aufgabenstellung, ki_kompetenz_tags, mission_type }) => {
-          await createAllgemeineAufgabe({
-            einheit_id: einheitId,
-            anforderungsebene,
-            aufgaben_typ: 'inhalt',
-            titel,
-            aufgabenstellung,
-            ki_kompetenz_tags,
-            // Mission nur für Ebene 2 sinnvoll — bei Ebene 3 (Projekt) wird das
-            // Feld vom Schema ohnehin nicht gepflegt.
-            mission_type: anforderungsebene === '3 - Projekt' ? null : (mission_type || null),
-          });
-          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] });
-        }}
-      />
-
       {/* Schüler-Vorschau (Tablet) */}
       <AufgabePreviewModal
         open={!!previewAufgabe}
@@ -1115,3 +1064,31 @@ export default function AllgemeineAufgabenView({
     </div>
   );
 }
+
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ * STILLGELEGT am 2026-08-30 — Kandidaten zum Loeschen
+ * ─────────────────────────────────────────────────────────────────────────
+ * Aus dieser Ansicht sind zwei Einstiege entfallen, weil die Aufgaben-
+ * Werkstatt beides uebernimmt:
+ *
+ *   "KI-Ideenbox oeffnen"  -> <ThemenfeldIdeenModal>, dazu handleSaveIdee()
+ *      Ersatz: Gesammelte Ideen (Entity AufgabenIdee) erscheinen jetzt im
+ *      Einstieg der Werkstatt und lassen sich dort uebernehmen — siehe
+ *      hooks/useOffeneAufgabenIdeen.js und werkstatt/WerkstattEinstieg.jsx.
+ *      Angelegt werden Ideen weiterhin im Aufgabenassistenten
+ *      (components/ideenkiste/), der unberuehrt bleibt.
+ *      -> components/missionen/ThemenfeldIdeenModal.jsx wird seither
+ *         NIRGENDS mehr eingebunden und kann geloescht werden, sobald die
+ *         Werkstatt sich im Alltag bewaehrt hat.
+ *
+ *   "Mit KI entwerfen"     -> <AiTaskWizardModal>
+ *      Ersatz: Die Struktur-Phase der Werkstatt. Die Komponente selbst
+ *      BLEIBT — ProjektaufgabenView (Ebene 3) benutzt sie weiterhin.
+ *      Hier entfaellt nur der Einstieg.
+ *
+ * Der frueher hier eingehaengte Wizard-Block legte eine Aufgabe direkt an:
+ * createAllgemeineAufgabe({ einheit_id, anforderungsebene,
+ *   aufgaben_typ: 'inhalt', titel, aufgabenstellung, ki_kompetenz_tags,
+ *   mission_type }) — falls jemand die Logik nachschlagen muss.
+ */
