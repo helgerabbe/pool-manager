@@ -175,6 +175,7 @@ export default function LernzielAnalysePanel({
       const vorhandene_texte = items.map((it) => it.text);
       const res = await base44.functions.invoke('analyzeAufgabeLernziele', {
         aufgabeId: aufgabe.id, modus: 'mehr', vorhandene_texte,
+        schritt_titel: schrittTitel, schritt_aufgabenstellung: schrittAufgabenstellung,
       });
       if (res?.data?.error) throw new Error(res.data.error);
       const neue = res.data?.neue_vorschlaege || [];
