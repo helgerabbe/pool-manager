@@ -42,7 +42,7 @@
     },
     "sequenz_schritte": {
       "type": "array",
-      "description": "Geordnete Schrittfolge der Aufgabe. Der TYP sitzt am Schritt, nicht an der Aufgabe (Konzept 2026-08-29). Sortierung ueber 'reihenfolge'. Je nach 'typ' ist genau EIN Nutzdaten-Block gefuellt: material | aufgabe | katalog (aktivitaet_id + field_values) | offen | brian | handlung | extern. Alt-Typen 'material' und 'aufgabe' bleiben gueltig und unveraendert - Bestandssequenzen laufen ohne Migration weiter. Schritte ohne 'status' sind Altbestand und gelten als 'uebernommen'.",
+      "description": "Geordnete Schrittfolge der Aufgabe. Der TYP sitzt am Schritt, nicht an der Aufgabe (Konzept 2026-08-29). Sortierung ueber 'reihenfolge'. Je nach 'typ' ist genau EIN Nutzdaten-Block gefuellt: material | aufgabe | katalog (aktivitaet_id + field_values) | offen | brian | handlung | extern | abgabe. Alt-Typen 'material' und 'aufgabe' bleiben gueltig und unveraendert - Bestandssequenzen laufen ohne Migration weiter. Schritte ohne 'status' sind Altbestand und gelten als 'uebernommen'.",
       "items": {
         "type": "object",
         "properties": {
@@ -59,7 +59,8 @@
               "offen",
               "brian",
               "handlung",
-              "extern"
+              "extern",
+              "abgabe"
             ],
             "description": "Schritttyp. 'material' und 'aufgabe' sind die urspruenglichen Typen der Aufgabensequenz und bleiben unveraendert gueltig."
           },
@@ -203,7 +204,7 @@
           "brian": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Nur bei typ='brian': Feldschnitt identisch zu StundenSequenz.brian.",
+            "description": "Nur bei typ='brian': ein KI-Tutor-Gespraech. Brian arbeitet PRO DIALOG, deshalb traegt jeder Brian-Schritt seinen eigenen vollstaendigen Durchlauf: Lernzielanalyse, Erwartungshorizont und die vier Brian-Felder, die daraus erzeugt werden. Feldschnitt ansonsten identisch zu StundenSequenz.brian.",
             "properties": {
               "aufgabenstellung": {
                 "type": "string"
@@ -239,6 +240,18 @@
               "generiert_am": {
                 "type": "string",
                 "format": "date-time"
+              },
+              "lernzielanalyse": {
+                "type": "object",
+                "additionalProperties": true,
+                "description": "Lernzielanalyse DIESES Brian-Gespraechs. Gleiche Form wie AllgemeineAufgabe.lernzielanalyse ({items:[...], analysiert_am}). Je Brian-Schritt eigen, weil zwei Gespraeche einer Folge verschiedene Aspekte behandeln und damit verschiedene Lernziele brauchen koennen. Brian bekommt daraus den Hinweis, auf welches Lernpaket er bei Luecken verweisen kann."
+              },
+              "erwartungshorizont_datei_url": {
+                "type": "string",
+                "description": "Optionale Loesungsdatei (PDF/Bild), die bei der KI-Erzeugung des Erwartungshorizonts mitgelesen wird."
+              },
+              "erwartungshorizont_datei_name": {
+                "type": "string"
               }
             }
           },
@@ -280,6 +293,32 @@
               },
               "hinweis": {
                 "type": "string"
+              }
+            }
+          },
+          "abgabe": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Nur bei typ='abgabe': WAS die Schueler abgeben sollen. Der Pool-Manager nimmt selbst nichts entgegen - hochgeladen wird in Moodle, die MBK verbindet beides. Kennungen in 'formate' aus src/lib/abgabeFormate.js.",
+            "properties": {
+              "formate": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "text | presentation | timeline | image | graphic | audio | portfolio"
+              },
+              "custom_format": {
+                "type": "string",
+                "description": "Eigene Angabe, wenn kein Standardformat passt."
+              },
+              "dateiformat": {
+                "type": "string",
+                "description": "Optional, z. B. 'PDF'."
+              },
+              "hinweis": {
+                "type": "string",
+                "description": "Optionaler Hinweis fuer die Schueler."
               }
             }
           }
