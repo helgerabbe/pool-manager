@@ -35,6 +35,20 @@ const TYP_ICONS = {
   book_ref: FileText,
 };
 
+/**
+ * Farbe je Materialtyp. Ein abgelegtes Material soll auf einen Blick als
+ * solches erkennbar sein — und man soll ohne Lesen sehen, ob drei Bilder
+ * oder drei Textausschnitte daliegen.
+ */
+const TYP_FARBEN = {
+  image:     { rahmen: 'border-sky-200 bg-sky-50',       icon: 'bg-sky-100 text-sky-700' },
+  pdf:       { rahmen: 'border-rose-200 bg-rose-50',     icon: 'bg-rose-100 text-rose-700' },
+  link:      { rahmen: 'border-emerald-200 bg-emerald-50', icon: 'bg-emerald-100 text-emerald-700' },
+  free_text: { rahmen: 'border-amber-200 bg-amber-50',   icon: 'bg-amber-100 text-amber-700' },
+  book_ref:  { rahmen: 'border-violet-200 bg-violet-50', icon: 'bg-violet-100 text-violet-700' },
+};
+const TYP_FARBE_FALLBACK = { rahmen: 'border-slate-200 bg-slate-50', icon: 'bg-slate-100 text-slate-600' };
+
 const TYP_LABELS = {
   image: 'Bild',
   pdf: 'PDF',
@@ -116,12 +130,17 @@ export default function MaterialSammlung({ materialien = [], onChange, disabled 
         <ul className="space-y-1.5">
           {materialien.map((m, i) => {
             const Icon = TYP_ICONS[m.type] || FileIcon;
+            const farbe = TYP_FARBEN[m.type] || TYP_FARBE_FALLBACK;
             return (
-              <li key={i} className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2">
-                <Icon className="w-4 h-4 shrink-0 text-muted-foreground" />
+              <li key={i} className={`flex items-center gap-3 rounded-lg border-2 px-3 py-2.5 ${farbe.rahmen}`}>
+                <span className={`flex items-center justify-center w-8 h-8 rounded-lg shrink-0 ${farbe.icon}`}>
+                  <Icon className="w-4 h-4" />
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm truncate">{m.label || TYP_LABELS[m.type] || 'Material'}</p>
-                  <p className="text-[11px] text-muted-foreground">
+                  <p className="text-sm font-medium truncate text-slate-800">
+                    {m.label || TYP_LABELS[m.type] || 'Material'}
+                  </p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                     {TYP_LABELS[m.type] || m.type}
                     {m.type === 'free_text' && m.content ? ` · ${m.content.length} Zeichen` : ''}
                   </p>
@@ -140,7 +159,7 @@ export default function MaterialSammlung({ materialien = [], onChange, disabled 
                   type="button"
                   onClick={() => entfernen(i)}
                   disabled={disabled}
-                  className="p-1 rounded hover:bg-red-100 text-muted-foreground hover:text-red-600 shrink-0 disabled:opacity-40"
+                  className="p-1 rounded hover:bg-red-100 text-slate-500 hover:text-red-600 shrink-0 disabled:opacity-40"
                   title="Entfernen"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
