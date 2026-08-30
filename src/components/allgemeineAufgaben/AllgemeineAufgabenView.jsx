@@ -371,25 +371,45 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             Aufgabensequenz ({sequenzSchritte.length} Schritte)
           </p>
           <div className="space-y-1.5">
-            {sequenzSchritte.map((s, i) => (
-              <div key={s.id || i} className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border border-border text-xs">
-                <span className={cn(
-                  'shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5',
-                  s.typ === 'material' ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
-                )}>
-                  {i + 1}
-                </span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-semibold">{s.typ === 'material' ? 'Material' : 'Aufgabe'}</span>
-                  {s.material?.beschreibung && (
-                    <span className="text-muted-foreground ml-1">– {s.material.beschreibung}</span>
-                  )}
-                  {s.aufgabe?.aufgabenstellung && (
-                    <p className="text-muted-foreground mt-0.5 line-clamp-2">{s.aufgabe.aufgabenstellung}</p>
-                  )}
+            {sequenzSchritte.map((s, i) => {
+              const typInfo = getSchrittTyp(s.typ);
+              const status = schrittStatus(s);
+              const fertig = istSchrittVollstaendig(s);
+              return (
+                <div key={s.id || i} className="flex items-start gap-2 p-2 rounded-md bg-muted/20 border border-border text-xs">
+                  <span className={cn(
+                    'shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold mt-0.5',
+                    fertig ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'
+                  )}>
+                    {i + 1}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-semibold">
+                        {s.titel?.trim() || typInfo?.label || 'Schritt'}
+                      </span>
+                      <span className={cn(
+                        'rounded-full border px-1.5 py-0.5 text-[10px] font-bold',
+                        typInfo?.classes?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
+                      )}>
+                        {schrittBeschriftung(s, typInfo)}
+                      </span>
+                      {!fertig && status !== 'geplant' && (
+                        <span className="text-[10px] text-amber-700">unvollständig</span>
+                      )}
+                      {status === 'geplant' && (
+                        <span className="text-[10px] text-muted-foreground">geplant</span>
+                      )}
+                    </div>
+                    {schrittZusammenfassung(s) && (
+                      <p className="text-muted-foreground mt-0.5 line-clamp-2">
+                        {schrittZusammenfassung(s)}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       ) : (
