@@ -249,8 +249,20 @@ export default function AITutorPromptPanel({
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
+      // Beim Brian-Schritt wird die Aufgabe mit den Werten DIESES Gesprächs
+      // überlagert. Die Function liest weiterhin dieselben Felder — sie muss
+      // von Schritten nichts wissen.
+      const aufgabeFuerErzeugung = imEntwurfsModus
+        ? {
+          ...aufgabe,
+          titel: erzeugungsKontext?.titel || aufgabe?.titel,
+          aufgabenstellung: erzeugungsKontext?.aufgabenstellung || '',
+          erwartungshorizont: erzeugungsKontext?.erwartungshorizont || '',
+        }
+        : aufgabe;
+
       const response = await base44.functions.invoke('generateBrianSegments', {
-        aufgabe,
+        aufgabe: aufgabeFuerErzeugung,
         einheit,
         lernziele: mappedLernziele,
         basisLernziele: mappedBasisLernziele,
@@ -279,10 +291,22 @@ export default function AITutorPromptPanel({
         updates.rubric_criteria = result.rubric_criteria;
       }
 
-      await base44.entities.AllgemeineAufgabe.update(aufgabe.id, updates);
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      setIsDirty(false);
-      toast.success('Brian-Segmente generiert und gespeichert.');
+      if (imEntwurfsModus) {
+        onBrianChange({
+          dialog_name: updates.brian_dialog_name,
+          learner_instruction: updates.brian_learner_instruction,
+          system_instruction: updates.brian_system_instruction,
+          completion_rule: updates.brian_completion_rule,
+          generiert_am: new Date().toISOString(),
+        });
+        setIsDirty(false);
+        toast.success('Brian-Felder erzeugt. Zum Sichern noch speichern.');
+      } else {
+        await base44.entities.AllgemeineAufgabe.update(aufgabe.id, updates);
+        queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+        setIsDirty(false);
+        toast.success('Brian-Segmente generiert und gespeichert.');
+      }
     } catch (err) {
       toast.error('Fehler beim Generieren: ' + err.message);
     } finally {
@@ -293,6 +317,17 @@ export default function AITutorPromptPanel({
   // Manuell gespeicherte Änderungen sichern
   const saveMutation = useMutation({
     mutationFn: () => {
+      if (imEntwurfsModus) {
+        onBrianChange({
+          dialog_name: segments.brian_dialog_name,
+          learner_instruction: segments.brian_learner_instruction,
+          system_instruction: segments.brian_system_instruction,
+          completion_rule: segments.brian_completion_rule,
+          tutor_persona: segments.tutor_persona,
+          tutor_persona_zusatz: segments.tutor_persona_zusatz,
+        });
+        return Promise.resolve();
+      }
       const dataToSave = { ...segments };
       // Stelle sicher, dass rubric_criteria nur mitgespeichert wird wenn es ein Array ist
       if (!Array.isArray(aufgabe.rubric_criteria)) {
@@ -301,9 +336,9 @@ export default function AITutorPromptPanel({
       return base44.entities.AllgemeineAufgabe.update(aufgabe.id, dataToSave);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      if (!imEntwurfsModus) queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       setIsDirty(false);
-      toast.success('Segmente gespeichert.');
+      toast.success(imEntwurfsModus ? 'Felder übernommen. Zum Sichern noch speichern.' : 'Segmente gespeichert.');
     },
     onError: (err) => toast.error('Fehler beim Speichern: ' + err.message),
   });
