@@ -280,6 +280,31 @@
                     }
                   }
                 }
+              },
+              "sync_status": {
+                "type": "string",
+                "enum": [
+                  "new",
+                  "pending",
+                  "synced",
+                  "modified",
+                  "error"
+                ],
+                "default": "new",
+                "description": "Uebertragungsstand DIESES Gespraechs nach Brian. Je Brian-Schritt eigen: Brian legt pro Dialog eine Aufgabe an, zwei Schritte einer Folge sind zwei Dialoge und koennen unterschiedlich weit sein. Bei Aufgaben im Modus 'einzeln' gilt weiterhin das gleichnamige Feld an der AUFGABE - Bestandsdaten behalten ihren Status, sonst gaelten uebertragene Aufgaben ploetzlich als offen und wuerden in Brian doppelt angelegt."
+              },
+              "synced_at": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Zeitpunkt der letzten Uebertragung dieses Gespraechs."
+              },
+              "dialog_id": {
+                "type": "string",
+                "description": "ID/Kennung dieses Gespraechs in Brian.study (Rueckkanal des manuellen Exports)."
+              },
+              "url": {
+                "type": "string",
+                "description": "Direkte URL zu diesem Gespraech in Brian.study."
               }
             }
           },
