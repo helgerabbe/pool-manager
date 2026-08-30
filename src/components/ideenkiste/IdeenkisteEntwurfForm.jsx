@@ -52,7 +52,7 @@ export default function IdeenkisteEntwurfForm({ einheitId, idee = null, onClose 
         toast.success('Aufgaben-Idee aktualisiert.');
       } else {
         await base44.entities.AufgabenIdee.create({ ...data, status: 'offen' });
-        toast.success('Aufgaben-Idee in der Ideenkiste gespeichert.');
+        toast.success('Idee im Ideenspeicher gespeichert.');
       }
       queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
       onClose();
