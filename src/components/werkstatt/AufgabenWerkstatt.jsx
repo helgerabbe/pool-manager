@@ -90,6 +90,13 @@ export default function AufgabenWerkstatt({
 
   const schritt = folge.aktuellerSchritt;
 
+  /* Welche Arbeit gerade ansteht, entscheidet über die Spaltenbreiten.
+     Am Ablauf zu arbeiten heißt lesen und umstellen — dafür braucht die
+     linke Spalte Platz, und die Schülersicht ist noch nebensächlich, weil
+     die Schritte ja noch leer sind. Sobald es ans Füllen geht, dreht sich
+     das um. */
+  const arbeitetAmAblauf = planerOffen || folge.schritte.length === 0;
+
   /* Kontext für den Assistenten beim Bau eines offenen Schritts. Gebaut wird
      im SchrittFenster (Ebene 3), nicht hier. */
   const generatorKontext = useMemo(() => ({
@@ -271,10 +278,14 @@ export default function AufgabenWerkstatt({
            eines Schritts wird nicht hier, sondern im SchrittFenster
            bearbeitet (Ebene 3). Diese Seite ist für den Ablauf zuständig:
            anlegen, löschen, umsortieren. */
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,420px)_1fr] gap-4 pt-4 flex-1 min-h-0">
+        <div className={`grid grid-cols-1 gap-4 pt-4 flex-1 min-h-0 transition-[grid-template-columns] duration-200 ${
+          arbeitetAmAblauf
+            ? 'lg:grid-cols-[minmax(460px,1fr)_minmax(240px,340px)]'
+            : 'lg:grid-cols-[minmax(320px,400px)_1fr]'
+        }`}>
           {/* Links: Schrittfolge + Ablaufplanung */}
           <div className="flex flex-col min-h-0 gap-3">
-            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white p-3">
+            <div className={`${arbeitetAmAblauf ? 'shrink-0 max-h-[38vh]' : 'flex-1'} min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white p-3`}>
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 shrink-0">
                 Ablauf der Aufgabe
               </p>
@@ -292,11 +303,11 @@ export default function AufgabenWerkstatt({
 
             {/* Der Assistent bleibt erreichbar, nimmt aber zugeklappt keinen
                 Platz weg — auf dieser Seite geht es meist um Feinschliff. */}
-            <div className="shrink-0 rounded-xl border border-slate-200 bg-white overflow-hidden">
+            <div className={`${planerOffen ? 'flex-1' : 'shrink-0'} min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden`}>
               <button
                 type="button"
                 onClick={() => setPlanerOffen((o) => !o)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors shrink-0"
               >
                 {planerOffen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                 <ListOrdered className="w-4 h-4 text-violet-600 shrink-0" />
@@ -305,7 +316,7 @@ export default function AufgabenWerkstatt({
                 </span>
               </button>
               {planerOffen && (
-                <div className="px-3 pb-3 border-t border-slate-100 pt-3 max-h-[42vh] flex flex-col">
+                <div className="px-3 pb-3 border-t border-slate-100 pt-3 flex-1 min-h-0 flex flex-col">
                   <StrukturPhase
                     struktur={struktur}
                     hatSchritte={folge.schritte.length > 0}
