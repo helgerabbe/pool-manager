@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink, EyeOff, Sparkles, MessageCircleQuestion, AlertTriangle, Hand, MonitorPlay, PencilRuler } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowLeft, ArrowRight, FileText, ListChecks, Film, Music, Image, ExternalLink, EyeOff, Sparkles, MessageCircleQuestion, AlertTriangle, Hand, MonitorPlay, PencilRuler, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ import KITutorSeite from './KITutorSeite';
 import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
 import { fragmentZuDokument } from '@/lib/aufgabeFragment';
 import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
+import { abgabeSatz } from '@/lib/abgabeFormate';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 
@@ -212,6 +213,36 @@ function ExternBlock({ extern }) {
         <a href={e.url} target="_blank" rel="noopener noreferrer" className="underline">
           In neuem Tab öffnen
         </a>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Ergebnisabgabe: sagt, WAS abgegeben wird. Das Hochladen selbst passiert in
+ * Moodle — hier steht nur die Ansage, damit sie an der richtigen Stelle der
+ * Aufgabe auftaucht und nicht erst am Ende im Kurs.
+ */
+function AbgabeBlock({ abgabe }) {
+  const a = abgabe || {};
+  const satz = abgabeSatz(a.formate, a.custom_format);
+
+  if (!satz && !a.hinweis && !a.dateiformat) {
+    return <p className="text-sm text-muted-foreground italic">Für diesen Schritt ist noch keine Abgabe festgelegt.</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border-2 border-teal-200 bg-teal-50 px-4 py-3">
+        <p className="text-xs font-semibold text-teal-900 uppercase tracking-wide">Deine Abgabe</p>
+        {satz && <p className="mt-1 text-sm text-teal-900 leading-relaxed">{satz}</p>}
+        {a.dateiformat && (
+          <p className="mt-1 text-sm text-teal-900">Dateiformat: {a.dateiformat}</p>
+        )}
+      </div>
+      {a.hinweis && <HinweisBox>{a.hinweis}</HinweisBox>}
+      <p className="text-xs text-muted-foreground">
+        Hochgeladen wird in deinem Kurs, nicht hier.
       </p>
     </div>
   );
@@ -503,6 +534,18 @@ export default function AufgabensequenzSeite({
                 </span>
               </div>
               <ExternBlock extern={step.extern} />
+            </div>
+          )}
+
+          {typ === SCHRITT_TYPEN.ABGABE && (
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-teal-100 text-teal-700 shrink-0">
+                  <Upload className="w-4 h-4" />
+                </span>
+                <span className="text-sm font-semibold">{step.titel || 'Ergebnisabgabe'}</span>
+              </div>
+              <AbgabeBlock abgabe={step.abgabe} />
             </div>
           )}
 

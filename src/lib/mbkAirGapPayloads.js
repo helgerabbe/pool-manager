@@ -1942,6 +1942,10 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) 
           return { ...basis, handlung: s?.handlung || null };
         case 'extern':
           return { ...basis, extern: s?.extern || null };
+        case 'abgabe':
+          // Was abgegeben werden soll. Das Einsammeln baut die MBK im Kurs —
+          // der Pool-Manager nimmt selbst nichts entgegen.
+          return { ...basis, abgabe: s?.abgabe || null };
         default:
           return basis;
       }
