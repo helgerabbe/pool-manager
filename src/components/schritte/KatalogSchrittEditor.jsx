@@ -3,7 +3,9 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
-import { Loader2, Info } from 'lucide-react';
+import { Loader2, Info, Images } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 
 /**
  * KatalogSchrittEditor
@@ -20,9 +22,18 @@ import { Loader2, Info } from 'lucide-react';
  * Damit ist Stufe 1 der Dreierregel abgedeckt: passenden Typ im Katalog
  * suchen und nur dessen Attribute abfragen (Beispiel Lehrwerk/Quelle:
  * Buchtitel, Seiten, Aufgabentext).
+ *
+ * SONDERFALL Aktivitätengalerie (Stufe 2): Dieses Format hat vier technische
+ * Felder (galerie_id, galerie_name, galerie_stand, inhalt), die niemand von
+ * Hand ausfüllen möchte. Dafür gibt es den vorhandenen Galerie-Dialog mit
+ * Vorlagenliste, Demo-Vorschau und KI-Hilfe für den Übergabetext — der wird
+ * hier eingebunden statt die Felder nackt anzuzeigen.
  */
+const GALERIE_FORMAT = 'Aktivitätengalerie';
+
 export default function KatalogSchrittEditor({ schritt, onChange }) {
   const { katalogMap, auswahlListe, isLoading } = useAktivitaetenKatalog();
+  const [galerieOffen, setGalerieOffen] = React.useState(false);
 
   const aktivitaet = schritt.aktivitaet_id ? katalogMap[schritt.aktivitaet_id] : null;
   const formSchema = useMemo(() => aktivitaet?.form_schema || [], [aktivitaet]);
@@ -84,7 +95,43 @@ export default function KatalogSchrittEditor({ schritt, onChange }) {
         </p>
       )}
 
-      {formSchema.map((field) => {
+      {/* Galerie-Format: eigener Ablauf statt vier technischer Felder. */}
+      {aktivitaet?.name === GALERIE_FORMAT ? (
+        <div className="space-y-3">
+          {werte.galerie_name || werte.galerie_id ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+              <p className="text-sm font-medium text-emerald-900">
+                Vorlage: {werte.galerie_name || werte.galerie_id}
+              </p>
+              <p className="mt-1 text-xs text-emerald-800">
+                {werte.inhalt?.trim()
+                  ? `Übergabetext hinterlegt (${werte.inhalt.trim().length} Zeichen).`
+                  : 'Es fehlt noch der Übergabetext — ohne ihn kann die Aktivität nicht gebaut werden.'}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground italic">
+              Noch keine Vorlage gewählt.
+            </p>
+          )}
+          <Button variant="outline" className="w-full gap-2" onClick={() => setGalerieOffen(true)}>
+            <Images className="w-4 h-4" />
+            {werte.galerie_id ? 'Vorlage und Inhalte bearbeiten' : 'Vorlage aus der Galerie wählen'}
+          </Button>
+
+          <GalerieAktivitaetModal
+            open={galerieOffen}
+            onOpenChange={setGalerieOffen}
+            initialFieldValues={werte}
+            kontext={schritt?.plan?.kurzbeschreibung || ''}
+            onCancel={() => setGalerieOffen(false)}
+            onSave={(neueWerte) => {
+              onChange({ ...schritt, field_values: { ...werte, ...neueWerte } });
+              setGalerieOffen(false);
+            }}
+          />
+        </div>
+      ) : formSchema.map((field) => {
         // Bedingte Felder – gleiche Regel wie im Lernpaket-Editor.
         const inhaltTyp = werte.inhalt_typ;
         if (field.field_name === 'inhalt' && inhaltTyp && inhaltTyp !== 'text') return null;
