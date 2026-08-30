@@ -28,9 +28,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import { useTaskLock } from '@/hooks/useLocks';
 import { base44 } from '@/api/base44Client';
-// STILLGELEGT 2026-08-30 — beide Einstiege sind entfallen, siehe Block am
-// Ende dieser Datei. Wieder einkommentieren, falls die Werkstatt doch nicht
-// trägt; sonst samt der ungenutzten Komponenten löschen.
+// STILLGELEGT 2026-08-30 — die Einstiege von hier aus sind entfallen, siehe
+// Block am Ende dieser Datei.
 // import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 // import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import HelpBadge from '@/components/ui/HelpBadge';
@@ -1073,14 +1072,15 @@ export default function AllgemeineAufgabenView({
  * Werkstatt beides uebernimmt:
  *
  *   "KI-Ideenbox oeffnen"  -> <ThemenfeldIdeenModal>, dazu handleSaveIdee()
- *      Ersatz: Gesammelte Ideen (Entity AufgabenIdee) erscheinen jetzt im
- *      Einstieg der Werkstatt und lassen sich dort uebernehmen — siehe
+ *      Der GENERATOR lebt weiter, nur nicht mehr als eigener Knopf hier: Er
+ *      haengt jetzt im Ideenkasten der Werkstatt ("Ideen vorschlagen lassen")
+ *      und schreibt von dort entweder ins Ideenfeld oder in die Sammelbox.
+ *      Ebenfalls neu: Bereits gesammelte Ideen (Entity AufgabenIdee) lassen
+ *      sich im Einstieg der Werkstatt uebernehmen — siehe
  *      hooks/useOffeneAufgabenIdeen.js und werkstatt/WerkstattEinstieg.jsx.
- *      Angelegt werden Ideen weiterhin im Aufgabenassistenten
- *      (components/ideenkiste/), der unberuehrt bleibt.
- *      -> components/missionen/ThemenfeldIdeenModal.jsx wird seither
- *         NIRGENDS mehr eingebunden und kann geloescht werden, sobald die
- *         Werkstatt sich im Alltag bewaehrt hat.
+ *      Was hier WEGFAELLT, ist nur das frueher primaere Ziel dieses Knopfes:
+ *      aus einer Idee sofort eine fertige Aufgabe anlegen (handleSaveIdee).
+ *      Dafuer gibt es jetzt die Werkstatt.
  *
  *   "Mit KI entwerfen"     -> <AiTaskWizardModal>
  *      Ersatz: Die Struktur-Phase der Werkstatt. Die Komponente selbst
