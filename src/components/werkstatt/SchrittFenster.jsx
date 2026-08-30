@@ -111,10 +111,15 @@ export default function SchrittFenster({
                 aufgabeId={aufgabeId}
                 kontext={kontext}
                 isReleased={isReleased}
-                onFragment={(fragment, snapshotHtml) => setEntwurf((e) => ({
-                  ...e,
-                  offen: { ...(e.offen || {}), fragment, snapshot_html: snapshotHtml },
-                }))}
+                // Der Schritt-Bezug wird mitgeliefert und geprüft: Beim
+                // Wechsel auf einen anderen Schritt läuft der Effekt der alten
+                // Instanz noch einmal, bevor sie ersetzt wird — ohne diese
+                // Prüfung landete das Fragment des vorigen Schritts im neuen.
+                onFragment={(fragment, snapshotHtml, vonSchrittId) => setEntwurf((e) => (
+                  e.id === vonSchrittId
+                    ? { ...e, offen: { ...(e.offen || {}), fragment, snapshot_html: snapshotHtml } }
+                    : e
+                ))}
               />
             )}
           </div>

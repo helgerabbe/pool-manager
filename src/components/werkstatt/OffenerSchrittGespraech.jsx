@@ -33,7 +33,7 @@ export default function OffenerSchrittGespraech({
   aufgabeId,
   kontext,
   isReleased = false,
-  onFragment,   // (fragment, snapshotHtml) => void — fließt in den Entwurf
+  onFragment,   // (fragment, snapshotHtml, schrittId) => void — fließt in den Entwurf
 }) {
   const gen = useAufgabenGenerator({
     kontext,
@@ -76,10 +76,10 @@ export default function OffenerSchrittGespraech({
     const f = gen.fragment;
     if (!f || gen.busy || f === letztesGemeldetesRef.current) return;
     letztesGemeldetesRef.current = f;
-    onFragment?.(f, fragmentZuDokument(f));
+    onFragment?.(f, fragmentZuDokument(f), schritt?.id);
     const passend = staende.staende.find((st) => st.fragment === f);
     if (passend) staende.alsUebernommenMarkieren(passend.id);
-  }, [gen.fragment, gen.busy, onFragment, staende]);
+  }, [gen.fragment, gen.busy, onFragment, staende, schritt?.id]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1 gap-2">
