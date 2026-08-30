@@ -55,12 +55,7 @@ function gruppeOf(item) {
   return 'ki';
 }
 
-/**
- * @param {string|null} schrittId  Für Brian-SCHRITTE: bindet neue Lernziel-
- *   Verknüpfungen an diesen Schritt. Ohne Angabe gilt die Zuordnung für die
- *   ganze Aufgabe (Verhalten wie bisher).
- */
-export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false, schrittId = null }) {
+export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }) {
   const queryClient = useQueryClient();
   // Alle in der Liste sichtbaren Einträge (ausgewählte + noch nicht ausgewählte Vorschläge).
   const [items, setItems] = useState([]);

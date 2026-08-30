@@ -159,33 +159,14 @@ export async function getMappingsByAufgabe(aufgabeId) {
 /**
  * Mapping zwischen Aufgabe und Lernziel anlegen.
  */
-export async function createMapping(aufgabeId, lernzielId, reihenfolge = null, schrittId = null) {
+export async function createMapping(aufgabeId, lernzielId, reihenfolge = null) {
   return base44.entities.AllgemeineAufgabeLernzielMapping.create({
     aufgabe_id: aufgabeId,
     lernziel_id: lernzielId,
     ...(reihenfolge !== null && { reihenfolge }),
-    // Nur setzen, wenn die Verknüpfung wirklich zu einem Brian-Schritt gehört.
-    // Ein leeres Feld heißt "gilt für die ganze Aufgabe" — so verhalten sich
-    // alle Bestandsdaten, und dabei soll es bleiben.
-    ...(schrittId ? { schritt_id: schrittId } : {}),
   });
 }
 
-/**
- * Mappings einer Aufgabe nach Schritt gefiltert.
- *
- * Ein Brian-Schritt sieht seine EIGENEN Verknüpfungen plus die der Aufgabe
- * (Feld leer). Letzteres ist der Bestandsfall: Aufgaben von vor der Werkstatt
- * haben ihre Lernziele an der Aufgabe, und eine portierte Aufgabe soll sie
- * nicht verlieren.
- *
- * Ohne `schrittId` kommt alles zurück — das braucht die Lernlandkarte, die
- * nach Aufgaben fragt und Schritte nicht kennt.
- */
-export function filterMappingsFuerSchritt(mappings = [], schrittId = null) {
-  if (!schrittId) return mappings;
-  return mappings.filter((m) => !m.schritt_id || m.schritt_id === schrittId);
-}
 
 /**
  * Mapping löschen.
@@ -216,11 +197,10 @@ export async function getBasisMappingsByAufgabe(aufgabeId) {
 /**
  * Basis-Lernziel-Mapping anlegen.
  */
-export async function createBasisMapping(aufgabeId, basisLernzielId, schrittId = null) {
+export async function createBasisMapping(aufgabeId, basisLernzielId) {
   return base44.entities.AllgemeineAufgabeBasisLernzielMapping.create({
     aufgabe_id: aufgabeId,
     basislernziel_id: basisLernzielId,
-    ...(schrittId ? { schritt_id: schrittId } : {}),
   });
 }
 
