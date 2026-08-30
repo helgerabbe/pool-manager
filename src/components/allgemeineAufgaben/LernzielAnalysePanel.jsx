@@ -55,7 +55,29 @@ function gruppeOf(item) {
   return 'ki';
 }
 
-export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }) {
+/**
+ * Zwei Betriebsarten:
+ *
+ *   AUFGABE (Vorgabe) — liest und schreibt `aufgabe.lernzielanalyse`, speichert
+ *   sofort in die Datenbank. So arbeitet der Reiter an der Aufgabe.
+ *
+ *   ENTWURF — wird `items` und `onItemsChange` übergeben, arbeitet das Panel
+ *   darauf und speichert NICHTS selbst. Das braucht der Brian-Schritt im
+ *   Schritt-Fenster: Dort läuft alles in einen Entwurf, der erst mit
+ *   „Übernehmen" gilt — sonst hätte „Abbrechen" keine Bedeutung.
+ *
+ * `schrittTitel`/`schrittAufgabenstellung` schärfen die KI-Analyse auf das
+ * einzelne Gespräch statt auf die ganze Aufgabe.
+ */
+export default function LernzielAnalysePanel({
+  aufgabe,
+  kannBearbeiten = false,
+  items: itemsExtern,
+  onItemsChange,
+  schrittTitel = '',
+  schrittAufgabenstellung = '',
+}) {
+  const imEntwurfsModus = typeof onItemsChange === 'function';
   const queryClient = useQueryClient();
   // Alle in der Liste sichtbaren Einträge (ausgewählte + noch nicht ausgewählte Vorschläge).
   const [items, setItems] = useState([]);
@@ -67,15 +89,15 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
 
   // Gespeicherte (ausgewählte) Liste der Aufgabe laden → sind automatisch "selected".
   useEffect(() => {
-    const gespeichert = Array.isArray(aufgabe?.lernzielanalyse?.items)
-      ? aufgabe.lernzielanalyse.items
-      : [];
+    const quelle = imEntwurfsModus ? itemsExtern : aufgabe?.lernzielanalyse?.items;
+    const gespeichert = Array.isArray(quelle) ? quelle : [];
     // Sicherstellen, dass jeder Eintrag eine lokale id hat.
     const withIds = gespeichert.map((it) => ({ ...it, id: it.id || makeId() }));
     setItems(withIds);
     setSelected(new Set(withIds.map((it) => it.id)));
     setNeuerEintrag('');
-  }, [aufgabe?.id]);
+    // Im Entwurfsmodus hängt der Zustand am Schritt, nicht an der Aufgaben-ID.
+  }, [aufgabe?.id, imEntwurfsModus]);
 
   const saveMutation = useMutation({
     mutationFn: (itemsToSave) =>
@@ -101,16 +123,21 @@ export default function LernzielAnalysePanel({ aufgabe, kannBearbeiten = false }
           ...(basismodul_titel && { basismodul_titel }),
           ...(ist_aktuelles_themenfeld != null && { ist_aktuelles_themenfeld }),
         }));
-      saveMutation.mutate(ausgewaehlt);
+      if (imEntwurfsModus) onItemsChange(ausgewaehlt);
+      else saveMutation.mutate(ausgewaehlt);
     },
-    [saveMutation]
+    [saveMutation, imEntwurfsModus, onItemsChange]
   );
 
   const handleAnalyze = async () => {
     if (!kannBearbeiten || !aufgabe?.id) return;
     setAnalyzing(true);
     try {
-      const res = await base44.functions.invoke('analyzeAufgabeLernziele', { aufgabeId: aufgabe.id });
+      const res = await base44.functions.invoke('analyzeAufgabeLernziele', {
+        aufgabeId: aufgabe.id,
+        schritt_titel: schrittTitel,
+        schritt_aufgabenstellung: schrittAufgabenstellung,
+      });
       if (res?.data?.error) throw new Error(res.data.error);
       const d = res.data || {};
 
