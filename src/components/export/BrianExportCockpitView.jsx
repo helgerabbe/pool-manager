@@ -18,6 +18,7 @@ import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { sammleBrianDialoge, istVeraltet } from '@/lib/brianDialoge';
 
 // ── Brian-relevante Aufgabentypen ──
 // Nur KI-Tutor-Aufgaben ('inhalt', inkl. Sequenz-Modus) brauchen Brian.
@@ -215,7 +216,7 @@ function DialogCard({ dialog, onMarkAsSynced }) {
 export default function BrianExportCockpitView({ einheitId = null, embedded = false }) {
   const queryClient = useQueryClient();
   const [filterSynced, setFilterSynced] = useState(false);
-  const [uebertragenAufgabe, setUebertragenAufgabe] = useState(null);
+  const [uebertragenDialog, setUebertragenDialog] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
   const { data: allAufgaben = [] } = useQuery({
@@ -226,28 +227,31 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
         : base44.entities.AllgemeineAufgabe.list(),
   });
 
-  // Nur freigegebene KI-Tutor-Aufgaben (alle Ebenen) — Handlungsaufgaben
-  // und externe HTML-Seiten brauchen keinen Brian-Export.
-  const aufgaben = useMemo(() => {
-    return allAufgaben.filter(a =>
-      a.content_status === 'approved' &&
-      istBrianAufgabe(a) &&
-      (filterSynced ? true : a.brian_sync_status !== 'synced')
-    );
-  }, [allAufgaben, filterSynced]);
+  // Gezählt und gelistet werden DIALOGE, nicht Aufgaben: Eine Folge mit zwei
+  // Brian-Schritten ergibt zwei Dialoge, die einzeln nach Brian gehen und
+  // unterschiedlich weit sein können.
+  const alleDialoge = useMemo(() => sammleBrianDialoge(allAufgaben), [allAufgaben]);
 
-  const synced   = allAufgaben.filter(a => istBrianAufgabe(a) && a.brian_sync_status === 'synced').length;
-  const pending  = allAufgaben.filter(a => a.content_status === 'approved' && istBrianAufgabe(a) && a.brian_sync_status !== 'synced').length;
+  const dialoge = useMemo(() => alleDialoge.filter((d) =>
+    d.aufgabe.content_status === 'approved'
+    && (filterSynced ? true : d.sync_status !== 'synced')
+  ), [alleDialoge, filterSynced]);
+
+  const synced = alleDialoge.filter((d) => d.sync_status === 'synced').length;
+  const pending = alleDialoge.filter((d) => d.aufgabe.content_status === 'approved' && d.sync_status !== 'synced').length;
 
   const handleConfirmUebertragen = async ({ brian_dialog_id, brian_url }) => {
-    if (!uebertragenAufgabe) return;
+    if (!uebertragenDialog) return;
     setIsSaving(true);
     try {
       // Atomarer Server-Call: setzt brian_sync_status='synced' + Brian-ID/URL
       // und löst im selben Update den Dual-Lock auf, falls Moodle bereits
       // synced ist (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
       const result = await base44.functions.invoke('confirmBrianExport', {
-        aufgabe_id: uebertragenAufgabe.id,
+        aufgabe_id: uebertragenDialog.aufgabe.id,
+        // Ohne schritt_id gilt die Bestätigung für die ganze Aufgabe
+        // (Einzelaufgabe), mit für genau dieses eine Gespräch.
+        schritt_id: uebertragenDialog.schrittId || null,
         brian_dialog_id,
         brian_url,
       });
@@ -321,7 +325,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">
-              Aufgaben ({aufgaben.length})
+              Brian-Dialoge ({dialoge.length})
             </h3>
             <button
               onClick={() => setFilterSynced(p => !p)}
@@ -331,18 +335,18 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
             </button>
           </div>
 
-          {aufgaben.length === 0 ? (
+          {dialoge.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
               {filterSynced
-                ? 'Keine freigegebenen KI-Tutor-Aufgaben vorhanden.'
-                : 'Alle Aufgaben sind bereits in Brian exportiert.'}
+                ? 'Keine freigegebenen Brian-Dialoge vorhanden.'
+                : 'Alle Dialoge sind bereits in Brian angelegt.'}
             </div>
           ) : (
-            aufgaben.map(aufgabe => (
-              <AufgabeCard
-                key={aufgabe.id}
-                aufgabe={aufgabe}
-                onMarkAsSynced={setUebertragenAufgabe}
+            dialoge.map(dialog => (
+              <DialogCard
+                key={dialog.key}
+                dialog={dialog}
+                onMarkAsSynced={setUebertragenDialog}
               />
             ))
           )}
@@ -350,9 +354,9 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
       </div>
 
       <BrianUebertragenDialog
-        open={!!uebertragenAufgabe}
+        open={!!uebertragenDialog}
         onOpenChange={(open) => { if (!open) setUebertragenAufgabe(null); }}
-        aufgabe={uebertragenAufgabe}
+        aufgabe={uebertragenDialog?.aufgabe}
         onConfirm={handleConfirmUebertragen}
         isSaving={isSaving}
       />
