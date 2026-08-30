@@ -5,7 +5,9 @@
  *
  * Deshalb sind beide Ziele Eigenschaften, keine feste Verdrahtung:
  *   onSaveIdea      primaeres Ziel, Beschriftung ueber `primaerLabel`
- *   (Ideenkiste)    zweites Ziel, immer die Sammelbox (Entity AufgabenIdee)
+ *   (Ideenspeicher) zweites Ziel, immer die Sammelbox (Entity AufgabenIdee).
+ *                   Abschaltbar ueber `zweitZielAnzeigen` — im Speicher selbst
+ *                   waeren beide Ziele dasselbe.
  *
  * Aufrufer (Stand 2026-08-30):
  *   - werkstatt/AufgabenWerkstatt: primaeres Ziel ist das Ideenfeld des
@@ -41,6 +43,7 @@ function Stars({ value }) {
 function IdeaCard({
   idea, saved, saving, onSave, kisteSaved, kisteSaving, onSaveToKiste,
   primaerLabel = 'Idee merken', primaerLabelFertig = 'Gemerkte Idee',
+  zweitZielAnzeigen = true,
 }) {
   const material = getMaterialLevel(idea.material_level);
 
@@ -76,10 +79,12 @@ function IdeaCard({
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saved ? primaerLabelFertig : primaerLabel}
         </Button>
-        <Button size="sm" variant="outline" onClick={onSaveToKiste} disabled={kisteSaved || kisteSaving} className="gap-2 w-full sm:w-auto">
-          {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
-          {kisteSaved ? 'In der Ideenkiste' : 'In die Ideenkiste'}
-        </Button>
+        {zweitZielAnzeigen && (
+          <Button size="sm" variant="outline" onClick={onSaveToKiste} disabled={kisteSaved || kisteSaving} className="gap-2 w-full sm:w-auto">
+            {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
+            {kisteSaved ? 'Im Ideenspeicher' : 'In den Ideenspeicher'}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -98,6 +103,9 @@ export default function ThemenfeldIdeenModal({
   primaerLabel = 'Idee merken',
   primaerLabelFertig = 'Gemerkte Idee',
   primaerErfolg = 'Idee wurde als Entwurf gemerkt.',
+  // Aus dem Ideenspeicher heraus waeren beide Ziele dasselbe — dann bleibt
+  // nur das primaere stehen.
+  zweitZielAnzeigen = true,
   // Verschachtelt in einem anderen Dialog: hoehere Ebene noetig, sonst
   // oeffnet sich das Fenster unsichtbar dahinter.
   zIndex,
@@ -196,9 +204,9 @@ export default function ThemenfeldIdeenModal({
       });
       queryClient.invalidateQueries({ queryKey: ['aufgaben-ideen', einheitId] });
       setKisteSavedKeys((prev) => new Set(prev).add(`${index}-${idea.titel}`));
-      toast.success('Idee liegt jetzt in der Ideenkiste.');
+      toast.success('Idee liegt jetzt im Ideenspeicher.');
     } catch (err) {
-      toast.error(err?.message || 'Idee konnte nicht in die Ideenkiste gelegt werden.');
+      toast.error(err?.message || 'Idee konnte nicht in den Ideenspeicher gelegt werden.');
     } finally {
       setKisteSavingIndex(null);
     }
@@ -292,6 +300,7 @@ export default function ThemenfeldIdeenModal({
                   onSave={() => saveIdea(idea, index)}
                   primaerLabel={primaerLabel}
                   primaerLabelFertig={primaerLabelFertig}
+                  zweitZielAnzeigen={zweitZielAnzeigen}
                   kisteSaved={kisteSavedKeys.has(`${index}-${idea.titel}`)}
                   kisteSaving={kisteSavingIndex === index}
                   onSaveToKiste={() => saveIdeaToKiste(idea, index)}
