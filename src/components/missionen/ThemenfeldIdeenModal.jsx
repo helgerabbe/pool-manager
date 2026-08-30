@@ -1,14 +1,21 @@
 /*
- * ⚠️ NICHT MEHR EINGEBUNDEN (Stand 2026-08-30) — Loeschkandidat.
+ * Der KI-Ideengenerator. WERKZEUG, kein Ort: Er erzeugt Vorschlaege, und wohin
+ * ein Vorschlag wandert, entscheidet die Lehrkraft an der einzelnen Idee —
+ * nicht der Aufrufer.
  *
- * Der Einstieg "KI-Ideenbox oeffnen" in AllgemeineAufgabenView ist entfallen.
- * Gesammelte Ideen (Entity AufgabenIdee) werden jetzt im Einstieg der
- * Aufgabenwerkstatt uebernommen: hooks/useOffeneAufgabenIdeen.js und
- * components/werkstatt/WerkstattEinstieg.jsx. Angelegt werden Ideen
- * weiterhin im Aufgabenassistenten (components/ideenkiste/).
+ * Deshalb sind beide Ziele Eigenschaften, keine feste Verdrahtung:
+ *   onSaveIdea      primaeres Ziel, Beschriftung ueber `primaerLabel`
+ *   (Ideenkiste)    zweites Ziel, immer die Sammelbox (Entity AufgabenIdee)
  *
- * Diese Datei bleibt vorerst liegen, falls die Werkstatt sich im Alltag
- * nicht bewaehrt. Loeschen, sobald das geklaert ist.
+ * Aufrufer (Stand 2026-08-30):
+ *   - werkstatt/AufgabenWerkstatt: primaeres Ziel ist das Ideenfeld des
+ *     Einstiegs ("In dieses Feld uebernehmen"). Dort wird ja schon eine
+ *     Aufgabe gebaut, eine zweite anzulegen waere unsinnig.
+ *
+ * Frueher hing der Generator auch an einem eigenen Knopf in
+ * AllgemeineAufgabenView ("KI-Ideenbox oeffnen") und legte von dort aus
+ * direkt eine fertige Aufgabe an. Dieser Einstieg ist am 2026-08-30
+ * entfallen, weil er neben der Werkstatt ein zweiter Weg zum selben Ziel war.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -31,7 +38,10 @@ function Stars({ value }) {
   return <span className="text-amber-500 text-xs">{'★'.repeat(safe)}<span className="text-muted-foreground/30">{'★'.repeat(3 - safe)}</span></span>;
 }
 
-function IdeaCard({ idea, saved, saving, onSave, kisteSaved, kisteSaving, onSaveToKiste }) {
+function IdeaCard({
+  idea, saved, saving, onSave, kisteSaved, kisteSaving, onSaveToKiste,
+  primaerLabel = 'Idee merken', primaerLabelFertig = 'Gemerkte Idee',
+}) {
   const material = getMaterialLevel(idea.material_level);
 
   return (
@@ -64,7 +74,7 @@ function IdeaCard({ idea, saved, saving, onSave, kisteSaved, kisteSaving, onSave
       <div className="flex flex-col sm:flex-row gap-2">
         <Button size="sm" onClick={onSave} disabled={saved || saving} className="gap-2 w-full sm:w-auto">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {saved ? 'Gemerkte Idee' : 'Idee merken'}
+          {saved ? primaerLabelFertig : primaerLabel}
         </Button>
         <Button size="sm" variant="outline" onClick={onSaveToKiste} disabled={kisteSaved || kisteSaving} className="gap-2 w-full sm:w-auto">
           {kisteSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Inbox className="w-4 h-4" />}
@@ -83,6 +93,14 @@ export default function ThemenfeldIdeenModal({
   defaultThemenfeldId = null,
   anforderungsebene = '2 - Transfer',
   onSaveIdea,
+  // Beschriftung und Rueckmeldung des primaeren Ziels. Vorgabe passt zum
+  // Merken als Entwurf; die Werkstatt setzt hier "In dieses Feld uebernehmen".
+  primaerLabel = 'Idee merken',
+  primaerLabelFertig = 'Gemerkte Idee',
+  primaerErfolg = 'Idee wurde als Entwurf gemerkt.',
+  // Verschachtelt in einem anderen Dialog: hoehere Ebene noetig, sonst
+  // oeffnet sich das Fenster unsichtbar dahinter.
+  zIndex,
 }) {
   const [themenfeldId, setThemenfeldId] = useState(defaultThemenfeldId || '');
   const [selectedMissionType, setSelectedMissionType] = useState('');
@@ -156,7 +174,7 @@ export default function ThemenfeldIdeenModal({
         anforderungsebene,
       });
       setSavedKeys((prev) => new Set(prev).add(`${index}-${idea.titel}`));
-      toast.success('Idee wurde als Entwurf gemerkt.');
+      toast.success(primaerErfolg);
     } catch (err) {
       toast.error(err?.message || 'Idee konnte nicht gespeichert werden.');
     } finally {
@@ -272,6 +290,8 @@ export default function ThemenfeldIdeenModal({
                   saved={savedKeys.has(`${index}-${idea.titel}`)}
                   saving={savingIndex === index}
                   onSave={() => saveIdea(idea, index)}
+                  primaerLabel={primaerLabel}
+                  primaerLabelFertig={primaerLabelFertig}
                   kisteSaved={kisteSavedKeys.has(`${index}-${idea.titel}`)}
                   kisteSaving={kisteSavingIndex === index}
                   onSaveToKiste={() => saveIdeaToKiste(idea, index)}
