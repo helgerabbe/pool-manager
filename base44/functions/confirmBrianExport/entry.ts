@@ -147,8 +147,19 @@ Deno.serve(async (req) => {
       if (dialogId) updatePayload.brian_dialog_id = dialogId;
       if (dialogUrl) updatePayload.brian_url = dialogUrl;
     }
+    // Der Dual-Lock darf erst fallen, wenn NICHTS mehr aussteht. Bei einer
+    // Folge mit zwei Brian-Gespraechen waere die Aufgabe nach dem ersten
+    // sonst schon entsperrt, obwohl das zweite noch nicht in Brian liegt.
+    let alleDialogeUebertragen = true;
+    if (schritt_id) {
+      const nachher = updatePayload.sequenz_schritte as any[];
+      alleDialogeUebertragen = nachher
+        .filter((s) => s?.typ === 'brian')
+        .every((s) => s?.brian?.sync_status === 'synced');
+    }
+
     let lockReleased = false;
-    if (moodleAlreadySynced) {
+    if (moodleAlreadySynced && alleDialogeUebertragen) {
       updatePayload.locked_by = null;
       updatePayload.locked_at = null;
       lockReleased = true;
