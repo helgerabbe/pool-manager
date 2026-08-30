@@ -69,7 +69,6 @@ export default function SchrittFenster({
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onAbbrechen(); }}>
       <DialogContent
-        zIndex={10001}
         className="max-h-[94vh] w-[94vw] max-w-[1300px] overflow-hidden bg-slate-50 p-4 flex flex-col"
       >
         <DialogHeader className="border-b border-slate-200 pb-3 shrink-0">

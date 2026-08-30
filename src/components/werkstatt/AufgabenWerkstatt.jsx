@@ -458,7 +458,6 @@ export default function AufgabenWerkstatt({
       <ThemenfeldIdeenModal
         open={generatorOffen}
         onOpenChange={setGeneratorOffen}
-        zIndex={10001}
         einheitId={einheitId}
         themenfelder={themenfelder}
         defaultThemenfeldId={themenfeldId}
