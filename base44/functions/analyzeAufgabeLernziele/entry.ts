@@ -21,7 +21,14 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
  * Diese Funktion SCHREIBT nichts in die DB — sie liefert nur Vorschläge zurück.
  *
  * Payload:
- *   { aufgabeId: string, modus?: 'voll' | 'mehr', vorhandene_texte?: string[] }
+ *   { aufgabeId: string, modus?: 'voll' | 'mehr', vorhandene_texte?: string[],
+ *     schritt_titel?: string, schritt_aufgabenstellung?: string }
+ *
+ * Die beiden schritt_*-Angaben sind fuer BRIAN-SCHRITTE einer Aufgaben-
+ * Sequenz: Dort gilt nicht die Aufgabenstellung der ganzen Aufgabe, sondern
+ * die dieses einen Gespraechs. Zwei Brian-Schritte koennen verschiedene
+ * Aspekte behandeln und brauchen deshalb verschiedene Lernziele. Fehlen sie,
+ * verhaelt sich alles wie bisher.
  *   - modus 'mehr': es werden NUR neue Vorschläge erzeugt (Button "3 weitere"),
  *     unter Vermeidung der bereits vorhandenen Texte.
  */
@@ -33,7 +40,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { aufgabeId, modus = 'voll', vorhandene_texte = [] } = await req.json();
+    const { aufgabeId, modus = 'voll', vorhandene_texte = [],
+      schritt_titel = '', schritt_aufgabenstellung = '' } = await req.json();
     if (!aufgabeId) {
       return Response.json({ error: 'aufgabeId fehlt' }, { status: 400 });
     }
@@ -140,8 +148,11 @@ Ein passendes Lernziel ist daher KONKRET und ÜBBAR — eine klar abgrenzbare Te
     const aufgabeBlock = `DIE AUFGABE:
 - Fach: ${fach}, ${jahrgang}
 - Einheit: "${einheitTitel}" / Themenfeld: "${themenfeldTitel}"
-- Titel: ${aufgabe.titel || '(kein Titel)'}
-- Aufgabenstellung: ${aufgabe.aufgabenstellung || '(keine Aufgabenstellung hinterlegt)'}
+- Titel: ${schritt_titel || aufgabe.titel || '(kein Titel)'}
+- Aufgabenstellung: ${schritt_aufgabenstellung || aufgabe.aufgabenstellung || '(keine Aufgabenstellung hinterlegt)'}${
+  schritt_aufgabenstellung
+    ? `\n- Hinweis: Dies ist EIN Gespraech innerhalb der Aufgabe "${aufgabe.titel || ''}". Beziehe dich nur auf diesen Teil, nicht auf die ganze Aufgabe.`
+    : ''}
 ${aufgabe.erwartungshorizont ? `- Erwartungshorizont: ${aufgabe.erwartungshorizont}` : ''}
 ${aufgabe.hinweise_zum_material ? `- Material-Hinweise: ${aufgabe.hinweise_zum_material}` : ''}`;
 
