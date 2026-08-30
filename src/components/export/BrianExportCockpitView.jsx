@@ -63,20 +63,16 @@ function SegmentCopyButton({ label, value }) {
   );
 }
 
-// ── Einzelne Aufgaben-Karte ──
-function AufgabeCard({ aufgabe, onMarkAsSynced }) {
+// ── Karte eines Brian-DIALOGS ──
+// Ein Dialog ist entweder eine ganze Einzelaufgabe oder EIN Brian-Schritt
+// einer Folge — Brian legt pro Dialog eine Aufgabe an. Woher er stammt,
+// liefert lib/brianDialoge; diese Karte muss den Unterschied nicht kennen.
+function DialogCard({ dialog, onMarkAsSynced }) {
   const [expanded, setExpanded] = useState(false);
-  const isSynced = aufgabe.brian_sync_status === 'synced';
-  const isReady = isPromptReady(aufgabe);
-
-  // Seit dem letzten Brian-Export geändert? Vergleich updated_date vs.
-  // brian_synced_at (10-Sek-Puffer, weil der Export-Bestätigungs-Update
-  // selbst updated_date anfasst).
-  const modifiedSinceExport =
-    isSynced &&
-    aufgabe.brian_synced_at &&
-    aufgabe.updated_date &&
-    new Date(aufgabe.updated_date).getTime() - new Date(aufgabe.brian_synced_at).getTime() > 10_000;
+  const { aufgabe, felder } = dialog;
+  const isSynced = dialog.sync_status === 'synced';
+  const isReady = dialog.bereit;
+  const modifiedSinceExport = istVeraltet(dialog);
 
   const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt'
     ? '🎯 Ebene 3'
@@ -91,7 +87,12 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
       <div className="flex items-center gap-3 p-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-medium text-sm truncate">{aufgabe.titel || 'Aufgabe ohne Titel'}</span>
+            <span className="font-medium text-sm truncate">{dialog.titel}</span>
+            {dialog.schrittId && (
+              <Badge variant="secondary" className="text-[10px] shrink-0">
+                Schritt {dialog.schrittNummer} aus „{aufgabe.titel || 'Aufgabe'}“
+              </Badge>
+            )}
             <Badge variant="outline" className="text-[10px] shrink-0">{ebeneLabel}</Badge>
             {aufgabe.aufgabentyp_projekt && (
               <Badge variant="secondary" className="text-[10px] shrink-0">{aufgabe.aufgabentyp_projekt}</Badge>
@@ -99,7 +100,7 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
             {isSynced && (
               <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1">
                 <CheckCircle2 className="w-3 h-3" /> In Brian
-                {aufgabe.brian_dialog_id ? ` · ${aufgabe.brian_dialog_id}` : ''}
+                {dialog.dialog_id ? ` · ${dialog.dialog_id}` : ''}
               </Badge>
             )}
             {modifiedSinceExport && (
@@ -108,14 +109,14 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
               </Badge>
             )}
           </div>
-          {isSynced && aufgabe.brian_synced_at && (
+          {isSynced && dialog.synced_at && (
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Zuletzt nach Brian übertragen am {new Date(aufgabe.brian_synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
+              Zuletzt nach Brian übertragen am {new Date(dialog.synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
               {modifiedSinceExport && ' — die Aufgabe wurde danach noch bearbeitet. Prüfe, ob die Brian-Version noch aktuell ist.'}
             </p>
           )}
-          {aufgabe.aufgabenstellung && (
-            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{aufgabe.aufgabenstellung}</p>
+          {felder.learner_instruction && (
+            <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{felder.learner_instruction}</p>
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0 whitespace-nowrap">
@@ -127,7 +128,7 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
           {!isSynced && (
             <Button
               size="sm"
-              onClick={() => onMarkAsSynced(aufgabe)}
+              onClick={() => onMarkAsSynced(dialog)}
               className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700 whitespace-nowrap"
               disabled={!isReady}
             >
@@ -150,17 +151,22 @@ function AufgabeCard({ aufgabe, onMarkAsSynced }) {
           {!isReady && (
             <div className="flex items-start gap-2 p-3 rounded-lg border border-amber-200 bg-amber-50 text-xs text-amber-800">
               <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-              <span>Nicht alle Felder sind gefüllt. Bitte im KI-Tutor-Prompt-Tab generieren oder ausfüllen.</span>
+              <span>
+                Nicht alle vier Felder sind gefüllt.{' '}
+                {dialog.schrittId
+                  ? 'Im Schritt-Fenster dieses Gesprächs im Reiter „Brian-Felder" erzeugen.'
+                  : 'Bitte im KI-Tutor-Prompt-Tab generieren oder ausfüllen.'}
+              </span>
             </div>
           )}
 
           {/* Fünf Segmente */}
           <div className="space-y-3">
             {[
-              { label: '1. Dialogname', value: aufgabe.brian_dialog_name },
-              { label: '2. Anweisung für Lernende', value: aufgabe.brian_learner_instruction },
-              { label: '3. System-Anweisung (Tutor-Persona)', value: aufgabe.brian_system_instruction },
-              { label: '4. Completion-Rule', value: aufgabe.brian_completion_rule },
+              { label: '1. Dialogname', value: felder.dialog_name },
+              { label: '2. Anweisung für Lernende', value: felder.learner_instruction },
+              { label: '3. System-Anweisung (Tutor-Persona)', value: felder.system_instruction },
+              { label: '4. Completion-Rule', value: felder.completion_rule },
             ].map(({ label, value }) => (
               <div key={label} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
