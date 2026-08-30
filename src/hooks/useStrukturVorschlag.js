@@ -156,12 +156,19 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
     }
   }, [busy, verlauf, vorschlag, kontext]);
 
+  /** Die zuletzt gescheiterte Nachricht erneut schicken. */
+  const nochmalVersuchen = useCallback(() => {
+    if (fehlgeschlagen) senden(fehlgeschlagen);
+  }, [fehlgeschlagen, senden]);
+
   return {
     verlauf,
     teilAntwort,
     vorschlag,
     busy,
     fehler,
+    fehlgeschlagen,
+    nochmalVersuchen,
     warnungen,
     senden,
     abbrechen,

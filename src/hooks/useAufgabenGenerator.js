@@ -177,6 +177,11 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     }
   }, [busy, fragment, kontext, verlauf]);
 
+  /** Die zuletzt gescheiterte Nachricht erneut schicken. */
+  const nochmalVersuchen = useCallback(() => {
+    if (fehlgeschlagen) senden(fehlgeschlagen);
+  }, [fehlgeschlagen, senden]);
+
   return {
     verlauf,
     teilAntwort,
@@ -185,6 +190,8 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     index,
     busy,
     fehler,
+    fehlgeschlagen,
+    nochmalVersuchen,
     warnungen,
     senden,
     springeZu,
