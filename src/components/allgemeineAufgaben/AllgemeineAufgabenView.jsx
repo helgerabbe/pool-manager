@@ -484,6 +484,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
           </span>
         </span>
       </div>
+      )}
 
       {/* HTML-Vorschau (nur bei externen HTML-Seiten) */}
       {aufgabe.aufgaben_typ === 'externe_html_seite' && aufgabe.html_code && (
@@ -557,7 +558,9 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             ))}
           </div>
         </div>
-      ) : (
+      ) : istSequenz ? null : (
+        // Bei Sequenzen kein Leerhinweis: Material gehört dort zum jeweiligen
+        // Schritt, an der Aufgabe fehlt es also nicht — es steht nur woanders.
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground italic px-3 py-1.5 rounded-lg bg-muted/10 border border-dashed border-border">
           <Package className="w-3 h-3" />
           Keine zusätzlichen Materialien hochgeladen
