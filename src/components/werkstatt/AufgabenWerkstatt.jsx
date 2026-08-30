@@ -18,6 +18,7 @@ import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import SchrittFenster from '@/components/werkstatt/SchrittFenster';
 import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import MissionPicker from '@/components/missionen/MissionPicker';
+import SternRating from '@/components/allgemeineAufgaben/aufgabeSections/SternRating';
 import { istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
 import { getMission } from '@/lib/missionen';
 
@@ -61,6 +62,7 @@ export default function AufgabenWerkstatt({
   const [themenfeldId, setThemenfeldId] = useState(null);
   const [missionType, setMissionType] = useState(null);
   const [aufgabenstellung, setAufgabenstellung] = useState('');
+  const [schwierigkeit, setSchwierigkeit] = useState(null);
   const [materialien, setMaterialien] = useState([]);
   const [idee, setIdee] = useState('');
   // 'einstieg' = Material + Idee, 'werkstatt' = Schrittfolge bearbeiten.
@@ -81,6 +83,7 @@ export default function AufgabenWerkstatt({
     // die Lehrkraft hat gerade "Neue Aufgabe zu diesem Themenfeld" gedrückt.
     setThemenfeldId(initialData?.themenfeld_id || defaultThemenfeldId || null);
     setMissionType(initialData?.mission_type || null);
+    setSchwierigkeit(initialData?.schwierigkeitsgrad ?? null);
     setAufgabenstellung(initialData?.aufgabenstellung || '');
     setMaterialien(Array.isArray(initialData?.materialien) ? initialData.materialien : []);
     setIdee('');
@@ -213,6 +216,7 @@ export default function AufgabenWerkstatt({
     themenfeld_id: themenfeldId || null,
     titel: titel || null,
     mission_type: missionType || null,
+    schwierigkeitsgrad: schwierigkeit ?? null,
     aufgabenstellung: aufgabenstellung || null,
     materialien,
     sequenz_schritte: folge.schritte,
@@ -306,12 +310,26 @@ export default function AufgabenWerkstatt({
               {gewaehlteKategorie
                 ? <>{gewaehlteKategorie.emoji} {gewaehlteKategorie.label}</>
                 : 'Noch keine Kategorie gewählt'}
+              {schwierigkeit ? (
+                <span className="text-amber-500">{'★'.repeat(schwierigkeit)}</span>
+              ) : null}
               {kopfOffen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </Button>
           </div>
 
           {kopfOffen && (
-            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+            <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-4">
+              {/* Schwierigkeit: Sie war seit dem Wegfall der alten Reiter bei
+                  Sequenzen nirgends mehr erreichbar. Gehört zur ganzen Folge,
+                  nicht zu einem Schritt. */}
+              <div className="space-y-1">
+                <p className="text-[11px] text-slate-500">
+                  Wie anspruchsvoll ist diese Aufgabe? (optional)
+                </p>
+                <SternRating value={schwierigkeit} onChange={setSchwierigkeit} />
+              </div>
+
+              <div className="border-t border-slate-100 pt-3 space-y-2">
               <p className="text-[11px] text-slate-500">
                 Wo im Unterrichtsverlauf steht diese Aufgabe? (optional)
               </p>
@@ -323,6 +341,7 @@ export default function AufgabenWerkstatt({
                 onChange={(v) => { setMissionType(v); setKopfOffen(false); }}
                 disabled={isReleased}
               />
+              </div>
             </div>
           )}
         </div>
