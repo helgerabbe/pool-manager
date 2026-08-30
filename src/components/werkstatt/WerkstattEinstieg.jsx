@@ -35,8 +35,10 @@ export default function WerkstattEinstieg({
   busy = false,
   disabled = false,
 }) {
-  const [materialOffen, setMaterialOffen] = useState(true);
-  const [ideeOffen, setIdeeOffen] = useState(true);
+  // Beide Kästen starten zugeklappt: So sieht man auf einen Blick, dass es
+  // zwei Wege gibt, statt sofort in einem Formular zu stehen.
+  const [materialOffen, setMaterialOffen] = useState(false);
+  const [ideeOffen, setIdeeOffen] = useState(false);
 
   // SpeechInputButton rendert NICHTS, wenn der Browser keine Aufnahme kann
   // (kein HTTPS, eingebettete Ansicht, fehlende Berechtigung). Ohne eigenen
@@ -50,11 +52,16 @@ export default function WerkstattEinstieg({
   const anzahl = materialien.length;
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-4 py-2">
-      <p className="text-sm text-slate-600 leading-relaxed">
-        Legen Sie ab, was Sie schon haben, und erzählen Sie, was passieren soll. Beides ist
-        freiwillig — je mehr Sie mitgeben, desto genauer wird der Vorschlag.
-      </p>
+    <div className="w-full max-w-4xl space-y-4 py-2">
+      {/* Der Arbeitsauftrag — abgesetzt, damit klar ist, dass hier etwas von
+          der Lehrkraft erwartet wird und nicht nur eine Erklärung steht. */}
+      <div className="rounded-xl border-l-4 border-l-violet-500 border border-violet-200 bg-violet-50 px-4 py-3">
+        <p className="text-sm text-violet-900 leading-relaxed">
+          <span className="font-semibold">Legen Sie ab, was Sie schon haben, und erzählen Sie,
+          was passieren soll.</span>{' '}
+          Beides ist freiwillig — je mehr Sie mitgeben, desto genauer wird der Vorschlag.
+        </p>
+      </div>
 
       {/* ── Material ──────────────────────────────────────────────────── */}
       <section className="rounded-xl border border-slate-200 bg-white overflow-hidden">
@@ -66,7 +73,7 @@ export default function WerkstattEinstieg({
           {materialOffen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
           <FolderOpen className="w-5 h-5 text-amber-600 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-800">Material</p>
+            <p className="text-base font-bold text-slate-800">Material</p>
             <p className="text-xs text-slate-500">
               {anzahl === 0
                 ? 'Foto einer Buchseite, PDF, Link, eingefügter Text — oder nichts'
@@ -95,16 +102,16 @@ export default function WerkstattEinstieg({
           {ideeOffen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
           <Lightbulb className="w-5 h-5 text-violet-600 shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-slate-800">Ihre Idee</p>
+            <p className="text-base font-bold text-slate-800">Ihre Ideen</p>
             <p className="text-xs text-slate-500">
-              {hatIdee ? `${idee.trim().length} Zeichen` : 'Aufsprechen oder tippen — was soll in der Aufgabe passieren?'}
+              {hatIdee ? `${idee.trim().length} Zeichen erfasst` : 'Aufsprechen oder tippen — was soll in der Aufgabe passieren?'}
             </p>
           </div>
         </button>
         {ideeOffen && (
           <div className="px-4 pb-4 pt-3 border-t border-slate-100 space-y-3">
             {spracheMoeglich ? (
-              <div className="flex items-start gap-2">
+              <div className="space-y-2">
                 <SpeechInputButton
                   value={idee}
                   onResult={onIdeeChange}
@@ -113,7 +120,7 @@ export default function WerkstattEinstieg({
                   label="Idee aufsprechen"
                   listeningLabel="Ich höre zu …"
                 />
-                <p className="text-xs text-slate-500 leading-relaxed pt-1.5">
+                <p className="text-xs text-slate-500 leading-relaxed">
                   Bis zu 90 Sekunden. Erzählen Sie einfach, als würden Sie es einer Kollegin
                   erklären — das Gesprochene landet danach im Feld und lässt sich dort noch ändern.
                 </p>
