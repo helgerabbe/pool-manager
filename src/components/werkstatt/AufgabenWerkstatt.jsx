@@ -135,6 +135,9 @@ export default function AufgabenWerkstatt({
       { materialien },
     );
     setAnsicht('werkstatt');
+    // Der Kasten MUSS offen sein — dort erscheint die Antwort. Zugeklappt
+    // sähe es aus, als sei nichts passiert.
+    setPlanerOffen(true);
   };
 
   const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
