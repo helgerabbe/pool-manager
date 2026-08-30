@@ -22,6 +22,8 @@
  * sie zur Build-Zeit findet.
  */
 
+import { abgabeSatz } from '@/lib/abgabeFormate';
+
 export const SCHRITT_TYPEN = Object.freeze({
   MATERIAL: 'material',
   AUFGABE: 'aufgabe',
@@ -30,6 +32,7 @@ export const SCHRITT_TYPEN = Object.freeze({
   BRIAN: 'brian',
   HANDLUNG: 'handlung',
   EXTERN: 'extern',
+  ABGABE: 'abgabe',
 });
 
 /** Baustand eines Schritts. Fehlender Wert = Altbestand = 'uebernommen'. */
@@ -114,6 +117,17 @@ export const SCHRITT_TYP_LISTE = Object.freeze([
     classes: { stripe: 'bg-rose-500', badge: 'bg-rose-50 text-rose-800 border-rose-200' },
   },
   {
+    id: SCHRITT_TYPEN.ABGABE,
+    label: 'Ergebnisabgabe',
+    kurz: 'Abgabe',
+    beschreibung:
+      'Sagt den Schüler:innen, in welcher Form sie ihr Ergebnis abgeben sollen. Der Pool-Manager nimmt nichts entgegen — hochgeladen wird in Moodle, die MBK verbindet beides.',
+    datenfeld: 'abgabe',
+    legacy: false,
+    eingabe: false,
+    classes: { stripe: 'bg-teal-500', badge: 'bg-teal-50 text-teal-800 border-teal-200' },
+  },
+  {
     id: SCHRITT_TYPEN.MATERIAL,
     label: 'Material',
     kurz: 'Material',
@@ -196,6 +210,10 @@ export function istSchrittVollstaendig(schritt) {
       return !!schritt.handlung?.arbeitsauftrag?.trim();
     case SCHRITT_TYPEN.EXTERN:
       return !!schritt.extern?.url?.trim();
+    case SCHRITT_TYPEN.ABGABE:
+      // Mindestens ein Format oder eine eigene Angabe — sonst weiß niemand,
+      // was abgegeben werden soll.
+      return (schritt.abgabe?.formate?.length > 0) || !!schritt.abgabe?.custom_format?.trim();
     default:
       return false;
   }
@@ -248,6 +266,9 @@ export function schrittZusammenfassung(schritt) {
       return kuerzen(schritt.handlung?.arbeitsauftrag);
     case SCHRITT_TYPEN.EXTERN:
       return kuerzen(schritt.extern?.hinweis || schritt.extern?.url);
+    case SCHRITT_TYPEN.ABGABE:
+      return kuerzen(abgabeSatz(schritt.abgabe?.formate, schritt.abgabe?.custom_format)
+        || schritt.abgabe?.hinweis);
     case SCHRITT_TYPEN.KATALOG:
       return kuerzen(
         schritt.field_values?.aufgabentext
@@ -291,6 +312,8 @@ export function leererSchritt(typ, reihenfolge = 0) {
       return { ...basis, handlung: { arbeitsauftrag: '', material_hinweis: '', datei_url: '', datei_name: '', bestaetigungstext: '' } };
     case SCHRITT_TYPEN.EXTERN:
       return { ...basis, extern: { url: '', titel: '', hoehe: null, hinweis: '' } };
+    case SCHRITT_TYPEN.ABGABE:
+      return { ...basis, abgabe: { formate: [], custom_format: '', hinweis: '', dateiformat: '' } };
     default:
       return basis;
   }
