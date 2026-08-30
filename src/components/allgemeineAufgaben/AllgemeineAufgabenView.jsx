@@ -261,28 +261,32 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
             </span>
           </span>
 
-          <Tooltip delayDuration={150}>
-            <TooltipTrigger asChild>
-              <span
-                className={cn(
-                  'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help',
-                  typMeta.color.bg, typMeta.color.text, typMeta.color.border
-                )}
-              >
-                <TypIcon className="w-3 h-3" />
-                {typMeta.label}
-              </span>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
-              {typMeta.description}
-            </TooltipContent>
-          </Tooltip>
-
-          {istSequenz && (
+          {/* Ein Etikett für die ART der Aufgabe, und nur, wo es etwas
+              unterscheidet: WO die Schüler arbeiten. „KI-Tutor-Aufgabe" ist
+              seit dem Umbau keine Art mehr, sondern ein Schritttyp — das
+              Etikett wäre eine Altlast, die etwas Falsches behauptet. */}
+          {istSequenz ? (
             <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold bg-emerald-100 text-emerald-700 border-emerald-300">
               <ListChecks className="w-3 h-3" />
-              Aufgabensequenz
+              Digitale Aufgabe
             </span>
+          ) : (
+            <Tooltip delayDuration={150}>
+              <TooltipTrigger asChild>
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1 h-5 px-2 rounded-full border text-[11px] font-semibold cursor-help',
+                    typMeta.color.bg, typMeta.color.text, typMeta.color.border
+                  )}
+                >
+                  <TypIcon className="w-3 h-3" />
+                  {typMeta.label}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs text-left leading-snug">
+                {typMeta.description}
+              </TooltipContent>
+            </Tooltip>
           )}
           {showMission && (
             <MissionBadge missionId={aufgabe.mission_type} size="sm" showFallback />
@@ -459,7 +463,11 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
         </div>
       )}
 
-      {/* Erwartetes Ergebnis: Inline-Zeile mit explizitem "nicht definiert" */}
+      {/* Erwartetes Ergebnis. Entfällt bei Sequenzen: Dort ist die Abgabe ein
+          eigener Schritt und steht schon oben in der Schrittliste. Die alten
+          Felder bleiben im Datensatz stehen (Rückweg der Portierung), sollen
+          hier aber nicht doppelt erscheinen. */}
+      {!istSequenz && (
       <div className="flex items-start gap-x-4 gap-y-1 flex-wrap text-xs px-3 py-2 rounded-lg bg-muted/20 border border-border">
         <span className="inline-flex items-center gap-1.5">
           <Tag className="w-3 h-3 text-muted-foreground" />
