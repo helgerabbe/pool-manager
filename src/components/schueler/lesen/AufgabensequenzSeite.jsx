@@ -236,7 +236,14 @@ function ExternBlock({ extern }) {
  * Aktivität „Aufgabensequenz") und `sequenz_schritte` direkt an der
  * AllgemeineAufgabe.
  */
-export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onBack }) {
+export default function AufgabensequenzSeite({
+  aktivitaet, busy, onErledigt, onBack,
+  // Die Aufgabenstellung gilt für die GESAMTE Folge ("bearbeite Schritt für
+  // Schritt"). In einer Vorschau, die nur EINEN Schritt zeigt, ist sie falsch:
+  // Eine offene Aufgabe bringt ihre eigene Aufgabenstellung mit, und die
+  // Schritt-für-Schritt-Ansage stimmt dort schlicht nicht.
+  zeigeAufgabenstellung = true,
+}) {
   const fv = aktivitaet?.field_values || {};
   const schritte = useMemo(() => schritteAusAufgabe(aktivitaet), [aktivitaet]);
   const [currentStep, setCurrentStep] = useState(0);
@@ -325,9 +332,11 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
   if (schritte.length === 0) {
     return (
       <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
-        <AufgabenstellungBox className="mb-4 shrink-0">
-          {fv.aufgabentext || standardAufgabe}
-        </AufgabenstellungBox>
+        {zeigeAufgabenstellung && (
+          <AufgabenstellungBox className="mb-4 shrink-0">
+            {fv.aufgabentext || standardAufgabe}
+          </AufgabenstellungBox>
+        )}
         <div className="flex-1 flex items-center justify-center">
           <p className="text-sm text-muted-foreground italic">
             Für diese Aktivität ist noch keine Aufgabensequenz hinterlegt.
@@ -434,9 +443,11 @@ export default function AufgabensequenzSeite({ aktivitaet, busy, onErledigt, onB
   return (
     <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
       {/* Aufgabenstellung */}
-      <AufgabenstellungBox className="mb-4 shrink-0">
-        {fv.aufgabentext || standardAufgabe}
-      </AufgabenstellungBox>
+      {zeigeAufgabenstellung && (
+        <AufgabenstellungBox className="mb-4 shrink-0">
+          {fv.aufgabentext || standardAufgabe}
+        </AufgabenstellungBox>
+      )}
 
       {indikator}
 

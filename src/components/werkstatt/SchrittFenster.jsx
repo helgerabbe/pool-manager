@@ -63,7 +63,7 @@ export default function SchrittFenster({
   // genau diesem Schritt.
   const vorschauAktivitaet = {
     id: `entwurf-${entwurf.id}`,
-    field_values: { sequenz_schritte: [entwurf], aufgabentext: aufgabenstellung },
+    field_values: { sequenz_schritte: [entwurf] },
   };
 
   return (
@@ -119,9 +119,12 @@ export default function SchrittFenster({
               <span className="text-xs font-semibold text-slate-600">So sehen es die Schüler:innen</span>
             </div>
             <div className="flex-1 min-h-0 bg-background">
+              {/* Nur EIN Schritt: Die Aufgabenstellung der Folge wäre hier
+                  irreführend — der Schritt trägt seine eigene. */}
               <AufgabensequenzSeite
                 aktivitaet={vorschauAktivitaet}
                 busy={false}
+                zeigeAufgabenstellung={false}
                 onErledigt={() => {}}
                 onBack={() => {}}
               />

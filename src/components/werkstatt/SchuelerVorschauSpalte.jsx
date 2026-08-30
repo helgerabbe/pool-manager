@@ -78,6 +78,10 @@ export default function SchuelerVorschauSpalte({
               key={gesamtdurchlauf ? 'gesamt' : (schritt?.id || selectedIndex)}
               aktivitaet={aktivitaet}
               busy={false}
+              // Die Aufgabenstellung der Folge gehört nur zum Gesamtdurchlauf.
+              // Bei der Einzelansicht eines Schritts wäre die Ansage
+              // "bearbeite Schritt für Schritt" schlicht falsch.
+              zeigeAufgabenstellung={gesamtdurchlauf}
               onErledigt={() => {}}
               onBack={() => {}}
             />
