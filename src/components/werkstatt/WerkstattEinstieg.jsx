@@ -5,8 +5,9 @@ import {
   FolderOpen, Lightbulb, ChevronDown, ChevronRight, Sparkles, Loader2, PenLine,
 } from 'lucide-react';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
-import { MicOff } from 'lucide-react';
+import { MicOff, Inbox } from 'lucide-react';
 import MaterialSammlung from '@/components/werkstatt/MaterialSammlung';
+import useOffeneAufgabenIdeen from '@/hooks/useOffeneAufgabenIdeen';
 
 /**
  * WerkstattEinstieg
@@ -26,6 +27,8 @@ import MaterialSammlung from '@/components/werkstatt/MaterialSammlung';
  * derselben Zeit tippt — und der Assistent braucht genau diese Beschreibung.
  */
 export default function WerkstattEinstieg({
+  einheitId,
+  onIdeeUebernehmen,
   materialien = [],
   onMaterialienChange,
   idee = '',
@@ -50,6 +53,10 @@ export default function WerkstattEinstieg({
 
   const hatIdee = !!idee.trim();
   const anzahl = materialien.length;
+
+  // Bereits gesammelte Ideen dieser Einheit — sie sollen hier landen können,
+  // statt in der Sammelbox liegen zu bleiben.
+  const { ideen } = useOffeneAufgabenIdeen(einheitId, { enabled: !!einheitId });
 
   return (
     <div className="w-full max-w-4xl space-y-4 py-2">
@@ -133,6 +140,40 @@ export default function WerkstattEinstieg({
                 funktioniert genauso gut.
               </p>
             )}
+            {ideen.length > 0 && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-2">
+                <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-900">
+                  <Inbox className="w-3.5 h-3.5" />
+                  {ideen.length === 1
+                    ? 'Eine gesammelte Idee liegt bereit'
+                    : `${ideen.length} gesammelte Ideen liegen bereit`}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {ideen.map((i) => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => onIdeeUebernehmen?.(i)}
+                      title={i.beschreibung || undefined}
+                      className="rounded-md border border-amber-300 bg-white px-2 py-1 text-xs text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                    >
+                      {i.titel}
+                      {i.material_urls?.length > 0 && (
+                        <span className="ml-1 text-[10px] text-amber-700">
+                          +{i.material_urls.length}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-amber-800">
+                  Übernehmen füllt das Feld unten und legt mitgebrachtes Material ab. In der
+                  Sammelbox bleibt die Idee stehen, bis Sie sie dort abhaken.
+                </p>
+              </div>
+            )}
+
             <Textarea
               value={idee}
               onChange={(e) => onIdeeChange(e.target.value)}

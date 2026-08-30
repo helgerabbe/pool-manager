@@ -144,6 +144,28 @@ export default function AufgabenWerkstatt({
     setPlanerOffen(true);
   };
 
+  /** Eine gesammelte Idee in den Einstieg holen — Text und Material. */
+  const ideeUebernehmen = (gesammelt) => {
+    const text = [gesammelt?.titel, gesammelt?.beschreibung].filter(Boolean).join('\n\n');
+    setIdee((alt) => (alt.trim() ? `${alt.trim()}\n\n${text}` : text));
+    const neueMaterialien = (gesammelt?.material_urls || [])
+      .filter((m) => m?.url)
+      .map((m) => ({
+        type: /\.(png|jpe?g|gif|webp)$/i.test(m.url) ? 'image' : 'pdf',
+        label: m.name || 'Material aus der Sammelbox',
+        content: '',
+        url: m.url,
+      }));
+    if (neueMaterialien.length) {
+      setMaterialien((alt) => [
+        ...alt,
+        // Nichts doppelt ablegen, wenn dieselbe Idee zweimal geholt wird.
+        ...neueMaterialien.filter((n) => !alt.some((a) => a.url === n.url)),
+      ]);
+    }
+    toast.success('Idee übernommen.');
+  };
+
   const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
     const { schritte, hinweise } = vorschlagZuSchritten(vorschlag, katalogListe);
     folge.folgeSetzen(schritte, { anhaengen });
@@ -287,6 +309,8 @@ export default function AufgabenWerkstatt({
         {ansicht === 'einstieg' ? (
           <div className="flex-1 min-h-0 overflow-y-auto pt-4">
             <WerkstattEinstieg
+              einheitId={einheitId}
+              onIdeeUebernehmen={ideeUebernehmen}
               materialien={materialien}
               onMaterialienChange={setMaterialien}
               idee={idee}
