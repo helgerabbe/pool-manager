@@ -6,17 +6,11 @@ import { Sparkles, Loader2, Save, Plus, Trash2, CheckCircle2, Info } from 'lucid
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
+import { ABGABE_FORMATE } from '@/lib/abgabeFormate';
 
-// ── Verfügbare Standardformate ──
-const STANDARD_FORMATE = [
-  { id: 'text',         label: 'Text',           emoji: '📝' },
-  { id: 'presentation', label: 'Präsentation',   emoji: '📊' },
-  { id: 'timeline',     label: 'Zeitleiste',      emoji: '📅' },
-  { id: 'image',        label: 'Bild',            emoji: '🖼️' },
-  { id: 'graphic',      label: 'Grafik',          emoji: '📐' },
-  { id: 'audio',        label: 'Audio/Podcast',   emoji: '🎙️' },
-  { id: 'portfolio',    label: 'Portfolio',       emoji: '📁' },
-];
+// Verfügbare Standardformate — geteilt mit den Abgabe-Schritten der
+// Aufgaben-Werkstatt, damit die Liste nur an einer Stelle gepflegt wird.
+const STANDARD_FORMATE = ABGABE_FORMATE;
 
 function FormatKachel({ format, selected, onToggle }) {
   return (
