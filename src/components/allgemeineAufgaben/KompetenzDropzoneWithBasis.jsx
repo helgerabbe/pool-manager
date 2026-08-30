@@ -1,3 +1,8 @@
+/*
+ * ⚠️ NICHT MEHR EINGEBUNDEN (Stand 2026-08-31) — Loeschkandidat.
+ * Wird nur von AufgabeKompetenzMapping benutzt, das selbst nicht mehr
+ * gemountet wird. Begruendung dort im Dateikopf.
+ */
 import React, { useMemo } from 'react';
 import { Droppable } from '@hello-pangea/dnd';
 import { Badge } from '@/components/ui/badge';

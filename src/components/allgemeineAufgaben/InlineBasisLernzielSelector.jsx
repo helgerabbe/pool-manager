@@ -1,3 +1,8 @@
+/*
+ * ⚠️ NICHT MEHR EINGEBUNDEN (Stand 2026-08-31) — Loeschkandidat.
+ * Wird nur von AufgabeKompetenzMapping benutzt, das selbst nicht mehr
+ * gemountet wird. Begruendung dort im Dateikopf.
+ */
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';

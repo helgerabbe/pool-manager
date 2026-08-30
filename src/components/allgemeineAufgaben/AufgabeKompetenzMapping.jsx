@@ -1,3 +1,19 @@
+/*
+ * ⚠️ NICHT MEHR EINGEBUNDEN (Stand 2026-08-31) — Loeschkandidat.
+ *
+ * Die Lernziel-Zuordnung per Drag & Drop war der urspruengliche Weg. Sie wurde
+ * durch die KI-gestuetzte Lernzielanalyse abgeloest (LernzielAnalysePanel), die
+ * ihr Ergebnis in `aufgabe.lernzielanalyse.items` speichert — NICHT in den
+ * Mapping-Entities.
+ *
+ * Diese Datei wird von keiner Ansicht mehr gemountet. Sie bleibt vorerst
+ * liegen, weil daran ein ungeloestes Problem haengt: Die Lernlandkarte
+ * (lib/generateMoodleLandkarteJSON) liest weiterhin
+ * AllgemeineAufgabeLernzielMapping — und diese Datensaetze schreibt seit der
+ * Umstellung NIEMAND mehr. Neue Aufgaben tauchen in der Landkarte deshalb
+ * nicht auf. Bevor hier geloescht wird, muss geklaert sein, wie Analyse und
+ * Landkarte zusammenfinden.
+ */
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllLernziele } from '@/services/LernzielService';
