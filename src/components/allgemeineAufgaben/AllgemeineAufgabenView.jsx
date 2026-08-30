@@ -973,8 +973,6 @@ export default function AllgemeineAufgabenView({
             isEbene3={isEbene3}
             onSelectAufgabe={handleSelectAufgabe}
             onNeueAufgabe={handleNeueAufgabe}
-            onOpenIdeenbox={() => setIdeenboxOpen(true)}
-            onOpenWizard={() => setWizardOpen(true)}
           />
         ) : (
           <main className="flex-1 flex items-center justify-center text-center">

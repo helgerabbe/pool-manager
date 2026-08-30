@@ -81,8 +81,6 @@ export default function ThemenfeldUebersichtPanel({
   isEbene3 = false,
   onSelectAufgabe,
   onNeueAufgabe,
-  onOpenIdeenbox,
-  onOpenWizard,
 }) {
   const istOhneThemenfeld = themenfeld?.id === '_none';
 
