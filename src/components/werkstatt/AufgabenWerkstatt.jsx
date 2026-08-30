@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Loader2, Hammer, Lock, ListOrdered, FolderOpen, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -19,6 +18,7 @@ import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import SchrittFenster from '@/components/werkstatt/SchrittFenster';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import { istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
+import { getMission } from '@/lib/missionen';
 
 /**
  * AufgabenWerkstatt
