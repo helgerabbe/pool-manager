@@ -201,6 +201,66 @@ export function istSchrittVollstaendig(schritt) {
   }
 }
 
+/**
+ * Kurze Beschriftung eines Schritts für Übersichten — was ist das eigentlich?
+ *
+ * Bei Katalog- und Galerie-Schritten ist der Typ allein nichtssagend
+ * („Format aus dem Katalog"); interessant ist, WELCHES Format. Deshalb steht
+ * dort der Name der Aktivität bzw. der Galerie-Vorlage.
+ */
+export function schrittBeschriftung(schritt, typInfo = null, aktivitaetName = '') {
+  const info = typInfo || getSchrittTyp(schritt?.typ);
+  if (schritt?.typ === SCHRITT_TYPEN.KATALOG) {
+    return schritt?.field_values?.galerie_name
+      || aktivitaetName
+      || info?.kurz
+      || 'Katalog';
+  }
+  if (schritt?.typ === SCHRITT_TYPEN.MATERIAL && schritt?.material?.material_typ) {
+    const m = {
+      text: 'Text', video: 'Video', audio: 'Audio',
+      bild: 'Bild', pdf: 'PDF', link: 'Link',
+    };
+    return m[schritt.material.material_typ] || 'Material';
+  }
+  return info?.kurz || info?.label || schritt?.typ || 'Schritt';
+}
+
+/**
+ * Ein Satz zum Inhalt eines Schritts, für Übersichten.
+ *
+ * Reihenfolge der Quellen: was die Schüler sehen, sonst die Notiz der
+ * Lehrkraft aus der Planung. Gibt es beides nicht, kommt nichts zurück —
+ * eine erfundene Zusammenfassung wäre schlechter als gar keine.
+ */
+export function schrittZusammenfassung(schritt) {
+  if (!schritt) return '';
+  const kuerzen = (t) => String(t || '').replace(/\s+/g, ' ').trim();
+
+  switch (schritt.typ) {
+    case SCHRITT_TYPEN.MATERIAL:
+      return kuerzen(schritt.material?.beschreibung || schritt.material?.inhalt || schritt.material?.url);
+    case SCHRITT_TYPEN.AUFGABE:
+      return kuerzen(schritt.aufgabe?.aufgabenstellung);
+    case SCHRITT_TYPEN.BRIAN:
+      return kuerzen(schritt.brian?.learner_instruction || schritt.brian?.dialog_name);
+    case SCHRITT_TYPEN.HANDLUNG:
+      return kuerzen(schritt.handlung?.arbeitsauftrag);
+    case SCHRITT_TYPEN.EXTERN:
+      return kuerzen(schritt.extern?.hinweis || schritt.extern?.url);
+    case SCHRITT_TYPEN.KATALOG:
+      return kuerzen(
+        schritt.field_values?.aufgabentext
+        || schritt.field_values?.instruction
+        || schritt.field_values?.inhalt
+        || schritt.plan?.kurzbeschreibung,
+      );
+    case SCHRITT_TYPEN.OFFEN:
+    default:
+      return kuerzen(schritt.plan?.kurzbeschreibung);
+  }
+}
+
 /** Erzeugt eine stabile Schritt-UID. Niemals den Array-Index verwenden. */
 export function neueSchrittId() {
   return `s${Date.now().toString(36)}${Math.random().toString(36).slice(2, 9)}`;

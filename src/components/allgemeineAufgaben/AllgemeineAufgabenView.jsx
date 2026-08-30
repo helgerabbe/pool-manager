@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
+import {
+  getSchrittTyp, schrittStatus, istSchrittVollstaendig,
+  schrittBeschriftung, schrittZusammenfassung,
+} from '@/lib/schrittTypen';
 import { Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks, Code2 } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskLockBar from '@/components/ui/TaskLockBar';
