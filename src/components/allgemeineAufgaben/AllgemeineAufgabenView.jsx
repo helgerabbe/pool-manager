@@ -14,6 +14,7 @@ import {
   getSchrittTyp, schrittStatus, istSchrittVollstaendig,
   schrittBeschriftung, schrittZusammenfassung,
 } from '@/lib/schrittTypen';
+import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 import { Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Image as ImageIcon, Package, Tag, Folder, FileType2, Eye, ListChecks, Code2 } from 'lucide-react';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import TaskLockBar from '@/components/ui/TaskLockBar';
@@ -214,6 +215,11 @@ function AufgabeNode({ aufgabe, isSelected, onSelect }) {
  * Detail-Panel: Allgemeine Angaben (Tab 1)
  */
 function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFreigeben, onEdit, onDelete, onPreview }) {
+  // Katalog-Schritte speichern nur die aktivitaet_id. Für die Übersicht ist
+  // aber der FORMATNAME das Interessante ("Miniquiz" statt "Katalog") —
+  // deshalb der Katalog hier. Er ist gecacht und wird ohnehin an mehreren
+  // Stellen geladen.
+  const { katalogMap } = useAktivitaetenKatalog();
   const hatTitel = !!aufgabe.titel?.trim();
   const showMission = isMissionApplicable(aufgabe);
   const themenfeld = themenfelder.find((tf) => tf.id === aufgabe.themenfeld_id);
@@ -396,7 +402,7 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                         'rounded-full border px-1.5 py-0.5 text-[10px] font-bold',
                         typInfo?.classes?.badge || 'bg-slate-50 text-slate-700 border-slate-200'
                       )}>
-                        {schrittBeschriftung(s, typInfo)}
+                        {schrittBeschriftung(s, typInfo, katalogMap[s.aktivitaet_id]?.name)}
                       </span>
                       {!fertig && status !== 'geplant' && (
                         <span className="text-[10px] text-amber-700">unvollständig</span>
