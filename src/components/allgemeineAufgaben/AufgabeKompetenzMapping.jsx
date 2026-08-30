@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getAllLernziele } from '@/services/LernzielService';
 import { getAllLernpakete } from '@/services/LernpaketService';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
-import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe, createBasisMapping, deleteBasisMapping } from '@/services/AllgemeineAufgabeService';
+import { getMappingsByAufgabe, createMapping, deleteMapping, getBasisMappingsByAufgabe, createBasisMapping, deleteBasisMapping, filterMappingsFuerSchritt } from '@/services/AllgemeineAufgabeService';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
