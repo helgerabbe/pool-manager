@@ -385,6 +385,7 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
     const eintrag: {
       titel: string; typ: string; kurzbeschreibung: string;
       dauer_minuten?: number; aktivitaet_name?: string;
+      galerie_id?: string; galerie_name?: string;
     } = {
       titel,
       typ,
