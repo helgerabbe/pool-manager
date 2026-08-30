@@ -42,19 +42,22 @@ export default function StrukturPhase({
         onEingabe={setEingabe}
         onAbschicken={abschicken}
         disabled={disabled}
-        className="flex-1 min-h-[220px]"
+        className={vorschlag?.length > 0 ? 'flex-1 min-h-[150px]' : 'flex-1 min-h-[220px]'}
         platzhalter="Worum geht es in dieser Aufgabe? Was sollen die Schüler am Ende können?"
         leerText="Beschreiben Sie kurz, worum es gehen soll — ich schlage Ihnen eine Schrittfolge vor. Gebaut wird noch nichts."
       />
 
       {vorschlag?.length > 0 && (
-        <div className="shrink-0 rounded-xl border border-violet-200 bg-violet-50 p-3 space-y-3">
+        <div className="shrink-0 rounded-xl border border-violet-200 bg-violet-50 p-3 space-y-3 flex flex-col min-h-0">
           <p className="flex items-center gap-2 text-xs font-semibold text-violet-900 uppercase tracking-wide">
             <ListOrdered className="w-3.5 h-3.5" />
             Vorgeschlagene Folge · {vorschlag.length} Schritte
           </p>
 
-          <ol className="space-y-1.5">
+          {/* Eigener Scrollbereich: Bei sechs oder mehr Schritten liefen die
+              Knöpfe darunter sonst aus dem Kasten heraus und waren nicht mehr
+              erreichbar. Die Liste scrollt, die Entscheidung bleibt stehen. */}
+          <ol className="space-y-1.5 overflow-y-auto min-h-0 max-h-64 pr-1">
             {vorschlag.map((v, i) => {
               const typInfo = getSchrittTyp(v.typ);
               return (
