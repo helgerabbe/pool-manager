@@ -5,8 +5,8 @@ import { base44 } from '@/api/base44Client';
 import IdeenkistePanel from './IdeenkistePanel';
 
 /**
- * Einheitenweiter Zugang zum IDEENSPEICHER: Ablage für Aufgaben-Ideen, die
- * noch keinen Platz haben. Der Zähler zeigt, wie viele bereitliegen.
+ * Einheitenweiter Zugang zum AUFGABEN-DEPOT: Ablage für Aufgaben, die noch
+ * keinen Platz haben. Der Zähler zeigt, wie viele bereitliegen.
  *
  * Zum Namen siehe Kopfkommentar in IdeenkistePanel — Dateiname und Bezeichner
  * heißen bewusst weiterhin "Ideenkiste".

@@ -6,7 +6,7 @@
  * Deshalb sind beide Ziele Eigenschaften, keine feste Verdrahtung:
  *   onSaveIdea      primaeres Ziel, Beschriftung ueber `primaerLabel`
  *   (Aufgaben-Depot) zweites Ziel, immer die Sammelbox (Entity AufgabenIdee).
- *                   Abschaltbar ueber `zweitZielAnzeigen` — im Speicher selbst
+ *                   Abschaltbar ueber `zweitZielAnzeigen` — im Depot selbst
  *                   waeren beide Ziele dasselbe.
  *
  * Aufrufer (Stand 2026-08-30):
