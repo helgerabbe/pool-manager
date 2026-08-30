@@ -156,8 +156,12 @@ export default function ErwartungshorizontTab({
   };
 
   const handleGenerateWithAI = () => {
-    if (!aufgabe.aufgabenstellung?.trim()) {
-      toast.error('Bitte füllen Sie zuerst die Aufgabenstellung aus.');
+    // Im Brian-Schritt steht die Aufgabenstellung am SCHRITT, nicht an der
+    // Aufgabe — sonst bliebe der Knopf dort dauerhaft gesperrt.
+    if (!basisAufgabenstellung.trim()) {
+      toast.error(imEntwurfsModus
+        ? 'Bitte füllen Sie zuerst im Reiter „Aufgabe" die Aufgabenstellung aus.'
+        : 'Bitte füllen Sie zuerst die Aufgabenstellung aus.');
       return;
     }
     // Wenn keine Lernziele verknüpft: Rückfrage-Dialog zeigen
@@ -248,7 +252,7 @@ export default function ErwartungshorizontTab({
           {kannBearbeiten && (
             <Button
               onClick={handleGenerateWithAI}
-              disabled={isGenerating || !aufgabe.aufgabenstellung?.trim()}
+              disabled={isGenerating || !basisAufgabenstellung.trim()}
               variant="outline"
               size="sm"
               className="gap-2 shrink-0"
