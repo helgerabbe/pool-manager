@@ -355,7 +355,7 @@ const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlu
  * wäre schlimmer als ein fehlender — die Lehrkraft sieht sonst etwas, das
  * niemand so gemeint hat. Was aussortiert wurde, wird gemeldet.
  */
-function leseSchritte(text, katalogNamen) {
+function leseSchritte(text, katalogNamen, galerieEintraege = []) {
   const roh = tagInhalt(text, 'schritte');
   if (!roh) return { schritte: null, warnungen: [] };
 
@@ -370,6 +370,7 @@ function leseSchritte(text, katalogNamen) {
   }
 
   const bekannt = new Set(katalogNamen);
+  const galerieById = new Map((galerieEintraege || []).map((g) => [String(g.id), g]));
   const warnungen = [];
   const schritte = [];
 
@@ -400,6 +401,21 @@ function leseSchritte(text, katalogNamen) {
       // und kann selbst ein Format wählen.
       if (name && bekannt.has(name)) {
         eintrag.aktivitaet_name = name;
+        // Bei der Aktivitaetengalerie muss zusaetzlich die Vorlage stimmen.
+        // Eine erfundene Galerie-ID waere eine tote Referenz, die erst beim
+        // Export auffiele — dann lieber ohne Vorlage weitergeben.
+        if (name === 'Aktivitätengalerie') {
+          const gid = String(s?.galerie_id || '').trim();
+          const treffer = galerieById.get(gid);
+          if (treffer) {
+            eintrag.galerie_id = treffer.id;
+            eintrag.galerie_name = treffer.name;
+          } else {
+            delete eintrag.aktivitaet_name;
+            eintrag.typ = 'offen';
+            warnungen.push(`Für „${titel}“ wurde eine Galerie-Vorlage vorgeschlagen, die es nicht gibt (${gid || 'ohne Kennung'}). Der Schritt steht jetzt als offene Aufgabe da.`);
+          }
+        }
       } else {
         eintrag.typ = 'offen';
         warnungen.push(`Für „${titel}“ wurde ein Format vorgeschlagen, das es nicht gibt (${name || 'ohne Namen'}). Der Schritt steht jetzt als offene Aufgabe da.`);
@@ -463,6 +479,7 @@ Deno.serve(async (req) => {
     // Nach Namen entdoppelt: der Katalog führt jede Aktivität einmal pro
     // Lernpaket-Phase, ein Schritt hat aber keine Phase.
     let katalogNamen: string[] = [];
+    let galerieEintraege: any[] = [];
     if (istStruktur) {
       const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog
         .list()
@@ -471,8 +488,11 @@ Deno.serve(async (req) => {
         .filter((k: any) => k?.is_active !== false && k?.name)
         .map((k: any) => String(k.name));
       katalogNamen = [...new Set(namen)].sort((a, b) => a.localeCompare(b, 'de'));
+      // Faellt aus, wenn der GitHub-Connector nicht greift — dann bleibt der
+      // Vorschlag ohne Galerie, statt ganz auszufallen.
+      galerieEintraege = await ladeGalerieEintraege(base44);
     }
-    const systemStruktur = istStruktur ? baueStrukturPrompt(katalogNamen) : '';
+    const systemStruktur = istStruktur ? baueStrukturPrompt(katalogNamen, galerieEintraege) : '';
 
     // ── Nachrichten zusammenstellen ────────────────────────────────────
     const kontextZeilen = [
@@ -657,7 +677,7 @@ Deno.serve(async (req) => {
           const antwort = tagInhalt(roh, 'antwort') || 'Fertig.';
 
           if (istStruktur) {
-            const res = leseSchritte(roh, katalogNamen);
+            const res = leseSchritte(roh, katalogNamen, galerieEintraege);
             controller.enqueue(enc.encode(sseEvent('ergebnis', {
               antwort,
               schritte: res.schritte,
