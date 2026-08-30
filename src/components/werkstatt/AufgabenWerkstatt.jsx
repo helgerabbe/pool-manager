@@ -46,6 +46,7 @@ export default function AufgabenWerkstatt({
   open,
   onOpenChange,
   einheitId,
+  einheit = null,
   themenfelder = [],
   initialData = null,
   defaultThemenfeldId = null,
@@ -475,6 +476,8 @@ export default function AufgabenWerkstatt({
         nummer={folge.selectedIndex + 1}
         aufgabeId={initialData?.id}
         aufgabenstellung={aufgabenstellung}
+        aufgabe={initialData}
+        einheit={einheit}
         kontext={generatorKontext}
         isReleased={isReleased}
         onUebernehmen={schrittUebernehmen}

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Check, X, Monitor, RefreshCw } from 'lucide-react';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
+import BrianSchrittArbeitsflaeche from '@/components/werkstatt/BrianSchrittArbeitsflaeche';
 import AufgabensequenzSeite from '@/components/schueler/lesen/AufgabensequenzSeite';
 import {
   SCHRITT_TYPEN, SCHRITT_STATUS, getSchrittTyp, istSchrittVollstaendig,
@@ -32,6 +33,8 @@ export default function SchrittFenster({
   nummer,
   aufgabeId,
   aufgabenstellung = '',
+  aufgabe = null,
+  einheit = null,
   kontext = {},
   isReleased = false,
   onUebernehmen,
@@ -55,6 +58,10 @@ export default function SchrittFenster({
 
   const typInfo = getSchrittTyp(entwurf.typ);
   const istOffen = entwurf.typ === SCHRITT_TYPEN.OFFEN;
+  // Ein Brian-Gespräch braucht den vollen Durchlauf (Lernziele →
+  // Erwartungshorizont → vier Felder) und bekommt deshalb eigene Reiter
+  // statt des schmalen Formulars.
+  const istBrian = entwurf.typ === SCHRITT_TYPEN.BRIAN;
   const vollstaendig = istSchrittVollstaendig(entwurf);
 
   const uebernehmen = () => {
@@ -100,9 +107,21 @@ export default function SchrittFenster({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 flex-1 min-h-0">
           {/* Links: bearbeiten */}
           <div className="flex flex-col min-h-0 gap-3">
+            {istBrian ? (
+              <div className="flex-1 min-h-0 rounded-xl border border-slate-200 bg-white p-4">
+                <BrianSchrittArbeitsflaeche
+                  schritt={entwurf}
+                  onChange={setEntwurf}
+                  aufgabe={aufgabe}
+                  einheit={einheit}
+                  kannBearbeiten={!isReleased}
+                />
+              </div>
+            ) : (
             <div className={`${istOffen ? 'shrink-0 max-h-[38vh]' : 'flex-1'} min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4`}>
               <SchrittEditor schritt={entwurf} onChange={setEntwurf} />
             </div>
+            )}
 
             {istOffen && (
               <OffenerSchrittGespraech

@@ -1054,6 +1054,7 @@ export default function AllgemeineAufgabenView({
         open={werkstattOpen}
         onOpenChange={setWerkstattOpen}
         einheitId={einheitId}
+        einheit={einheit}
         themenfelder={themenfelder}
         initialData={editingSequenz}
         defaultThemenfeldId={neuThemenfeldId}
