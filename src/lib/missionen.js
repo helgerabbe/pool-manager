@@ -14,14 +14,22 @@
  * "Anwenden & Sichern", heute nur noch Anwendung. Alle 28 Altbestände wurden
  * vor der Umdeutung von Hand zugeordnet, deshalb ist der Wert eindeutig.
  *
- * Scope-Regel (unverändert):
- *   `mission_type` gilt für AllgemeineAufgabe-Datensätze mit
- *     - aufgaben_typ ∈ {inhalt, handlung}     UND
- *     - anforderungsebene ∈ {'1 - Basis', '2 - Transfer'}.
- *   Lernpakete, Projekte und reine Container bleiben `null`, das UI blendet
- *   die Auswahl aus (siehe `isMissionApplicable`).
- *   Achtung: Sobald der Aufgabentyp am SCHRITT sitzt statt an der Aufgabe,
- *   verliert die typ-Bedingung ihren Sinn und muss neu gefasst werden.
+ * Scope-Regel (neu gefasst 2026-08-31):
+ *   Die Kategorie beschreibt, WO im Unterrichtsverlauf eine Aufgabe steht.
+ *   Das gilt für jede echte Aufgabe — unabhängig davon, ob die Schüler:innen
+ *   sie in der Lernplattform, am realen Material oder auf einer eingebetteten
+ *   Seite bearbeiten.
+ *
+ *   Ausgenommen bleiben nur:
+ *     - CONTAINER (buendel, prozess, projekt_anker, auswahl_buendel) — sie
+ *       bündeln andere Aufgaben und stehen selbst nirgends im Verlauf.
+ *     - EBENE 3 (Projekte) — Projekte haben keine Kategorie.
+ *
+ *   Zur Vorgeschichte: Bis zum Umbau hing die Regel am `aufgaben_typ` und
+ *   ließ nur {inhalt, handlung} zu. Damals war 'inhalt' gleichbedeutend mit
+ *   "KI-Tutor-Aufgabe". Seit der Typ am SCHRITT sitzt, sagt er nichts mehr
+ *   über die Aufgabe aus — und die externe HTML-Seite fiel ohne Grund heraus:
+ *   Auch eine GeoGebra-Aufgabe steht irgendwo im Unterrichtsverlauf.
  *
  * Konventionen:
  *   - Werte (Keys) sind SLUGS in Kleinbuchstaben, exakt passend zum Enum
@@ -168,14 +176,14 @@ export function formatMissionLabel(id, { withEmoji = true } = {}) {
  * @param {object} aufgabe - AllgemeineAufgabe-Record (oder Subset davon)
  * @returns {boolean}
  */
+/** Container bündeln andere Aufgaben und stehen selbst nirgends im Verlauf. */
+const CONTAINER_TYPEN = new Set(['buendel', 'prozess', 'projekt_anker', 'auswahl_buendel']);
+
 export function isMissionApplicable(aufgabe) {
   if (!aufgabe) return false;
-  const typOk = aufgabe.aufgaben_typ === 'inhalt' || aufgabe.aufgaben_typ === 'handlung';
-  const ebeneOk =
-    !aufgabe.anforderungsebene ||
-    aufgabe.anforderungsebene === '1 - Basis' ||
-    aufgabe.anforderungsebene === '2 - Transfer';
-  return typOk && ebeneOk;
+  if (CONTAINER_TYPEN.has(aufgabe.aufgaben_typ)) return false;
+  // Projekte (Ebene 3) haben keine Kategorie. Fehlende Angabe gilt als Ebene 1.
+  return aufgabe.anforderungsebene !== '3 - Projekt';
 }
 
 /**
