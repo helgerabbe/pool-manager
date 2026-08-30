@@ -275,3 +275,46 @@ describe('buildSequenzSchritteFuerExport (MBK-Payload)', () => {
     expect(out[0].brian_dialog).toBeUndefined();
   });
 });
+
+describe('Galerie-Schritte (Stufe 2 der Dreierregel)', () => {
+  const katalog = [{ id: 'k-gal', name: 'Aktivitätengalerie', phase: 'Übung' }];
+
+  it('traegt Vorlage und Herkunft ein, wenn der Assistent eine Galerie-Vorlage nennt', () => {
+    const { schritte, hinweise } = vorschlagZuSchritten([{
+      titel: 'Wortnetz zum Thema', typ: 'katalog',
+      aktivitaet_name: 'Aktivitätengalerie',
+      galerie_id: 'wortnetz-01', galerie_name: 'Wortnetz',
+      kurzbeschreibung: 'Begriffe vernetzen',
+    }], katalog);
+
+    expect(schritte[0].typ).toBe(SCHRITT_TYPEN.KATALOG);
+    expect(schritte[0].aktivitaet_id).toBe('k-gal');
+    expect(schritte[0].field_values.galerie_id).toBe('wortnetz-01');
+    expect(schritte[0].field_values.galerie_name).toBe('Wortnetz');
+    expect(schritte[0].herkunft).toEqual({ quelle: 'galerie', vorlage_id: 'wortnetz-01' });
+    expect(hinweise).toHaveLength(0);
+  });
+
+  it('gilt erst als vollstaendig, wenn der Uebergabetext da ist', () => {
+    const nurVorlage = {
+      typ: 'katalog', aktivitaet_id: 'k-gal',
+      field_values: { galerie_id: 'wortnetz-01', galerie_name: 'Wortnetz' },
+    };
+    expect(istSchrittVollstaendig(nurVorlage)).toBe(false);
+    expect(istSchrittVollstaendig({
+      ...nurVorlage,
+      field_values: { ...nurVorlage.field_values, inhalt: 'Die Begriffe lauten …' },
+    })).toBe(true);
+    // Leerzeichen zaehlen nicht als Inhalt.
+    expect(istSchrittVollstaendig({
+      ...nurVorlage,
+      field_values: { ...nurVorlage.field_values, inhalt: '   ' },
+    })).toBe(false);
+  });
+
+  it('laesst gewoehnliche Katalog-Schritte unveraendert', () => {
+    expect(istSchrittVollstaendig({
+      typ: 'katalog', aktivitaet_id: 'k1', field_values: { buchtitel: 'X' },
+    })).toBe(true);
+  });
+});

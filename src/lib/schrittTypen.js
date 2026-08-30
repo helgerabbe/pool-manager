@@ -179,8 +179,15 @@ export function istSchrittVollstaendig(schritt) {
     }
     case SCHRITT_TYPEN.AUFGABE:
       return !!schritt.aufgabe?.aufgabenstellung?.trim();
-    case SCHRITT_TYPEN.KATALOG:
-      return !!schritt.aktivitaet_id && Object.keys(schritt.field_values || {}).length > 0;
+    case SCHRITT_TYPEN.KATALOG: {
+      if (!schritt.aktivitaet_id) return false;
+      const fv = schritt.field_values || {};
+      // Galerie-Schritt: Eine Vorlage allein genügt nicht — ohne Übergabetext
+      // kann die MBK die Aktivität nicht bauen. Der Vorschlag des Assistenten
+      // trägt die Vorlage schon, den Text muss die Lehrkraft ergänzen.
+      if (fv.galerie_id) return !!String(fv.inhalt || '').trim();
+      return Object.keys(fv).length > 0;
+    }
     case SCHRITT_TYPEN.OFFEN:
       return !!(schritt.offen?.fragment?.trim() || schritt.offen?.snapshot_html?.trim());
     case SCHRITT_TYPEN.BRIAN:
