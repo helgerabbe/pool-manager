@@ -25,21 +25,9 @@ import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import StundenAufgabeKiButton from '@/components/unterrichtsstunden/StundenAufgabeKiButton';
 import StundenOffeneAufgabeVorschauButton from '@/components/unterrichtsstunden/StundenOffeneAufgabeVorschauButton';
-
-/** Aufgabenart → passender Editor-Dialog (gleiche Zuordnung wie im Pool-Manager). */
-function editorTyp(name = '') {
-  const n = name.toLowerCase();
-  if (n.includes('test')) return 'test';
-  if (n.includes('quiz')) return 'quiz';
-  if (['lückentext', 'lueckentext', 'lücken', 'cloze'].some((k) => n.includes(k))) return 'lueckentext';
-  if (['reihenfolge', 'sortierung', 'sequenzierung', 'sorting'].some((k) => n.includes(k))) return 'sortierung';
-  if (n.includes('zuordnen') || n.includes('match terms')) return 'match';
-  if (n.includes('multiple choice') || n.includes('multiple-choice')) return 'mc';
-  if (n.includes('bildbeschriftung') || n.includes('bildbeschreibung')) return 'bild';
-  if (n.includes('ki-tutor') || n.includes('ki-check')) return 'kitutor';
-  if (n.includes('offene aufgabe')) return 'offen';
-  return 'generisch';
-}
+// Zuordnung Aufgabenart → Editor: geteilt mit der Aufgaben-Werkstatt, damit
+// ein neues Format nur an EINER Stelle eingetragen werden muss.
+import { editorTyp } from '@/lib/aktivitaetEditorMap';
 
 export default function StundenAufgabeEditorButton({ phase, katalogEntry, stundeId }) {
   const queryClient = useQueryClient();
