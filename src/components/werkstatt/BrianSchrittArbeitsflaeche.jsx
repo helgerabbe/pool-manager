@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MessageSquare, Target, ClipboardCheck, Bot } from 'lucide-react';
-import { BrianSchrittEditor } from '@/components/schritte/WeitereSchrittEditoren';
+import { FileText, Target, ClipboardCheck, Bot } from 'lucide-react';
+import BrianAufgabeSection from '@/components/werkstatt/BrianAufgabeSection';
 import LernzielAnalysePanel from '@/components/allgemeineAufgaben/LernzielAnalysePanel';
 import ErwartungshorizontTab from '@/components/allgemeineAufgaben/ErwartungshorizontTab';
 import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPanel';
@@ -16,6 +16,9 @@ import AITutorPromptPanel from '@/components/allgemeineAufgaben/AITutorPromptPan
  * ungern von Hand schreibt — deshalb entstehen sie aus Angaben, die ihr näher
  * liegen: was die Schüler tun sollen, welche Lernziele dahinterstehen, was
  * eine gute Lösung ausmacht. Der vierte Reiter erzeugt daraus die Felder.
+ *
+ * Reiter 1 ist die AUFGABE (Text, Bild, Material) — nicht die Brian-Felder.
+ * Die stehen im letzten Reiter und entstehen dort automatisch.
  *
  * Diese Reihenfolge war schon der Aufbau der früheren Einzelaufgabe. Seit ein
  * Brian-Gespräch ein SCHRITT ist, gehört sie hierher — Brian arbeitet pro
@@ -43,10 +46,10 @@ export default function BrianSchrittArbeitsflaeche({
   const basisLernziele = items.filter((it) => it.quelle === 'basismodul');
 
   return (
-    <Tabs defaultValue="gespraech" className="flex flex-col h-full min-h-0">
+    <Tabs defaultValue="aufgabe" className="flex flex-col h-full min-h-0">
       <TabsList className="bg-muted shrink-0">
-        <TabsTrigger value="gespraech" className="text-xs gap-1.5">
-          <MessageSquare className="w-3.5 h-3.5" /> Gespräch
+        <TabsTrigger value="aufgabe" className="text-xs gap-1.5">
+          <FileText className="w-3.5 h-3.5" /> Aufgabe
         </TabsTrigger>
         <TabsTrigger value="lernziele" className="text-xs gap-1.5">
           <Target className="w-3.5 h-3.5" /> Lernziele
@@ -59,8 +62,8 @@ export default function BrianSchrittArbeitsflaeche({
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="gespraech" className="flex-1 min-h-0 overflow-y-auto m-0 pt-3">
-        <BrianSchrittEditor schritt={schritt} onChange={onChange} />
+      <TabsContent value="aufgabe" className="flex-1 min-h-0 overflow-y-auto m-0 pt-3">
+        <BrianAufgabeSection schritt={schritt} onChange={onChange} />
       </TabsContent>
 
       <TabsContent value="lernziele" className="flex-1 min-h-0 overflow-y-auto m-0 pt-3">
