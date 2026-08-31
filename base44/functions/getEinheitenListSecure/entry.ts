@@ -329,6 +329,13 @@ Deno.serve(async (req) => {
         // ✅ Privat-Modus: Sichtbarkeit + Besitzer für Badge, Veröffentlichen-
         // Aktion und die Admin-Besitzer-Übersicht.
         sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
+        // Format (2026-09-01): Uebungsbloecke sind private Einheiten mit
+        // format='uebungsblock' und haben in der Bibliothek einen eigenen
+        // Bereich. Diese Funktion baut jeden Datensatz Feld fuer Feld neu auf —
+        // ohne diese Zeile kommt das Kennzeichen NICHT im Frontend an, und die
+        // Bloecke landen still bei den Einheiten (bzw. werden dort ausgefiltert
+        // und sind nirgends zu sehen).
+        format: einheit.format || 'einheit',
         besitzer_email: einheit.besitzer_email,
         erhalten_von: einheit.erhalten_von,
         // ✅ Austausch-Bibliothek: Freigabe-Status für Badge + Toggle-Button.
