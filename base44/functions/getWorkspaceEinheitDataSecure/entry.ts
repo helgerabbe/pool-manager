@@ -376,6 +376,10 @@ Deno.serve(async (req) => {
           wizard_status: einheit.wizard_status,
           // Privat-Modus: Sichtbarkeit + Besitzer für die Workspace-UI.
           sichtbarkeit: einheit.sichtbarkeit || 'oeffentlich',
+          // Format (2026-09-01): Steuert im Workspace die reduzierten Reiter
+          // und die Beschriftungen (Uebungsblock statt Einheit). Ohne diese
+          // Zeile saehe die Arbeitsansicht jeden Uebungsblock als Einheit.
+          format: einheit.format || 'einheit',
           besitzer_email: einheit.besitzer_email || null,
           erhalten_von: einheit.erhalten_von || null,
           // Privat-Modus: angebotene Lerntypen (Stufe 1) + Legacy-Schalter.
