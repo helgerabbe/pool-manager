@@ -820,7 +820,13 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 rechts neben der Tab-Leiste eingeblendet, wenn er aktivierbar ist. */}
             <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0 flex items-center gap-3">
               <div className="flex-1 min-w-0">
-                <WorkspaceTabs activeTab={activeTab} onTabChange={handleTabChange} isBasismodul={isBasismodul} istPrivat={einheit?.sichtbarkeit === 'privat'} />
+                <WorkspaceTabs
+                  activeTab={activeTab}
+                  onTabChange={handleTabChange}
+                  isBasismodul={isBasismodul}
+                  istPrivat={einheit?.sichtbarkeit === 'privat'}
+                  istUebungsblock={istUebungsblockFormat}
+                />
               </div>
               {/* Aufgaben-Depot: einheitenweite Ablage für Aufgaben-Ideen. Dateiname
                   und Bezeichner heißen weiterhin "Ideenkiste", siehe
