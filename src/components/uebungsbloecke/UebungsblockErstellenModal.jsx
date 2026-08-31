@@ -114,7 +114,7 @@ export default function UebungsblockErstellenModal({ open, onOpenChange, besitze
                 <SelectTrigger><SelectValue placeholder="Fach wählen" /></SelectTrigger>
                 <SelectContent>
                   {faecher.map((f) => (
-                    <SelectItem key={f.id} value={f.name || f.titel}>{f.name || f.titel}</SelectItem>
+                    <SelectItem key={f.id} value={f.name}>{f.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -124,8 +124,10 @@ export default function UebungsblockErstellenModal({ open, onOpenChange, besitze
               <Select value={jahrgang} onValueChange={setJahrgang}>
                 <SelectTrigger><SelectValue placeholder="Jahrgang" /></SelectTrigger>
                 <SelectContent>
+                  {/* Das Feld heißt 'bezeichnung', nicht 'name' — bei
+                      LookupFaecher ist es umgekehrt. */}
                   {jahrgaenge.map((j) => (
-                    <SelectItem key={j.id} value={String(j.name || j.titel)}>{j.name || j.titel}</SelectItem>
+                    <SelectItem key={j.id} value={String(j.bezeichnung)}>{j.bezeichnung}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
