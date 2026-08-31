@@ -681,6 +681,11 @@ export default function EinheitUebersichtTab({
             canEdit={kannEinheitBearbeiten}
           />
 
+          {/* Das Grundgerüst ist der didaktische Gesamtkontext einer Einheit —
+              Quelle für alle späteren KI-Kontexte. Ein Übungsblock hat keinen
+              Gesamtkontext: Er ist ein Thema, ein paar Aufgaben, fertig. Der
+              Abschnitt entfällt dort, damit das Format schlank bleibt. */}
+          {!istUebungsblockFormat && (
           <EinheitGrundgeruestSection
             einheit={einheit}
             canEdit={kannEinheitBearbeiten}
@@ -690,6 +695,7 @@ export default function EinheitUebersichtTab({
               await queryClient.refetchQueries({ queryKey: ['einheiten-list-secure'] });
             }}
           />
+          )}
         </section>
 
         {/* ── Spalte 2: Bearbeitungsstatus + Mitarbeiter ───────────────────────── */}
