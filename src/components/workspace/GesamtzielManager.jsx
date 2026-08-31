@@ -8,7 +8,9 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import HelpBadge from '@/components/ui/HelpBadge';
 
-export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdate }) {
+export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdate ,
+  // Beschriftung je Format — siehe lib/einheitFormat.
+  titel = 'Gesamtziele der Einheit' }) {
   const [ziele, setZiele] = useState(gesamtziele);
   const [newZiel, setNewZiel] = useState('');
   const [saving, setSaving] = useState(false);
@@ -67,7 +69,7 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
   return (
     <div className="space-y-3">
       <Label className="flex items-center gap-1.5">
-        Gesamtziele der Einheit
+        {titel}
         <HelpBadge
           text="Gesamtziele sind die großen Grobziele dieser Einheit – nicht alle einzelnen Lernziele, die in der Einheit vorkommen. Sie bilden später die Kompetenzkarte und beschreiben in wenigen Sätzen, was Schüler nach Abschluss der Einheit übergreifend können."
         />

@@ -1,3 +1,4 @@
+import { formatTexte } from '@/lib/einheitFormat';
 import React, { useState } from 'react';
 import { Link2, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
