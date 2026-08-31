@@ -182,6 +182,10 @@ export default function LernpfadeAufgabenPool({
   selectedSystemBaustein = null,
   onSelectAufgabe,
   onSelectSystemBaustein,
+  // Übungsblock: kleines Format ohne Systembausteine. Die sind für den
+  // Aufbau einer ganzen Einheit gedacht (Orientierung, Diagnose, Abschluss)
+  // — in einem Block mit drei Lernpaketen wäre das mehr Rahmen als Inhalt.
+  ohneSystemBausteine = false,
 }) {
   // Reiter-Verhalten: genau eine Gruppe ist aktiv.
   const [activeFilter, setActiveFilter] = useState('lernpakete');
@@ -292,13 +296,15 @@ export default function LernpfadeAufgabenPool({
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <div className="shrink-0 px-3 pt-2 border-b border-border bg-card">
-          <TabsList className="grid w-full grid-cols-2 h-8">
+          <TabsList className={`grid w-full h-8 ${ohneSystemBausteine ? 'grid-cols-1' : 'grid-cols-2'}`}>
             <TabsTrigger value="aufgaben" className="text-xs gap-1.5">
               <BookOpen className="w-3 h-3" /> Einheit-Aufgaben
             </TabsTrigger>
-            <TabsTrigger value="system" className="text-xs gap-1.5">
-              <Sparkles className="w-3 h-3" /> Systembausteine
-            </TabsTrigger>
+            {!ohneSystemBausteine && (
+              <TabsTrigger value="system" className="text-xs gap-1.5">
+                <Sparkles className="w-3 h-3" /> Systembausteine
+              </TabsTrigger>
+            )}
           </TabsList>
         </div>
 
@@ -395,7 +401,8 @@ export default function LernpfadeAufgabenPool({
           </Droppable>
         </TabsContent>
 
-        {/* Tab 2: Standard-Elemente (System-Bausteine) */}
+        {/* Tab 2: Standard-Elemente (System-Bausteine) — im Übungsblock nicht. */}
+        {!ohneSystemBausteine && (
         <TabsContent value="system" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
           <div className="shrink-0 p-3 border-b border-border bg-card">
             <div className="flex items-center justify-between">
