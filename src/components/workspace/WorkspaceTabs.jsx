@@ -223,6 +223,19 @@ const BRIAN_TAB = {
 // Die Steps werden für die Anzeige frisch von 1 durchnummeriert.
 const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete'];
 
+/**
+ * Reiter eines ÜBUNGSBLOCKS — das kleine Format für die Poolzeit.
+ *
+ * Weggelassen gegenüber der Einheit:
+ *   'struktur'  — es gibt genau EIN Themenfeld, das beim Anlegen entsteht.
+ *                 Ein Reiter zum Verwalten mehrerer wäre leer.
+ *   'ebene3'    — Projektaufgaben gehören zu großen Einheiten.
+ *
+ * Der Export-Reiter kommt wie bei jeder privaten Einheit dazu (BRIAN_TAB) —
+ * darüber läuft auch der Einheiten-Code für die Moodle-Einbindung.
+ */
+const UEBUNGSBLOCK_TAB_VALUES = ['einheit', 'lernziele', 'lernpakete', 'ebene2', 'dashboards'];
+
 // Inhaltsfarben der Tabs 4–6 — identisch zur Farbsprache der Lernpfade
 // (blau = Lernpakete, orange = Aufgaben, lila = Projekte).
 const TAB_ART_STYLE = {
@@ -246,7 +259,7 @@ const TAB_ART_STYLE = {
   },
 };
 
-export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false }) {
+export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false, istUebungsblock = false }) {
   const { rolle } = useRBAC();
   let visibleTabs = getVisibleTabs(rolle, isBasismodul);
 
@@ -256,7 +269,12 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
     visibleTabs = [...visibleTabs, BRIAN_TAB];
   }
 
-  if (isBasismodul) {
+  if (istUebungsblock) {
+    visibleTabs = [...UEBUNGSBLOCK_TAB_VALUES, 'brian']
+      .map((val) => visibleTabs.find((t) => t.value === val))
+      .filter(Boolean)
+      .map((tab, idx) => ({ ...tab, step: idx + 1 }));
+  } else if (isBasismodul) {
     visibleTabs = BASISMODUL_TAB_VALUES
       .map((val) => visibleTabs.find((t) => t.value === val))
       .filter(Boolean)
