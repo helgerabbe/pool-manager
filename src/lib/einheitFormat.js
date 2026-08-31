@@ -91,3 +91,46 @@ export function neuerUebungsblock({ fach, titel, jahrgangsstufe, besitzerEmail }
     wizard_status: 'aktiv',
   };
 }
+
+/**
+ * Beschriftungen je Format.
+ *
+ * WICHTIG: Nur die Oberfläche ändert sich. Gespeichert wird ein Übungsblock
+ * exakt wie eine Einheit — `titel_der_einheit`, `gesamtziele`,
+ * `grundgeruest_rohtext` heißen im Datensatz weiter so. Damit bleibt der
+ * Vorteil erhalten, dass ein Übungsblock eine Einheit IST: Export, Arbeitsplan
+ * und der Moodle-Code funktionieren unverändert, und ein späterer Agent kann
+ * ohne Umwandlung aus Blöcken eine Einheit bauen.
+ *
+ * Würde man die Feldnamen mitändern, wäre genau das verloren — für einen rein
+ * kosmetischen Gewinn.
+ */
+const TEXTE = {
+  einheit: {
+    konfigurieren: 'Einheit konfigurieren',
+    konfigurierenSub: 'Titel, Ziel, Fach und Status dieser Unterrichtseinheit.',
+    titel: 'Titel der Einheit',
+    ziele: 'Gesamtziele der Einheit',
+    titelbild: 'Titelbild der Einheit',
+    code: 'Einheiten-Code für Moodle',
+    codeSub: 'Jede Einheit hat einen eigenen Code — wie eine Hausnummer. Damit verknüpfen Sie diese Einheit in Moodle.',
+    loeschen: 'Einheit löschen',
+    codeZiel: 'genau zu dieser Einheit',
+  },
+  uebungsblock: {
+    konfigurieren: 'Übungsblock konfigurieren',
+    konfigurierenSub: 'Titel, Ziel, Fach und Jahrgang dieses Übungsblocks.',
+    titel: 'Titel des Übungsblocks',
+    ziele: 'Ziele des Übungsblocks',
+    titelbild: 'Titelbild des Übungsblocks',
+    code: 'Übungsblock-Code für Moodle',
+    codeSub: 'Jeder Übungsblock hat einen eigenen Code — wie eine Hausnummer. Damit verknüpfen Sie ihn in Moodle.',
+    loeschen: 'Übungsblock löschen',
+    codeZiel: 'genau zu diesem Übungsblock',
+  },
+};
+
+/** Beschriftungen für dieses Format. */
+export function formatTexte(einheit) {
+  return TEXTE[formatVon(einheit)];
+}
