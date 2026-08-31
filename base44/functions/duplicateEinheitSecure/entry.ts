@@ -193,6 +193,12 @@ Deno.serve(async (req) => {
       // angelegt (strenge Poolzeit-Regeln gelten ab sofort). Das private
       // Original bleibt unangetastet beim Besitzer.
       einheitCopy.sichtbarkeit = 'oeffentlich';
+      // Uebungsbloecke sind IMMER privat (siehe src/lib/einheitFormat). Wird
+      // einer als Poolzeit-Einheit kopiert, waere die Kopie oeffentlich UND
+      // als Uebungsblock gekennzeichnet — ein Widerspruch, der zu reduzierten
+      // Reitern an einer kollaborativen Einheit fuehren wuerde. Die Kopie wird
+      // deshalb zur vollwertigen Einheit.
+      einheitCopy.format = 'einheit';
       delete einheitCopy.besitzer_email;
       if (einheit.besitzer_email) einheitCopy.erhalten_von = einheit.besitzer_email;
     } else {
