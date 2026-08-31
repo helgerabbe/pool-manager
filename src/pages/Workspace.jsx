@@ -28,6 +28,7 @@ import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 import IdeenkisteButton from '@/components/ideenkiste/IdeenkisteButton';
+import { istUebungsblock } from '@/lib/einheitFormat';
 
 const LAST_EINHEIT_STORAGE_KEY = 'poolmanager:lastEinheitId';
 
