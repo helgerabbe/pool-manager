@@ -43,7 +43,7 @@ const EINHEIT_HELP = {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
 import EinheitGrundgeruestSection from './EinheitGrundgeruestSection';
-import { istUebungsblock } from '@/lib/einheitFormat';
+import { istUebungsblock, formatTexte } from '@/lib/einheitFormat';
 import { hasUnitLevelAccess } from '@/lib/rbac';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
@@ -171,6 +171,7 @@ export default function EinheitUebersichtTab({
   const istPrivat = einheit.sichtbarkeit === 'privat';
   // Übungsblock: reduziertes Format, siehe lib/einheitFormat.
   const istUebungsblockFormat = istUebungsblock(einheit);
+  const texte = formatTexte(einheit);
 
   const handleToggleSperre = async () => {
     setIsLocking(true);
@@ -488,7 +489,7 @@ export default function EinheitUebersichtTab({
         <section className="space-y-5">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Einheit konfigurieren</h2>
+              <h2 className="text-lg font-semibold">{texte.konfigurieren}</h2>
               <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
               <EinheitZeitstempel einheit={einheit} className="mt-1.5" />
             </div>
@@ -537,7 +538,7 @@ export default function EinheitUebersichtTab({
               // ✅ LESE-MODUS oder BEARBEITUNGSMODUS INAKTIV
               <div className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label className="text-muted-foreground">Titel der Einheit</Label>
+                  <Label className="text-muted-foreground">{texte.titel}</Label>
                   <p className="text-sm font-medium">{form.titel_der_einheit || '—'}</p>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -602,7 +603,7 @@ export default function EinheitUebersichtTab({
               // ✅ BEARBEITUNGS-MODUS für Admin/Fachschaft
               <>
                 <div className="space-y-1.5">
-                  <Label>Titel der Einheit *</Label>
+                  <Label>{texte.titel} *</Label>
                   <Input
                     value={form.titel_der_einheit}
                     onChange={e => set('titel_der_einheit', e.target.value)}
@@ -661,7 +662,7 @@ export default function EinheitUebersichtTab({
                      className="gap-2"
                    >
                      {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                     Einheit löschen
+                     {texte.loeschen}
                    </Button>
                    <Button
                      onClick={handleSave}
