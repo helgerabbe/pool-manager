@@ -4,7 +4,7 @@
   "properties": {
     "fach": {
       "type": "string",
-      "description": "Unterrichtsfach. G\u00fcltige Werte werden \u00fcber die LookupFaecher-Entit\u00e4t gepflegt (kein festes Enum mehr, 2026-08-16) \u2014 damit sind auch schul-eigene F\u00e4cher (AWT, NAT, GEP) und offene F\u00e4cher (Klassenleitung, Berufsorientierung, F\u00e4cher\u00fcbergreifend) m\u00f6glich. Validierung erfolgt in den Create-Funktionen gegen die aktiven LookupFaecher."
+      "description": "Unterrichtsfach. Gültige Werte werden über die LookupFaecher-Entität gepflegt (kein festes Enum mehr, 2026-08-16) — damit sind auch schul-eigene Fächer (AWT, NAT, GEP) und offene Fächer (Klassenleitung, Berufsorientierung, Fächerübergreifend) möglich. Validierung erfolgt in den Create-Funktionen gegen die aktiven LookupFaecher."
     },
     "titel_der_einheit": {
       "type": "string",
@@ -12,17 +12,17 @@
     },
     "cover_image_url": {
       "type": "string",
-      "description": "URL des Titelbilds der Einheit. Wird als Hintergrundbild auf der Einheit-Kachel im Sch\u00fclerbereich angezeigt. Empfohlenes Format: 16:9, mindestens 800\u00d7450 px."
+      "description": "URL des Titelbilds der Einheit. Wird als Hintergrundbild auf der Einheit-Kachel im Schülerbereich angezeigt. Empfohlenes Format: 16:9, mindestens 800×450 px."
     },
     "ist_basismodul": {
       "type": "boolean",
       "default": false,
-      "description": "true = diese Einheit ist ein Basismodul (Wissensspeicher aus vorangegangenen Jahrg\u00e4ngen). Basismodule nutzen dasselbe Datenmodell wie regul\u00e4re Einheiten, blenden aber bestimmte Tabs (Allgemeine/Projekt-Aufgaben, Dashboards, Export) aus und werden in einer separaten \u00dcbersicht (/basismodule) angezeigt. Perspektivisch kann ein Basismodul sp\u00e4ter zu einer vollwertigen Einheit erweitert werden, indem das Flag entfernt wird."
+      "description": "true = diese Einheit ist ein Basismodul (Wissensspeicher aus vorangegangenen Jahrgängen). Basismodule nutzen dasselbe Datenmodell wie reguläre Einheiten, blenden aber bestimmte Tabs (Allgemeine/Projekt-Aufgaben, Dashboards, Export) aus und werden in einer separaten Übersicht (/basismodule) angezeigt. Perspektivisch kann ein Basismodul später zu einer vollwertigen Einheit erweitert werden, indem das Flag entfernt wird."
     },
     "aus_basismodul": {
       "type": "boolean",
       "default": false,
-      "description": "Herkunftsvermerk (2026-07-22): true = diese (private) Einheit ist als Kopie aus einem Basismodul hervorgegangen (duplicateEinheitSecure mit Basismodul-Konvertierung: ist_basismodul-Flag entfernt, aktive_lerntypen=['ehrgeizig'], leere Lernpfad-Konfiguration f\u00fcr die Auto-Assembly). Die UI zeigt statt 'Von X erhalten' den Vermerk 'Aus Basismodul'."
+      "description": "Herkunftsvermerk (2026-07-22): true = diese (private) Einheit ist als Kopie aus einem Basismodul hervorgegangen (duplicateEinheitSecure mit Basismodul-Konvertierung: ist_basismodul-Flag entfernt, aktive_lerntypen=['ehrgeizig'], leere Lernpfad-Konfiguration für die Auto-Assembly). Die UI zeigt statt 'Von X erhalten' den Vermerk 'Aus Basismodul'."
     },
     "sichtbarkeit": {
       "type": "string",
@@ -31,34 +31,34 @@
         "privat"
       ],
       "default": "oeffentlich",
-      "description": "Privat-Modus (Konzept 2026-07-13): 'oeffentlich' = Poolzeit-Einheit \u2014 kollaborative Pool-Einheit, sichtbar nach den bestehenden RBAC-Regeln (Fach/Rolle). 'privat' = Sandbox-Einheit im Privatbereich einer Person \u2014 sichtbar nur f\u00fcr den Besitzer (besitzer_email), explizit eingeladene EinheitMembers und Administratoren (Admin-Privatansicht). Duplikate starten immer privat. Der Wechsel privat\u2192oeffentlich ('Zur Poolzeit-Einheit machen') erfolgt ausschlie\u00dflich \u00fcber setEinheitSichtbarkeitSecure und ist der Fachschaftsleitung/Administratoren vorbehalten."
+      "description": "Privat-Modus (Konzept 2026-07-13): 'oeffentlich' = Poolzeit-Einheit — kollaborative Pool-Einheit, sichtbar nach den bestehenden RBAC-Regeln (Fach/Rolle). 'privat' = Sandbox-Einheit im Privatbereich einer Person — sichtbar nur für den Besitzer (besitzer_email), explizit eingeladene EinheitMembers und Administratoren (Admin-Privatansicht). Duplikate starten immer privat. Der Wechsel privat→oeffentlich ('Zur Poolzeit-Einheit machen') erfolgt ausschließlich über setEinheitSichtbarkeitSecure und ist der Fachschaftsleitung/Administratoren vorbehalten."
     },
     "besitzer_email": {
       "type": "string",
-      "description": "E-Mail des Besitzers einer PRIVATEN Einheit (die Person, die die Kopie gezogen bzw. die Einheit privat erstellt hat). Nur bei sichtbarkeit='privat' relevant; bleibt nach dem Ver\u00f6ffentlichen als Herkunftsnachweis erhalten. Bei \u00f6ffentlichen Bestands-Einheiten leer."
+      "description": "E-Mail des Besitzers einer PRIVATEN Einheit (die Person, die die Kopie gezogen bzw. die Einheit privat erstellt hat). Nur bei sichtbarkeit='privat' relevant; bleibt nach dem Veröffentlichen als Herkunftsnachweis erhalten. Bei öffentlichen Bestands-Einheiten leer."
     },
     "erhalten_von": {
       "type": "string",
-      "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Gesetzt, wenn die Einheit \u00fcber duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde ODER wenn sich jemand eine private Kopie aus der Austausch-Bibliothek gezogen hat. Dient als Herkunftsnachweis."
+      "description": "Weitergeben-Feature: E-Mail der Person, die diese private Einheit als Kopie weitergegeben hat ('Von X erhalten'). Gesetzt, wenn die Einheit über duplicateEinheitSecure mit target_email in einen fremden Privatbereich kopiert wurde ODER wenn sich jemand eine private Kopie aus der Austausch-Bibliothek gezogen hat. Dient als Herkunftsnachweis."
     },
     "im_austausch": {
       "type": "boolean",
       "default": false,
-      "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit f\u00fcr das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschb\u00f6rse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen k\u00f6nnen (duplicateEinheitSecure). Fachschaftsleitung/Administratoren k\u00f6nnen sie zus\u00e4tzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Erweiterung 2026-07-22: Auch BASISMODULE (ist_basismodul=true) k\u00f6nnen freigegeben werden (durch Admin, zust\u00e4ndige Fachschaftsleitung oder LEITUNG-Mitglieder, via setEinheitAustauschSecure); Kolleg:innen ziehen sich dann eine private Kopie, die dabei in eine normale private Einheit umgewandelt wird (aus_basismodul=true)."
+      "description": "Austausch-Bibliothek (2026-07-18): true = der Besitzer hat diese PRIVATE Einheit für das gesamte Kollegium freigegeben. Sie erscheint dann im Bereich 'Freigegebene Einheiten' (Tauschbörse/Bibliothek), wo Kolleg:innen sie ansehen und sich eine PRIVATE KOPIE ziehen können (duplicateEinheitSecure). Fachschaftsleitung/Administratoren können sie zusätzlich als Poolzeit-Einheit kopieren (duplicateEinheitSecure mit als_poolzeit=true). Erweiterung 2026-07-22: Auch BASISMODULE (ist_basismodul=true) können freigegeben werden (durch Admin, zuständige Fachschaftsleitung oder LEITUNG-Mitglieder, via setEinheitAustauschSecure); Kolleg:innen ziehen sich dann eine private Kopie, die dabei in eine normale private Einheit umgewandelt wird (aus_basismodul=true)."
     },
     "zur_veroeffentlichung_vorgeschlagen": {
       "type": "boolean",
       "default": false,
-      "description": "Vorschlags-Workflow (2026-07-22): true = der Besitzer dieser PRIVATEN Einheit hat sie der Fachschaftsleitung 'zur Ver\u00f6ffentlichung als Poolzeit-Einheit' vorgeschlagen. Die Einheit erscheint dann im Poolzeit-Bereich des Fachs in einer eigenen Sektion 'Zur Ver\u00f6ffentlichung vorgeschlagen' \u2014 f\u00fcr alle Kolleg:innen des Fachs NUR im Ansichtsmodus (Sch\u00fcler-Vorschau, kein Workspace-Zugriff). Fachschaftsleitung/Admin kann den Vorschlag freigeben (setEinheitSichtbarkeitSecure \u2192 'oeffentlich', inkl. Freigabe-Reset aller Inhalte auf 'draft') oder ablehnen (Flag zur\u00fcck auf false). Wechsel ausschlie\u00dflich \u00fcber setEinheitVeroeffentlichungVorschlagSecure bzw. die Freigabe."
+      "description": "Vorschlags-Workflow (2026-07-22): true = der Besitzer dieser PRIVATEN Einheit hat sie der Fachschaftsleitung 'zur Veröffentlichung als Poolzeit-Einheit' vorgeschlagen. Die Einheit erscheint dann im Poolzeit-Bereich des Fachs in einer eigenen Sektion 'Zur Veröffentlichung vorgeschlagen' — für alle Kolleg:innen des Fachs NUR im Ansichtsmodus (Schüler-Vorschau, kein Workspace-Zugriff). Fachschaftsleitung/Admin kann den Vorschlag freigeben (setEinheitSichtbarkeitSecure → 'oeffentlich', inkl. Freigabe-Reset aller Inhalte auf 'draft') oder ablehnen (Flag zurück auf false). Wechsel ausschließlich über setEinheitVeroeffentlichungVorschlagSecure bzw. die Freigabe."
     },
     "vorgeschlagen_von": {
       "type": "string",
-      "description": "E-Mail der Person, die den Ver\u00f6ffentlichungs-Vorschlag eingereicht hat."
+      "description": "E-Mail der Person, die den Veröffentlichungs-Vorschlag eingereicht hat."
     },
     "vorgeschlagen_am": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel des Ver\u00f6ffentlichungs-Vorschlags."
+      "description": "Zeitstempel des Veröffentlichungs-Vorschlags."
     },
     "lerntypen_modus": {
       "type": "string",
@@ -67,7 +67,7 @@
         "einzel"
       ],
       "default": "vier",
-      "description": "@legacy (2026-07-14, durch aktive_lerntypen ersetzt): Fr\u00fcherer Pauschal-Schalter 'Mit/Ohne Lerntypen' bei privaten Einheiten. 'einzel' wird von getAktiveLerntypKeys (src/lib/lerntypen.js) als Fallback zu aktive_lerntypen=['ehrgeizig'] interpretiert, solange aktive_lerntypen leer ist. Wird nicht mehr aktiv geschrieben."
+      "description": "@legacy (2026-07-14, durch aktive_lerntypen ersetzt): Früherer Pauschal-Schalter 'Mit/Ohne Lerntypen' bei privaten Einheiten. 'einzel' wird von getAktiveLerntypKeys (src/lib/lerntypen.js) als Fallback zu aktive_lerntypen=['ehrgeizig'] interpretiert, solange aktive_lerntypen leer ist. Wird nicht mehr aktiv geschrieben."
     },
     "aktive_lerntypen": {
       "type": "array",
@@ -80,7 +80,7 @@
           "passioniert"
         ]
       },
-      "description": "Privat-Modus Stufe 1 (2026-07-14): Welche Lerntypen bietet diese PRIVATE Einheit an? Die Lehrkraft kann im Dashboard-Tab jeden Lerntyp einzeln an-/abw\u00e4hlen (mindestens einer, anwendungsseitig sichergestellt). Leer/nicht gesetzt = alle. \u00d6FFENTLICHE Einheiten bieten IMMER alle global definierten Lerntypen an \u2014 dort wird dieses Feld ignoriert (zentrale Auswertung: getAktiveLerntypKeys in src/lib/lerntypen.js). Ersetzt den fr\u00fcheren Pauschal-Schalter lerntypen_modus."
+      "description": "Privat-Modus Stufe 1 (2026-07-14): Welche Lerntypen bietet diese PRIVATE Einheit an? Die Lehrkraft kann im Dashboard-Tab jeden Lerntyp einzeln an-/abwählen (mindestens einer, anwendungsseitig sichergestellt). Leer/nicht gesetzt = alle. ÖFFENTLICHE Einheiten bieten IMMER alle global definierten Lerntypen an — dort wird dieses Feld ignoriert (zentrale Auswertung: getAktiveLerntypKeys in src/lib/lerntypen.js). Ersetzt den früheren Pauschal-Schalter lerntypen_modus."
     },
     "gesamtziele": {
       "type": "array",
@@ -110,11 +110,11 @@
     },
     "grundgeruest_rohtext": {
       "type": "string",
-      "description": "Tab 1: Frei formulierter didaktischer Gesamtkontext der Einheit. Dient als Quelle der Wahrheit f\u00fcr sp\u00e4tere KI-Kontexte."
+      "description": "Tab 1: Frei formulierter didaktischer Gesamtkontext der Einheit. Dient als Quelle der Wahrheit für spätere KI-Kontexte."
     },
     "grundgeruest_strukturiert": {
       "type": "object",
-      "description": "Optionale strukturierte KI-Auswertung des Grundger\u00fcsts aus der Sandbox. Wird nur \u00fcbernommen, wenn die Lehrkraft dies bewusst best\u00e4tigt.",
+      "description": "Optionale strukturierte KI-Auswertung des Grundgerüsts aus der Sandbox. Wird nur übernommen, wenn die Lehrkraft dies bewusst bestätigt.",
       "additionalProperties": true
     },
     "grundgeruest_status": {
@@ -125,12 +125,12 @@
         "analysiert"
       ],
       "default": "leer",
-      "description": "Status des Grundger\u00fcsts in Tab 1."
+      "description": "Status des Grundgerüsts in Tab 1."
     },
     "grundgeruest_updated_at": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitstempel der letzten Speicherung des Grundger\u00fcsts."
+      "description": "Zeitstempel der letzten Speicherung des Grundgerüsts."
     },
     "onboarding_konfiguration": {
       "type": "object",
@@ -173,10 +173,10 @@
     "freigabe_status": {
       "type": "string",
       "enum": [
-        "Freigegeben f\u00fcr Bearbeitung",
+        "Freigegeben für Bearbeitung",
         "Gesperrt"
       ],
-      "default": "Freigegeben f\u00fcr Bearbeitung"
+      "default": "Freigegeben für Bearbeitung"
     },
     "content_status": {
       "type": "string",
@@ -228,7 +228,7 @@
     },
     "dashboards_auto_status": {
       "type": "object",
-      "description": "Auto-Assembly (Etappe 1, 2026-07-18): Status pro Lerntyp-Dashboard bez\u00fcglich der automatischen Erstellung. Keys: minimalist|pragmatiker|ehrgeizig|passioniert. Werte: 'auto' = das Dashboard wurde automatisch aus Einheiten-Struktur + Standardvorlage aufgebaut (inkl. B\u00fcndel-Bef\u00fcllung) und noch nicht von der Fachschaftsleitung best\u00e4tigt; 'bestaetigt' = bewusst \u00fcbernommen (explizit per \u00dcbernehmen-Button oder implizit durch 'Dashboard als gepr\u00fcft markieren'). Fehlender Eintrag = Bestand / manuell gebaut. Siehe src/lib/dashboardAutoAssembly.js.",
+      "description": "Auto-Assembly (Etappe 1, 2026-07-18): Status pro Lerntyp-Dashboard bezüglich der automatischen Erstellung. Keys: minimalist|pragmatiker|ehrgeizig|passioniert. Werte: 'auto' = das Dashboard wurde automatisch aus Einheiten-Struktur + Standardvorlage aufgebaut (inkl. Bündel-Befüllung) und noch nicht von der Fachschaftsleitung bestätigt; 'bestaetigt' = bewusst übernommen (explizit per Übernehmen-Button oder implizit durch 'Dashboard als geprüft markieren'). Fehlender Eintrag = Bestand / manuell gebaut. Siehe src/lib/dashboardAutoAssembly.js.",
       "additionalProperties": true,
       "default": {}
     },
@@ -305,6 +305,15 @@
     "update_strategy_override_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "format": {
+      "type": "string",
+      "enum": [
+        "einheit",
+        "uebungsblock"
+      ],
+      "default": "einheit",
+      "description": "Format dieses Datensatzes (2026-09-01). 'einheit' = das vollstaendige Lernszenario wie bisher. 'uebungsblock' = kleines, schnell gebautes Format fuer die Poolzeit: EIN Themenfeld, ein bis drei Lernpakete, allgemeine Aufgaben, keine Projektaufgaben, kein Grundgeruest, kein Wizard, kein Onboarding, standardmaessig nur EIN Lernplan.\nBEWUSST KEIN eigener Datentyp: Ein Uebungsblock ist eine reduzierte private Einheit. Dadurch erbt er Arbeitsplan, Buendel, Moodle-Anbindung ueber den Einheiten-Code und die Rechte - nichts davon existiert doppelt. Ausserdem kann ein spaeterer KI-Agent aus mehreren Uebungsbloecken eine Einheit aggregieren, ohne vorher umzuwandeln.\nUebungsbloecke sind IMMER sichtbarkeit='privat': Damit entfallen Sperrlogik, Bearbeitungsmodus und Freigabe-Abschnitte automatisch - die sind fuer private Einheiten ohnehin schon ausgeblendet."
     }
   },
   "required": [
