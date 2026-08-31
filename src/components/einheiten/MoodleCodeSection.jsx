@@ -9,6 +9,7 @@ import { toast } from 'sonner';
  * steht ab dem Anlegen der Einheit fest und ändert sich nie.
  */
 export default function MoodleCodeSection({ einheit }) {
+  const texte = formatTexte(einheit);
   const [copied, setCopied] = useState(false);
   const code = `einheit=${einheit.id}`;
 
@@ -28,10 +29,10 @@ export default function MoodleCodeSection({ einheit }) {
       <div>
         <h2 className="text-lg font-semibold flex items-center gap-1.5">
           <Link2 className="w-4 h-4 text-blue-600" />
-          Einheiten-Code für Moodle
+          {texte.code}
         </h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Jede Einheit hat einen eigenen Code — wie eine Hausnummer. Damit verknüpfen Sie diese Einheit in Moodle.
+          {texte.codeSub}
         </p>
       </div>
 
@@ -52,7 +53,7 @@ export default function MoodleCodeSection({ einheit }) {
           <li>In Ihrem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
           <li>Bei „Vorkonfiguriertes Tool" das Tool <strong>„Pool-Manager"</strong> auswählen und der Aktivität einen Namen geben.</li>
           <li>Unter „Mehr anzeigen" das Feld <strong>„Angepasste Parameter"</strong> öffnen (so heißt es in Moodle) und den kopierten Code dort einfügen.</li>
-          <li>Speichern — fertig. Der Link führt jetzt genau zu dieser Einheit.</li>
+          <li>Speichern — fertig. Der Link führt jetzt {texte.codeZiel}.</li>
         </ol>
       </div>
     </div>

@@ -612,7 +612,8 @@ export default function EinheitUebersichtTab({
                 </div>
 
                 <div className="space-y-1.5 pt-2 pb-4 border-t">
-                  <GesamtzielManager 
+                  <GesamtzielManager
+            titel={texte.ziele} 
                     einheitId={einheit.id}
                     gesamtziele={einheit.gesamtziele || []}
                     onUpdate={async () => {

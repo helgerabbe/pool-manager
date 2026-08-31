@@ -229,12 +229,14 @@ const BASISMODUL_TAB_VALUES = ['einheit', 'struktur', 'lernziele', 'lernpakete']
  * Weggelassen gegenüber der Einheit:
  *   'struktur'  — es gibt genau EIN Themenfeld, das beim Anlegen entsteht.
  *                 Ein Reiter zum Verwalten mehrerer wäre leer.
+ *   'lernziele' — im Übungsblock reicht das Freitextfeld "Ziele" aus Reiter 1.
+ *                 Die verknüpfte Lernziel-Verwaltung gehört zur großen Einheit.
  *   'ebene3'    — Projektaufgaben gehören zu großen Einheiten.
  *
  * Der Export-Reiter kommt wie bei jeder privaten Einheit dazu (BRIAN_TAB) —
  * darüber läuft auch der Einheiten-Code für die Moodle-Einbindung.
  */
-const UEBUNGSBLOCK_TAB_VALUES = ['einheit', 'lernziele', 'lernpakete', 'ebene2', 'dashboards'];
+const UEBUNGSBLOCK_TAB_VALUES = ['einheit', 'lernpakete', 'ebene2', 'dashboards'];
 
 // Inhaltsfarben der Tabs 4–6 — identisch zur Farbsprache der Lernpfade
 // (blau = Lernpakete, orange = Aufgaben, lila = Projekte).
