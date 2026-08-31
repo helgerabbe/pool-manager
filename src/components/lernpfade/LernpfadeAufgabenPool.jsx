@@ -448,6 +448,7 @@ export default function LernpfadeAufgabenPool({
             )}
           </Droppable>
         </TabsContent>
+        )}
       </Tabs>
     </div>
   );
