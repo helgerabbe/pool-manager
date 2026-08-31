@@ -490,7 +490,7 @@ export default function EinheitUebersichtTab({
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-lg font-semibold">{texte.konfigurieren}</h2>
-              <p className="text-sm text-muted-foreground mt-0.5">Titel, Ziel, Fach und Status dieser Unterrichtseinheit.</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{texte.konfigurierenSub}</p>
               <EinheitZeitstempel einheit={einheit} className="mt-1.5" />
             </div>
             <HelpDialog {...EINHEIT_HELP} />
@@ -683,6 +683,7 @@ export default function EinheitUebersichtTab({
           <EinheitCoverImageSection
             einheit={einheit}
             canEdit={kannEinheitBearbeiten}
+            titel={texte.titelbild}
           />
 
           {/* Das Grundgerüst ist der didaktische Gesamtkontext einer Einheit —

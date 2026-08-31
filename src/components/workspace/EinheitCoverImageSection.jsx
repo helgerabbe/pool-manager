@@ -14,7 +14,9 @@ import { useQueryClient } from '@tanstack/react-query';
  *
  * Speichert die URL direkt über updateEinheitSecure.
  */
-export default function EinheitCoverImageSection({ einheit, canEdit }) {
+export default function EinheitCoverImageSection({ einheit, canEdit ,
+  // Beschriftung je Format (Einheit / Übungsblock) — siehe lib/einheitFormat.
+  titel = 'Titelbild der Einheit' }) {
   const queryClient = useQueryClient();
   const fileRef = useRef(null);
   const [uploading, setUploading] = useState(false);
@@ -85,7 +87,7 @@ export default function EinheitCoverImageSection({ einheit, canEdit }) {
     <div className="space-y-3">
       <div className="flex items-center gap-1.5">
         <ImageIcon className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm font-semibold">Titelbild der Einheit</span>
+        <span className="text-sm font-semibold">{titel}</span>
         <span className="text-xs text-muted-foreground ml-1">(wird im Schülerbereich angezeigt)</span>
       </div>
 
