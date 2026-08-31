@@ -43,6 +43,7 @@ const EINHEIT_HELP = {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import GesamtzielManager from './GesamtzielManager';
 import EinheitGrundgeruestSection from './EinheitGrundgeruestSection';
+import { istUebungsblock } from '@/lib/einheitFormat';
 import { hasUnitLevelAccess } from '@/lib/rbac';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
@@ -168,6 +169,8 @@ export default function EinheitUebersichtTab({
   // Sperrstatus und Lock-Übersicht werden ausgeblendet; stattdessen gibt es
   // den Einheiten-Code für die Moodle-Verknüpfung.
   const istPrivat = einheit.sichtbarkeit === 'privat';
+  // Übungsblock: reduziertes Format, siehe lib/einheitFormat.
+  const istUebungsblockFormat = istUebungsblock(einheit);
 
   const handleToggleSperre = async () => {
     setIsLocking(true);
