@@ -146,6 +146,9 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   // ── Aktive Einheit + Memoisierte abgeleitete Daten ──────────────────────────────
   const einheit = einheiten.find((e) => e.id === selectedEinheitId) || null;
+  // Übungsblock: reduziertes Format (weniger Reiter, keine Projektaufgaben).
+  // Siehe lib/einheitFormat — die Regeln stehen dort, nicht hier.
+  const istUebungsblockFormat = istUebungsblock(einheit);
 
   useEffect(() => {
     if (selectedEinheitId || einheiten.length === 0) return;
