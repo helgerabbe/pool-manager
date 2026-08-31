@@ -12,6 +12,8 @@ import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
 import UnterrichtsstundenSektion from '@/components/unterrichtsstunden/UnterrichtsstundenSektion';
+import UebungsbloeckeSektion from '@/components/uebungsbloecke/UebungsbloeckeSektion';
+import { istUebungsblock } from '@/lib/einheitFormat';
 import EinheitErstellenButtons from '@/components/einheiten/EinheitErstellenButtons';
 import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
@@ -236,8 +238,11 @@ export default function EinheitenListe() {
     // Vorschlags-Workflow: Im Poolzeit-Bereich erscheinen vorgeschlagene
     // (noch private) Einheiten NUR in der eigenen Sektion, nicht im Raster.
     const matchAnsicht = ansicht !== 'oeffentlich' || e.sichtbarkeit !== 'privat';
+    // Übungsblöcke sind technisch private Einheiten, haben aber einen eigenen
+    // Bereich. Ohne diesen Filter stünden sie doppelt in der Bibliothek.
+    const keinUebungsblock = !istUebungsblock(e);
 
-    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged && matchLifecycle && matchAnsicht;
+    return matchSearch && matchFach && matchJahrgang && matchRBAC && matchChanged && matchLifecycle && matchAnsicht && keinUebungsblock;
   });
 
   // Zur Veröffentlichung vorgeschlagene (private) Einheiten im Poolzeit-Bereich.
@@ -343,7 +348,12 @@ export default function EinheitenListe() {
         <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
       )}
 
-      {/* Zweiter, klar getrennter Bereich der Privaten Bibliothek: die Einheiten. */}
+      {/* Übungsblöcke: kleines Format für die Poolzeit, eigener Bereich. */}
+      {ansicht === 'privat' && (
+        <UebungsbloeckeSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+      )}
+
+      {/* Dritter, klar getrennter Bereich der Privaten Bibliothek: die Einheiten. */}
       {ansicht === 'privat' && (
         <div className="flex items-center justify-between gap-3 pt-2 border-t">
           <div>
