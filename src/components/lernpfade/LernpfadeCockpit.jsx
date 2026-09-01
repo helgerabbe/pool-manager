@@ -57,7 +57,7 @@ import { useDashboardDriftHandlers } from '@/hooks/useDashboardDriftHandlers';
 import { useCockpitPreviews } from '@/hooks/useCockpitPreviews';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
-import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
+import { getArbeitsphaseDefaultItems, UEBUNGSBLOCK_TEMPLATE } from '@/lib/dashboardTemplates';
 import { buildEffectiveTemplates, getEffectiveTemplateForLerntyp } from '@/lib/dashboardStandardVorlage';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
@@ -282,10 +282,18 @@ export default function LernpfadeCockpit({
       return res?.data?.vorlagen || [];
     },
   });
-  const effectiveTemplates = useMemo(
-    () => buildEffectiveTemplates(dashboardVorlagen),
-    [dashboardVorlagen]
-  );
+  const istBlock = istUebungsblock(einheit);
+  const effectiveTemplates = useMemo(() => {
+    const echte = buildEffectiveTemplates(dashboardVorlagen);
+    if (!istBlock) return echte;
+    // Übungsblock: EIN leerer Arbeitsphase-Sektor für jeden Lerntyp statt der
+    // vollen Lerntyp-Vorlage. Die rahmt eine ganze Einheit (Überblick,
+    // Diagnose, Abschluss) — hier müsste die Lehrkraft erst wegräumen,
+    // bevor sie anfangen kann. Siehe UEBUNGSBLOCK in lib/dashboardTemplates.
+    return Object.fromEntries(
+      Object.keys(echte).map((lerntyp) => [lerntyp, UEBUNGSBLOCK_TEMPLATE]),
+    );
+  }, [dashboardVorlagen, istBlock]);
   const systemBausteineById = useMemo(() => {
     const map = new Map();
     (systemBausteine || []).forEach((b) => map.set(b.baustein_id, b));
@@ -703,7 +711,9 @@ export default function LernpfadeCockpit({
     // einen eigenen Arbeitsphase-Sektor anlegt.
     themenfelder,
     // Admin-editierbare Standard-Vorlage des aktiven Lerntyps (DB > Hardcode).
-    resetTemplate: getEffectiveTemplateForLerntyp(dashboardVorlagen, activeLernTyp),
+    resetTemplate: istBlock
+      ? UEBUNGSBLOCK_TEMPLATE
+      : getEffectiveTemplateForLerntyp(dashboardVorlagen, activeLernTyp),
     // Auto-Assembly: Bündel beim Standard-Aufbau automatisch befüllen,
     // danach das Dashboard als „automatisch erstellt" markieren. Eine
     // erfolgreiche Prüf-Markierung gilt zugleich als Bestätigung.
@@ -817,7 +827,7 @@ export default function LernpfadeCockpit({
           titel: tfTitel || 'Themenfeld',
           // Standardraster für diesen Lerntyp übernehmen (analog zum
           // Default-Dashboard-Template und zur Drift-Resolution).
-          items: getArbeitsphaseDefaultItems(activeLernTyp, { istUebungsblock: istUebungsblock(einheit) }),
+          items: getArbeitsphaseDefaultItems(activeLernTyp, { istUebungsblock: istBlock }),
           sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
           themenfeld_id: tfId,
         });
