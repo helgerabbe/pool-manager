@@ -197,12 +197,35 @@ const PASSIONIERT = [
 ];
 
 // ── Public API ──────────────────────────────────────────────────────────
+/**
+ * ÜBUNGSBLOCK — bewusst minimal.
+ *
+ * Ein Sektor, leer. Kein Überblick, kein Zwischen- oder Abschlusstest, keine
+ * vorbelegten Bündel.
+ *
+ * Grund: Die Lerntyp-Vorlagen rahmen eine ganze Einheit — Orientierung,
+ * Diagnose, Abschluss. Ein Übungsblock besteht aus einem Thema und ein paar
+ * Aufgaben; dort wäre dieser Rahmen mehr Gerüst als Inhalt, und die Lehrkraft
+ * müsste erst wegräumen, bevor sie anfangen kann. Sie zieht ihre Lernpakete
+ * und Aufgaben stattdessen direkt in den leeren Sektor.
+ */
+const UEBUNGSBLOCK = Object.freeze([
+  Object.freeze({
+    titel: 'Arbeitsphase',
+    sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
+    items: Object.freeze([]),
+  }),
+]);
+
 export const DASHBOARD_TEMPLATES = Object.freeze({
   minimalist: MINIMALIST,
   pragmatiker: PRAGMATIKER,
   ehrgeizig: EHRGEIZIG,
   passioniert: PASSIONIERT,
 });
+
+/** Vorlage für Übungsblöcke — siehe Kommentar an UEBUNGSBLOCK. */
+export const UEBUNGSBLOCK_TEMPLATE = UEBUNGSBLOCK;
 
 export const TEMPLATE_LERN_TYPEN = Object.freeze([
   'minimalist',
@@ -230,7 +253,10 @@ export const TEMPLATE_LERN_TYPEN = Object.freeze([
  * @param {string} lernTyp – 'minimalist'|'pragmatiker'|'ehrgeizig'|'passioniert'
  * @returns {Array<{type:'system', ref_id:string}>} Frische Kopie der Items.
  */
-export function getArbeitsphaseDefaultItems(lernTyp) {
+export function getArbeitsphaseDefaultItems(lernTyp, { istUebungsblock = false } = {}) {
+  // Im Übungsblock bleibt ein neuer Sektor leer — die Lehrkraft füllt ihn
+  // selbst, statt erst Vorbelegtes wegräumen zu müssen.
+  if (istUebungsblock) return [];
   const sektoren = DASHBOARD_TEMPLATES?.[lernTyp];
   if (!Array.isArray(sektoren)) return [];
   const arbeitsphase = sektoren.find((s) => s.sektor_typ === SEKTOR_TYP.ARBEITSPHASE);
