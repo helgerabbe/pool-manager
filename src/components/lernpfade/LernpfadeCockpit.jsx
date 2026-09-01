@@ -58,6 +58,7 @@ import { useCockpitPreviews } from '@/hooks/useCockpitPreviews';
 import CascadeDeleteDialog from '@/components/lernpfade/CascadeDeleteDialog';
 import ArbeitsphaseModal from '@/components/lernpfade/ArbeitsphaseModal.jsx';
 import { getArbeitsphaseDefaultItems, UEBUNGSBLOCK_TEMPLATE } from '@/lib/dashboardTemplates';
+import { istUebungsblock } from '@/lib/einheitFormat';
 import { buildEffectiveTemplates, getEffectiveTemplateForLerntyp } from '@/lib/dashboardStandardVorlage';
 import { getSektorTemplate, SEKTOR_TEMPLATE_KEYS } from '@/lib/sektorTemplates';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
