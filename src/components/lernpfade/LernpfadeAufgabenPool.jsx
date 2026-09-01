@@ -182,10 +182,13 @@ export default function LernpfadeAufgabenPool({
   selectedSystemBaustein = null,
   onSelectAufgabe,
   onSelectSystemBaustein,
-  // Übungsblock: kleines Format ohne Systembausteine. Die sind für den
-  // Aufbau einer ganzen Einheit gedacht (Orientierung, Diagnose, Abschluss)
-  // — in einem Block mit drei Lernpaketen wäre das mehr Rahmen als Inhalt.
-  ohneSystemBausteine = false,
+  // Übungsblock: reduzierter Pool.
+  //  - Systembausteine: nur die BÜNDEL (Lernpakete-/Aufgabenbündel). Die
+  //    übrigen (Lernlandkarte, Diagnosetest, Abschluss, Feedback …) rahmen
+  //    eine ganze Einheit — in einem Block mit drei Lernpaketen wären sie
+  //    mehr Rahmen als Inhalt. Das Projektbündel entfällt mit den Projekten.
+  //  - Aufgaben: keine Projektaufgaben.
+  nurBuendel = false,
 }) {
   // Reiter-Verhalten: genau eine Gruppe ist aktiv.
   const [activeFilter, setActiveFilter] = useState('lernpakete');
@@ -223,6 +226,15 @@ export default function LernpfadeAufgabenPool({
       return (list || []).filter((b) => b.ist_aktiv !== false);
     },
   });
+
+  // Im Übungsblock bleiben nur die Bündel übrig — über das Feld `typ`, nicht
+  // über Titel geraten. Das Projektbündel fällt mit den Projekten weg.
+  const sichtbareBausteine = useMemo(() => {
+    if (!nurBuendel) return systemBausteine;
+    return systemBausteine.filter(
+      (b) => b.typ === 'buendel' && !/projekt/i.test(b.titel || ''),
+    );
+  }, [systemBausteine, nurBuendel]);
 
   // Pool: Aufgaben + adaptierte Lernpakete in eine gemeinsame Liste mischen.
   // Tombstones (sync_status === 'to_delete') werden in beiden Quellen gefiltert.
@@ -296,15 +308,13 @@ export default function LernpfadeAufgabenPool({
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <div className="shrink-0 px-3 pt-2 border-b border-border bg-card">
-          <TabsList className={`grid w-full h-8 ${ohneSystemBausteine ? 'grid-cols-1' : 'grid-cols-2'}`}>
+          <TabsList className="grid w-full h-8 grid-cols-2">
             <TabsTrigger value="aufgaben" className="text-xs gap-1.5">
               <BookOpen className="w-3 h-3" /> Einheit-Aufgaben
             </TabsTrigger>
-            {!ohneSystemBausteine && (
-              <TabsTrigger value="system" className="text-xs gap-1.5">
-                <Sparkles className="w-3 h-3" /> Systembausteine
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="system" className="text-xs gap-1.5">
+              <Sparkles className="w-3 h-3" /> {nurBuendel ? 'Bündel' : 'Systembausteine'}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -401,13 +411,12 @@ export default function LernpfadeAufgabenPool({
           </Droppable>
         </TabsContent>
 
-        {/* Tab 2: Standard-Elemente (System-Bausteine) — im Übungsblock nicht. */}
-        {!ohneSystemBausteine && (
+        {/* Tab 2: Standard-Elemente (System-Bausteine) */}
         <TabsContent value="system" className="flex-1 flex flex-col overflow-hidden m-0 data-[state=inactive]:hidden">
           <div className="shrink-0 p-3 border-b border-border bg-card">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-semibold text-foreground uppercase tracking-wide">Systembausteine</h3>
-              <span className="text-[10px] text-muted-foreground">{systemBausteine.length} verfügbar</span>
+              <span className="text-[10px] text-muted-foreground">{sichtbareBausteine.length} verfügbar</span>
             </div>
             <p className="text-[11px] text-muted-foreground mt-1">
               Globale Bausteine. Können beliebig oft gezogen werden.
@@ -425,7 +434,7 @@ export default function LernpfadeAufgabenPool({
                   <div className="flex items-center gap-2 text-xs text-muted-foreground py-6 justify-center">
                     <Loader2 className="w-3.5 h-3.5 animate-spin" /> Lade Bausteine…
                   </div>
-                ) : systemBausteine.length === 0 ? (
+                ) : sichtbareBausteine.length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center py-8 px-2">
                     <Sparkles className="w-7 h-7 text-muted-foreground/40 mb-2" />
                     <p className="text-xs text-muted-foreground">
@@ -433,7 +442,7 @@ export default function LernpfadeAufgabenPool({
                     </p>
                   </div>
                 ) : (
-                  systemBausteine.map((b, idx) => (
+                  sichtbareBausteine.map((b, idx) => (
                     <SystemBausteinPoolItem
                       key={b.id}
                       baustein={b}
@@ -448,7 +457,6 @@ export default function LernpfadeAufgabenPool({
             )}
           </Droppable>
         </TabsContent>
-        )}
       </Tabs>
     </div>
   );
