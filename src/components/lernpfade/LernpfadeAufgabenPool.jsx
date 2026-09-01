@@ -243,10 +243,15 @@ export default function LernpfadeAufgabenPool({
       .filter((lp) => lp.sync_status !== 'to_delete')
       .map(adaptLernpaketToPoolItem);
     const aufgabenItems = (alleAufgaben || []).filter(
-      (a) => a.sync_status !== 'to_delete' && getGroupKeyForItem(a) !== null
+      (a) => a.sync_status !== 'to_delete'
+        && getGroupKeyForItem(a) !== null
+        // Übungsblock: keine Projektaufgaben. Sie gehören zu großen Einheiten
+        // und sind dort auch nicht anlegbar — im Pool wären sie eine
+        // Einladung zu etwas, das dieses Format nicht kann.
+        && !(nurBuendel && istProjektItem(a))
     );
     return [...adaptedLernpakete, ...aufgabenItems];
-  }, [alleAufgaben, lernpakete]);
+  }, [alleAufgaben, lernpakete, nurBuendel]);
 
   const counts = useMemo(() => {
     const c = Object.fromEntries(FILTER_GROUP_KEYS.map((k) => [k, 0]));
