@@ -339,7 +339,7 @@ export default function LernpfadeAufgabenPool({
               <span className="text-[10px] text-muted-foreground">{filteredAufgaben.length} sichtbar</span>
             </div>
             <div className="flex flex-wrap gap-1.5">
-              {FILTER_GROUPS.map((group) => (
+              {sichtbareFilter.map((group) => (
                 <FilterChip
                   key={group.key}
                   group={group}
