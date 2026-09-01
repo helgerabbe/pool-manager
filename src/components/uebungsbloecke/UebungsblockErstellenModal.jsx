@@ -72,12 +72,20 @@ export default function UebungsblockErstellenModal({ open, onOpenChange, besitze
         ...(lernziele.trim() ? { gesamtziele: [lernziele.trim()] } : {}),
       });
 
-      // Genau EIN Themenfeld — beim Übungsblock gibt es keine Auswahl.
-      await base44.entities.Themenfeld.create({
-        einheit_id: einheit.id,
-        titel: thema.trim() || titel.trim() || 'Übungsblock',
-        reihenfolge: 1,
-      });
+      // KEIN neues Themenfeld anlegen: createEinheitMitDefaults legt bereits
+      // „Themenfeld 1" an. Ein zweites hier führte zu genau dem Doppel, das
+      // beim Übungsblock nicht vorkommen darf — er hat exakt eines.
+      // Stattdessen das vorhandene umbenennen, wenn ein Thema angegeben ist.
+      const wunschTitel = thema.trim() || titel.trim();
+      if (wunschTitel) {
+        const vorhandene = await base44.entities.Themenfeld
+          .filter({ einheit_id: einheit.id })
+          .catch(() => []);
+        const erstes = (vorhandene || [])[0];
+        if (erstes?.id) {
+          await base44.entities.Themenfeld.update(erstes.id, { titel: wunschTitel });
+        }
+      }
 
       return einheit;
     },
