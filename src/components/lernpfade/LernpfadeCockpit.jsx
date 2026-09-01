@@ -817,7 +817,7 @@ export default function LernpfadeCockpit({
           titel: tfTitel || 'Themenfeld',
           // Standardraster für diesen Lerntyp übernehmen (analog zum
           // Default-Dashboard-Template und zur Drift-Resolution).
-          items: getArbeitsphaseDefaultItems(activeLernTyp),
+          items: getArbeitsphaseDefaultItems(activeLernTyp, { istUebungsblock: istUebungsblock(einheit) }),
           sektor_typ: SEKTOR_TYP.ARBEITSPHASE,
           themenfeld_id: tfId,
         });
