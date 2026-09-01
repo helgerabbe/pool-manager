@@ -248,10 +248,17 @@ export default function LernpfadeAufgabenPool({
         // Übungsblock: keine Projektaufgaben. Sie gehören zu großen Einheiten
         // und sind dort auch nicht anlegbar — im Pool wären sie eine
         // Einladung zu etwas, das dieses Format nicht kann.
-        && !(nurBuendel && istProjektItem(a))
+        && !(nurBuendel && isProjekt(a))
     );
     return [...adaptedLernpakete, ...aufgabenItems];
   }, [alleAufgaben, lernpakete, nurBuendel]);
+
+  // Der Filterreiter „Projekte" entfällt im Übungsblock — er wäre dauerhaft
+  // leer und würde ein Format anbieten, das es hier nicht gibt.
+  const sichtbareFilter = useMemo(
+    () => (nurBuendel ? FILTER_GROUPS.filter((g) => g.key !== 'projekte') : FILTER_GROUPS),
+    [nurBuendel],
+  );
 
   const counts = useMemo(() => {
     const c = Object.fromEntries(FILTER_GROUP_KEYS.map((k) => [k, 0]));
