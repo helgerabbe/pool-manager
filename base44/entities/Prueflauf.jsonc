@@ -1,0 +1,101 @@
+{
+  "name": "Prueflauf",
+  "type": "object",
+  "description": "Export-Vorpr\u00fcfung (Pr\u00fcfbereich Tab 8, 2026-09-03): EIN Durchlauf der Pr\u00fcfung einer gemeinschaftlichen Einheit auf die f\u00fcnf MBK-Fehlerkategorien. H\u00e4lt Fortschritt (f\u00fcr den Fortschrittsbalken), Umfang (voll oder nur ge\u00e4nderte/behobene Stellen) und die Z\u00e4hler des Ergebnisses. Die einzelnen Befunde liegen in Pruefbefund (prueflauf_id). Der j\u00fcngste abgeschlossene Lauf einer Einheit ist ihr aktueller Pr\u00fcfstand.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur gepr\u00fcften Einheit."
+    },
+    "gestartet_von": {
+      "type": "string",
+      "description": "E-Mail der Person, die den Lauf gestartet hat (Admin, Fachschaftsleitung des Fachs oder Einheits-Leitung)."
+    },
+    "gestartet_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "beendet_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "laeuft",
+        "fertig",
+        "abgebrochen",
+        "fehler"
+      ],
+      "default": "laeuft"
+    },
+    "umfang": {
+      "type": "string",
+      "enum": [
+        "voll",
+        "delta"
+      ],
+      "default": "voll",
+      "description": "'voll' = alle Stellen der Einheit werden gepr\u00fcft. 'delta' = nur Stellen, die seit dem letzten Lauf ge\u00e4ndert wurden, neu hinzugekommen sind oder deren Befunde als 'behoben' markiert wurden (spart KI-Kosten)."
+    },
+    "stufen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "regel",
+          "ki"
+        ]
+      },
+      "default": [
+        "regel"
+      ],
+      "description": "Welche Pr\u00fcfstufen in diesem Lauf aktiv sind: 'regel' = mechanische Pr\u00fcfung (Kategorie 1 + Material ohne Datei), 'ki' = KI-Pr\u00fcfung (Kategorien 2\u20135)."
+    },
+    "schritte_gesamt": {
+      "type": "integer",
+      "default": 0,
+      "description": "Anzahl der Pr\u00fcfschritte (Lernpakete + Allgemeine Aufgaben + Systembausteine), die dieser Lauf abarbeitet."
+    },
+    "schritte_erledigt": {
+      "type": "integer",
+      "default": 0,
+      "description": "Bereits abgearbeitete Pr\u00fcfschritte \u2013 Basis f\u00fcr den Fortschrittsbalken."
+    },
+    "aktueller_schritt": {
+      "type": "string",
+      "description": "Klartext des aktuellen Schritts f\u00fcr die Anzeige, z. B. 'Lernpaket \u201eBr\u00fcche addieren\" (3 von 12)'."
+    },
+    "anzahl_offen": {
+      "type": "integer",
+      "default": 0
+    },
+    "anzahl_behoben": {
+      "type": "integer",
+      "default": 0
+    },
+    "anzahl_bewusst": {
+      "type": "integer",
+      "default": 0
+    },
+    "anzahl_bestaetigt": {
+      "type": "integer",
+      "default": 0,
+      "description": "Befunde, deren Behebung dieser Lauf best\u00e4tigt hat (vorher 'behoben', jetzt nicht mehr gefunden)."
+    },
+    "anzahl_erneut": {
+      "type": "integer",
+      "default": 0,
+      "description": "Befunde, die als 'behoben' galten, aber erneut gefunden wurden."
+    },
+    "fehlermeldung": {
+      "type": "string",
+      "description": "Nur bei status='fehler'."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "gestartet_von",
+    "gestartet_am"
+  ]
+}

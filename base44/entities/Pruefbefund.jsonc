@@ -1,0 +1,138 @@
+{
+  "name": "Pruefbefund",
+  "type": "object",
+  "description": "Export-Vorpr\u00fcfung (Pr\u00fcfbereich Tab 8, 2026-09-03): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit auf die f\u00fcnf klassischen MBK-Fehlerkategorien (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle (Aktivit\u00e4t, Allgemeine Aufgabe oder Systembaustein) und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` (ziel_typ + ziel_id + kategorie) sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, die gepr\u00fcft wurde."
+    },
+    "prueflauf_id": {
+      "type": "string",
+      "description": "FK zum Prueflauf, in dem dieser Befund zuletzt gefunden/best\u00e4tigt wurde."
+    },
+    "fingerprint": {
+      "type": "string",
+      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel: `<ziel_typ>:<ziel_id>:<kategorie>`. Pro Einheit eindeutig. Erneute Pr\u00fcfl\u00e4ufe aktualisieren den bestehenden Befund mit gleichem Fingerprint statt einen neuen anzulegen."
+    },
+    "ziel_typ": {
+      "type": "string",
+      "enum": [
+        "aktivitaet",
+        "master_aufgabe",
+        "allgemeine_aufgabe",
+        "systembaustein"
+      ],
+      "description": "Art der betroffenen Stelle. 'aktivitaet' = LernpaketPhaseAktivitaet, 'master_aufgabe' = MasterAufgabe (Variante einer Aktivit\u00e4t), 'allgemeine_aufgabe' = AllgemeineAufgabe (Ebene 2/3), 'systembaustein' = Systembaustein-Inhalt (SchuelerInhaltSnapshot) im Lernpfad."
+    },
+    "ziel_id": {
+      "type": "string",
+      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`)."
+    },
+    "ziel_titel": {
+      "type": "string",
+      "description": "Denormalisierter Anzeigetitel der Stelle (Aktivit\u00e4tsname, Aufgabentitel, Bausteintitel) f\u00fcr die Taskliste."
+    },
+    "lernpaket_id": {
+      "type": "string",
+      "description": "Denormalisiert: FK zum Lernpaket (nur bei aktivitaet/master_aufgabe) \u2013 f\u00fcr die Gruppierung in der Taskliste und f\u00fcr Deep-Links."
+    },
+    "lernpaket_titel": {
+      "type": "string",
+      "description": "Denormalisierter Lernpaket-Titel."
+    },
+    "themenfeld_id": {
+      "type": "string",
+      "description": "Denormalisiert: FK zum Themenfeld \u2013 f\u00fcr die Gruppierung."
+    },
+    "themenfeld_titel": {
+      "type": "string",
+      "description": "Denormalisierter Themenfeld-Titel."
+    },
+    "kategorie": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "description": "MBK-Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich."
+    },
+    "schwere": {
+      "type": "string",
+      "enum": [
+        "blockiert",
+        "stoert",
+        "hinweis"
+      ],
+      "default": "hinweis",
+      "description": "'blockiert' = Sch\u00fcler k\u00f6nnen die Stelle nicht sinnvoll bearbeiten. 'stoert' = bearbeitbar, aber R\u00fcckmeldung/Lernen leidet. 'hinweis' = alles \u00dcbrige."
+    },
+    "befund": {
+      "type": "string",
+      "description": "Ein Satz: Was fehlt oder passt nicht \u2013 mit Zitat der Stelle."
+    },
+    "vorschlag": {
+      "type": "string",
+      "description": "Ein Satz: Was die Lehrkraft konkret tun kann."
+    },
+    "quelle": {
+      "type": "string",
+      "enum": [
+        "regel",
+        "ki",
+        "mbk"
+      ],
+      "default": "regel",
+      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau (sp\u00e4tere Schnittstelle, gleiche f\u00fcnf Kategorien)."
+    },
+    "entscheidung": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "behoben",
+        "bewusst"
+      ],
+      "default": "offen",
+      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert (grau). 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 die MBK soll damit umgehen; reist im Payload mit (andere Einf\u00e4rbung). Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
+    },
+    "kommentar": {
+      "type": "string",
+      "description": "Pflichtkommentar bei entscheidung='bewusst' (z. B. 'Erwartungshorizont kommt n\u00e4chste Woche'). Wird an die MBK durchgereicht."
+    },
+    "entschieden_von": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die die Entscheidung gesetzt hat."
+    },
+    "entschieden_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der Entscheidung."
+    },
+    "erneut_gefunden": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = der Befund war als 'behoben' markiert, wurde beim n\u00e4chsten Pr\u00fcflauf aber wieder gefunden und deshalb auf 'offen' zur\u00fcckgesetzt. Wird in der Taskliste als Hinweis angezeigt."
+    },
+    "zuletzt_gefunden_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt des letzten Pr\u00fcflaufs, der diesen Befund (erneut) festgestellt hat."
+    },
+    "bestaetigt_behoben_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt, zu dem ein erneuter Pr\u00fcflauf die Behebung best\u00e4tigt hat (Befund nicht mehr gefunden). Leer, solange die Behebung nur von der Lehrkraft gemeldet, aber noch nicht gegengepr\u00fcft ist."
+    }
+  },
+  "required": [
+    "einheit_id",
+    "fingerprint",
+    "ziel_typ",
+    "ziel_id",
+    "kategorie",
+    "befund"
+  ]
+}
