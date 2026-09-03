@@ -10,8 +10,9 @@
  * leere Aufgabe (MBK-Kategorie 1).
  *
  * Diese Befunde werden bewusst MIT aufgenommen, obwohl sie nicht in einem
- * Aufgaben-Reiter behoben werden: Ihr Arbeitsort ist das Export-Center
- * („Interne Inhalte erzeugen"). Die Taskliste verlinkt deshalb dorthin.
+ * Aufgaben-Reiter behoben werden: Ihr Arbeitsort ist die Karte „Interne Inhalte
+ * erzeugen", die seit 2026-09-03 oben in der Vollständigkeitsprüfung (Reiter 8)
+ * sitzt — nicht mehr im Export-Center.
  *
  * Die Liste MUSS mit KI_BAUSTEINE in
  * base44/functions/generateInterneInhalte/entry.ts übereinstimmen (Spiegel von
@@ -65,7 +66,7 @@ export function findeFehlendeInterneInhalte({ einheit, snapshots = [], systemBau
             kategorie: 1,
             schwere: 'blockiert',
             befund: 'Der KI-Inhalt dieser Seite ist noch nicht erzeugt – im Kurs bliebe die Seite leer.',
-            vorschlag: 'Im Export-Center „Interne Inhalte erzeugen" ausführen und das Ergebnis prüfen.',
+            vorschlag: 'Oben in diesem Reiter „Fehlende erzeugen" anklicken und das Ergebnis prüfen.',
           },
         });
       }

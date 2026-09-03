@@ -16,6 +16,8 @@ import { getBefundZiel, gruppiereBefunde } from '@/lib/pruefungZiele';
 import { PRUEF_SCHWERE } from '@/lib/pruefungKategorien';
 import PruefungFortschritt from './PruefungFortschritt';
 import PruefbefundKarte from './PruefbefundKarte';
+import BrianCheckCard from '@/components/exportcenter/BrianCheckCard';
+import InterneInhalteCard from '@/components/exportcenter/InterneInhalteCard';
 
 export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = false }) {
   const einheitId = einheit?.id;
@@ -63,6 +65,12 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
       </div>
 
       <PruefungFortschritt fortschritt={fortschritt} />
+
+      {/* Die beiden Dauer-Prüfungen, die früher im Export-Center saßen:
+          Brian-Übergabefelder und die vorab erzeugten KI-Inhalte. Beides wird
+          in der Einheit fertiggemacht, deshalb steht es jetzt hier. */}
+      <BrianCheckCard einheitId={einheitId} />
+      <InterneInhalteCard einheitId={einheitId} />
 
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">{offen} offen</Badge>
