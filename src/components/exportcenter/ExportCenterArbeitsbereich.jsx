@@ -15,6 +15,11 @@ import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
 import AirGapPayloadDownloadCard from '@/components/exportcenter/AirGapPayloadDownloadCard';
 import GitHubExportCard from '@/components/exportcenter/GitHubExportCard';
 import PruefungWarnungCard from '@/components/exportcenter/PruefungWarnungCard';
+// Brian-Übertragung (2026-09-03): Die vier Übergabefelder werden hier von Hand
+// nach Brian.study kopiert; die zurückgetragene Brian-URL reist mit dem
+// MBK-Payload mit. Die Vollständigkeit der Felder prüft die Einheit selbst
+// (Reiter 8) — hier geht es um den Übertragungsstand.
+import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 
 export default function ExportCenterArbeitsbereich({ einheitId }) {
   const { data: einheit, isLoading } = useQuery({
@@ -50,6 +55,9 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
     <div className="p-6 max-w-5xl mx-auto space-y-4">
       <PruefungWarnungCard einheitId={einheitId} />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
+      <div className="rounded-xl border border-border bg-card">
+        <BrianExportCockpitView einheitId={einheitId} embedded />
+      </div>
       <GitHubExportCard einheitId={einheitId} />
       <AirGapPayloadDownloadCard einheitId={einheitId} />
       <SupabaseExportCard einheitId={einheitId} />

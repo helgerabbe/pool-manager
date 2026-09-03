@@ -66,9 +66,10 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
 
       <PruefungFortschritt fortschritt={fortschritt} />
 
-      {/* Die beiden Dauer-Prüfungen, die früher im Export-Center saßen:
-          Brian-Übergabefelder und die vorab erzeugten KI-Inhalte. Beides wird
-          in der Einheit fertiggemacht, deshalb steht es jetzt hier. */}
+      {/* Zwei Vollständigkeits-Checks, die die KI-Prüfung nicht abdeckt:
+          Sind die vier Brian-Übergabefelder erzeugt, und sind die vorab per KI
+          erzeugten Seiten vorhanden? Das ÜBERTRAGEN nach Brian.study bleibt im
+          Export-Center — hier geht es nur um Vollständigkeit. */}
       <BrianCheckCard einheitId={einheitId} />
       <InterneInhalteCard einheitId={einheitId} />
 

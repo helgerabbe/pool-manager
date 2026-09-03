@@ -1931,6 +1931,10 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) 
             ...basis,
             brian_dialog: s?.brian
               ? {
+                // Rückkanal des Brian-Exports: ID und feste URL des Gesprächs
+                // in Brian.study — die MBK verlinkt damit direkt aus dem Kurs.
+                dialog_id: nullable(s.brian.dialog_id),
+                url: nullable(s.brian.url),
                 dialog_name: nullable(s.brian.dialog_name),
                 learner_instruction: nullable(s.brian.learner_instruction),
                 system_instruction: nullable(s.brian.system_instruction),
