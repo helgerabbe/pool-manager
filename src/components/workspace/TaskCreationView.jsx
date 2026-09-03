@@ -737,8 +737,13 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           }))
           .filter(g => g.pakete.length > 0),
         {
-          label: 'Nicht zugeordnet',
-          pakete: paketeFuerEinheit.filter(p => !p.themenfeld_id),
+          // „Nicht zugeordnet" fängt beides: Pakete ohne Themenfeld UND Pakete,
+          // deren Themenfeld gelöscht wurde. Letztere waren vorher in KEINER
+          // Gruppe und damit unsichtbar — im Export reisten sie trotzdem mit.
+          label: 'Ohne Themenfeld',
+          pakete: paketeFuerEinheit.filter(
+            p => !p.themenfeld_id || !themenfelder.some(tf => tf.id === p.themenfeld_id)
+          ),
           isRest: true,
         },
       ].filter(g => g.pakete.length > 0)

@@ -13,9 +13,15 @@ export const PRUEF_KATEGORIEN = Object.freeze({
   3: { label: 'Erwartungshorizont fehlt oder trägt nicht', kurz: 'Horizont' },
   4: { label: 'Rückmeldeweg nicht entschieden', kurz: 'Rückmeldung' },
   5: { label: 'Material und Text nicht schülertauglich', kurz: 'Material' },
+  // Kategorie 6 ist eine Ergänzung des Pool-Managers (2026-09-03): Sie meldet
+  // keinen inhaltlichen Mangel, sondern eine kaputte Struktur — Lernpakete oder
+  // Aufgaben, die keinem (noch existierenden) Themenfeld mehr zugeordnet sind.
+  // Solche Reste reisen unbemerkt im Export mit, und der Bau kann sie nirgends
+  // einhängen.
+  6: { label: 'Keinem Themenfeld zugeordnet', kurz: 'Zuordnung' },
 });
 
-export const PRUEF_KATEGORIE_NUMMERN = Object.freeze([1, 2, 3, 4, 5]);
+export const PRUEF_KATEGORIE_NUMMERN = Object.freeze([1, 2, 3, 4, 5, 6]);
 
 export const PRUEF_SCHWERE = Object.freeze({
   blockiert: { label: 'Blockiert', cls: 'bg-red-100 text-red-800 border-red-300', rang: 0 },

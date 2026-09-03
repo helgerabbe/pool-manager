@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Export-Vorpr\u00fcfung (Pr\u00fcfbereich Tab 8, 2026-09-03): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit auf die f\u00fcnf klassischen MBK-Fehlerkategorien (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle (Aktivit\u00e4t, Allgemeine Aufgabe oder Systembaustein) und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` (ziel_typ + ziel_id + kategorie) sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` (ziel_typ + ziel_id + kategorie) sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -21,21 +21,22 @@
         "aktivitaet",
         "master_aufgabe",
         "allgemeine_aufgabe",
-        "systembaustein"
+        "systembaustein",
+        "lernpaket"
       ],
-      "description": "Art der betroffenen Stelle. 'aktivitaet' = LernpaketPhaseAktivitaet, 'master_aufgabe' = MasterAufgabe (Variante einer Aktivit\u00e4t), 'allgemeine_aufgabe' = AllgemeineAufgabe (Ebene 2/3), 'systembaustein' = Systembaustein-Inhalt (SchuelerInhaltSnapshot) im Lernpfad."
+      "description": "Art der betroffenen Stelle. 'aktivitaet' = LernpaketPhaseAktivitaet, 'master_aufgabe' = MasterAufgabe (Variante einer Aktivit\u00e4t), 'allgemeine_aufgabe' = AllgemeineAufgabe (Ebene 2/3), 'systembaustein' = Systembaustein-Inhalt (SchuelerInhaltSnapshot) bzw. Onboarding-Element, 'lernpaket' = das Lernpaket selbst (nur Kategorie 6: verwaiste Zuordnung)."
     },
     "ziel_id": {
       "type": "string",
-      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`)."
+      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id, lernpaket_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`)."
     },
     "ziel_titel": {
       "type": "string",
-      "description": "Denormalisierter Anzeigetitel der Stelle (Aktivit\u00e4tsname, Aufgabentitel, Bausteintitel) f\u00fcr die Taskliste."
+      "description": "Denormalisierter Anzeigetitel der Stelle f\u00fcr die Taskliste."
     },
     "lernpaket_id": {
       "type": "string",
-      "description": "Denormalisiert: FK zum Lernpaket (nur bei aktivitaet/master_aufgabe) \u2013 f\u00fcr die Gruppierung in der Taskliste und f\u00fcr Deep-Links."
+      "description": "Denormalisiert: FK zum Lernpaket \u2013 f\u00fcr die Gruppierung in der Taskliste und f\u00fcr Deep-Links."
     },
     "lernpaket_titel": {
       "type": "string",
@@ -56,9 +57,10 @@
         2,
         3,
         4,
-        5
+        5,
+        6
       ],
-      "description": "MBK-Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich."
+      "description": "Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich, 6 = Keinem Themenfeld zugeordnet (verwaistes Lernpaket bzw. verwaiste Aufgabe)."
     },
     "schwere": {
       "type": "string",
@@ -86,7 +88,7 @@
         "mbk"
       ],
       "default": "regel",
-      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau (sp\u00e4tere Schnittstelle, gleiche f\u00fcnf Kategorien)."
+      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau."
     },
     "entscheidung": {
       "type": "string",
@@ -96,11 +98,11 @@
         "bewusst"
       ],
       "default": "offen",
-      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert (grau). 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 die MBK soll damit umgehen; reist im Payload mit (andere Einf\u00e4rbung). Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
+      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert. 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 reist im Payload mit. Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
     },
     "kommentar": {
       "type": "string",
-      "description": "Pflichtkommentar bei entscheidung='bewusst' (z. B. 'Erwartungshorizont kommt n\u00e4chste Woche'). Wird an die MBK durchgereicht."
+      "description": "Pflichtkommentar bei entscheidung='bewusst'. Wird an die MBK durchgereicht."
     },
     "entschieden_von": {
       "type": "string",
@@ -114,7 +116,7 @@
     "erneut_gefunden": {
       "type": "boolean",
       "default": false,
-      "description": "true = der Befund war als 'behoben' markiert, wurde beim n\u00e4chsten Pr\u00fcflauf aber wieder gefunden und deshalb auf 'offen' zur\u00fcckgesetzt. Wird in der Taskliste als Hinweis angezeigt."
+      "description": "true = der Befund war als 'behoben' markiert, wurde beim n\u00e4chsten Pr\u00fcflauf aber wieder gefunden und deshalb auf 'offen' zur\u00fcckgesetzt."
     },
     "zuletzt_gefunden_am": {
       "type": "string",
@@ -124,7 +126,7 @@
     "bestaetigt_behoben_am": {
       "type": "string",
       "format": "date-time",
-      "description": "Zeitpunkt, zu dem ein erneuter Pr\u00fcflauf die Behebung best\u00e4tigt hat (Befund nicht mehr gefunden). Leer, solange die Behebung nur von der Lehrkraft gemeldet, aber noch nicht gegengepr\u00fcft ist."
+      "description": "Zeitpunkt, zu dem ein erneuter Pr\u00fcflauf die Behebung best\u00e4tigt hat (Befund nicht mehr gefunden)."
     }
   },
   "required": [

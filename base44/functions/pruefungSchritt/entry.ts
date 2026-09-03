@@ -18,6 +18,7 @@ import {
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
 import { findeFehlendeInterneInhalte, findeFehlendeOnboardingInhalte } from '../../shared/pruefungInterneInhalte.js';
+import { findeVerwaisteZuordnungen } from '../../shared/pruefungZuordnung.js';
 import { getAnthropicConfig } from '../../shared/anthropicClient.js';
 import { pruefeStellenMitKI, beschreibeFeldwerte } from '../../shared/pruefungKI.js';
 
@@ -151,6 +152,29 @@ export default async function (req) {
             themenfeld_titel: f.themenfeld_titel,
           },
           [f.kandidat]
+        );
+      }
+
+      // Kategorie 6: verwaiste Lernpakete/Aufgaben (Themenfeld gelöscht).
+      const [alleLernpakete, alleAufgaben] = await Promise.all([
+        base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: lauf.einheit_id }),
+        base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: lauf.einheit_id }),
+      ]);
+      const verwaist = findeVerwaisteZuordnungen({
+        lernpakete: alleLernpakete || [],
+        aufgaben: alleAufgaben || [],
+        themenfelder: themenfelder || [],
+      });
+      for (const v of verwaist) {
+        await merken(
+          {
+            ziel_typ: v.ziel_typ,
+            ziel_id: v.ziel_id,
+            ziel_titel: v.ziel_titel,
+            lernpaket_id: v.lernpaket_id || '',
+            lernpaket_titel: v.lernpaket_titel || '',
+          },
+          [v.kandidat]
         );
       }
     } else if (schritt.typ === 'aufgabe') {

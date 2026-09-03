@@ -739,12 +739,14 @@ export default function AllgemeineAufgabenView({
     // Ohne Themenfeld
     gruppen['_none'] = { titel: 'Ohne Themenfeld', aufgaben: [], themenfeld: null };
 
-    // Aufgaben verteilen (auf der gefilterten Liste)
+    // Aufgaben verteilen (auf der gefilterten Liste).
+    // Wichtig: Zeigt die themenfeld_id auf ein GELÖSCHTES Themenfeld, gab es
+    // früher keine passende Gruppe — die Aufgabe verschwand still aus der
+    // Sidebar, reiste im Export aber mit. Solche verwaisten Aufgaben landen
+    // jetzt unter „Ohne Themenfeld" und sind dort bearbeit-/löschbar.
     aufgabenNachFilter.forEach(aufgabe => {
-      const key = aufgabe.themenfeld_id || '_none';
-      if (gruppen[key]) {
-        gruppen[key].aufgaben.push(aufgabe);
-      }
+      const key = gruppen[aufgabe.themenfeld_id] ? aufgabe.themenfeld_id : '_none';
+      gruppen[key].aufgaben.push(aufgabe);
     });
 
     return Object.values(gruppen).filter(g => g.themenfeld || g.aufgaben.length > 0);
@@ -789,8 +791,12 @@ export default function AllgemeineAufgabenView({
       ? { id: '_none', titel: 'Ohne Themenfeld' }
       : themenfelder.find((tf) => tf.id === selectedThemenfeldId) || null
     : null;
+  // Gleiche Regel wie in der Gruppierung: verwaiste Zuordnung zählt als „_none".
+  const themenfeldIds = useMemo(() => new Set(themenfelder.map((tf) => tf.id)), [themenfelder]);
   const themenfeldAufgaben = selectedThemenfeldId
-    ? aufgabenNachFilter.filter((a) => (a.themenfeld_id || '_none') === selectedThemenfeldId)
+    ? aufgabenNachFilter.filter(
+        (a) => (themenfeldIds.has(a.themenfeld_id) ? a.themenfeld_id : '_none') === selectedThemenfeldId
+      )
     : [];
 
   return (
