@@ -22,7 +22,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight, AlignJustify, LayoutList, PenLine, Unlock, Loader2 } from 'lucide-react';
+import { Plus, GripVertical, Clock, Trash2, FolderOpen, Layers, X, Save, Target, ChevronLeft, ChevronsLeft, ArrowLeft, ArrowRight, AlignJustify, LayoutList, PenLine, Unlock, Loader2, MessageSquareText } from 'lucide-react';
+import ThemenfeldBeschreibungDialog from '@/components/workspace/struktur/ThemenfeldBeschreibungDialog';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -203,7 +204,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly 
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -307,6 +308,22 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         )}
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
+
+        {/* Ein Satz zum Themenfeld für die Schüler (Untertitel im Lernweg). */}
+        {!isSammelbecken && !readOnly && !istLesemodus && onEditBeschreibung && (
+          <button
+            onClick={onEditBeschreibung}
+            className={cn(
+              'p-1 rounded transition-colors shrink-0',
+              hatBeschreibung
+                ? 'text-primary hover:bg-primary/10'
+                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+            )}
+            title={hatBeschreibung ? 'Beschreibung bearbeiten' : 'Beschreibung hinzufügen'}
+          >
+            <MessageSquareText className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         {/* Reorder-Pfeil rechts (gleicher Stil wie links: voller Pfeil + Pill). */}
         {!isSammelbecken && !readOnly && !istLesemodus && onMoveRight && (
@@ -436,6 +453,8 @@ export default function StrukturBoardEmbedded({
   const [collapsedSpalten, setCollapsedSpalten] = useState(new Set([SAMMELBECKEN_ID]));
   // Speicher-Overlay
   const [saveOverlayOpen, setSaveOverlayOpen] = useState(false);
+  // Themenfeld-Beschreibung (ein Satz für die Schüler) – speichert direkt.
+  const [beschreibungDialog, setBeschreibungDialog] = useState(null);
 
   const toggleCollapse = (spalteId) => {
     setCollapsedSpalten(prev => {
@@ -455,7 +474,7 @@ export default function StrukturBoardEmbedded({
 
     const tfSpalten = [...felder]
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-      .map(tf => ({ id: `tf-${tf.id}`, titel: tf.titel, themenfeldId: tf.id }));
+      .map(tf => ({ id: `tf-${tf.id}`, titel: tf.titel, themenfeldId: tf.id, beschreibung: tf.beschreibung || '' }));
 
     const newMap = { [SAMMELBECKEN_ID]: [] };
     tfSpalten.forEach(s => { newMap[s.id] = []; });
@@ -1059,6 +1078,8 @@ export default function StrukturBoardEmbedded({
                 onMoveRight={() => moveSpalte(spalte.id, 'right')}
                 canMoveLeft={idx > 0}
                 canMoveRight={idx < spalten.length - 1}
+                hatBeschreibung={!!spalte.beschreibung}
+                onEditBeschreibung={spalte.themenfeldId ? () => setBeschreibungDialog(spalte) : null}
               />
             ))}
 
@@ -1110,6 +1131,20 @@ export default function StrukturBoardEmbedded({
         onConfirm={() => {
           handleDeletePaket(paketDeleteConfirm.id);
           setPaketDeleteConfirm(null);
+        }}
+      />
+
+      {/* Themenfeld-Beschreibung: ein Satz für die Schüler */}
+      <ThemenfeldBeschreibungDialog
+        open={!!beschreibungDialog}
+        onOpenChange={(open) => !open && setBeschreibungDialog(null)}
+        themenfeldId={beschreibungDialog?.themenfeldId}
+        titel={beschreibungDialog?.titel}
+        beschreibung={beschreibungDialog?.beschreibung}
+        onSaved={(text) => {
+          const id = beschreibungDialog?.id;
+          setSpalten(prev => prev.map(s => (s.id === id ? { ...s, beschreibung: text } : s)));
+          queryClient.refetchQueries({ queryKey: ['themenfelder'] });
         }}
       />
 

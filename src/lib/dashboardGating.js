@@ -21,8 +21,13 @@ import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
  *  Elemente werden ausgegraut, nur das aktuelle Element ist farbig.
  *  gating-1.3.0: Bündel-Modus ist standardmäßig das GEGENTEIL des Sektor-Modus
  *  (ein Bündel ermöglicht im Sektor bewusst die jeweils andere
- *  Bearbeitungsart) + Exit-Regel für "X von Y" in sequenziellen Bündeln. */
-export const GATING_ENGINE_VERSION = 'gating-1.3.0';
+ *  Bearbeitungsart) + Exit-Regel für "X von Y" in sequenziellen Bündeln.
+ *  gating-1.4.0: Innen-Modus eines Lernpakets (`lernpaket_innen_modus`) wird
+ *  pro Lernpaket-Item ausgeliefert und im Vertrag erklärt — die MBK hatte
+ *  `bundle_config.lernpaket_modus` bisher als Reihenfolge der Lernpaket-KINDER
+ *  gelesen; gemeint ist die Reihenfolge der Aktivitäten INNERHALB jedes
+ *  Lernpakets. */
+export const GATING_ENGINE_VERSION = 'gating-1.4.0';
 
 export const INITIAL_STATUS = Object.freeze({
   OFFEN: 'offen',
@@ -77,6 +82,18 @@ export function resolveBundleModus(bundleModus, sektorModus, { istProjektBuendel
   if (istProjektBuendel) return 'frei';
   if (bundleModus === 'sequenziell' || bundleModus === 'frei') return bundleModus;
   return normalizeSektorModus(sektorModus) === 'sequenziell' ? 'frei' : 'sequenziell';
+}
+
+/**
+ * Innen-Modus eines Lernpakets (gating-1.4.0).
+ *
+ * Gilt für die AKTIVITÄTEN INNERHALB eines einzelnen Lernpakets — nicht für
+ * die Reihenfolge mehrerer Lernpakete untereinander (das ist Sektor- bzw.
+ * Bündel-Modus). Gepflegt am Lernpaketebündel (`bundle_config.lernpaket_modus`),
+ * Default 'sequenziell': von oben nach unten, wie es die Minimalisten brauchen.
+ */
+export function resolveLernpaketInnenModus(lernpaketModus) {
+  return lernpaketModus === 'frei' ? 'frei' : 'sequenziell';
 }
 
 /**
@@ -232,6 +249,21 @@ export const DASHBOARD_GATING_ENGINE = Object.freeze({
       + 'einzige Möglichkeit, "X von Y" mit fester Reihenfolge zu bauen (erste X '
       + 'Pflicht, restliche freiwillig). Nur bei Lernpaket-Bündeln ist derselbe '
       + 'Modus wie im Sektor wirkungslos.',
+  },
+  lernpaket_innen_modus: {
+    feld: 'lernpaket_innen_modus (an jedem Lernpaket-Item des Pfades)',
+    bedeutung:
+      'Reihenfolge der AKTIVITÄTEN INNERHALB dieses einen Lernpakets: '
+      + '"sequenziell" = die Aktivitäten werden von oben nach unten abgearbeitet, '
+      + 'die jeweils nächste ist bis dahin ausgegraut; "frei" = alle Aktivitäten '
+      + 'des Lernpakets sind sofort anklickbar (Wissensspeicher). Default ist '
+      + '"sequenziell".',
+    abgrenzung:
+      'NICHT verwechseln mit der Reihenfolge MEHRERER Lernpakete untereinander — '
+      + 'die regeln Sektor-Modus bzw. bundle_config.modus. Das Rohfeld '
+      + 'bundle_config.lernpaket_modus am Lernpaketebündel meint ebenfalls diesen '
+      + 'Innen-Modus und gilt für alle Lernpaket-Kinder des Bündels; der '
+      + 'aufgelöste Wert steht bereits an jedem Lernpaket-Item.',
   },
   initial_status_rules: {
     description:

@@ -31,6 +31,7 @@
 
 import { getSektorTypLabel } from '@/lib/sektorTypen';
 import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGating';
+import { annotateItemArten } from '@/lib/lernpfadItemArt';
 import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboardingPayload';
 
 /**
@@ -97,8 +98,21 @@ import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboa
  *     Damit gilt der Snapshot-Prioritäts-Vertrag auch hier praktisch:
  *     Vorhandenes wird 1:1 übernommen, die MBK schreibt nur, was leer ist.
  *     Zusätzlich sagt `inhalt_regel` der MBK genau das.
+ * airgap-1.19.0: Item-Art im Lernpfad + Innen-Modus der Lernpakete.
+ *   Rückmeldung der MBK (2026-09-03, Weg-Ansicht): Lernpakete stehen längst als
+ *   Items im Pfad, waren dort aber nicht ERKENNBAR — jedes Nicht-System-Item
+ *   kam als `type: 'aufgabe'` an. Der Bau sortierte Lernpakete deshalb pauschal
+ *   vor die Aufgaben, und die von der Lehrkraft gebaute Reihenfolge („erst
+ *   Lernpaket 1, dann Aufgabe A, dann Lernpaket 2") ging verloren.
+ *   - Payload 2: jedes Lernpfad-Item trägt `item_kind`
+ *     (lernpaket|allgemeine_aufgabe|buendel|systembaustein) und `ref_titel`.
+ *   - Payload 2: jedes Lernpaket-Item trägt `lernpaket_innen_modus`
+ *     (sequenziell|frei), aufgelöst aus bundle_config.lernpaket_modus.
+ *   - Payload 1: `dashboard_gating_engine.lernpaket_innen_modus` erklärt das
+ *     Feld und grenzt es gegen den Bündel-Modus ab — die bisherige Lesart der
+ *     MBK war eine andere (sie las es als Reihenfolge der Lernpaket-Kinder).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.18.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.19.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -1005,7 +1019,7 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
  * portierbare Struktur um. Items werden hierarchisch (parent/children)
  * gerendert, damit Bündel-Verschachtelungen klar bleiben.
  */
-function summarizeSektor(sektor, themenfelderById, bausteinById = new Map()) {
+function summarizeSektor(sektor, themenfelderById, bausteinById = new Map(), refIndex = {}) {
   // Platzhalter-Bausteine bleiben in der DB-Konfiguration als Arbeitshilfe
   // für Tab 7 erhalten, fließen aber NICHT in den Export. Wir filtern sie
   // hier ein einziges Mal raus — alles weiter unten arbeitet auf der
@@ -1087,7 +1101,14 @@ function summarizeSektor(sektor, themenfelderById, bausteinById = new Map()) {
     bearbeitungsmodus,
     modus: sektorGatingModus,
     freischalt_bedingung,
-    items: itemsAnnotated,
+    // airgap-1.19.0: Erst danach die Item-ART bestimmen (Lernpaket vs. Aufgabe
+    // vs. Bündel vs. Systembaustein) und den Innen-Modus der Lernpakete
+    // auflösen — die gespeicherte Struktur kennt diesen Unterschied nicht.
+    items: annotateItemArten(itemsAnnotated, {
+      bausteinById,
+      lernpaketById: refIndex.lernpaketById,
+      aufgabeById: refIndex.aufgabeById,
+    }),
   };
 }
 
@@ -1208,6 +1229,13 @@ export function buildStructurePayload({
     verlinkte_projekt_ids: Array.isArray(aa.verlinkte_projekt_ids) ? aa.verlinkte_projekt_ids : [],
   }));
 
+  // airgap-1.19.0: Nachschlagewerk, um Pfad-Items ihrer Quelle zuzuordnen —
+  // ohne das sind Lernpakete und Aufgaben im Pfad nicht unterscheidbar.
+  const itemRefIndex = {
+    lernpaketById: new Map((lernpakete || []).map((lp) => [lp.id, lp])),
+    aufgabeById: new Map((allgemeineAufgaben || []).map((aa) => [aa.id, aa])),
+  };
+
   // Lernpfade pro Lerntyp (Sektoren + Items).
   const lernpfade = {};
   // airgap-1.4.0: Index ref_id → Set<dashboardFilename>, damit jedes Mapping-
@@ -1220,7 +1248,9 @@ export function buildStructurePayload({
   };
   for (const lt of LERNTYP_KEYS) {
     const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
-    lernpfade[lt] = sektoren.map((s) => summarizeSektor(s, themenfelderById, bausteinByKey));
+    lernpfade[lt] = sektoren.map((s) =>
+      summarizeSektor(s, themenfelderById, bausteinByKey, itemRefIndex)
+    );
     const dashboardFile = fnDashboard(lt);
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
