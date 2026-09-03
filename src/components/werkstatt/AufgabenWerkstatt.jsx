@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Loader2, Hammer, Lock, ListOrdered, FolderOpen, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -319,6 +320,25 @@ export default function AufgabenWerkstatt({
 
           {kopfOffen && (
             <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-4">
+              {/* Übergeordnete Aufgabenstellung. Sie wird gespeichert und in
+                  den Kurs exportiert (Einleitungstext über der Schrittfolge),
+                  hatte seit dem Umbau auf die Werkstatt aber kein Eingabefeld
+                  mehr — im Kurs stand dann der Platzhalter aus der Anlage
+                  („Aufgabenstellung folgt"). */}
+              <div className="space-y-1">
+                <p className="text-[11px] text-slate-500">
+                  Übergeordnete Aufgabenstellung — der Einleitungstext, den die Schüler über der
+                  Schrittfolge lesen (optional).
+                </p>
+                <Textarea
+                  value={aufgabenstellung}
+                  onChange={(e) => setAufgabenstellung(e.target.value)}
+                  placeholder="z. B. In dieser Aufgabe untersuchst du, wie Aufrufe zustande kommen und wofür sie eingesetzt werden."
+                  rows={3}
+                  disabled={isReleased}
+                />
+              </div>
+
               {/* Schwierigkeit: Sie war seit dem Wegfall der alten Reiter bei
                   Sequenzen nirgends mehr erreichbar. Gehört zur ganzen Folge,
                   nicht zu einem Schritt. */}
