@@ -73,6 +73,16 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
+    // URL mit dem aktiven Reiter synchron halten. Sonst blieb nach einem
+    // Deep-Link (z. B. „?tab=ebene2" aus der Vollständigkeitsprüfung) der alte
+    // Parameter stehen: Ein zweiter Klick auf denselben Link zeigte auf die
+    // identische URL — der Router betrachtet das als "keine Navigation" und es
+    // passierte gar nichts.
+    if (searchParams.get('tab') !== tab) {
+      const next = new URLSearchParams(searchParams);
+      next.set('tab', tab);
+      setSearchParams(next, { replace: true });
+    }
     setHighlightedAtomIds(new Set());
     setSelectedNode(null); // Zurücksetzen beim Tab-Wechsel
     if (tab !== 'lernpakete') {
