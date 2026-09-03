@@ -194,10 +194,10 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
 // Vorprüfung auf die fünf MBK-Fehlerkategorien, deren Befunde als Taskliste
 // abgearbeitet werden.
 const PRUEFUNG_TAB = {
-  value: 'pruefung', label: 'Prüfung vor dem Export', icon: ShieldCheck, step: 8,
+  value: 'pruefung', label: 'Vollständigkeitsprüfung', icon: ShieldCheck, step: 8,
   help: {
-    title: 'Prüfung vor dem Export',
-    description: 'Hier lässt du die Einheit vor dem Export durchsehen. Die Prüfung geht Lernpaket für Lernpaket, dann die allgemeinen und Projektaufgaben und schließlich die vorab per KI erzeugten Seiten durch. Was gefunden wird, landet als Taskliste in diesem Reiter — mit Sprung an die betroffene Stelle.',
+    title: 'Vollständigkeitsprüfung',
+    description: 'Hier lässt du die Inhalte der Einheit durchsehen, bevor sie in den Kurs gehen. Die Prüfung geht Lernpaket für Lernpaket, dann die allgemeinen und Projektaufgaben und schließlich die vorab per KI erzeugten Seiten durch. Was gefunden wird, landet als Taskliste in diesem Reiter — mit Sprung an die betroffene Stelle.',
     features: [
       'Prüfung starten mit Fortschrittsanzeige – du siehst, welches Lernpaket gerade geprüft wird',
       'Befunde nach den fünf MBK-Fehlerkategorien, sortiert nach Schwere',

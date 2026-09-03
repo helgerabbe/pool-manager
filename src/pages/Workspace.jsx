@@ -1083,11 +1083,11 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </TabsContent>
             )}
 
-            {/* ── Tab 8: Prüfung vor dem Export (nur gemeinschaftliche Einheiten) ── */}
+            {/* ── Tab 8: Vollständigkeitsprüfung (nur gemeinschaftliche Einheiten) ── */}
             {einheit?.sichtbarkeit !== 'privat' && !isBasismodul && (
               <TabsContent value="pruefung" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
                 <div className="flex-1 overflow-y-auto">
-                  <ErrorBoundary label="Prüfung vor dem Export">
+                  <ErrorBoundary label="Vollständigkeitsprüfung">
                     <PruefbereichTab
                       einheit={einheit}
                       aufgaben={allgemeineAufgabenData}

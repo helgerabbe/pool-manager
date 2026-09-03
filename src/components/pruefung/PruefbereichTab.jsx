@@ -40,7 +40,7 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
       <div className="flex items-start gap-3 flex-wrap">
         <div className="flex-1 min-w-[240px]">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-primary" /> Prüfung vor dem Export
+            <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Die Prüfung geht alle Lernpakete, Aufgaben und die vorab erzeugten KI-Seiten dieser
