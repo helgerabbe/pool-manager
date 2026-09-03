@@ -75,7 +75,7 @@ export default function BrianCheckCard({ einheitId }) {
               className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2"
             >
               <Link
-                to={`/einheiten/${einheitId}`}
+                to={`/einheiten/${einheitId}?tab=${aufgabe.anforderungsebene === '3 - Projekt' ? 'ebene3' : 'ebene2'}`}
                 className="text-xs font-semibold text-amber-900 hover:underline"
               >
                 {aufgabe.titel || 'Ohne Titel'}
