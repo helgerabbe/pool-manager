@@ -17,7 +17,7 @@ import {
   pruefeMasterMechanisch,
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
-import { findeFehlendeInterneInhalte } from '../../shared/pruefungInterneInhalte.js';
+import { findeFehlendeInterneInhalte, findeFehlendeOnboardingInhalte } from '../../shared/pruefungInterneInhalte.js';
 import { getAnthropicConfig } from '../../shared/anthropicClient.js';
 import { pruefeStellenMitKI, beschreibeFeldwerte } from '../../shared/pruefungKI.js';
 
@@ -132,12 +132,15 @@ export default async function (req) {
         base44.asServiceRole.entities.SystemBausteine.list(),
         base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: lauf.einheit_id }),
       ]);
-      const fehlende = findeFehlendeInterneInhalte({
-        einheit,
-        snapshots: snapshots || [],
-        systemBausteine: bausteine || [],
-        themenfelder: themenfelder || [],
-      });
+      const fehlende = [
+        ...findeFehlendeInterneInhalte({
+          einheit,
+          snapshots: snapshots || [],
+          systemBausteine: bausteine || [],
+          themenfelder: themenfelder || [],
+        }),
+        ...findeFehlendeOnboardingInhalte({ einheit }),
+      ];
       for (const f of fehlende) {
         await merken(
           {

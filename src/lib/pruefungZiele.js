@@ -13,7 +13,16 @@ export function getBefundZiel(befund, { einheitId, aufgaben = [] }) {
   if (!befund) return null;
 
   if (befund.ziel_typ === 'systembaustein') {
-    return { href: '/export-center', label: 'Zum Export-Center' };
+    // Onboarding-Elemente werden im Reiter „Arbeitspläne" erzeugt und
+    // gespeichert. Vorab erzeugbare Seiten (Snapshots) brauchen keinen Link —
+    // sie werden direkt in der Befund-Kachel erzeugt.
+    if (String(befund.ziel_id || '').startsWith('onboarding::')) {
+      return {
+        href: `/workspace?einheit=${einheitId}&tab=dashboards`,
+        label: 'Zu den Arbeitsplänen',
+      };
+    }
+    return null;
   }
 
   if (befund.ziel_typ === 'allgemeine_aufgabe') {
@@ -43,7 +52,7 @@ export function gruppiereBefunde(befunde) {
       ? 'interne_inhalte'
       : (b.lernpaket_id || (b.ziel_typ === 'allgemeine_aufgabe' ? 'aufgaben' : 'sonstige'));
     const titel = b.ziel_typ === 'systembaustein'
-      ? 'Interne KI-Inhalte (Export-Center)'
+      ? 'Interne KI-Inhalte'
       : (b.lernpaket_titel || (b.ziel_typ === 'allgemeine_aufgabe' ? 'Allgemeine und Projektaufgaben' : 'Weitere Stellen'));
     if (!gruppen.has(key)) gruppen.set(key, { key, titel, befunde: [] });
     gruppen.get(key).befunde.push(b);

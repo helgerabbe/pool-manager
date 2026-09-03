@@ -131,7 +131,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId, force = false } = await req.json();
+    // `nur` (optional): genau EINE Baustein-Instanz erzeugen — so kann die
+    // Vollständigkeitsprüfung pro Befund gezielt nachlegen, ohne die ganze
+    // Einheit durchzurechnen.
+    const { einheitId, force = false, nur = null } = await req.json();
     if (!einheitId) {
       return Response.json({ error: 'einheitId ist erforderlich' }, { status: 400 });
     }
@@ -157,6 +160,7 @@ Deno.serve(async (req) => {
         for (const item of sektor?.items || []) {
           if (item?.type !== 'system') continue;
           if (!KI_BAUSTEINE[item.ref_id]) continue;
+          if (nur && (nur.lerntyp !== lerntyp || nur.instanceId !== item.instance_id)) continue;
           aufgaben.push({
             lerntyp,
             instanceId: item.instance_id,

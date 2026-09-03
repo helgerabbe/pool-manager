@@ -14,15 +14,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PRUEF_SCHWERE, getKategorieLabel } from '@/lib/pruefungKategorien';
+import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 
 const BEWUSST_PLACEHOLDER =
   'Warum bleibt das so? Die Begründung wird an die MBK weitergegeben.';
 
-export default function PruefbefundKarte({ befund, ziel, kannBewusstSetzen, onEntscheiden }) {
+export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstSetzen, onEntscheiden }) {
   const [kommentarOffen, setKommentarOffen] = useState(false);
   const [kommentar, setKommentar] = useState(befund.kommentar || '');
   const schwere = PRUEF_SCHWERE[befund.schwere] || PRUEF_SCHWERE.hinweis;
   const erledigt = befund.entscheidung !== 'offen';
+  // Vorab erzeugbarer KI-Inhalt: direkt hier erzeugbar (Onboarding-Elemente
+  // entstehen dagegen über die Vorschau im Reiter „Arbeitspläne").
+  const direktErzeugbar = befund.ziel_typ === 'systembaustein'
+    && !String(befund.ziel_id || '').startsWith('onboarding::');
 
   return (
     <div className={cn('rounded-lg border p-3 space-y-2', erledigt ? 'bg-muted/40 border-border' : 'bg-card border-border')}>
@@ -51,7 +56,14 @@ export default function PruefbefundKarte({ befund, ziel, kannBewusstSetzen, onEn
         )}
         {befund.entscheidung === 'offen' ? (
           <>
-            <Button size="sm" onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}>
+            {direktErzeugbar && (
+              <InternenInhaltErzeugenButton
+                einheitId={einheitId}
+                zielId={befund.ziel_id}
+                onErzeugt={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
+              />
+            )}
+            <Button size="sm" variant={direktErzeugbar ? 'outline' : 'default'} onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}>
               <Check className="w-3.5 h-3.5" /> Behoben
             </Button>
             {kannBewusstSetzen && (

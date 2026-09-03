@@ -207,7 +207,7 @@ const PRUEFUNG_TAB = {
     ],
     faqs: [
       { question: 'Blockiert die Prüfung den Export?', answer: 'Nein. Der Export bleibt jederzeit möglich. Offene Befunde erscheinen im Export-Center nur als Warnung.' },
-      { question: 'Was prüfen die beiden Karten oben?', answer: 'Die erste prüft, ob alle KI-Tutor-Aufgaben ihre vier Brian-Übergabefelder haben. Die zweite zeigt, welche vorab per KI erzeugten Seiten (z. B. Themenfeld-Einführungen) noch fehlen – erzeugen kannst du sie direkt dort. Beides lag früher im Export-Center.' },
+      { question: 'Was prüft die Karte oben?', answer: 'Sie prüft, ob alle KI-Tutor-Aufgaben ihre vier Brian-Übergabefelder haben. Fehlende KI-Inhalte (z. B. Themenfeld-Einführungen) erscheinen dagegen als eigene Befunde in der Liste – dort kannst du sie einzeln mit „Jetzt erzeugen" nachlegen oder bewusst der MBK überlassen.' },
       { question: 'Was heißt „bewusst gelassen"?', answer: 'Die Leitung kennt den Befund und lässt ihn absichtlich stehen. Die Begründung wird an die MBK weitergegeben, damit sie ihn nicht erneut meldet.' },
       { question: 'Was bedeutet „erneut gefunden"?', answer: 'Der Befund war als behoben markiert, wurde bei der nächsten Prüfung aber wieder gefunden – die Stelle braucht noch einmal Aufmerksamkeit.' },
     ],

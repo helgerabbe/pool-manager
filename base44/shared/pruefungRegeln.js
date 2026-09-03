@@ -349,6 +349,19 @@ export function pruefeAllgemeineAufgabeMechanisch(aufgabe) {
         .map((s, i) => ({ s, nr: i + 1 }))
         .filter(({ s }) => leer(s?.material) && leer(s?.aufgabe) && leer(s?.offen) && leer(s?.brian)
           && leer(s?.handlung) && leer(s?.extern) && leer(s?.abgabe) && leer(s?.field_values));
+      // Offene Aufgaben-Schritte: Ohne fertiges HTML-Fragment aus der
+      // Aufgabenwerkstatt gibt es keine Vorlage — die MBK müsste die Aufgabe
+      // dann allein aus der Beschreibung bauen.
+      const ohneVorlage = schritte
+        .map((s, i) => ({ s, nr: i + 1 }))
+        .filter(({ s }) => s?.typ === 'offen' && leer(s?.offen?.fragment) && leer(s?.offen?.snapshot_html));
+      if (ohneVorlage.length > 0) {
+        treffer.push(befund(
+          1, 'stoert',
+          `Offene Aufgabe in Schritt ${ohneVorlage.map((x) => x.nr).join(', ')}: Es ist noch keine Vorlage in der Aufgabenwerkstatt erzeugt worden.`,
+          'Vorlage in der Aufgabenwerkstatt erzeugen und übernehmen – oder bewusst so lassen, dann baut die MBK die Aufgabe aus der Beschreibung.'
+        ));
+      }
       if (leereSchritte.length > 0) {
         treffer.push(befund(
           1, 'blockiert',

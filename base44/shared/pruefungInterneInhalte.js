@@ -23,6 +23,20 @@
 const VORAB_ERZEUGBARE_BAUSTEINE = ['sys_themenfeld_intro'];
 const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
+/**
+ * Die vier festen Onboarding-Elemente der Einheit (Orientierungsphase).
+ * Sie liegen NICHT als Snapshot, sondern in Einheiten.onboarding_konfiguration
+ * und werden im Reiter „Arbeitspläne" über die jeweilige Vorschau erzeugt und
+ * gespeichert. Fehlt eines, bleibt die Stelle im Kurs leer — es sei denn, die
+ * Lehrkraft überlässt sie bewusst der MBK.
+ */
+const ONBOARDING_ELEMENTE = [
+  { key: 'einfuehrung', titel: 'Kurze Einführung in die Einheit' },
+  { key: 'fragenblock', titel: 'Freiwilliger Fragenblock (Selbsteinschätzung)' },
+  { key: 'einstiegsdiagnose', titel: 'Einstiegsdiagnose (Wissensquiz)' },
+  { key: 'lerntyp_diagnose', titel: 'KI-Intensitätsstufen-Diagnose' },
+];
+
 function leeresObjekt(inhalt) {
   return !inhalt || typeof inhalt !== 'object' || Object.keys(inhalt).length === 0;
 }
@@ -66,11 +80,36 @@ export function findeFehlendeInterneInhalte({ einheit, snapshots = [], systemBau
             kategorie: 1,
             schwere: 'blockiert',
             befund: 'Der KI-Inhalt dieser Seite ist noch nicht erzeugt – im Kurs bliebe die Seite leer.',
-            vorschlag: 'Oben in diesem Reiter „Fehlende erzeugen" anklicken und das Ergebnis prüfen.',
+            vorschlag: 'Hier „Jetzt erzeugen" anklicken – oder bewusst so lassen, dann baut die MBK die Seite.',
           },
         });
       }
     }
+  }
+  return treffer;
+}
+
+/**
+ * Prüft die vier festen Onboarding-Elemente der Einheit.
+ * @returns {Array<{ziel_id, ziel_titel, themenfeld_id, themenfeld_titel, kandidat}>}
+ */
+export function findeFehlendeOnboardingInhalte({ einheit }) {
+  const konfig = einheit?.onboarding_konfiguration || {};
+  const treffer = [];
+  for (const el of ONBOARDING_ELEMENTE) {
+    if (!leeresObjekt(konfig[el.key])) continue;
+    treffer.push({
+      ziel_id: `onboarding::${el.key}`,
+      ziel_titel: `Orientierung: ${el.titel}`,
+      themenfeld_id: '',
+      themenfeld_titel: '',
+      kandidat: {
+        kategorie: 1,
+        schwere: 'stoert',
+        befund: 'Dieses Orientierungs-Element ist noch nicht erzeugt und gespeichert – im Kurs bliebe die Stelle leer.',
+        vorschlag: 'Im Reiter „Arbeitspläne" unter „Orientierung & Onboarding" über die Vorschau erzeugen und speichern – oder bewusst der MBK überlassen.',
+      },
+    });
   }
   return treffer;
 }

@@ -17,7 +17,6 @@ import { PRUEF_SCHWERE } from '@/lib/pruefungKategorien';
 import PruefungFortschritt from './PruefungFortschritt';
 import PruefbefundKarte from './PruefbefundKarte';
 import BrianCheckCard from '@/components/exportcenter/BrianCheckCard';
-import InterneInhalteCard from '@/components/exportcenter/InterneInhalteCard';
 
 export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = false }) {
   const einheitId = einheit?.id;
@@ -66,12 +65,11 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
 
       <PruefungFortschritt fortschritt={fortschritt} />
 
-      {/* Zwei Vollständigkeits-Checks, die die KI-Prüfung nicht abdeckt:
-          Sind die vier Brian-Übergabefelder erzeugt, und sind die vorab per KI
-          erzeugten Seiten vorhanden? Das ÜBERTRAGEN nach Brian.study bleibt im
-          Export-Center — hier geht es nur um Vollständigkeit. */}
+      {/* Vollständigkeits-Check, den die KI-Prüfung nicht abdeckt: Sind die vier
+          Brian-Übergabefelder erzeugt? Das ÜBERTRAGEN nach Brian.study bleibt im
+          Export-Center. Fehlende KI-Inhalte werden nicht mehr zentral gesammelt,
+          sondern direkt in der jeweiligen Befund-Kachel erzeugt. */}
       <BrianCheckCard einheitId={einheitId} />
-      <InterneInhalteCard einheitId={einheitId} />
 
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">{offen} offen</Badge>
@@ -101,6 +99,7 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
                 key={b.id}
                 befund={b}
                 ziel={getBefundZiel(b, { einheitId, aufgaben })}
+                einheitId={einheitId}
                 kannBewusstSetzen={kannStarten}
                 onEntscheiden={entscheiden}
               />
