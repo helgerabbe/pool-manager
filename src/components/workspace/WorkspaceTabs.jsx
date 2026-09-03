@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot } from 'lucide-react';
+import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot, ShieldCheck } from 'lucide-react';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
@@ -190,6 +190,31 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
   });
 };
 
+// Prüfbereich — NUR für gemeinschaftliche Poolzeit-Einheiten. Hier läuft die
+// Vorprüfung auf die fünf MBK-Fehlerkategorien, deren Befunde als Taskliste
+// abgearbeitet werden.
+const PRUEFUNG_TAB = {
+  value: 'pruefung', label: 'Prüfung vor dem Export', icon: ShieldCheck, step: 8,
+  help: {
+    title: 'Prüfung vor dem Export',
+    description: 'Hier lässt du die Einheit vor dem Export durchsehen. Die Prüfung geht Lernpaket für Lernpaket, dann die allgemeinen und Projektaufgaben und schließlich die vorab per KI erzeugten Seiten durch. Was gefunden wird, landet als Taskliste in diesem Reiter — mit Sprung an die betroffene Stelle.',
+    features: [
+      'Prüfung starten mit Fortschrittsanzeige – du siehst, welches Lernpaket gerade geprüft wird',
+      'Befunde nach den fünf MBK-Fehlerkategorien, sortiert nach Schwere',
+      'Jeder Befund verlinkt an seinen Arbeitsort (Lernpaket, Aufgabenreiter oder Export-Center)',
+      'Behobenes abhaken; die nächste Prüfung bestätigt die Behebung',
+      'Leitung kann einen Befund mit Begründung bewusst stehen lassen – die Begründung reist zur MBK mit',
+    ],
+    faqs: [
+      { question: 'Blockiert die Prüfung den Export?', answer: 'Nein. Der Export bleibt jederzeit möglich. Offene Befunde erscheinen im Export-Center nur als Warnung.' },
+      { question: 'Warum verlinken manche Befunde ins Export-Center?', answer: 'Einige Seiten (z. B. Themenfeld-Einführungen) werden nicht getippt, sondern einmalig per KI erzeugt. Fehlt dieser Inhalt, ist die Seite im Kurs leer – behoben wird das im Export-Center über „Interne Inhalte erzeugen".' },
+      { question: 'Was heißt „bewusst gelassen"?', answer: 'Die Leitung kennt den Befund und lässt ihn absichtlich stehen. Die Begründung wird an die MBK weitergegeben, damit sie ihn nicht erneut meldet.' },
+      { question: 'Was bedeutet „erneut gefunden"?', answer: 'Der Befund war als behoben markiert, wurde bei der nächsten Prüfung aber wieder gefunden – die Stelle braucht noch einmal Aufmerksamkeit.' },
+    ],
+    docsSlug: 'export-workflow',
+  },
+};
+
 // Brian-Export-Tab — NUR für PRIVATE Einheiten. Bei Poolzeit-Einheiten läuft
 // der Brian-Workflow zentral im Export-Center; bei privaten Einheiten macht
 // die Lehrkraft die Übertragung nach Brian.study selbst (händisch, mit
@@ -269,6 +294,9 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
   // Übertragung nach Brian.study selbst vornimmt.
   if (istPrivat) {
     visibleTabs = [...visibleTabs, BRIAN_TAB];
+  } else if (!isBasismodul) {
+    // Gemeinschaftliche Poolzeit-Einheiten: Prüfbereich als Reiter 8.
+    visibleTabs = [...visibleTabs, PRUEFUNG_TAB];
   }
 
   if (istUebungsblock) {

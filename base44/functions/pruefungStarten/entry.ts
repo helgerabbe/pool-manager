@@ -61,6 +61,10 @@ export default async function (req) {
         id: aa.id,
         titel: aa.titel || 'Aufgabe ohne Titel',
       })),
+      // Ein Schritt für die vorab per KI erzeugten Seiten des Lernpfads
+      // (z. B. Themenfeld-Einführungen). Fehlt der Inhalt, ist die Seite im
+      // Kurs leer — der Arbeitsort ist das Export-Center.
+      { typ: 'interne_inhalte', id: einheitId, titel: 'Interne KI-Inhalte' },
     ];
 
     const jetzt = new Date().toISOString();

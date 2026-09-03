@@ -17,6 +17,7 @@ import {
   pruefeMasterMechanisch,
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
+import { findeFehlendeInterneInhalte } from '../../shared/pruefungInterneInhalte.js';
 
 export default async function (req) {
   try {
@@ -113,6 +114,30 @@ export default async function (req) {
             );
           }
         }
+      }
+    } else if (schritt.typ === 'interne_inhalte') {
+      const [snapshots, bausteine, themenfelder] = await Promise.all([
+        base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({ einheit_id: lauf.einheit_id }),
+        base44.asServiceRole.entities.SystemBausteine.list(),
+        base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: lauf.einheit_id }),
+      ]);
+      const fehlende = findeFehlendeInterneInhalte({
+        einheit,
+        snapshots: snapshots || [],
+        systemBausteine: bausteine || [],
+        themenfelder: themenfelder || [],
+      });
+      for (const f of fehlende) {
+        await merken(
+          {
+            ziel_typ: 'systembaustein',
+            ziel_id: f.ziel_id,
+            ziel_titel: f.ziel_titel,
+            themenfeld_id: f.themenfeld_id,
+            themenfeld_titel: f.themenfeld_titel,
+          },
+          [f.kandidat]
+        );
       }
     } else if (schritt.typ === 'aufgabe') {
       const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.get(schritt.id);

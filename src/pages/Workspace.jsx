@@ -25,6 +25,7 @@ import AllgemeineAufgabenView from '@/components/allgemeineAufgaben/AllgemeineAu
 import { base44 } from '@/api/base44Client';
 import ProjektaufgabenView from '@/components/projektaufgaben/ProjektaufgabenView';
 import LernpfadeCockpit from '@/components/lernpfade/LernpfadeCockpit';
+import PruefbereichTab from '@/components/pruefung/PruefbereichTab';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 import IdeenkisteButton from '@/components/ideenkiste/IdeenkisteButton';
@@ -53,7 +54,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
     ? ['einheit', 'struktur', 'lernziele', 'lernpakete']
-    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'brian'];
+    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'brian', 'pruefung'];
   // Tab-Verschmelzung (2026-07-27): Die früheren Tabs 'aktivitaeten' (4) und
   // 'aufgaben' (5) sind zum Tab 'lernpakete' vereint. Alte Deep-Links werden
   // transparent auf den neuen Tab abgebildet.
@@ -1077,6 +1078,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 <div className="flex-1 overflow-y-auto">
                   <ErrorBoundary label="Brian-Export">
                     <BrianExportCockpitView einheitId={selectedEinheitId} embedded />
+                  </ErrorBoundary>
+                </div>
+              </TabsContent>
+            )}
+
+            {/* ── Tab 8: Prüfung vor dem Export (nur gemeinschaftliche Einheiten) ── */}
+            {einheit?.sichtbarkeit !== 'privat' && !isBasismodul && (
+              <TabsContent value="pruefung" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <ErrorBoundary label="Prüfung vor dem Export">
+                    <PruefbereichTab
+                      einheit={einheit}
+                      aufgaben={allgemeineAufgabenData}
+                      kannStarten={istAdmin || istFachschaftsleitung || unitAccess.hasFullAccess}
+                    />
                   </ErrorBoundary>
                 </div>
               </TabsContent>
