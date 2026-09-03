@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { uploadFile } from '@/services/FileService';
 import { Type, BookMarked, FileUp, ImagePlus, X, Loader2, ClipboardPaste } from 'lucide-react';
+import IServHinweis from '@/components/allgemeineAufgaben/IServHinweis';
 import { toast } from 'sonner';
 
 /**
@@ -128,6 +129,7 @@ export default function ZusaetzlichesMaterialSection({
         Weitere Informationen, die zum Lösen der Aufgabe hilfreich sind (z.B. Arbeitsblatt, Tabelle,
         Buchseite).
       </p>
+      <IServHinweis />
 
       {materials.length > 0 && (
         <div className="space-y-2">

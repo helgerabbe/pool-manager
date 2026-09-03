@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import MaterialDateiFeld from '@/components/allgemeineAufgaben/MaterialDateiFeld';
 import { MATERIAL_TYPEN, MAX_UPLOAD_MB } from '@/lib/materialaufgabe';
+import IServHinweis from '@/components/allgemeineAufgaben/IServHinweis';
 
 /**
  * Editor für das Material einer Materialaufgabe: Typ wählen, Datei hochladen
@@ -69,6 +70,7 @@ export default function MaterialEditor({ material = {}, onChange, disabled = fal
             placeholder="https://…"
             disabled={disabled}
           />
+          <IServHinweis />
         </div>
       )}
 

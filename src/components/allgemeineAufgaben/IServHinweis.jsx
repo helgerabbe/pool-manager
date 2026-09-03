@@ -3,7 +3,7 @@
  *
  * Rückmeldung der MBK (2026-09-03): Arbeitsblätter wurden mehrfach als
  * IServ-Link eingetragen. Schüler kommen an IServ-Ordner von Lehrkräften
- * nicht heran – die Aufgabe ist dann für sie nicht bearbeitbar.
+ * nicht heran – die Aufgabe ist für sie dann nicht bearbeitbar.
  */
 
 import React from 'react';
