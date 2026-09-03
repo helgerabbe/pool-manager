@@ -10,7 +10,7 @@
 import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, ShieldCheck, Loader2 } from 'lucide-react';
+import { Play, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
 import { usePruefbefunde, usePruefungLauf } from '@/hooks/usePruefung';
 import { getBefundZiel, gruppiereBefunde } from '@/lib/pruefungZiele';
 import { PRUEF_SCHWERE } from '@/lib/pruefungKategorien';
@@ -44,14 +44,21 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
             Die Prüfung geht alle Lernpakete, Aufgaben und die vorab erzeugten KI-Seiten dieser
-            Einheit durch und sammelt, was im Kurs später Probleme machen würde.
+            Einheit durch und sammelt, was im Kurs später Probleme machen würde. Die Schnellprüfung
+            findet Leerstellen und Platzhalter; die KI-Durchsicht liest zusätzlich mit und meldet
+            unklare Aufträge, fehlende Erwartungshorizonte und schwer verständliche Materialien.
           </p>
         </div>
         {kannStarten && (
-          <Button onClick={starten} disabled={laeuft}>
-            {laeuft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-            Prüfung starten
-          </Button>
+          <div className="flex flex-col gap-2 items-end">
+            <Button onClick={() => starten({ mitKI: false })} disabled={laeuft}>
+              {laeuft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+              Schnellprüfung
+            </Button>
+            <Button variant="outline" onClick={() => starten({ mitKI: true })} disabled={laeuft}>
+              <Sparkles className="w-4 h-4" /> Prüfung mit KI-Durchsicht
+            </Button>
+          </div>
         )}
       </div>
 

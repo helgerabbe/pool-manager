@@ -25,12 +25,15 @@ export function usePruefungLauf(einheitId) {
   const [laeuft, setLaeuft] = useState(false);
   const [fortschritt, setFortschritt] = useState(null); // { erledigt, gesamt, schritt }
 
-  const starten = useCallback(async () => {
+  const starten = useCallback(async ({ mitKI = false } = {}) => {
     if (!einheitId || laeuft) return;
     setLaeuft(true);
     setFortschritt({ erledigt: 0, gesamt: 1, schritt: 'Prüfung wird vorbereitet …' });
     try {
-      const res = await invokeFunction('pruefungStarten', { einheit_id: einheitId });
+      const res = await invokeFunction('pruefungStarten', {
+        einheit_id: einheitId,
+        stufen: mitKI ? ['regel', 'ki'] : ['regel'],
+      });
       const { prueflauf_id, schritte = [] } = res.data || {};
       setFortschritt({ erledigt: 0, gesamt: schritte.length || 1, schritt: 'Start …' });
 

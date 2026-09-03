@@ -18,6 +18,8 @@ import {
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
 import { findeFehlendeInterneInhalte } from '../../shared/pruefungInterneInhalte.js';
+import { getAnthropicConfig } from '../../shared/anthropicClient.js';
+import { pruefeStellenMitKI, beschreibeFeldwerte } from '../../shared/pruefungKI.js';
 
 export default async function (req) {
   try {
@@ -47,6 +49,17 @@ export default async function (req) {
 
     let gefunden = 0;
     let erneut = 0;
+    // Prüfstufe B: gelesene Stellen sammeln und am Ende des Schritts in EINEM
+    // KI-Aufruf inhaltlich durchsehen (Kategorien 2–5).
+    const kiAktiv = Array.isArray(lauf.stufen) && lauf.stufen.includes('ki');
+    const kiStellen = [];
+    const kiZiele = new Map();
+    const fuerKI = (ziel, art, inhalt) => {
+      if (!kiAktiv || !inhalt) return;
+      const ref = `${ziel.ziel_typ}:${ziel.ziel_id}`;
+      kiZiele.set(ref, ziel);
+      kiStellen.push({ ref, art, titel: ziel.ziel_titel || '', inhalt });
+    };
 
     const merken = async (ziel, kandidaten) => {
       if (!kandidaten || kandidaten.length === 0) return;
@@ -97,21 +110,19 @@ export default async function (req) {
           // Masterfähige Aktivitäten tragen ihre Inhalte in den Varianten —
           // dann wird die Aktivität selbst nicht auf leere Felder geprüft.
           if (varianten.length === 0) {
-            await merken(
-              { ...kontext, ziel_typ: 'aktivitaet', ziel_id: a.id, ziel_titel: k?.name || 'Aufgabe' },
-              pruefeAktivitaetMechanisch(a, k)
-            );
+            const ziel = { ...kontext, ziel_typ: 'aktivitaet', ziel_id: a.id, ziel_titel: k?.name || 'Aufgabe' };
+            await merken(ziel, pruefeAktivitaetMechanisch(a, k));
+            fuerKI(ziel, k?.name || 'Aufgabe', beschreibeFeldwerte(a.field_values));
           }
           for (const m of varianten) {
-            await merken(
-              {
-                ...kontext,
-                ziel_typ: 'master_aufgabe',
-                ziel_id: m.id,
-                ziel_titel: `${k?.name || 'Aufgabe'} – ${m.titel || 'Variante'}`,
-              },
-              pruefeMasterMechanisch(m, k)
-            );
+            const ziel = {
+              ...kontext,
+              ziel_typ: 'master_aufgabe',
+              ziel_id: m.id,
+              ziel_titel: `${k?.name || 'Aufgabe'} – ${m.titel || 'Variante'}`,
+            };
+            await merken(ziel, pruefeMasterMechanisch(m, k));
+            fuerKI(ziel, k?.name || 'Aufgabe', beschreibeFeldwerte(m.field_values));
           }
         }
       }
@@ -145,16 +156,57 @@ export default async function (req) {
         const themenfeld = aufgabe.themenfeld_id
           ? await base44.asServiceRole.entities.Themenfeld.get(aufgabe.themenfeld_id).catch(() => null)
           : null;
-        await merken(
-          {
-            ziel_typ: 'allgemeine_aufgabe',
-            ziel_id: aufgabe.id,
-            ziel_titel: aufgabe.titel || 'Aufgabe ohne Titel',
-            themenfeld_id: aufgabe.themenfeld_id || '',
-            themenfeld_titel: themenfeld?.titel || '',
-          },
-          pruefeAllgemeineAufgabeMechanisch(aufgabe)
+        const ziel = {
+          ziel_typ: 'allgemeine_aufgabe',
+          ziel_id: aufgabe.id,
+          ziel_titel: aufgabe.titel || 'Aufgabe ohne Titel',
+          themenfeld_id: aufgabe.themenfeld_id || '',
+          themenfeld_titel: themenfeld?.titel || '',
+        };
+        await merken(ziel, pruefeAllgemeineAufgabeMechanisch(aufgabe));
+        fuerKI(
+          ziel,
+          `Allgemeine Aufgabe (${aufgabe.anforderungsebene || 'Ebene 1'})`,
+          beschreibeFeldwerte({
+            aufgabenstellung: aufgabe.aufgabenstellung,
+            erwartungshorizont: aufgabe.erwartungshorizont,
+            musterloesung: aufgabe.musterloesung,
+            hinweise_zum_material: aufgabe.hinweise_zum_material,
+            materialien: aufgabe.materialien,
+            sequenz_schritte: aufgabe.sequenz_schritte,
+            output_formats: aufgabe.output_formats,
+            rubric_criteria: aufgabe.rubric_criteria,
+          })
         );
+      }
+    }
+
+    // ── Prüfstufe B: inhaltliche Durchsicht durch die KI ──────────────────
+    let kiFehler = null;
+    if (kiAktiv && kiStellen.length > 0) {
+      try {
+        const cfg = await getAnthropicConfig(base44);
+        const treffer = await pruefeStellenMitKI(cfg, kiStellen);
+        const nachher = await ladeBefunde(base44, lauf.einheit_id);
+        for (const [ref, kandidaten] of treffer) {
+          const ziel = kiZiele.get(ref);
+          if (!ziel) continue;
+          const res = await speichereBefunde(base44, {
+            einheitId: lauf.einheit_id,
+            prueflaufId,
+            ziel,
+            kandidaten,
+            vorhandene: nachher,
+            quelle: 'ki',
+            jetzt,
+          });
+          gefunden += res.fingerprints.length;
+          erneut += res.erneut;
+        }
+      } catch (e) {
+        // Die mechanischen Befunde dieses Schritts bleiben erhalten — die
+        // KI-Durchsicht ist eine Ergänzung, kein Muss.
+        kiFehler = e.message;
       }
     }
 
@@ -164,7 +216,7 @@ export default async function (req) {
       aktueller_schritt: `${schritt.titel || schritt.typ} (${erledigt} von ${lauf.schritte_gesamt || erledigt})`,
     });
 
-    return Response.json({ ok: true, schritte_erledigt: erledigt, gefunden, erneut });
+    return Response.json({ ok: true, schritte_erledigt: erledigt, gefunden, erneut, ki_fehler: kiFehler });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
