@@ -17,7 +17,11 @@ import {
   pruefeMasterMechanisch,
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
-import { findeFehlendeInterneInhalte, findeFehlendeOnboardingInhalte } from '../../shared/pruefungInterneInhalte.js';
+import {
+  findeFehlendeInterneInhalte,
+  findeFehlendeOnboardingInhalte,
+  findeUngesichteteInterneInhalte,
+} from '../../shared/pruefungInterneInhalte.js';
 import { findeVerwaisteZuordnungen } from '../../shared/pruefungZuordnung.js';
 import { getAnthropicConfig } from '../../shared/anthropicClient.js';
 import { pruefeStellenMitKI, beschreibeFeldwerte } from '../../shared/pruefungKI.js';
@@ -141,6 +145,13 @@ export default async function (req) {
           themenfelder: themenfelder || [],
         }),
         ...findeFehlendeOnboardingInhalte({ einheit }),
+        // Vorhanden, aber von keiner Lehrkraft gelesen — der Kern der
+        // MBK-Meldung vom 2026-09-01.
+        ...findeUngesichteteInterneInhalte({
+          snapshots: snapshots || [],
+          systemBausteine: bausteine || [],
+          themenfelder: themenfelder || [],
+        }),
       ];
       for (const f of fehlende) {
         await merken(

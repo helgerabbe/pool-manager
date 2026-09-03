@@ -197,6 +197,10 @@ Deno.serve(async (req) => {
             inhalt,
             generiert_am: now,
             generiert_von: 'export_center',
+            // Neuer Text = neu zu sichten. Sonst gälte ein frisch erzeugter
+            // KI-Text als von der Lehrkraft geprüft, nur weil der alte es war.
+            gesichtet_am: null,
+            gesichtet_von: null,
           });
         } else {
           await base44.asServiceRole.entities.SchuelerInhaltSnapshot.create({

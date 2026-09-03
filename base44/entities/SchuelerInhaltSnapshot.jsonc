@@ -1,7 +1,7 @@
 {
   "name": "SchuelerInhaltSnapshot",
   "type": "object",
-  "description": "Single Source of Truth f\u00fcr die einmalig KI-generierten, sch\u00fclergerechten Inhalte aller KI-Bausteine der App. Zwei Geltungsbereiche (Feld `geltungsbereich`): (a) 'pfad_instanz' = Inhalt einer konkreten Lernpfad-Baustein-Instanz, eindeutig pro (einheit_id, lerntyp, instance_id) \u2013 z. B. \u201eEinf\u00fchrung in das Themenfeld\"; (b) 'einheit' = einheits-globaler Inhalt, der VOR der Dashboard-Wahl gilt (kein Lerntyp, keine instance_id), eindeutig pro (einheit_id, baustein_id) \u2013 z. B. die vier Onboarding-Elemente (onboarding_einfuehrung, onboarding_fragenblock, onboarding_einstiegsdiagnose, onboarding_lerntyp_diagnose). Die Existenz eines Snapshots IST das \u201eschon generiert\"-Flag \u2013 kein separates Flag n\u00f6tig. Geschrieben wird hier (a) im Lehrer-Tool nach \u201eVorschau \u2192 \u00dcbernehmen\", (b) beim Export-Center-Trigger \u201eInterne Inhalte erzeugen\", (c) \u00fcbergangsweise durch den Sch\u00fcler-Button. Die Sch\u00fcleransicht liest ausschlie\u00dflich (schnell) aus dieser Entity. Snapshots k\u00f6nnen jederzeit \u00fcberschrieben werden (Upsert).",
+  "description": "Single Source of Truth f\u00fcr die einmalig KI-generierten, sch\u00fclergerechten Inhalte aller KI-Bausteine der App. Zwei Geltungsbereiche (Feld `geltungsbereich`): (a) 'pfad_instanz' = Inhalt einer konkreten Lernpfad-Baustein-Instanz, eindeutig pro (einheit_id, lerntyp, instance_id) \u2013 z. B. \u201eEinf\u00fchrung in das Themenfeld\"; (b) 'einheit' = einheits-globaler Inhalt, der VOR der Dashboard-Wahl gilt (kein Lerntyp, keine instance_id), eindeutig pro (einheit_id, baustein_id) \u2013 z. B. die vier Onboarding-Elemente (onboarding_einfuehrung, onboarding_fragenblock, onboarding_einstiegsdiagnose, onboarding_lerntyp_diagnose). Die Existenz eines Snapshots IST das \u201eschon generiert\"-Flag \u2013 kein separates Flag n\u00f6tig. Geschrieben wird hier (a) im Lehrer-Tool nach \u201eVorschau \u2192 \u00dcbernehmen\", (b) beim Trigger \u201eJetzt erzeugen\" in der Vollst\u00e4ndigkeitspr\u00fcfung, (c) \u00fcbergangsweise durch den Sch\u00fcler-Button. Die Sch\u00fcleransicht liest ausschlie\u00dflich (schnell) aus dieser Entity. Snapshots k\u00f6nnen jederzeit \u00fcberschrieben werden (Upsert).\n\nSICHTUNG (2026-09-03, nach MBK-Meldung \u201eDer Export schreibt mit\"): Diese Inhalte hat ein Sprachmodell geschrieben, nicht die Lehrkraft \u2013 sie landeten bisher ungesehen im Kurs. Deshalb tragen Snapshots jetzt `gesichtet_am`/`gesichtet_von`. Solange das leer ist, gilt der Inhalt als ungesichtet und wird in der Vollst\u00e4ndigkeitspr\u00fcfung (Reiter 8) als Befund gemeldet. Jede erneute Generierung setzt die Sichtung zur\u00fcck \u2013 ein neuer Text ist ein neuer Text.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -51,6 +51,15 @@
     "generiert_von": {
       "type": "string",
       "description": "E-Mail der Person bzw. 'export_center' / 'schueler_trigger', die den Snapshot zuletzt erzeugt hat (Audit)."
+    },
+    "gesichtet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Sichtung (2026-09-03): Zeitpunkt, zu dem eine Lehrkraft diesen KI-Text angesehen und best\u00e4tigt hat. Leer = ungesichtet; die Vollst\u00e4ndigkeitspr\u00fcfung meldet die Stelle dann als Befund. Wird bei jeder erneuten Generierung geleert."
+    },
+    "gesichtet_von": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die die Sichtung best\u00e4tigt hat."
     }
   },
   "required": [

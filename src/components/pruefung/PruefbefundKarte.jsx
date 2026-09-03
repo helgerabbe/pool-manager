@@ -15,6 +15,7 @@ import { ArrowRight, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PRUEF_SCHWERE, getKategorieLabel } from '@/lib/pruefungKategorien';
 import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
+import InhaltGesichtetButton from './InhaltGesichtetButton';
 
 const BEWUSST_PLACEHOLDER =
   'Warum bleibt das so? Die Begründung wird an die MBK weitergegeben.';
@@ -26,7 +27,13 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
   const erledigt = befund.entscheidung !== 'offen';
   // Vorab erzeugbarer KI-Inhalt: direkt hier erzeugbar (Onboarding-Elemente
   // entstehen dagegen über die Vorschau im Reiter „Arbeitspläne").
+  // Ungesichteter KI-Text: `sicht::<snapshotId>` — hier wird bestätigt, nicht erzeugt.
+  const sichtungsZiel = befund.ziel_typ === 'systembaustein'
+    && String(befund.ziel_id || '').startsWith('sicht::')
+    ? String(befund.ziel_id).slice('sicht::'.length)
+    : null;
   const direktErzeugbar = befund.ziel_typ === 'systembaustein'
+    && !sichtungsZiel
     && !String(befund.ziel_id || '').startsWith('onboarding::');
 
   return (
@@ -56,6 +63,12 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         )}
         {befund.entscheidung === 'offen' ? (
           <>
+            {sichtungsZiel && (
+              <InhaltGesichtetButton
+                snapshotId={sichtungsZiel}
+                onGesichtet={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
+              />
+            )}
             {direktErzeugbar && (
               <InternenInhaltErzeugenButton
                 einheitId={einheitId}
@@ -63,7 +76,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
                 onErzeugt={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
               />
             )}
-            <Button size="sm" variant={direktErzeugbar ? 'outline' : 'default'} onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}>
+            <Button size="sm" variant={direktErzeugbar || sichtungsZiel ? 'outline' : 'default'} onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}>
               <Check className="w-3.5 h-3.5" /> Behoben
             </Button>
             {kannBewusstSetzen && (

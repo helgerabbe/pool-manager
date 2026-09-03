@@ -13,6 +13,14 @@ export function getBefundZiel(befund, { einheitId, aufgaben = [] }) {
   if (!befund) return null;
 
   if (befund.ziel_typ === 'systembaustein') {
+    // Ungesichteter KI-Text: Angesehen wird er in der Vorschau des Bausteins
+    // im Reiter „Arbeitspläne"; bestätigt wird direkt in der Befund-Kachel.
+    if (String(befund.ziel_id || '').startsWith('sicht::')) {
+      return {
+        href: `/workspace?einheit=${einheitId}&tab=dashboards`,
+        label: 'Text ansehen (Arbeitspläne)',
+      };
+    }
     // Onboarding-Elemente werden im Reiter „Arbeitspläne" erzeugt und
     // gespeichert. Vorab erzeugbare Seiten (Snapshots) brauchen keinen Link —
     // sie werden direkt in der Befund-Kachel erzeugt.

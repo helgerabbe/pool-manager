@@ -90,6 +90,44 @@ export function findeFehlendeInterneInhalte({ einheit, snapshots = [], systemBau
 }
 
 /**
+ * Sichtungspflicht (2026-09-03, MBK-Meldung „Der Export schreibt mit").
+ *
+ * Ein vorhandener KI-Inhalt ist noch kein geprüfter KI-Inhalt: In allen von
+ * der MBK gemeldeten Fällen stand ein Modelltext im Kurs, den die Fachkraft
+ * nie gelesen hatte („Wir wissen nicht, was damit gemeint ist"). Deshalb gilt
+ * ein Snapshot erst als in Ordnung, wenn ihn jemand angesehen und bestätigt
+ * hat (gesichtet_am).
+ *
+ * Eigener ziel_id-Raum (`sicht::…`), damit dieser Befund nicht mit dem
+ * „Inhalt fehlt"-Befund derselben Stelle kollidiert — beide haben Kategorie 1,
+ * meinen aber Verschiedenes.
+ */
+export function findeUngesichteteInterneInhalte({ snapshots = [], systemBausteine = [], themenfelder = [] }) {
+  const bausteinById = new Map((systemBausteine || []).map((b) => [b.baustein_id, b]));
+  const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
+
+  return (snapshots || [])
+    .filter((s) => !leeresObjekt(s.inhalt) && !s.gesichtet_am)
+    .map((s) => {
+      const titel = bausteinById.get(s.baustein_id)?.titel || s.baustein_id;
+      const themenfeldTitel = s.themenfeld_id ? (themenfeldById.get(s.themenfeld_id)?.titel || '') : '';
+      const zusatz = [themenfeldTitel, s.lerntyp].filter(Boolean).join(', ');
+      return {
+        ziel_id: `sicht::${s.id}`,
+        ziel_titel: zusatz ? `${titel} (${zusatz})` : titel,
+        themenfeld_id: s.themenfeld_id || '',
+        themenfeld_titel: themenfeldTitel,
+        kandidat: {
+          kategorie: 1,
+          schwere: 'stoert',
+          befund: 'Diesen Text hat die KI geschrieben – er ist noch von keiner Lehrkraft angesehen worden, würde aber so im Kurs stehen.',
+          vorschlag: 'Text ansehen und mit „Angesehen & bestätigt" abhaken – oder neu erzeugen, wenn er nicht passt.',
+        },
+      };
+    });
+}
+
+/**
  * Prüft die vier festen Onboarding-Elemente der Einheit.
  * @returns {Array<{ziel_id, ziel_titel, themenfeld_id, themenfeld_titel, kandidat}>}
  */
