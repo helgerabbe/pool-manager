@@ -11,7 +11,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle, ExternalLink } from 'lucide-react';
 import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
 import BrianAnleitungPanel from '@/components/export/BrianAnleitungPanel';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
@@ -58,6 +58,11 @@ function DialogCard({ dialog, onMarkAsSynced }) {
   const isSynced = dialog.sync_status === 'synced';
   const isReady = dialog.bereit;
   const modifiedSinceExport = istVeraltet(dialog);
+
+  // Direkter Weg zur Aufgabe: neuer Tab, damit das Export-Center offen bleibt.
+  const aufgabeLink = aufgabe?.einheit_id
+    ? `/workspace?einheit=${aufgabe.einheit_id}&tab=${aufgabe.anforderungsebene === '3 - Projekt' ? 'ebene3' : 'ebene2'}`
+    : null;
 
   const ebeneLabel = aufgabe.anforderungsebene === '3 - Projekt'
     ? '🎯 Ebene 3'
@@ -140,7 +145,20 @@ function DialogCard({ dialog, onMarkAsSynced }) {
                 Nicht alle vier Felder sind gefüllt.{' '}
                 {dialog.schrittId
                   ? 'Im Schritt-Fenster dieses Gesprächs im Reiter „Brian-Felder" erzeugen.'
-                  : 'Bitte im KI-Tutor-Prompt-Tab generieren oder ausfüllen.'}
+                  : 'Im KI-Tutor-Prompt-Tab der Aufgabe generieren oder ausfüllen.'}
+                {aufgabeLink && (
+                  <>
+                    {' '}
+                    <a
+                      href={aufgabeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-semibold underline"
+                    >
+                      Aufgabe öffnen <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </>
+                )}
               </span>
             </div>
           )}
