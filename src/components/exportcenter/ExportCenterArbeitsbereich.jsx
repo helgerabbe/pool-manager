@@ -14,6 +14,7 @@ import MBKPromptGeneratorPanel from '@/components/export/MBKPromptGeneratorPanel
 import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
 import AirGapPayloadDownloadCard from '@/components/exportcenter/AirGapPayloadDownloadCard';
 import GitHubExportCard from '@/components/exportcenter/GitHubExportCard';
+import PruefungWarnungCard from '@/components/exportcenter/PruefungWarnungCard';
 
 export default function ExportCenterArbeitsbereich({ einheitId }) {
   const { data: einheit, isLoading } = useQuery({
@@ -47,6 +48,7 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-4">
+      <PruefungWarnungCard einheitId={einheitId} />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
       <GitHubExportCard einheitId={einheitId} />
       <AirGapPayloadDownloadCard einheitId={einheitId} />
