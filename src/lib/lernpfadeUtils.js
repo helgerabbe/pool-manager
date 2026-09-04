@@ -865,8 +865,11 @@ export function getAutoFillCandidates({
 
   if (bundleKind === 'lernpakete') {
     if (!themenfeldId) return [];
+    // MBK-Hinweis 2026-09-04: Die Bündel-Reihenfolge muss der Reihenfolge im
+    // Themenfeld (reihenfolge_nummer) folgen – nicht der Ladereihenfolge.
     return lernpakete
       .filter((lp) => lp.themenfeld_id === themenfeldId && !usedAufgabenIds.has(lp.id))
+      .sort((a, b) => (a.reihenfolge_nummer ?? 9999) - (b.reihenfolge_nummer ?? 9999))
       .map((lp) => lp.id);
   }
 
@@ -1021,4 +1024,3 @@ export function moveItemAbsolute(
   });
   return setSektoren(konfig, lernTyp, next);
 }
-
