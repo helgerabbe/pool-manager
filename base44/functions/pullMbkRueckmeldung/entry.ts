@@ -53,22 +53,37 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     return { einheit_id: einheit.id, slug, gefunden: false, hinweis: `${datei.path} ist leer.` };
   }
 
-  const { meta, befunde, externe, warnungen } = parseRueckmeldung(roh, datei.path);
+  const { meta, befunde, externe, warnungen, uebersprungen } = parseRueckmeldung(roh, datei.path);
 
   // Zuordnung im Pool-Manager: nur so kann die Taskliste später verlinken.
-  const [lernpakete, aufgaben, vorhandene, vorhandeneTodos] = await Promise.all([
+  // Die MBK nennt eine ID, ohne zu sagen, was sie bezeichnet — deshalb werden
+  // Lernpakete, Aufgaben, Aktivitäten und Themenfelder zum Abgleich geladen.
+  const [lernpakete, aufgaben, themenfelder, vorhandene, vorhandeneTodos] = await Promise.all([
     base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheit.id }),
     base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheit.id }),
+    base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheit.id }),
     base44.asServiceRole.entities.Pruefbefund.filter({ einheit_id: einheit.id, quelle: 'mbk' }),
     base44.asServiceRole.entities.MbkAdminTodo.filter({ einheit_id: einheit.id }),
   ]);
+
+  const paketIds = (lernpakete || []).map((p) => p.id);
+  const aktivitaeten = paketIds.length > 0
+    ? await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({
+        lernpaket_id: { $in: paketIds },
+      })
+    : [];
 
   const bekannt = new Map((vorhandene || []).map((b) => [b.fingerprint, b]));
   const neueBefunde = [];
   const befundUpdates = [];
 
   for (const rohBefund of befunde) {
-    const zugeordnet = ordneBefundZu(rohBefund, { lernpakete: lernpakete || [], aufgaben: aufgaben || [] });
+    const zugeordnet = ordneBefundZu(rohBefund, {
+      lernpakete: lernpakete || [],
+      aufgaben: aufgaben || [],
+      aktivitaeten: aktivitaeten || [],
+      themenfelder: themenfelder || [],
+    });
     const fingerprint = buildMbkFingerprint(zugeordnet.mbk_id);
     const daten = {
       einheit_id: einheit.id,
@@ -78,6 +93,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       ziel_titel: zugeordnet.ziel_titel,
       lernpaket_id: zugeordnet.lernpaket_id,
       lernpaket_titel: zugeordnet.lernpaket_titel,
+      themenfeld_id: zugeordnet.themenfeld_id || '',
       themenfeld_titel: zugeordnet.themenfeld_titel || '',
       kategorie: zugeordnet.kategorie,
       schwere: zugeordnet.schwere,
@@ -145,6 +161,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     gefunden: true,
     quelldatei: datei.path,
     gemeldet_am: meta.erzeugt_am,
+    // Vom Bau selbst als geklärt markierte Punkte (bewusst exportiert/erledigt).
+    uebersprungen,
     befunde_neu: neueBefunde.length,
     befunde_aktualisiert: befundUpdates.length,
     admin_punkte_neu: neueTodos.length,
