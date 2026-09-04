@@ -19,9 +19,14 @@ export const PRUEF_KATEGORIEN = Object.freeze({
   // Solche Reste reisen unbemerkt im Export mit, und der Bau kann sie nirgends
   // einhängen.
   6: { label: 'Keinem Themenfeld zugeordnet', kurz: 'Zuordnung' },
+  // Kategorie 7 entsteht nur beim Abholen der MBK-Rückmeldung (2026-09-04):
+  // Der Bau hat etwas gemeldet, das sich keiner der sechs Kategorien zuordnen
+  // lässt. Bewusst NICHT von einer KI geraten — eine falsche Kategorie führt
+  // die Lehrkraft in die Irre, eine offene nicht.
+  7: { label: 'Von der MBK gemeldet, ohne Kategorie', kurz: 'MBK' },
 });
 
-export const PRUEF_KATEGORIE_NUMMERN = Object.freeze([1, 2, 3, 4, 5, 6]);
+export const PRUEF_KATEGORIE_NUMMERN = Object.freeze([1, 2, 3, 4, 5, 6, 7]);
 
 export const PRUEF_SCHWERE = Object.freeze({
   blockiert: { label: 'Blockiert', cls: 'bg-red-100 text-red-800 border-red-300', rang: 0 },

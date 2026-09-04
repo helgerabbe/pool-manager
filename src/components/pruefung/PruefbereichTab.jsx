@@ -1,112 +1,87 @@
 /**
  * PruefbereichTab — Reiter 8: Export-Vorprüfung mit Taskliste.
  *
- * Die Leitung startet hier die Prüfung; sie geht Lernpaket für Lernpaket
- * durch (Fortschrittsbalken) und listet die Befunde nach den fünf
- * MBK-Fehlerkategorien auf. Jeder Befund verlinkt an seinen Arbeitsort und
- * lässt sich als behoben oder — durch die Leitung, mit Begründung — als
- * bewusst gelassen markieren.
+ * Zwei Herkünfte, zwei Reiter (2026-09-04):
+ *   · Interne Prüfung    — die eigene Prüfung der Schule (Regeln + KI).
+ *   · Rückmeldung der MBK — was der Kursbau nach dem Export zurückmeldet.
+ *
+ * Getrennt, weil sonst genau das passiert, was die Liste unbrauchbar macht:
+ * Der Bau findet größtenteils dieselben Stellen, und beide Listen zusammen
+ * ergäben eine Taskliste voller Dubletten. Der Abgleich ist deshalb ein
+ * bewusster Schritt im MBK-Reiter, keine stille Automatik.
  */
-import React, { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
-import { Play, ShieldCheck, Loader2, Sparkles } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShieldCheck } from 'lucide-react';
 import { usePruefbefunde, usePruefungLauf } from '@/hooks/usePruefung';
-import { getBefundZiel, gruppiereBefunde } from '@/lib/pruefungZiele';
-import { PRUEF_SCHWERE } from '@/lib/pruefungKategorien';
-import PruefungFortschritt from './PruefungFortschritt';
-import PruefbefundKarte from './PruefbefundKarte';
-import BrianCheckCard from '@/components/exportcenter/BrianCheckCard';
+import InternePruefungReiter from './InternePruefungReiter';
+import MbkBefundeReiter from './MbkBefundeReiter';
 
 export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = false }) {
   const einheitId = einheit?.id;
-  const { data: befunde = [], isLoading } = usePruefbefunde(einheitId);
+  const { data: alleBefunde = [], isLoading } = usePruefbefunde(einheitId);
   const { laeuft, fortschritt, starten, entscheiden } = usePruefungLauf(einheitId);
-  const [nurOffen, setNurOffen] = useState(true);
 
-  const sichtbar = useMemo(() => {
-    const liste = nurOffen ? befunde.filter((b) => b.entscheidung === 'offen') : befunde;
-    return [...liste].sort(
-      (a, b) => (PRUEF_SCHWERE[a.schwere]?.rang ?? 9) - (PRUEF_SCHWERE[b.schwere]?.rang ?? 9)
-    );
-  }, [befunde, nurOffen]);
+  const { data: me } = useQuery({ queryKey: ['aktuellerNutzer'], queryFn: () => base44.auth.me() });
+  const istAdmin = me?.role === 'admin';
 
-  const gruppen = useMemo(() => gruppiereBefunde(sichtbar), [sichtbar]);
-  const offen = befunde.filter((b) => b.entscheidung === 'offen').length;
-  const behoben = befunde.filter((b) => b.entscheidung === 'behoben').length;
-  const bewusst = befunde.filter((b) => b.entscheidung === 'bewusst').length;
+  const interneBefunde = alleBefunde.filter((b) => (b.quelle || 'regel') !== 'mbk');
+  const mbkOffen = alleBefunde.filter(
+    (b) => b.quelle === 'mbk' && (b.entscheidung || 'offen') === 'offen' && b.dublette_status !== 'dublette'
+  ).length;
 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-4xl">
-      <div className="flex items-start gap-3 flex-wrap">
-        <div className="flex-1 min-w-[240px]">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
-          </h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Die Prüfung geht alle Lernpakete, Aufgaben und die vorab erzeugten KI-Seiten dieser
-            Einheit durch und sammelt, was im Kurs später Probleme machen würde. Die Schnellprüfung
-            findet Leerstellen und Platzhalter; die KI-Durchsicht liest zusätzlich mit und meldet
-            unklare Aufträge, fehlende Erwartungshorizonte und schwer verständliche Materialien.
-          </p>
-        </div>
-        {kannStarten && (
-          <div className="flex flex-col gap-2 items-end">
-            <Button onClick={() => starten({ mitKI: false })} disabled={laeuft}>
-              {laeuft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Schnellprüfung
-            </Button>
-            <Button variant="outline" onClick={() => starten({ mitKI: true })} disabled={laeuft}>
-              <Sparkles className="w-4 h-4" /> Prüfung mit KI-Durchsicht
-            </Button>
-          </div>
-        )}
+      <div>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Hier läuft zusammen, was vor der Veröffentlichung noch zu klären ist – die eigene Prüfung
+          der Schule und die Rückmeldung des Kursbaus.
+        </p>
       </div>
 
-      <PruefungFortschritt fortschritt={fortschritt} />
+      <Tabs defaultValue="intern">
+        <TabsList>
+          <TabsTrigger value="intern">Interne Prüfung</TabsTrigger>
+          <TabsTrigger value="mbk" className="gap-2">
+            Rückmeldung der MBK
+            {mbkOffen > 0 && (
+              <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">
+                {mbkOffen}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Vollständigkeits-Check, den die KI-Prüfung nicht abdeckt: Sind die vier
-          Brian-Übergabefelder erzeugt? Das ÜBERTRAGEN nach Brian.study bleibt im
-          Export-Center. Fehlende KI-Inhalte werden nicht mehr zentral gesammelt,
-          sondern direkt in der jeweiligen Befund-Kachel erzeugt. */}
-      <BrianCheckCard einheitId={einheitId} />
+        <TabsContent value="intern" className="mt-4">
+          <InternePruefungReiter
+            einheitId={einheitId}
+            befunde={interneBefunde}
+            isLoading={isLoading}
+            aufgaben={aufgaben}
+            kannStarten={kannStarten}
+            laeuft={laeuft}
+            fortschritt={fortschritt}
+            onStarten={starten}
+            onEntscheiden={entscheiden}
+          />
+        </TabsContent>
 
-      <div className="flex items-center gap-2 flex-wrap">
-        <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">{offen} offen</Badge>
-        <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">{behoben} behoben</Badge>
-        <Badge variant="outline" className="bg-violet-50 text-violet-800 border-violet-200">{bewusst} bewusst gelassen</Badge>
-        <Button size="sm" variant="ghost" onClick={() => setNurOffen((v) => !v)}>
-          {nurOffen ? 'Alle Befunde zeigen' : 'Nur offene zeigen'}
-        </Button>
-      </div>
-
-      {isLoading ? (
-        <p className="text-sm text-muted-foreground">Befunde werden geladen …</p>
-      ) : gruppen.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          {befunde.length === 0
-            ? 'Noch keine Prüfung gelaufen. Starte die Prüfung, um den Stand dieser Einheit zu sehen.'
-            : 'Keine offenen Befunde – alles abgearbeitet.'}
-        </div>
-      ) : (
-        gruppen.map((g) => (
-          <div key={g.key} className="space-y-2">
-            <h3 className="text-sm font-semibold text-muted-foreground">
-              {g.titel} <span className="font-normal">({g.befunde.length})</span>
-            </h3>
-            {g.befunde.map((b) => (
-              <PruefbefundKarte
-                key={b.id}
-                befund={b}
-                ziel={getBefundZiel(b, { einheitId, aufgaben })}
-                einheitId={einheitId}
-                kannBewusstSetzen={kannStarten}
-                onEntscheiden={entscheiden}
-              />
-            ))}
-          </div>
-        ))
-      )}
+        <TabsContent value="mbk" className="mt-4">
+          <MbkBefundeReiter
+            einheitId={einheitId}
+            aufgaben={aufgaben}
+            kannStarten={kannStarten}
+            istAdmin={istAdmin}
+            onEntscheiden={entscheiden}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -1,0 +1,99 @@
+{
+  "name": "MbkAdminTodo",
+  "type": "object",
+  "description": "MBK-R\u00fcckmeldung, Teil 2 (2026-09-04): Punkte, die der Bau NICHT an eine Stelle im Pool-Manager meldet, sondern an die Administration \u2014 z. B. \u201esechs Moodle-Abgaben anlegen\" oder \u201edrei KI-Prompts einspielen\". Solche Punkte geh\u00f6ren bewusst NICHT in die Lehrkraft-Taskliste (Pruefbefund): dort w\u00fcrden sie die Liste aufbl\u00e4hen, ohne dass die Lehrkraft sie beheben k\u00f6nnte. Sie werden beim Abholen der R\u00fcckmeldung (pullMbkRueckmeldung) angelegt und \u00fcber `mbk_id` wiedererkannt, damit ein erneutes Abholen sie nicht dupliziert.",
+  "properties": {
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur Einheit, zu der die R\u00fcckmeldung geh\u00f6rt."
+    },
+    "einheit_titel": {
+      "type": "string",
+      "description": "Denormalisierter Einheiten-Titel f\u00fcr die Admin-\u00dcbersicht."
+    },
+    "kurs_slug": {
+      "type": "string",
+      "description": "Ordnername des Kurses im Repository (kurse/<slug>/)."
+    },
+    "mbk_id": {
+      "type": "string",
+      "description": "Stabile Kennung des Punktes aus der MBK-Datei. Pro Einheit eindeutig \u2014 Grundlage der Wiedererkennung."
+    },
+    "titel": {
+      "type": "string",
+      "description": "Kurzbezeichnung der Aufgabe, z. B. \u201eMoodle-Abgaben anlegen\"."
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Was genau zu tun ist (Klartext der MBK)."
+    },
+    "art": {
+      "type": "string",
+      "enum": [
+        "moodle",
+        "ki_prompt",
+        "sonstiges"
+      ],
+      "default": "sonstiges",
+      "description": "Grobe Einordnung f\u00fcr die Gruppierung in der Admin-Ansicht."
+    },
+    "anzahl": {
+      "type": "number",
+      "description": "Optionale St\u00fcckzahl (z. B. 6 Abgaben)."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "erledigt"
+      ],
+      "default": "offen",
+      "description": "Bearbeitungsstand. 'erledigt' setzt die Administration selbst."
+    },
+    "quelldatei": {
+      "type": "string",
+      "description": "Pfad der MBK-Datei, aus der dieser Punkt stammt (Nachvollziehbarkeit)."
+    },
+    "gemeldet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitstempel der MBK-R\u00fcckmeldung."
+    },
+    "abgeholt_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt, zu dem der Pool-Manager diesen Punkt zuletzt aus dem Repository gezogen hat."
+    },
+    "erledigt_von": {
+      "type": "string",
+      "description": "E-Mail der Person, die den Punkt als erledigt markiert hat."
+    },
+    "erledigt_am": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "mbk_id",
+    "titel"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

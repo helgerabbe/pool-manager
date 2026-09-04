@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` (ziel_typ + ziel_id + kategorie) sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -9,11 +9,11 @@
     },
     "prueflauf_id": {
       "type": "string",
-      "description": "FK zum Prueflauf, in dem dieser Befund zuletzt gefunden/best\u00e4tigt wurde."
+      "description": "FK zum Prueflauf, in dem dieser Befund zuletzt gefunden/best\u00e4tigt wurde. Bei MBK-Befunden leer \u2014 sie entstehen ohne Pr\u00fcflauf."
     },
     "fingerprint": {
       "type": "string",
-      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel: `<ziel_typ>:<ziel_id>:<kategorie>`. Pro Einheit eindeutig. Erneute Pr\u00fcfl\u00e4ufe aktualisieren den bestehenden Befund mit gleichem Fingerprint statt einen neuen anzulegen."
+      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel. Intern: `<ziel_typ>:<ziel_id>:<kategorie>`. MBK: `mbk:<mbk_meldung_id>`. Pro Einheit eindeutig."
     },
     "ziel_typ": {
       "type": "string",
@@ -28,7 +28,7 @@
     },
     "ziel_id": {
       "type": "string",
-      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id, lernpaket_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`)."
+      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id, lernpaket_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`). Bei MBK-Befunden ohne aufl\u00f6sbare Stelle die mbk_meldung_id \u2014 dann gibt es keinen Link, aber auch keine falsche Zuordnung."
     },
     "ziel_titel": {
       "type": "string",
@@ -58,9 +58,10 @@
         3,
         4,
         5,
-        6
+        6,
+        7
       ],
-      "description": "Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich, 6 = Keinem Themenfeld zugeordnet (verwaistes Lernpaket bzw. verwaiste Aufgabe)."
+      "description": "Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich, 6 = Keinem Themenfeld zugeordnet (verwaistes Lernpaket bzw. verwaiste Aufgabe), 7 = Von der MBK gemeldet, ohne Kategorie (nur quelle='mbk')."
     },
     "schwere": {
       "type": "string",
@@ -88,7 +89,7 @@
         "mbk"
       ],
       "default": "regel",
-      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau."
+      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau (eigener Reiter in Tab 8). Nur 'regel' und 'ki' werden beim Abschluss eines Pr\u00fcflaufs aufger\u00e4umt \u2013 MBK-Befunde bleiben stehen, bis sie entschieden werden."
     },
     "entscheidung": {
       "type": "string",
@@ -127,6 +128,42 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitpunkt, zu dem ein erneuter Pr\u00fcflauf die Behebung best\u00e4tigt hat (Befund nicht mehr gefunden)."
+    },
+    "mbk_meldung_id": {
+      "type": "string",
+      "description": "Nur bei quelle='mbk': stabile Kennung des Funds aus der MBK-Datei (Feld `id`). Grundlage der Wiedererkennung \u2013 derselbe Fund darf beim n\u00e4chsten Abholen nicht doppelt entstehen."
+    },
+    "mbk_quelldatei": {
+      "type": "string",
+      "description": "Nur bei quelle='mbk': Pfad der R\u00fcckmeldungs-Datei im Repository, aus der dieser Befund stammt."
+    },
+    "mbk_gemeldet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Nur bei quelle='mbk': Zeitstempel, den die MBK in der Datei angegeben hat (`erzeugt_am`)."
+    },
+    "dublette_status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "dublette",
+        "eigenstaendig"
+      ],
+      "default": "offen",
+      "description": "Nur bei quelle='mbk': Ergebnis der bewusst angesto\u00dfenen Dublettenpr\u00fcfung. 'offen' = noch nicht gepr\u00fcft. 'dublette' = beschreibt dieselbe Stelle wie ein eigener Befund (siehe dublette_von_befund_id) \u2013 wird in der Liste zusammengeklappt, aber NICHT gel\u00f6scht. 'eigenstaendig' = gepr\u00fcft und in der eigenen Liste nicht enthalten."
+    },
+    "dublette_von_befund_id": {
+      "type": "string",
+      "description": "FK auf den eigenen (internen) Pruefbefund, mit dem dieser MBK-Befund als Dublette erkannt wurde."
+    },
+    "dublette_begruendung": {
+      "type": "string",
+      "description": "Ein Satz der Pr\u00fcfung, warum die beiden Befunde dieselbe Stelle betreffen. Macht die Markierung f\u00fcr die Lehrkraft nachvollziehbar und korrigierbar."
+    },
+    "dublette_geprueft_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Zeitpunkt der letzten Dublettenpr\u00fcfung dieses Befunds."
     }
   },
   "required": [
