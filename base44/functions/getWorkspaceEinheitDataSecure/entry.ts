@@ -348,6 +348,9 @@ Deno.serve(async (req) => {
         einheit_id: tf.einheit_id,
         titel: tf.titel,
         beschreibung: tf.beschreibung,
+        // Lernlandkarte (2026-09-05): Ohne diese Zeile meldete das Struktur-Board
+        // „Leitfrage fehlt", obwohl sie in der Datenbank längst stand.
+        leitfrage: tf.leitfrage || '',
         reihenfolge: tf.reihenfolge,
         bearbeitungsmodus: tf.bearbeitungsmodus,
         sync_status: tf.sync_status,

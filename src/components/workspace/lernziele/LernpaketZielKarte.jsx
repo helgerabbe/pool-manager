@@ -250,10 +250,11 @@ export default function LernpaketZielKarte({
           Noch keine Lernziele für dieses Lernpaket.
         </p>
       )}
-      <div className="space-y-1.5">
+      <div className="space-y-3">
         {draft.map((lz, idx) => (
           <LernzielRow
             key={lz.id}
+            gross
             lz={lz}
             idx={idx}
             onUpdate={editierbar ? updateZiel : () => {}}

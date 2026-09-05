@@ -28,6 +28,7 @@ import {
 import LernpaketZielKarte from '@/components/workspace/lernziele/LernpaketZielKarte';
 import LernpaketZielSidebar from '@/components/workspace/lernziele/LernpaketZielSidebar';
 import LernpaketLebenszyklusBadge from '@/components/workspace/panels/LernpaketLebenszyklusBadge';
+import ThemenfeldLeitfrageKopf from '@/components/workspace/lernziele/ThemenfeldLeitfrageKopf';
 
 const HELP = {
   title: 'Lernziele der Einheit',
@@ -139,10 +140,11 @@ export default function LernzieleUebersichtTab({
     [lernpakete, selectedPaketId]
   );
 
-  const selectedThemenfeldTitel = useMemo(() => {
+  const selectedThemenfeld = useMemo(() => {
     if (!selectedPaket?.themenfeld_id) return null;
-    return themenfelder.find((tf) => tf.id === selectedPaket.themenfeld_id)?.titel || null;
+    return themenfelder.find((tf) => tf.id === selectedPaket.themenfeld_id) || null;
   }, [selectedPaket, themenfelder]);
+  const selectedThemenfeldTitel = selectedThemenfeld?.titel || null;
 
   const gesamtZiele = lernziele.length;
 
@@ -217,11 +219,12 @@ export default function LernzieleUebersichtTab({
 
       {/* ── Detail: Lernziele des gewählten Pakets ────────────────────── */}
       <main className="flex-1 overflow-y-auto min-h-0">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {selectedPaket ? (
             <>
-            <div className="mb-3 pb-3 border-b flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold text-foreground">
+            <ThemenfeldLeitfrageKopf themenfeld={selectedThemenfeld} />
+            <div className="mb-4 pb-3 border-b flex items-center gap-2 flex-wrap">
+              <h2 className="text-xl font-bold text-foreground">
                 {selectedPaket.titel_des_pakets}
               </h2>
               <StatusBadge

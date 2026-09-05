@@ -33,7 +33,11 @@ const KATEGORIEN = [
   { value: 'Fähigkeit/Fertigkeit', kurz: 'F' },
 ];
 
-export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, readOnly = false }) {
+// `gross` = große Lese-Darstellung im Lernziele-Tab (viel Platz rechts):
+// Fachsprache in normaler Lesegröße, Schülervariante als eigener, gut
+// lesbarer Block. Ohne `gross` bleibt die kompakte Dialog-Zeile des
+// Struktur-Boards unverändert.
+export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, readOnly = false, gross = false }) {
   const [loading, setLoading] = useState(false);
   const [vorschlag, setVorschlag] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -92,12 +96,19 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, read
   };
 
   return (
-    <div className="rounded-md border bg-muted/20 px-2 py-1.5">
-      <div className="flex items-start gap-2">
+    <div className={cn(
+      gross
+        ? 'rounded-xl border bg-card shadow-sm px-4 py-3.5'
+        : 'rounded-md border bg-muted/20 px-2 py-1.5'
+    )}>
+      <div className={cn('flex items-start', gross ? 'gap-4' : 'gap-2')}>
         {/* Aktionsspalte: Nummer + EIN Kategorie-Toggle (W/F) + Verknüpfungs-Badge + KI-Symbol */}
         <TooltipProvider>
-        <div className="flex flex-col items-center gap-1 shrink-0">
-          <span className="flex items-center justify-center w-4 h-4 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">{idx + 1}</span>
+        <div className={cn('flex flex-col items-center shrink-0', gross ? 'gap-1.5' : 'gap-1')}>
+          <span className={cn(
+            'flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold',
+            gross ? 'w-7 h-7 text-sm' : 'w-4 h-4 bg-green-100 text-green-700 text-[10px]'
+          )}>{idx + 1}</span>
           {/* Ein einziges Kategorie-Feld: zeigt W oder F, durchschalten per Klick */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -159,29 +170,50 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, read
         </div>
         </TooltipProvider>
 
-        <div className="flex-1 min-w-0 space-y-1">
-          {/* Fachsprache – zwei Zeilen lesbar */}
+        <div className={cn('flex-1 min-w-0', gross ? 'space-y-3' : 'space-y-1')}>
+          {/* Fachsprache */}
+          {gross && (
+            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">Lernziel (Fachsprache)</p>
+          )}
           <Textarea
             placeholder="Offizielle Formulierung (Fachsprache) – z.B. „Ich kann…"
             value={lz.formulierung_fachsprache}
             onChange={e => onUpdate(lz.id, 'formulierung_fachsprache', e.target.value)}
             readOnly={readOnly}
-            rows={2}
-            className={cn('text-xs min-h-[42px] resize-y leading-snug py-1', readOnly && 'bg-muted/40 cursor-default')}
+            rows={gross ? 3 : 2}
+            className={cn(
+              gross
+                ? 'text-base leading-relaxed min-h-[76px] resize-y py-2 px-3 font-medium text-foreground'
+                : 'text-xs min-h-[42px] resize-y leading-snug py-1',
+              readOnly && (gross ? 'bg-muted/20 border-transparent shadow-none cursor-default' : 'bg-muted/40 cursor-default')
+            )}
           />
-          {/* Schülergerecht – grafisch klar als Schüler-Variante markiert:
-              Schüler-Icon, kursiv, deutlich kleiner, eigene amber/orange Tönung. */}
-          <div className="flex items-start gap-1 pl-1 border-l-2 border-amber-300">
-            <GraduationCap className="w-2.5 h-2.5 text-amber-500 shrink-0 mt-1.5" />
-            <Textarea
-              placeholder="Schülergerechte Formulierung (optional)"
-              value={lz.schueler_uebersetzung || ''}
-              onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
-              readOnly={readOnly}
-              rows={1}
-              style={{ fontSize: '10px', lineHeight: '1.3' }}
-              className={cn('italic min-h-[20px] resize-y py-0.5 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic', readOnly && 'cursor-default')}
-            />
+          {/* Schülergerecht – grafisch klar als Schüler-Variante markiert. */}
+          <div className={cn(
+            'flex items-start border-l-2 border-amber-300',
+            gross ? 'gap-2 pl-3 rounded-r-lg bg-amber-50/60 py-2 pr-2' : 'gap-1 pl-1'
+          )}>
+            <GraduationCap className={cn('text-amber-500 shrink-0', gross ? 'w-4 h-4 mt-1.5' : 'w-2.5 h-2.5 mt-1.5')} />
+            <div className="flex-1 min-w-0">
+              {gross && (
+                <p className="text-[11px] uppercase tracking-wide font-semibold text-amber-700 mb-1">So lesen es die Schüler:innen</p>
+              )}
+              <Textarea
+                placeholder="Schülergerechte Formulierung (optional)"
+                value={lz.schueler_uebersetzung || ''}
+                onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
+                readOnly={readOnly}
+                rows={gross ? 2 : 1}
+                style={gross ? undefined : { fontSize: '10px', lineHeight: '1.3' }}
+                className={cn(
+                  'italic resize-y text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic',
+                  gross
+                    ? 'text-sm leading-relaxed min-h-[48px] py-1.5 px-2.5 bg-transparent border-amber-200/70'
+                    : 'min-h-[20px] py-0.5 bg-amber-50/50 border-amber-200',
+                  readOnly && (gross ? 'border-transparent shadow-none cursor-default' : 'cursor-default')
+                )}
+              />
+            </div>
           </div>
 
           {/* KI-Vorschlag */}
