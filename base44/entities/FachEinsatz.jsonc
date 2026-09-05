@@ -1,0 +1,55 @@
+{
+  "name": "FachEinsatz",
+  "type": "object",
+  "description": "Unterrichtseinsatz (2026-09-05): WELCHE Lehrkraft unterrichtet aktuell WELCHES Fach in WELCHEM Jahrgang. Ein Datensatz = eine Zuordnung (Fach + Jahrgang + Lehrkraft). Gepflegt in den Globalen Systemeinstellungen im Bereich 'F\u00e4cher' (aufklappbare Lehrkraft-Liste je Fach). Grundlage f\u00fcr Moodle/MBK: dort muss bekannt sein, welche Kolleg:innen in der Poolzeit eines Jahrgangs Zugriff auf welche Fachinhalte haben. Aktuell wird nur Jahrgang 9 gepflegt; das Feld ist bewusst frei, damit sp\u00e4ter weitere Jahrg\u00e4nge dazukommen k\u00f6nnen. Zweiter Schritt (noch offen): automatische \u00dcbernahme aus WebUntis.",
+  "properties": {
+    "fach": {
+      "type": "string",
+      "description": "Fach der Zuordnung (Wert aus LookupFaecher.name)."
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "description": "Jahrgangsstufe, in der die Lehrkraft dieses Fach unterrichtet (Wert aus LookupJahrgaenge.bezeichnung, derzeit '9')."
+    },
+    "lehrkraft_email": {
+      "type": "string",
+      "description": "E-Mail (Benutzer.user_id) der eingesetzten Lehrkraft \u2014 die stabile Kennung f\u00fcr Moodle."
+    },
+    "lehrkraft_name": {
+      "type": "string",
+      "description": "Denormalisierter Anzeigename der Lehrkraft."
+    },
+    "quelle": {
+      "type": "string",
+      "enum": [
+        "manuell",
+        "webuntis"
+      ],
+      "default": "manuell",
+      "description": "Herkunft der Zuordnung. 'manuell' = in den Systemeinstellungen eingetragen. 'webuntis' = sp\u00e4ter automatisch \u00fcbernommen."
+    }
+  },
+  "required": [
+    "fach",
+    "jahrgangsstufe",
+    "lehrkraft_email"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

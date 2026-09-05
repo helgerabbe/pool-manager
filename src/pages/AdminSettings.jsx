@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { base44 } from '@/api/base44Client';
 import LookupTable from '@/components/admin/LookupTable';
+import FachEinsatzPanel from '@/components/admin/FachEinsatzPanel';
 import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
@@ -184,6 +185,8 @@ export default function AdminSettings() {
                 „Offen für alle" macht jede Lehrkraft automatisch zur Fachlehrkraft dieses Fachs
                 (z. B. Klassenleitung, Berufsorientierung) — ohne die 5-Fächer-Grenze zu berühren
                 und ohne automatische Fachschaftsleitung.
+                Klappe ein Fach auf, um einzutragen, welche Lehrkräfte es derzeit in Jahrgang 9
+                unterrichten — diese Zuordnung braucht Moodle für die Poolzeit.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -193,6 +196,7 @@ export default function AdminSettings() {
                 items={faecherRaw}
                 labelField="name"
                 createDefaults={{ ist_poolzeit_fach: true, ist_gemeinschaftsfach: true }}
+                renderDetails={(fach) => <FachEinsatzPanel fach={fach.name} />}
                 renderExtra={(values, setValues) => (
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="flex items-center gap-1.5">

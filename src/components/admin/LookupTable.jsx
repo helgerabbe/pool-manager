@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Trash2, GripVertical, Check, X, Pencil } from 'lucide-react';
+import { Plus, Trash2, GripVertical, Check, X, Pencil, ChevronDown, ChevronRight } from 'lucide-react';
 
 /**
  * Generische CRUD-Tabelle für Lookup-Einträge.
@@ -18,6 +18,8 @@ import { Plus, Trash2, GripVertical, Check, X, Pencil } from 'lucide-react';
  *  extraFields     — optionale zusätzliche Felder zum Anzeigen (z.B. [{key:'kategorie', label:'Kategorie'}])
  *  createDefaults  — Default-Werte beim Anlegen neuer Einträge
  *  renderExtra     — optionale Render-Funktion für Extrafelder im Create-Formular
+ *  renderDetails   — optionale Render-Funktion für eine aufklappbare Detailzeile
+ *                    unter dem Eintrag (z. B. die Lehrkräfte eines Fachs)
  */
 export default function LookupTable({
   entityName,
@@ -27,6 +29,7 @@ export default function LookupTable({
   extraFields = [],
   createDefaults = {},
   renderExtra,
+  renderDetails,
 }) {
   const queryClient = useQueryClient();
   const entity = base44.entities[entityName];
@@ -36,6 +39,8 @@ export default function LookupTable({
   const [editingId, setEditingId]   = useState(null);
   const [editLabel, setEditLabel]   = useState('');
   const [editExtra, setEditExtra]   = useState({});
+  // Welcher Eintrag ist aufgeklappt? Immer nur einer — hält die Liste ruhig.
+  const [offenId, setOffenId]       = useState(null);
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey });
 
@@ -101,13 +106,26 @@ export default function LookupTable({
           <p className="text-sm text-muted-foreground text-center py-6">Noch keine Einträge.</p>
         )}
         {items.map(item => (
+          <div key={item.id}>
           <div
-            key={item.id}
             className={`flex items-center gap-3 px-3 py-2.5 transition-colors ${
               item.ist_aktiv === false ? 'bg-muted/40 opacity-60' : 'bg-background hover:bg-muted/30'
             }`}
           >
-            <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+            {renderDetails ? (
+              <button
+                type="button"
+                onClick={() => setOffenId(offenId === item.id ? null : item.id)}
+                className="shrink-0 text-muted-foreground hover:text-foreground"
+                title={offenId === item.id ? 'Zuklappen' : 'Aufklappen'}
+              >
+                {offenId === item.id
+                  ? <ChevronDown className="w-4 h-4" />
+                  : <ChevronRight className="w-4 h-4" />}
+              </button>
+            ) : (
+              <GripVertical className="w-4 h-4 text-muted-foreground/40 shrink-0" />
+            )}
 
             {editingId === item.id ? (
               <>
@@ -172,6 +190,8 @@ export default function LookupTable({
             >
               <Trash2 className="w-3.5 h-3.5 text-destructive" />
             </Button>
+          </div>
+          {renderDetails && offenId === item.id && renderDetails(item)}
           </div>
         ))}
       </div>
