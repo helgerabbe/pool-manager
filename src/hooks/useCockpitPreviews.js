@@ -26,6 +26,7 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
   const [qblockOpen, setQblockOpen] = useState(false);
   const [diagnoseQuizOpen, setDiagnoseQuizOpen] = useState(false);
   const [lerntypDiagnoseOpen, setLerntypDiagnoseOpen] = useState(false);
+  const [lernlandkarteOpen, setLernlandkarteOpen] = useState(false);
 
   const [einfuehrungSnapshot, setEinfuehrungSnapshot] = useState(null);
   const [qblockSnapshot, setQblockSnapshot] = useState(null);
@@ -66,6 +67,7 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
   const openQblock = useCallback(() => setQblockOpen(true), []);
   const openDiagnoseQuiz = useCallback(() => setDiagnoseQuizOpen(true), []);
   const openLerntypDiagnose = useCallback(() => setLerntypDiagnoseOpen(true), []);
+  const openLernlandkarte = useCallback(() => setLernlandkarteOpen(true), []);
   const openDashboard = useCallback(() => setDashboardOpen(true), []);
   const openThemenfeldIntro = useCallback((ctx) => setThemenfeldIntroContext(ctx), []);
 
@@ -77,8 +79,11 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       openQblock,
       openDiagnoseQuiz,
       openLerntypDiagnose,
+      openLernlandkarte,
       openThemenfeldIntro,
       setPreviewAufgabe,
+      lernlandkarteOpen,
+      setLernlandkarteOpen,
       // Zustand (wird an CockpitPreviewModals durchgereicht)
       dashboardOpen,
       setDashboardOpen,
@@ -107,7 +112,9 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       openQblock,
       openDiagnoseQuiz,
       openLerntypDiagnose,
+      openLernlandkarte,
       openThemenfeldIntro,
+      lernlandkarteOpen,
       dashboardOpen,
       einfuehrungOpen,
       qblockOpen,

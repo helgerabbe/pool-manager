@@ -1117,6 +1117,7 @@ export default function LernpfadeCockpit({
                 onPreviewEinfuehrung={previews.openEinfuehrung}
                 onPreviewQblock={previews.openQblock}
                 onPreviewDiagnoseQuiz={previews.openDiagnoseQuiz}
+                onPreviewLernlandkarte={previews.openLernlandkarte}
                 onPreviewThemenfeldIntro={(ctx) =>
                   previews.openThemenfeldIntro({ ...ctx, lerntyp: activeLernTyp })
                 }

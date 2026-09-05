@@ -36,6 +36,9 @@ import { groupItemsByParent } from '@/lib/lernpfadeUtils';
 import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
 import SektorDriftBadge from '@/components/lernpfade/SektorDriftBadge';
 
+// Lernlandkarte: alle Varianten teilen dieselbe Schüler-Vorschau.
+const LERNLANDKARTE_REF_IDS = ['sys_map_full', 'sys_map_reduced', 'sys_landkarte'];
+
 function AufgabePill({ aufgabe, refId, sektorId, index, instanceId, indent = false, onRemove, onSelect, isSelected, disabled, ampelStatus, exportReady, contentApproved, onOpenEditor, onOpenLernpaket, activeLernTyp, fremdesThemenfeldTitel, inaktiv = false, onToggleAktiv, zugang, onSetZugang }) {
   // Fallback, falls die Aufgabe (noch) nicht im Cache ist.
   const titel = aufgabe?.titel || 'Aufgabe';
@@ -189,6 +192,7 @@ export default function LernpfadeSektor({
   onPreviewQblock,
   onPreviewDiagnoseQuiz,
   onPreviewThemenfeldIntro,
+  onPreviewLernlandkarte,
   alleSektoren = [],
   // Akkordeon: Sektor zugeklappt? + Toggle-Callbacks (Sektor & Bündel).
   collapsed = false,
@@ -242,6 +246,8 @@ export default function LernpfadeSektor({
               ? onPreviewQblock
               : item.ref_id === 'sys_diagnose_entry' && onPreviewDiagnoseQuiz
               ? onPreviewDiagnoseQuiz
+              : LERNLANDKARTE_REF_IDS.includes(item.ref_id) && onPreviewLernlandkarte
+              ? onPreviewLernlandkarte
               : item.ref_id === 'sys_themenfeld_intro' && onPreviewThemenfeldIntro
               ? () => onPreviewThemenfeldIntro({
                   instanceId: item.instance_id,
