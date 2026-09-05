@@ -7,11 +7,14 @@
  * Die Karte deckt sich additiv auf: Zu Beginn sind die Wurzel und ihre
  * direkten Zweige zu sehen; jeder Klick zeigt die Kinder des Knotens.
  */
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Map as MapIcon } from 'lucide-react';
 import LernlandkarteCanvas from './LernlandkarteCanvas';
 import LernlandkarteInspektor from './LernlandkarteInspektor';
 import KleinerBildschirmHinweis from './KleinerBildschirmHinweis';
+import LernlandkarteFortschrittsring from './LernlandkarteFortschrittsring';
+import LernlandkarteLob from './LernlandkarteLob';
+import { feiereStufe } from '@/lib/lernlandkarteFeier';
 import { buildLernlandkarte, kinderVon, fokusLayout } from '@/lib/lernlandkarteGraph';
 import { berechneStatus, darfSelbstMarkieren } from '@/lib/lernlandkarteStatus';
 
@@ -77,6 +80,21 @@ export default function LernlandkarteAnsicht({
   const aktiv = nodes.find((n) => n.id === aktivId) || null;
   const gesamt = status.root || {};
 
+  // Belohnung: Konfetti + Lob nur beim Sprung auf „Kann ich".
+  const [lob, setLob] = useState(null);
+  const lobTimer = useRef(null);
+  useEffect(() => () => clearTimeout(lobTimer.current), []);
+
+  const handleMarkieren = (node, stufe) => {
+    const text = feiereStufe(stufe);
+    if (text) {
+      setLob(text);
+      clearTimeout(lobTimer.current);
+      lobTimer.current = setTimeout(() => setLob(null), 2600);
+    }
+    onMarkieren?.(node, stufe);
+  };
+
   if (nodes.length <= 1) {
     return (
       <div className="flex h-full items-center justify-center bg-[#0b132b] px-8 text-center text-white/60">
@@ -103,9 +121,10 @@ export default function LernlandkarteAnsicht({
           {LERNTYP_LABEL[lerntyp] || 'Dein Weg'}
         </span>
         {gesamt.zaehler?.gesamt > 0 && (
-          <span className="text-xs font-semibold text-[#06d6a0]">
-            {gesamt.zaehler.fertig}/{gesamt.zaehler.gesamt} geschafft
-          </span>
+          <LernlandkarteFortschrittsring
+            fertig={gesamt.zaehler.fertig}
+            gesamt={gesamt.zaehler.gesamt}
+          />
         )}
       </header>
 
@@ -124,10 +143,12 @@ export default function LernlandkarteAnsicht({
           status={aktiv ? status[aktiv.id] : null}
           kannSelbstMarkieren={darfSelbstMarkieren(lerntyp)}
           onOeffnen={onOeffnen}
-          onMarkieren={onMarkieren}
+          onMarkieren={handleMarkieren}
           busy={busy}
         />
       </div>
+
+      <LernlandkarteLob text={lob} />
 
       <KleinerBildschirmHinweis titel={einheitTitel} />
     </div>
