@@ -6,7 +6,7 @@
  * für die Lerntypen, die ihren Stand selbst setzen dürfen.
  */
 import React from 'react';
-import { ArrowRight, Check, Lock, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const CTA_TEXT = {
@@ -24,26 +24,14 @@ export default function LernlandkarteInspektor({
   onMarkieren,
   busy,
 }) {
-  if (!node) {
-    return (
-      <aside className="hidden w-[380px] shrink-0 flex-col justify-center border-l border-white/10 bg-[#0f1830] px-7 lg:flex">
-        <Sparkles className="mb-4 h-7 w-7 text-[#48cae4]" />
-        <h2 className="font-display text-xl font-bold text-white leading-snug">
-          Tippe auf einen Punkt der Karte
-        </h2>
-        <p className="mt-2 text-sm leading-relaxed text-white/60">
-          Du kannst erst nur schauen, worum es geht — und dann entscheiden, ob du
-          dort richtig einsteigen willst. Mit jedem Klick deckst du neue Bereiche auf.
-        </p>
-      </aside>
-    );
-  }
+  // Ohne ausgewählten Knoten gehört der Platz der Karte.
+  if (!node) return null;
 
   const ctaText = CTA_TEXT[node.typ];
   const gesperrt = status?.gesperrt;
 
   return (
-    <aside className="hidden w-[380px] shrink-0 flex-col border-l border-white/10 bg-[#0f1830] px-7 py-7 lg:flex">
+    <aside className="hidden w-[300px] shrink-0 flex-col border-l border-white/10 bg-[#0f1830] px-7 py-7 lg:flex">
       <p className="text-xs font-semibold uppercase tracking-wide text-[#48cae4]">
         {node.typ === 'aufgaben'
           ? 'Aufgaben'

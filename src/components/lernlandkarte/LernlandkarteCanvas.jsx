@@ -33,8 +33,11 @@ export default function LernlandkarteCanvas({
     }));
 
   const onPointerDown = (e) => {
+    // Knöpfe (Knoten, Zoom) NICHT als Ziehen behandeln — und bewusst kein
+    // setPointerCapture: das leitet den anschließenden Klick auf die Fläche
+    // um, wodurch vorher kein Knoten und kein Zoom-Knopf reagiert hat.
+    if (e.target.closest('button')) return;
     ziehen.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
-    e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e) => {
     if (!ziehen.current) return;
