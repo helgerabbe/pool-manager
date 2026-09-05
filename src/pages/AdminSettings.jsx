@@ -24,6 +24,7 @@ import {
 import { base44 } from '@/api/base44Client';
 import LookupTable from '@/components/admin/LookupTable';
 import FachEinsatzPanel from '@/components/admin/FachEinsatzPanel';
+import WebUntisImportCard from '@/components/admin/webuntis/WebUntisImportCard';
 import PhasenTable from '@/components/admin/PhasenTable';
 import WartungsmodusToggle from '@/components/admin/WartungsmodusToggle';
 import AktivitaetenKatalog from '@/components/admin/AktivitaetenKatalog';
@@ -173,7 +174,8 @@ export default function AdminSettings() {
         </TabsContent>
 
         {/* Fächer */}
-        <TabsContent value="faecher" className="mt-4">
+        <TabsContent value="faecher" className="mt-4 space-y-6">
+          <WebUntisImportCard />
           <Card className="border shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-base">Fächer verwalten</CardTitle>
