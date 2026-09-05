@@ -11,8 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Plus, Search, AlertCircle, Wand2, Lock, Bot } from 'lucide-react';
 import PrivateEinheitenUebersicht from '@/components/einheiten/PrivateEinheitenUebersicht';
-import UnterrichtsstundenSektion from '@/components/unterrichtsstunden/UnterrichtsstundenSektion';
-import UebungsbloeckeSektion from '@/components/uebungsbloecke/UebungsbloeckeSektion';
+import MeinUnterrichtBereich from '@/components/unterricht/MeinUnterrichtBereich';
+import PrivatReiter from '@/components/einheiten/PrivatReiter';
 import { istUebungsblock } from '@/lib/einheitFormat';
 import EinheitErstellenButtons from '@/components/einheiten/EinheitErstellenButtons';
 import BasismoduleListe from '@/pages/BasismoduleListe';
@@ -178,6 +178,8 @@ export default function EinheitenListe() {
   const [schnellErstellen, setSchnellErstellen] = useState(false);
   // Vier Bereiche: 'privat' (Start) | 'austausch' (Bibliothek) | 'oeffentlich' (Poolzeit) | 'basismodule'.
   const [ansicht, setAnsicht] = useState('privat');
+  // Private Bibliothek: 'unterricht' (Start) | 'einheiten'.
+  const [privatReiter, setPrivatReiter] = useState('unterricht');
   const [isDeletingAny, setIsDeletingAny] = useState(false);
   const queryClient = useQueryClient();
 
@@ -342,19 +344,22 @@ export default function EinheitenListe() {
       </div>
       )}
 
-      {/* Moodle-Unterrichts-Generator: Unterrichtsstunden stehen im
-          Privatbereich ganz oben — auch für Administratoren. */}
+      {/* Private Bibliothek: zwei getrennte Welten in Reitern. */}
       {ansicht === 'privat' && (
-        <UnterrichtsstundenSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+        <PrivatReiter aktiv={privatReiter} onChange={setPrivatReiter} />
       )}
 
-      {/* Übungsblöcke: kleines Format für die Poolzeit, eigener Bereich. */}
-      {ansicht === 'privat' && (
-        <UebungsbloeckeSektion einheiten={einheiten} besitzerEmail={authUser?.email} />
+      {/* Reiter 1 — Mein Unterricht: Fach-Kacheln, dahinter Stunden und Übungsblöcke. */}
+      {ansicht === 'privat' && privatReiter === 'unterricht' && (
+        <MeinUnterrichtBereich
+          einheiten={einheiten}
+          besitzerEmail={authUser?.email}
+          faecher={faecherLookup}
+        />
       )}
 
-      {/* Dritter, klar getrennter Bereich der Privaten Bibliothek: die Einheiten. */}
-      {ansicht === 'privat' && (
+      {/* Reiter 2 — Meine Einheiten: vollständige Einheiten für Moodle. */}
+      {ansicht === 'privat' && privatReiter === 'einheiten' && (
         <div className="flex items-center justify-between gap-3 pt-2 border-t">
           <div>
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -364,6 +369,10 @@ export default function EinheitenListe() {
             <p className="text-xs text-muted-foreground mt-0.5">
               Vollständige Einheiten für die Poolzeit — mit Themenfeldern, Lernpaketen und Aufgaben.
             </p>
+            <p className="text-xs text-muted-foreground mt-1 italic">
+              Aus deinen Unterrichtsstunden und Übungsblöcken lässt sich später eine ganze Einheit
+              zusammenbauen — daran arbeiten wir.
+            </p>
           </div>
           {(permissions.kannEinheitVerwalten || rolle === ROLLEN.LEHRKRAFT) && (
             <EinheitErstellenButtons privat onNeueEinheit={() => setSchnellErstellen(true)} />
@@ -371,7 +380,7 @@ export default function EinheitenListe() {
         </div>
       )}
 
-      {ansicht === 'basismodule' ? (
+      {ansicht === 'privat' && privatReiter === 'unterricht' ? null : ansicht === 'basismodule' ? (
         <BasismoduleListe />
       ) : ansicht === 'austausch' ? (
         <AustauschBibliothek
@@ -499,7 +508,7 @@ export default function EinheitenListe() {
       )}
 
       {/* Direkthilfe im Privatbereich: Wie kommt meine Einheit nach Moodle? */}
-      {ansicht === 'privat' && <MoodleWegInfoBox />}
+      {ansicht === 'privat' && privatReiter === 'einheiten' && <MoodleWegInfoBox />}
 
       <SchnellErstellenModal
         open={schnellErstellen}

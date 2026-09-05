@@ -29,6 +29,7 @@ const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const UnterrichtsstundeDetail = lazyWithRetry(() => import('@/pages/UnterrichtsstundeDetail'));
+const UnterrichtFachSeite = lazyWithRetry(() => import('@/pages/UnterrichtFachSeite'));
 const BasismodulViewManager = lazyWithRetry(() => import('@/components/basismodule/BasismodulViewManager'));
 const DocsLayout = lazyWithRetry(() => import('@/components/docs/DocsLayout'));
 const DocsIndex = lazyWithRetry(() => import('@/pages/DocsIndex'));
@@ -153,6 +154,7 @@ const AuthenticatedApp = () => {
           <Route path="/" element={<ErrorBoundary fallback="Einheiten konnten nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten" element={<ErrorBoundary fallback="Einheitenliste konnte nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten/:id" element={<ErrorBoundary fallback="Einheitansicht konnte nicht geladen werden."><EinheitViewManager /></ErrorBoundary>} />
+          <Route path="/unterricht" element={<ErrorBoundary fallback="Der Fach-Bereich konnte nicht geladen werden."><UnterrichtFachSeite /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id" element={<ErrorBoundary fallback="Unterrichtsstunde konnte nicht geladen werden."><UnterrichtsstundeDetail /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />

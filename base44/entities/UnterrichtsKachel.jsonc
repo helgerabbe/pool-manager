@@ -1,0 +1,33 @@
+{
+  "name": "UnterrichtsKachel",
+  "type": "object",
+  "description": "Eine Kachel im Bereich \u201eMein Unterricht\" der Privaten Bibliothek (2026-09-05): die Kombination aus Fach und Jahrgangsstufe, in der eine Lehrkraft arbeitet (z. B. \u201eMathematik Jg. 6\").\n\nDIE KACHELN ENTSTEHEN AUTOMATISCH: F\u00fcr jede Fach/Jahrgang-Kombination, zu der es eine Unterrichtsstunde oder einen \u00dcbungsblock der Lehrkraft gibt, zeigt die App eine Kachel \u2014 ohne dass hier ein Datensatz existieren muss. Diese Entity h\u00e4lt nur, was die Lehrkraft SELBST bestimmt: eine bewusst angelegte (noch leere) Kachel, ein eigener Anzeigename und die Reihenfolge. Ein Datensatz ist also eine Erg\u00e4nzung/\u00dcbersteuerung der automatischen Kachel, kein Container f\u00fcr Inhalte \u2014 Stunden und \u00dcbungsbl\u00f6cke bleiben \u00fcber ihre eigenen Felder `fach` und `jahrgangsstufe` zugeordnet und werden bei Umbenennungen nicht angefasst.",
+  "properties": {
+    "besitzer_email": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, zu deren Unterricht diese Kachel geh\u00f6rt. Kacheln sind immer pers\u00f6nlich."
+    },
+    "fach": {
+      "type": "string",
+      "description": "Fach der Kachel (Wert aus LookupFaecher.name)."
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "description": "Jahrgangsstufe der Kachel (Wert aus LookupJahrgaenge.bezeichnung)."
+    },
+    "anzeigename": {
+      "type": "string",
+      "description": "Optionaler eigener Name der Kachel, z. B. \u201eMathe 6b\". Leer = die App zeigt \u201e<Fach> \u00b7 Jg. <Jahrgang>\"."
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 100,
+      "description": "Sortierreihenfolge der Kacheln in der \u00dcbersicht (kleiner = weiter vorne)."
+    }
+  },
+  "required": [
+    "besitzer_email",
+    "fach",
+    "jahrgangsstufe"
+  ]
+}

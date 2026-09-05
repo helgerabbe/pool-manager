@@ -17,7 +17,13 @@ import StundeLoeschenButton from './StundeLoeschenButton';
  * Stunden, damit die chronologische Arbeitsweise (erst Stunden planen, später
  * daraus eine Einheit) sichtbar wird.
  */
-export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmail }) {
+export default function UnterrichtsstundenSektion({
+  einheiten = [],
+  besitzerEmail,
+  // Optional: nur die Stunden EINES Fachs/Jahrgangs zeigen (Fach-Seite).
+  nurFach,
+  nurJahrgang,
+}) {
   const [erstellenOffen, setErstellenOffen] = useState(false);
   const navigate = useNavigate();
 
@@ -31,7 +37,14 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
 
   // Gruppierung: Fach -> Einheit -> Stunden
   const faecher = {};
-  stunden.forEach((s) => {
+  const sichtbareStunden = stunden.filter((s) => {
+    if (!nurFach && !nurJahrgang) return true;
+    const einheit = einheitById.get(s.einheit_id);
+    const fach = s.fach || einheit?.fach;
+    const jg = s.jahrgangsstufe || einheit?.jahrgangsstufe;
+    return (!nurFach || fach === nurFach) && (!nurJahrgang || String(jg) === String(nurJahrgang));
+  });
+  sichtbareStunden.forEach((s) => {
     const einheit = einheitById.get(s.einheit_id);
     const fach = s.fach || einheit?.fach || 'Ohne Fach';
     const einheitKey = s.einheit_id || 'ohne';
@@ -62,7 +75,7 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
         </Button>
       </div>
 
-      {stunden.length === 0 ? (
+      {sichtbareStunden.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Noch keine Unterrichtsstunden geplant.
         </p>
