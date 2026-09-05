@@ -3,6 +3,7 @@ import { LogOut, DoorOpen } from 'lucide-react';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 import { logout } from '@/services/AuthService';
+import { verwerfeLtiSession } from '@/lib/ltiSession';
 
 /**
  * Fest integrierter Button im Cockpit-Header (rechts neben Datum/Uhrzeit).
@@ -30,6 +31,9 @@ export default function SchueleransichtVerlassenButton() {
 
   const handleClick = () => {
     if (istMitarbeiter) {
+      // Test-Sitzung aus dem Moodle-Einstieg wegräumen, sonst landet man beim
+      // nächsten Neuladen wieder in der getesteten Einheit.
+      verwerfeLtiSession();
       navigate('/');
     } else {
       logout(false);

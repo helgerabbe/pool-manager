@@ -31,6 +31,16 @@ export function getLtiToken() {
   return localStorage.getItem(STORAGE_KEY) || null;
 }
 
+/**
+ * Sitzung verwerfen. Wichtig für Lehrkräfte, die den Moodle-Einstieg getestet
+ * haben: Ohne das Verwerfen bleibt das Token bis zu 8 Stunden liegen und die
+ * App springt bei jedem Neuladen des Schülerbereichs zurück in die getestete
+ * Einheit.
+ */
+export function verwerfeLtiSession() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
 /** Payload der Sitzung, oder null wenn keine/abgelaufene Sitzung vorliegt. */
 export function getLtiSession() {
   const token = getLtiToken();
