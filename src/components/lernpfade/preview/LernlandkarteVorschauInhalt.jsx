@@ -31,11 +31,8 @@ export default function LernlandkarteVorschauInhalt({
       vorwissenPakete={vorwissenPakete || []}
       lerntyp={lerntyp}
       einschaetzungByZiel={lokal}
-      onMarkieren={(node) =>
-        setLokal((prev) => ({
-          ...prev,
-          [node.refs.lernzielId]: prev[node.refs.lernzielId] === 'sicher' ? null : 'sicher',
-        }))
+      onMarkieren={(node, stufe) =>
+        setLokal((prev) => ({ ...prev, [node.refs.lernzielId]: stufe ?? null }))
       }
     />
   );

@@ -5,7 +5,7 @@
  * als SVG, darüber die Knoten. Etappe 1 bewusst OHNE Animation — erst muss
  * die Logik stimmen.
  */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Plus, Minus, Crosshair } from 'lucide-react';
 import LernlandkarteKnoten from './LernlandkarteKnoten';
 
@@ -17,10 +17,18 @@ export default function LernlandkarteCanvas({
   status,
   sichtbar,
   aktivId,
+  fokusId,
   onKnotenClick,
 }) {
   const [view, setView] = useState(START);
+  const [zieht, setZieht] = useState(false);
   const ziehen = useRef(null);
+
+  // Neuer Fokus → die Karte fährt zurück in die Mitte (der Fokus-Knoten liegt
+  // im Layout immer bei 0/0), die Knoten wandern per CSS-Übergang mit.
+  useEffect(() => {
+    setView((v) => ({ ...v, x: 0, y: 0 }));
+  }, [fokusId]);
 
   const sichtbareNodes = nodes.filter((n) => sichtbar.has(n.id));
   const kanten = sichtbareNodes
@@ -38,6 +46,7 @@ export default function LernlandkarteCanvas({
     // um, wodurch vorher kein Knoten und kein Zoom-Knopf reagiert hat.
     if (e.target.closest('button')) return;
     ziehen.current = { x: e.clientX, y: e.clientY, vx: view.x, vy: view.y };
+    setZieht(true);
   };
   const onPointerMove = (e) => {
     if (!ziehen.current) return;
@@ -50,6 +59,7 @@ export default function LernlandkarteCanvas({
   };
   const onPointerUp = () => {
     ziehen.current = null;
+    setZieht(false);
   };
   const zoomen = (delta) =>
     setView((v) => ({ ...v, zoom: Math.min(1.4, Math.max(0.35, v.zoom + delta)) }));
@@ -80,7 +90,9 @@ export default function LernlandkarteCanvas({
       />
 
       <div
-        className="absolute left-1/2 top-1/2"
+        className={`absolute left-1/2 top-1/2 ${
+          zieht ? '' : 'transition-transform duration-500 ease-out'
+        }`}
         style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}
       >
         <svg

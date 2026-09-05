@@ -12,7 +12,7 @@ import { Map as MapIcon } from 'lucide-react';
 import LernlandkarteCanvas from './LernlandkarteCanvas';
 import LernlandkarteInspektor from './LernlandkarteInspektor';
 import KleinerBildschirmHinweis from './KleinerBildschirmHinweis';
-import { buildLernlandkarte, kinderVon } from '@/lib/lernlandkarteGraph';
+import { buildLernlandkarte, kinderVon, fokusLayout } from '@/lib/lernlandkarteGraph';
 import { berechneStatus, darfSelbstMarkieren } from '@/lib/lernlandkarteStatus';
 
 const LERNTYP_LABEL = {
@@ -36,7 +36,7 @@ export default function LernlandkarteAnsicht({
   onMarkieren,
   busy,
 }) {
-  const { nodes, positionen } = useMemo(
+  const { nodes } = useMemo(
     () =>
       buildLernlandkarte({
         einheitTitel,
@@ -54,25 +54,24 @@ export default function LernlandkarteAnsicht({
     [nodes, lerntyp, einschaetzungByZiel, bearbeiteteAufgabenIds]
   );
 
-  const [aufgedeckt, setAufgedeckt] = useState(() => new Set(['root']));
+  // Fokus-Navigation: Der angeklickte Knoten fährt in die Mitte, seine Kinder
+  // ordnen sich neu darum an. So kann sich nichts überlappen.
+  const [fokusId, setFokusId] = useState('root');
   const [aktivId, setAktivId] = useState(null);
 
+  const positionen = useMemo(() => fokusLayout(nodes, fokusId), [nodes, fokusId]);
+
   const sichtbar = useMemo(() => {
-    const set = new Set(['root']);
-    for (const id of aufgedeckt) {
-      for (const kind of kinderVon(nodes, id)) set.add(kind.id);
-    }
+    const set = new Set([fokusId]);
+    const fokus = nodes.find((n) => n.id === fokusId);
+    if (fokus?.parentId) set.add(fokus.parentId);
+    for (const kind of kinderVon(nodes, fokusId)) set.add(kind.id);
     return set;
-  }, [aufgedeckt, nodes]);
+  }, [fokusId, nodes]);
 
   const handleClick = (node) => {
     setAktivId(node.id);
-    setAufgedeckt((prev) => {
-      if (prev.has(node.id)) return prev;
-      const next = new Set(prev);
-      next.add(node.id);
-      return next;
-    });
+    if (kinderVon(nodes, node.id).length > 0) setFokusId(node.id);
   };
 
   const aktiv = nodes.find((n) => n.id === aktivId) || null;
@@ -117,6 +116,7 @@ export default function LernlandkarteAnsicht({
           status={status}
           sichtbar={sichtbar}
           aktivId={aktivId}
+          fokusId={fokusId}
           onKnotenClick={handleClick}
         />
         <LernlandkarteInspektor

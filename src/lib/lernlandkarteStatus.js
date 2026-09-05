@@ -15,6 +15,8 @@
  *  - alle anderen Lerntypen: nichts gesperrt.
  */
 
+import { anteilVon } from '@/lib/lernlandkarteEinschaetzung';
+
 export const OFFENE_LERNTYPEN = ['ehrgeizig', 'passioniert'];
 
 export function darfSelbstMarkieren(lerntyp) {
@@ -33,8 +35,13 @@ export function berechneStatus({
   // 1. Blätter/Basiswerte
   for (const n of nodes) {
     if (n.typ === 'lernpaket') {
-      const geschafft = einschaetzungByZiel[n.refs.lernzielId] === 'sicher';
-      status[n.id] = { geschafft, anteil: geschafft ? 1 : 0, gesperrt: false };
+      const einschaetzung = einschaetzungByZiel[n.refs.lernzielId] || null;
+      status[n.id] = {
+        einschaetzung,
+        geschafft: einschaetzung === 'sicher',
+        anteil: anteilVon(einschaetzung),
+        gesperrt: false,
+      };
     } else if (n.typ === 'aufgaben') {
       const ids = n.refs.aufgabenIds || [];
       const fertig = ids.filter((id) => bearbeitet.has(id)).length;

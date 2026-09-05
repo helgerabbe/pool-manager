@@ -1,7 +1,7 @@
 {
   "name": "SchuelerLernzielEinschaetzung",
   "type": "object",
-  "description": "Selbsteinsch\u00e4tzung eines Sch\u00fclers zu einem Lernziel auf der Lernlandkarte (sys_map_full). Pro (user_email, einheit_id, lernziel_id) maximal ein Datensatz (anwendungsseitig sichergestellt). 'sicher' = Kann ich, 'unsicher' = Bin unsicher, 'schwierig' = Brauche Hilfe. Kein Eintrag = noch nicht eingesch\u00e4tzt.",
+  "description": "Selbsteinsch\u00e4tzung eines Sch\u00fclers zu einem Lernziel auf der Lernlandkarte (sys_map_full). Pro (user_email, einheit_id, lernziel_id) maximal ein Datensatz (anwendungsseitig sichergestellt). Vier Stufen von rot nach gr\u00fcn: 'schwierig' = Kein Plan, 'unsicher' = Ein bisschen verstanden, 'teilweise' = Kann das meiste, 'sicher' = Kann ich. Kein Eintrag = noch nicht eingesch\u00e4tzt. Reihenfolge und Beschriftung liegen zentral in src/lib/lernlandkarteEinschaetzung.js.",
   "properties": {
     "user_email": {
       "type": "string",
@@ -23,10 +23,11 @@
       "type": "string",
       "enum": [
         "sicher",
+        "teilweise",
         "unsicher",
         "schwierig"
       ],
-      "description": "Selbsteinsch\u00e4tzung des Sch\u00fclers zu diesem Lernziel."
+      "description": "Selbsteinsch\u00e4tzung des Sch\u00fclers zu diesem Lernziel (4 Stufen, siehe Beschreibung der Entity). 'teilweise' wurde 2026-09-05 mit der vierstufigen Skala der Lernlandkarte erg\u00e4nzt."
     }
   },
   "required": [

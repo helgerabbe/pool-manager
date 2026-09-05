@@ -18,8 +18,6 @@
  *   basispaket     — verknüpftes Basispaket (nur eine Ebene tief)
  */
 
-const RADIEN = [0, 330, 620, 830];
-
 /** Sortiert stabil nach einem Zahlenfeld. */
 const nachZahl = (feld) => (a, b) => (a[feld] || 0) - (b[feld] || 0);
 
@@ -87,7 +85,6 @@ export function buildLernlandkarte({
           typ: 'lernpaket',
           parentId: tfNodeId,
           titel: ziel.schueler_uebersetzung?.trim() || ziel.formulierung_fachsprache,
-          kurz: `Gehört zum Lernpaket „${paket.titel_des_pakets}".`,
           refs: {
             lernzielId: ziel.id,
             lernpaketId: paket.id,
@@ -95,14 +92,8 @@ export function buildLernlandkarte({
             themenfeldId: gruppe.id,
           },
         });
-        push({
-          id: `ws:${ziel.id}`,
-          typ: 'wissensspeicher',
-          parentId: lpNodeId,
-          titel: 'Wissensspeicher',
-          kurz: 'Hier steht das Wichtigste kurz zusammengefasst — gut zum Nachschlagen.',
-          refs: { lernpaketId: paket.id, lernpaketTitel: paket.titel_des_pakets },
-        });
+        // Der Wissensspeicher ist bewusst KEIN eigener Knoten mehr — er ist
+        // ein Knopf am Lernziel im Inspektor (weniger Knoten, klarere Karte).
       }
     }
 
@@ -146,51 +137,47 @@ export function buildLernlandkarte({
     }
   }
 
-  return { nodes, positionen: radialLayout(nodes) };
+  return { nodes, positionen: fokusLayout(nodes, 'root') };
 }
 
 /**
- * Radiale Anordnung: Wurzel in der Mitte, Kinder verteilen sich im Kreissektor
- * um ihren Elternknoten. Der Vorwissen-Ast zeigt bewusst „rückwärts" (links).
+ * Fokus-Anordnung: Der angeklickte Knoten steht IMMER in der Mitte, seine
+ * Kinder legen sich als Kreis darum, der Elternknoten sitzt links daneben.
+ *
+ * Nur eine Ebene gleichzeitig sichtbar zu ordnen löst das Überlappungs-
+ * problem des früheren Gesamt-Layouts: Der Kreisradius wächst mit der Anzahl
+ * der Kinder, sodass zwischen zwei Karten immer genug Bogenlänge bleibt.
  */
-export function radialLayout(nodes) {
-  const kinder = new Map();
-  for (const n of nodes) {
-    if (!n.parentId) continue;
-    if (!kinder.has(n.parentId)) kinder.set(n.parentId, []);
-    kinder.get(n.parentId).push(n);
-  }
-
+export function fokusLayout(nodes, fokusId) {
   const pos = {};
-  const setze = (node, winkel, spanne, tiefe) => {
-    const r = RADIEN[Math.min(tiefe, RADIEN.length - 1)];
-    pos[node.id] = { x: Math.cos(winkel) * r, y: Math.sin(winkel) * r, winkel, tiefe };
+  const fokus = nodes.find((n) => n.id === fokusId) || nodes.find((n) => !n.parentId);
+  if (!fokus) return pos;
 
-    const list = kinder.get(node.id) || [];
-    if (list.length === 0) return;
+  pos[fokus.id] = { x: 0, y: 0 };
 
-    const istWurzel = tiefe === 0;
-    const vorwissen = list.filter((c) => c.typ === 'vorwissen');
-    const rest = list.filter((c) => c.typ !== 'vorwissen');
+  const eltern = fokus.parentId ? nodes.find((n) => n.id === fokus.parentId) : null;
+  if (eltern) pos[eltern.id] = { x: -560, y: 0 };
 
-    if (istWurzel && vorwissen.length > 0) {
-      setze(vorwissen[0], Math.PI, Math.PI / 2, 1);
+  const kinder = nodes.filter((n) => n.parentId === fokus.id);
+  const anzahl = kinder.length;
+  if (anzahl === 0) return pos;
+
+  // Mindestabstand von 340 px Bogenlänge je Karte — daraus folgt der Radius.
+  const spanne = eltern ? Math.PI * 1.25 : Math.PI * 2;
+  const radius = Math.max(380, (anzahl * 340) / spanne);
+
+  kinder.forEach((kind, i) => {
+    let winkel;
+    if (!eltern) {
+      winkel = -Math.PI / 2 + (i * (Math.PI * 2)) / anzahl;
+    } else if (anzahl === 1) {
+      winkel = 0;
+    } else {
+      winkel = -spanne / 2 + (i * spanne) / (anzahl - 1);
     }
+    pos[kind.id] = { x: Math.cos(winkel) * radius, y: Math.sin(winkel) * radius };
+  });
 
-    const nutzbar = istWurzel && vorwissen.length > 0 ? Math.PI * 1.35 : spanne;
-    const start = istWurzel
-      ? -Math.PI * 0.5 - nutzbar / 2 + nutzbar / (rest.length * 2 || 1)
-      : winkel - nutzbar / 2 + nutzbar / (rest.length * 2 || 1);
-    const schritt = rest.length > 1 ? nutzbar / rest.length : 0;
-
-    rest.forEach((kind, i) => {
-      const kindWinkel = rest.length === 1 && !istWurzel ? winkel : start + i * schritt;
-      setze(kind, kindWinkel, Math.max(schritt * 0.85, Math.PI / 9), tiefe + 1);
-    });
-  };
-
-  const wurzel = nodes.find((n) => !n.parentId);
-  if (wurzel) setze(wurzel, 0, Math.PI * 2, 0);
   return pos;
 }
 

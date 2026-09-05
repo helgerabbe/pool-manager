@@ -117,8 +117,10 @@ export default function LernlandkarteSeite({
   );
 
   // ── Aktionen ──────────────────────────────────────────────────────────
-  const handleOeffnen = (node) => {
-    if (node.typ === 'aufgaben') {
+  // absicht: 'lernen' | 'wissensspeicher' — beide führen in das Lernpaket; der
+  // Wissensspeicher ist dort die erste Station.
+  const handleOeffnen = (node, absicht = 'lernen') => {
+    if (node.typ === 'aufgaben' && absicht === 'lernen') {
       const erste = (node.refs.aufgabenIds || []).find((id) => pfadZiele.has(id));
       const ziel = erste ? pfadZiele.get(erste) : null;
       if (ziel && !ziel.gesperrt) onOpenAufgabe?.(ziel.instanceId, erste);
@@ -128,13 +130,14 @@ export default function LernlandkarteSeite({
     if (ziel && !ziel.gesperrt) onOpenLernpaket?.(ziel.instanceId);
   };
 
-  const handleMarkieren = async (node) => {
+  // stufe: nächster Wert der vierstufigen Skala (null = Einschätzung entfernen).
+  const handleMarkieren = async (node, stufe) => {
     const zielId = node.refs?.lernzielId;
     if (!zielId) return;
     setSpeichert(true);
     try {
       const vorhanden = (einschaetzungenQ.data || []).find((e) => e.lernziel_id === zielId);
-      const neu = einschaetzungByZiel[zielId] === 'sicher' ? null : 'sicher';
+      const neu = stufe ?? null;
       if (vorhanden) {
         if (neu === null) await SchuelerData.deleteLernzielEinschaetzung(vorhanden.id);
         else await SchuelerData.updateLernzielEinschaetzung(vorhanden.id, { einschaetzung: neu });
