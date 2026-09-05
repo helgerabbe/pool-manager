@@ -24,7 +24,7 @@ export default function LernlandkarteCanvas({
 
   const sichtbareNodes = nodes.filter((n) => sichtbar.has(n.id));
   const kanten = sichtbareNodes
-    .filter((n) => n.parentId && sichtbar.has(n.parentId))
+    .filter((n) => n.parentId && sichtbar.has(n.parentId) && positionen[n.parentId] && positionen[n.id])
     .map((n) => ({
       id: n.id,
       von: positionen[n.parentId],
@@ -38,11 +38,12 @@ export default function LernlandkarteCanvas({
   };
   const onPointerMove = (e) => {
     if (!ziehen.current) return;
-    setView((v) => ({
-      ...v,
-      x: ziehen.current.vx + (e.clientX - ziehen.current.x),
-      y: ziehen.current.vy + (e.clientY - ziehen.current.y),
-    }));
+    // Werte VOR dem Setter auslesen: React kann die Update-Funktion später
+    // (auch nach dem Loslassen) erneut auswerten — dann wäre ziehen.current null.
+    const { x, y, vx, vy } = ziehen.current;
+    const naechstesX = vx + (e.clientX - x);
+    const naechstesY = vy + (e.clientY - y);
+    setView((v) => ({ ...v, x: naechstesX, y: naechstesY }));
   };
   const onPointerUp = () => {
     ziehen.current = null;
