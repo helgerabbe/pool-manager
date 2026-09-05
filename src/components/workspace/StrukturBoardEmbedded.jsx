@@ -204,7 +204,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly 
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false, leitfrage = '' }) {
   const [editingTitel, setEditingTitel]   = useState(false);
   const [titelDraft, setTitelDraft]       = useState(titel);
 
@@ -319,7 +319,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
                 ? 'text-primary hover:bg-primary/10'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
-            title={hatBeschreibung ? 'Beschreibung bearbeiten' : 'Beschreibung hinzufügen'}
+            title={hatBeschreibung ? 'Leitfrage & Beschreibung bearbeiten' : 'Leitfrage & Beschreibung eintragen'}
           >
             <MessageSquareText className="w-3.5 h-3.5" />
           </button>
@@ -356,6 +356,28 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
           </button>
         )}
       </div>
+
+      {/* Leitfrage: die Frage, die die Schüler auf der Lernlandkarte sehen.
+          Fehlt sie, weist eine Pille darauf hin – ein Klick öffnet den Dialog. */}
+      {!isSammelbecken && (
+        leitfrage ? (
+          <div className="px-3 py-2 border-b border-border/60 bg-primary/5 shrink-0">
+            <p className="text-[11px] leading-snug text-primary/90 italic" title={leitfrage}>
+              „{leitfrage}"
+            </p>
+          </div>
+        ) : (
+          <div className="px-3 py-2 border-b border-border/60 bg-amber-50 shrink-0">
+            <button
+              onClick={onEditBeschreibung || undefined}
+              disabled={!onEditBeschreibung}
+              className="text-[11px] font-medium text-amber-700 hover:underline disabled:no-underline disabled:cursor-default text-left"
+            >
+              Leitfrage fehlt – bitte eintragen
+            </button>
+          </div>
+        )
+      )}
 
       {/* Drop-Zone */}
        <Droppable droppableId={id}>
@@ -474,7 +496,13 @@ export default function StrukturBoardEmbedded({
 
     const tfSpalten = [...felder]
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-      .map(tf => ({ id: `tf-${tf.id}`, titel: tf.titel, themenfeldId: tf.id, beschreibung: tf.beschreibung || '' }));
+      .map(tf => ({
+        id: `tf-${tf.id}`,
+        titel: tf.titel,
+        themenfeldId: tf.id,
+        leitfrage: tf.leitfrage || '',
+        beschreibung: tf.beschreibung || '',
+      }));
 
     const newMap = { [SAMMELBECKEN_ID]: [] };
     tfSpalten.forEach(s => { newMap[s.id] = []; });
@@ -1078,7 +1106,8 @@ export default function StrukturBoardEmbedded({
                 onMoveRight={() => moveSpalte(spalte.id, 'right')}
                 canMoveLeft={idx > 0}
                 canMoveRight={idx < spalten.length - 1}
-                hatBeschreibung={!!spalte.beschreibung}
+                leitfrage={spalte.leitfrage}
+                hatBeschreibung={!!spalte.beschreibung || !!spalte.leitfrage}
                 onEditBeschreibung={spalte.themenfeldId ? () => setBeschreibungDialog(spalte) : null}
               />
             ))}
@@ -1140,10 +1169,11 @@ export default function StrukturBoardEmbedded({
         onOpenChange={(open) => !open && setBeschreibungDialog(null)}
         themenfeldId={beschreibungDialog?.themenfeldId}
         titel={beschreibungDialog?.titel}
+        leitfrage={beschreibungDialog?.leitfrage}
         beschreibung={beschreibungDialog?.beschreibung}
-        onSaved={(text) => {
+        onSaved={({ leitfrage, beschreibung }) => {
           const id = beschreibungDialog?.id;
-          setSpalten(prev => prev.map(s => (s.id === id ? { ...s, beschreibung: text } : s)));
+          setSpalten(prev => prev.map(s => (s.id === id ? { ...s, leitfrage, beschreibung } : s)));
           queryClient.refetchQueries({ queryKey: ['themenfelder'] });
         }}
       />
