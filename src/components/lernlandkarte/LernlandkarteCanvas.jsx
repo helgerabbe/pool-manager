@@ -2,12 +2,16 @@
  * LernlandkarteCanvas.jsx
  *
  * Die zieh- und zoombare Fläche der Lernlandkarte: dezente Verbindungslinien
- * als SVG, darüber die Knoten. Etappe 1 bewusst OHNE Animation — erst muss
- * die Logik stimmen.
+ * als SVG, darüber die Knoten.
+ *
+ * Etappe 2 — Bewegung: Wechselt der Fokus, ordnen sich die Knoten federnd neu
+ * an statt zu springen, neue Zweige tauchen nacheinander auf, die Linien
+ * wandern mit. Jeder Knoten schwebt zusätzlich leise (siehe Wrapper).
  */
 import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { Plus, Minus, Crosshair } from 'lucide-react';
-import LernlandkarteKnoten from './LernlandkarteKnoten';
+import LernlandkarteKnotenWrapper from './LernlandkarteKnotenWrapper';
 
 const START = { x: 0, y: 0, zoom: 0.72 };
 
@@ -30,7 +34,7 @@ export default function LernlandkarteCanvas({
     setView((v) => ({ ...v, x: 0, y: 0 }));
   }, [fokusId]);
 
-  const sichtbareNodes = nodes.filter((n) => sichtbar.has(n.id));
+  const sichtbareNodes = nodes.filter((n) => sichtbar.has(n.id) && positionen[n.id]);
   const kanten = sichtbareNodes
     .filter((n) => n.parentId && sichtbar.has(n.parentId) && positionen[n.parentId] && positionen[n.id])
     .map((n) => ({
@@ -76,9 +80,11 @@ export default function LernlandkarteCanvas({
         zoomen(e.deltaY > 0 ? -0.06 : 0.06);
       }}
     >
-      {/* Aura hinter der Mitte */}
-      <div
+      {/* Aura hinter der Mitte — atmet langsam. */}
+      <motion.div
         className="pointer-events-none absolute rounded-full"
+        animate={{ opacity: [0.75, 1, 0.75], scale: [1, 1.06, 1] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
         style={{
           left: '50%',
           top: '50%',
@@ -99,30 +105,41 @@ export default function LernlandkarteCanvas({
           className="pointer-events-none absolute overflow-visible"
           style={{ left: 0, top: 0, width: 1, height: 1 }}
         >
-          {kanten.map((k) => (
-            <line
-              key={k.id}
-              x1={k.von.x}
-              y1={k.von.y}
-              x2={k.bis.x}
-              y2={k.bis.y}
-              stroke="rgba(255,255,255,0.16)"
-              strokeWidth="2"
-              strokeDasharray={k.gesperrt ? '6 8' : undefined}
-            />
-          ))}
+          <AnimatePresence>
+            {kanten.map((k) => (
+              <motion.line
+                key={k.id}
+                initial={{ opacity: 0 }}
+                animate={{
+                  opacity: 1,
+                  x1: k.von.x,
+                  y1: k.von.y,
+                  x2: k.bis.x,
+                  y2: k.bis.y,
+                }}
+                exit={{ opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 120, damping: 18 }}
+                stroke="rgba(255,255,255,0.16)"
+                strokeWidth="2"
+                strokeDasharray={k.gesperrt ? '6 8' : undefined}
+              />
+            ))}
+          </AnimatePresence>
         </svg>
 
-        {sichtbareNodes.map((n) => (
-          <LernlandkarteKnoten
-            key={n.id}
-            node={n}
-            position={positionen[n.id]}
-            status={status[n.id]}
-            aktiv={aktivId === n.id}
-            onClick={onKnotenClick}
-          />
-        ))}
+        <AnimatePresence>
+          {sichtbareNodes.map((n, i) => (
+            <LernlandkarteKnotenWrapper
+              key={n.id}
+              node={n}
+              position={positionen[n.id]}
+              status={status[n.id]}
+              aktiv={aktivId === n.id}
+              index={i}
+              onClick={onKnotenClick}
+            />
+          ))}
+        </AnimatePresence>
       </div>
 
       {/* Steuerung */}
