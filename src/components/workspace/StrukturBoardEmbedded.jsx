@@ -76,8 +76,8 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, onGotoLernzi
                 autoFocus
                 placeholder="z.B. Grundlagen der linearen Funktionen"
                 value={titel}
-                onChange={e => setTitel(e.target.value)}
-              />
+                onChange={(e) => setTitel(e.target.value)} />
+              
             </div>
             <div className="space-y-1.5">
               <Label>Dauer</Label>
@@ -85,9 +85,9 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, onGotoLernzi
                 <Input
                   type="number" min={5} step={5}
                   value={dauer}
-                  onChange={e => setDauer(parseInt(e.target.value) || 45)}
-                  className="w-20"
-                />
+                  onChange={(e) => setDauer(parseInt(e.target.value) || 45)}
+                  className="w-20" />
+                
                 <span className="text-xs text-muted-foreground">Min.</span>
               </div>
             </div>
@@ -100,38 +100,38 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, onGotoLernzi
               <Target className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>Lernziele werden zentral im Tab <strong>„Lernziele"</strong> angelegt und bearbeitet.</span>
             </div>
-            {!isNew && initialData?.id && onGotoLernziele && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5 h-7 text-xs"
-                onClick={() => {
-                  onOpenChange(false);
-                  onGotoLernziele(initialData.id);
-                }}
-              >
+            {!isNew && initialData?.id && onGotoLernziele &&
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 h-7 text-xs"
+              onClick={() => {
+                onOpenChange(false);
+                onGotoLernziele(initialData.id);
+              }}>
+              
                 <Target className="w-3.5 h-3.5" />
                 Lernziele dieses Pakets bearbeiten
               </Button>
-            )}
-            {lernziele.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Diesem Lernpaket sind noch keine Lernziele zugeordnet.</p>
-            ) : (
-              <div className="space-y-1.5">
-                {lernziele.map((lz) => (
-                  <div key={lz.id} className="flex items-start gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5 text-sm">
+            }
+            {lernziele.length === 0 ?
+            <p className="text-xs text-muted-foreground italic">Diesem Lernpaket sind noch keine Lernziele zugeordnet.</p> :
+
+            <div className="space-y-1.5">
+                {lernziele.map((lz) =>
+              <div key={lz.id} className="flex items-start gap-2 rounded-md border bg-muted/20 px-2.5 py-1.5 text-sm">
                     <Target className="w-3.5 h-3.5 text-green-600 shrink-0 mt-0.5" />
                     <div className="min-w-0">
                       <p className="leading-snug">{lz.formulierung_fachsprache}</p>
-                      {lz.schueler_uebersetzung && (
-                        <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
-                      )}
+                      {lz.schueler_uebersetzung &&
+                  <p className="text-xs text-muted-foreground italic mt-0.5">„{lz.schueler_uebersetzung}"</p>
+                  }
                     </div>
                   </div>
-                ))}
+              )}
               </div>
-            )}
+            }
           </div>
         </div>
         <DialogFooter className="shrink-0 border-t pt-4">
@@ -141,8 +141,8 @@ function LernpaketDialog({ open, onOpenChange, initialData, onSave, onGotoLernzi
           </Button>
         </DialogFooter>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
 
 const SAMMELBECKEN_ID = '__sammelbecken__';
@@ -152,65 +152,65 @@ const SAMMELBECKEN_ID = '__sammelbecken__';
 function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly = false, istLesemodus = false }) {
   return (
     <Draggable draggableId={paket.id} index={index}>
-      {(provided, snapshot) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          className={cn(
-            'group flex items-start gap-1.5 rounded-lg border bg-card text-sm transition-shadow',
-            compact ? 'p-1.5' : 'p-3',
-            snapshot.isDragging
-              ? 'shadow-xl border-primary/40 rotate-1 scale-105'
-              : 'shadow-sm hover:shadow-md border-border hover:border-primary/30 cursor-pointer'
-          )}
-          onClick={() => onEdit(paket)}
-          title={compact ? paket.titel_des_pakets : undefined}
-        >
+      {(provided, snapshot) =>
+      <div
+        ref={provided.innerRef}
+        {...provided.draggableProps}
+        className={cn(
+          'group flex items-start gap-1.5 rounded-lg border bg-card text-sm transition-shadow',
+          compact ? 'p-1.5' : 'p-3',
+          snapshot.isDragging ?
+          'shadow-xl border-primary/40 rotate-1 scale-105' :
+          'shadow-sm hover:shadow-md border-border hover:border-primary/30 cursor-pointer'
+        )}
+        onClick={() => onEdit(paket)}
+        title={compact ? paket.titel_des_pakets : undefined}>
+        
           <div
-            {...provided.dragHandleProps}
-            className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab shrink-0"
-            onClick={e => e.stopPropagation()}
-          >
+          {...provided.dragHandleProps}
+          className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab shrink-0"
+          onClick={(e) => e.stopPropagation()}>
+          
             <GripVertical className="w-3.5 h-3.5" />
           </div>
           <div className="flex-1 min-w-0">
             <p className={cn('font-medium leading-snug', compact && 'truncate whitespace-nowrap text-xs')}>
               {paket.titel_des_pakets}
             </p>
-            {!compact && paket.geschaetzte_dauer_minuten && (
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+            {!compact && paket.geschaetzte_dauer_minuten &&
+          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
                 <Clock className="w-3 h-3" />{paket.geschaetzte_dauer_minuten} Min.
               </p>
-            )}
-            {!compact && paket.lernziele && paket.lernziele.length > 0 && (
-              <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+          }
+            {!compact && paket.lernziele && paket.lernziele.length > 0 &&
+          <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
                 <Target className="w-3 h-3" />{paket.lernziele.length} Lernziel{paket.lernziele.length !== 1 ? 'e' : ''}
               </p>
-            )}
+          }
           </div>
-          {!readOnly && !istLesemodus && (
-            <button
-              onClick={e => { e.stopPropagation(); onDelete(paket.id); }}
-              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0"
-            >
+          {!readOnly && !istLesemodus &&
+        <button
+          onClick={(e) => {e.stopPropagation();onDelete(paket.id);}}
+          className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 text-destructive transition-all shrink-0">
+          
               <Trash2 className="w-3 h-3" />
             </button>
-          )}
+        }
         </div>
-      )}
-    </Draggable>
-  );
+      }
+    </Draggable>);
+
 }
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
 function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false, leitfrage = '' }) {
-  const [editingTitel, setEditingTitel]   = useState(false);
-  const [titelDraft, setTitelDraft]       = useState(titel);
+  const [editingTitel, setEditingTitel] = useState(false);
+  const [titelDraft, setTitelDraft] = useState(titel);
 
-  useEffect(() => { setTitelDraft(titel); }, [titel]);
+  useEffect(() => {setTitelDraft(titel);}, [titel]);
 
-  const saveTitel = () => { if (titelDraft.trim()) onTitelChange(titelDraft.trim()); setEditingTitel(false); };
+  const saveTitel = () => {if (titelDraft.trim()) onTitelChange(titelDraft.trim());setEditingTitel(false);};
 
   // Eingeklappte Ansicht
   if (collapsed) {
@@ -220,43 +220,43 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         <button
           onClick={onToggleCollapse}
           className="p-2 flex justify-center hover:bg-muted/60 rounded-t-xl transition-colors"
-          title="Spalte ausklappen"
-        >
+          title="Spalte ausklappen">
+          
           <ChevronLeft className="w-4 h-4 text-muted-foreground rotate-180" />
         </button>
         {/* Sequenz-Nummer (collapsed) */}
-        {sequenzNummer !== null && (
-          <div className="flex justify-center pb-1">
+        {sequenzNummer !== null &&
+        <div className="flex justify-center pb-1">
             <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold">{sequenzNummer}</span>
           </div>
-        )}
+        }
         {/* Vertikaler Titel */}
         <div className="flex-1 flex items-center justify-center py-3 overflow-hidden">
           <span
             className="text-xs font-semibold text-muted-foreground whitespace-nowrap"
             style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', transform: 'rotate(180deg)' }}
-            title={titel}
-          >
+            title={titel}>
+            
             {titel} ({pakete.length})
           </span>
         </div>
         {/* Drop-Zone (unsichtbar, aber aktiv) */}
           <Droppable droppableId={id}>
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={cn(
-                  'w-full min-h-[40px] rounded-b-xl transition-colors overflow-hidden',
-                  snapshot.isDraggingOver && 'bg-primary/20'
-                )}
-              >
+            {(provided, snapshot) =>
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={cn(
+              'w-full min-h-[40px] rounded-b-xl transition-colors overflow-hidden',
+              snapshot.isDraggingOver && 'bg-primary/20'
+            )}>
+            
               {provided.placeholder}
             </div>
-          )}
+          }
         </Droppable>
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -268,151 +268,151 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
       {/* Header */}
       <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
         {/* Reorder-Pfeil links (nur Themenfelder, nur im Edit-Modus).
-            Volle Pfeile mit Schaft (ArrowLeft) + dezenter Pill-Hintergrund,
-            damit sie sich klar vom dünnen Einklappen-Chevron unterscheiden.
-            Sammelbecken ist von der Reorder-Logik ausgenommen. */}
-        {!isSammelbecken && !readOnly && !istLesemodus && onMoveLeft && (
-          <button
-            onClick={onMoveLeft}
-            disabled={!canMoveLeft}
-            className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
-            title="Themenfeld nach links verschieben"
-          >
+             Volle Pfeile mit Schaft (ArrowLeft) + dezenter Pill-Hintergrund,
+             damit sie sich klar vom dünnen Einklappen-Chevron unterscheiden.
+             Sammelbecken ist von der Reorder-Logik ausgenommen. */}
+        {!isSammelbecken && !readOnly && !istLesemodus && onMoveLeft &&
+        <button
+          onClick={onMoveLeft}
+          disabled={!canMoveLeft}
+          className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
+          title="Themenfeld nach links verschieben">
+          
             <ArrowLeft className="w-3.5 h-3.5" />
           </button>
-        )}
-
-        {isSammelbecken
-          ? <Layers className="w-4 h-4 text-muted-foreground shrink-0" />
-          : sequenzNummer !== null
-            ? <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">{sequenzNummer}</span>
-            : <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
         }
 
-        {editingTitel && !isSammelbecken ? (
-          <Input
-            autoFocus value={titelDraft}
-            onChange={e => setTitelDraft(e.target.value)}
-            onBlur={saveTitel}
-            onKeyDown={e => { if (e.key === 'Enter') saveTitel(); if (e.key === 'Escape') setEditingTitel(false); }}
-            className="h-7 text-sm font-semibold flex-1"
-          />
-        ) : (
-          <button
-            className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary')}
-            onClick={() => !isSammelbecken && setEditingTitel(true)}
-            title={titel}
-          >
+        {isSammelbecken ?
+        <Layers className="w-4 h-4 text-muted-foreground shrink-0" /> :
+        sequenzNummer !== null ?
+        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">{sequenzNummer}</span> :
+        <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+        }
+
+        {editingTitel && !isSammelbecken ?
+        <Input
+          autoFocus value={titelDraft}
+          onChange={(e) => setTitelDraft(e.target.value)}
+          onBlur={saveTitel}
+          onKeyDown={(e) => {if (e.key === 'Enter') saveTitel();if (e.key === 'Escape') setEditingTitel(false);}}
+          className="h-7 text-sm font-semibold flex-1" /> :
+
+
+        <button
+          className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary')}
+          onClick={() => !isSammelbecken && setEditingTitel(true)}
+          title={titel}>
+          
             {titel}
           </button>
-        )}
+        }
 
         <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">{pakete.length}</span>
 
         {/* Ein Satz zum Themenfeld für die Schüler (Untertitel im Lernweg). */}
-        {!isSammelbecken && !readOnly && !istLesemodus && onEditBeschreibung && (
-          <button
-            onClick={onEditBeschreibung}
-            className={cn(
-              'p-1 rounded transition-colors shrink-0',
-              hatBeschreibung
-                ? 'text-primary hover:bg-primary/10'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-            title={hatBeschreibung ? 'Leitfrage & Beschreibung bearbeiten' : 'Leitfrage & Beschreibung eintragen'}
-          >
+        {!isSammelbecken && !readOnly && !istLesemodus && onEditBeschreibung &&
+        <button
+          onClick={onEditBeschreibung}
+          className={cn(
+            'p-1 rounded transition-colors shrink-0',
+            hatBeschreibung ?
+            'text-primary hover:bg-primary/10' :
+            'text-muted-foreground hover:bg-muted hover:text-foreground'
+          )}
+          title={hatBeschreibung ? 'Leitfrage & Beschreibung bearbeiten' : 'Leitfrage & Beschreibung eintragen'}>
+          
             <MessageSquareText className="w-3.5 h-3.5" />
           </button>
-        )}
+        }
 
         {/* Reorder-Pfeil rechts (gleicher Stil wie links: voller Pfeil + Pill). */}
-        {!isSammelbecken && !readOnly && !istLesemodus && onMoveRight && (
-          <button
-            onClick={onMoveRight}
-            disabled={!canMoveRight}
-            className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
-            title="Themenfeld nach rechts verschieben"
-          >
+        {!isSammelbecken && !readOnly && !istLesemodus && onMoveRight &&
+        <button
+          onClick={onMoveRight}
+          disabled={!canMoveRight}
+          className="p-1 rounded-md bg-amber-100/60 hover:bg-amber-200 text-amber-700 hover:text-amber-900 transition-colors disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-amber-100/60"
+          title="Themenfeld nach rechts verschieben">
+          
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
-        )}
+        }
 
         {/* Einklapp-Button (nur für Themenfelder).
-            Doppel-Chevron + andere Farbe (slate), klar abgegrenzt von den
-            bernsteinfarbenen Reorder-Pfeilen oben. */}
-        {onToggleCollapse && (
-          <button
-            onClick={onToggleCollapse}
-            className="p-1 rounded hover:bg-muted text-slate-500 hover:text-slate-900 transition-colors"
-            title="Spalte einklappen"
-          >
+             Doppel-Chevron + andere Farbe (slate), klar abgegrenzt von den
+             bernsteinfarbenen Reorder-Pfeilen oben. */}
+        {onToggleCollapse &&
+        <button
+          onClick={onToggleCollapse}
+          className="p-1 rounded hover:bg-muted text-slate-500 hover:text-slate-900 transition-colors"
+          title="Spalte einklappen">
+          
             <ChevronsLeft className="w-3.5 h-3.5" />
           </button>
-        )}
+        }
 
-        {!isSammelbecken && !readOnly && !istLesemodus && (
-          <button onClick={() => !istLesemodus && onDeleteSpalte()} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+        {!isSammelbecken && !readOnly && !istLesemodus &&
+        <button onClick={() => !istLesemodus && onDeleteSpalte()} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
-        )}
+        }
       </div>
 
       {/* Leitfrage: die Frage, die die Schüler auf der Lernlandkarte sehen.
-          Fehlt sie, weist eine Pille darauf hin – ein Klick öffnet den Dialog. */}
+           Fehlt sie, weist eine Pille darauf hin – ein Klick öffnet den Dialog. */}
       {!isSammelbecken && (
-        leitfrage ? (
-          <div className="px-3 py-2 border-b border-border/60 bg-primary/5 shrink-0">
-            <p className="text-[11px] leading-snug text-primary/90 italic" title={leitfrage}>
+      leitfrage ?
+      <div className="px-3 py-2 border-b border-border/60 bg-primary/5 shrink-0">
+            <p className="leading-snug text-primary/90 italic text-xs" title={leitfrage}>
               „{leitfrage}"
             </p>
-          </div>
-        ) : (
-          <div className="px-3 py-2 border-b border-border/60 bg-amber-50 shrink-0">
+          </div> :
+
+      <div className="px-3 py-2 border-b border-border/60 bg-amber-50 shrink-0">
             <button
-              onClick={onEditBeschreibung || undefined}
-              disabled={!onEditBeschreibung}
-              className="text-[11px] font-medium text-amber-700 hover:underline disabled:no-underline disabled:cursor-default text-left"
-            >
+          onClick={onEditBeschreibung || undefined}
+          disabled={!onEditBeschreibung}
+          className="text-[11px] font-medium text-amber-700 hover:underline disabled:no-underline disabled:cursor-default text-left">
+          
               Leitfrage fehlt – bitte eintragen
             </button>
-          </div>
-        )
-      )}
+          </div>)
+
+      }
 
       {/* Drop-Zone */}
        <Droppable droppableId={id}>
-         {(provided, snapshot) => (
-           <div
-             ref={provided.innerRef}
-             {...provided.droppableProps}
-             className={cn('flex-1 p-2 space-y-1.5 min-h-[120px] transition-colors overflow-y-auto', snapshot.isDraggingOver && 'bg-primary/5')}
-           >
-            {pakete.map((paket, index) => (
-              <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} readOnly={readOnly} istLesemodus={istLesemodus} />
-            ))}
+         {(provided, snapshot) =>
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className={cn('flex-1 p-2 space-y-1.5 min-h-[120px] transition-colors overflow-y-auto', snapshot.isDraggingOver && 'bg-primary/5')}>
+          
+            {pakete.map((paket, index) =>
+          <PaketKarte key={paket.id} paket={paket} index={index} onDelete={onDeletePaket} onEdit={onEditPaket} compact={compact} readOnly={readOnly} istLesemodus={istLesemodus} />
+          )}
             {provided.placeholder}
-            {pakete.length === 0 && !snapshot.isDraggingOver && (
-              <div className="flex items-center justify-center h-20 text-xs text-muted-foreground/40 border-2 border-dashed border-muted rounded-lg">
+            {pakete.length === 0 && !snapshot.isDraggingOver &&
+          <div className="flex items-center justify-center h-20 text-xs text-muted-foreground/40 border-2 border-dashed border-muted rounded-lg">
                 Hierher ziehen
               </div>
-            )}
+          }
           </div>
-        )}
+        }
       </Droppable>
 
       {/* Neues Lernpaket */}
-      {!readOnly && !istLesemodus && (
-        <div className="px-2 pb-2 pt-1 shrink-0">
+      {!readOnly && !istLesemodus &&
+      <div className="px-2 pb-2 pt-1 shrink-0">
           <button
-            onClick={() => !istLesemodus && onAddPaket(id)}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all"
-          >
+          onClick={() => !istLesemodus && onAddPaket(id)}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all">
+          
             <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
           </button>
         </div>
-      )}
-    </div>
-  );
+      }
+    </div>);
+
 }
 
 // ── Haupt-Komponente (eingebettet) ────────────────────────────────────────────
@@ -424,7 +424,7 @@ export default function StrukturBoardEmbedded({
   lernziele: remoteLernziele = [],
   themenfelder: remoteThemenfelder,
   queryClient,
-  onSaved,   // callback nach erfolgreichem Speichern
+  onSaved, // callback nach erfolgreichem Speichern
   onGotoLernziele = null, // Deep-Link: Lernziele dieses Pakets in Tab 3 bearbeiten
   readOnly = false, // ← Structural Lock nicht aktiv
   isStructuralEditingActive = false, // ← NEU: Expliziter Lock-Status von Workspace
@@ -438,7 +438,7 @@ export default function StrukturBoardEmbedded({
   onAcquireStructLock = null,
   onReleaseStructLock = null,
   isAcquiringStructLock = false,
-  isReleasingStructLock = false,
+  isReleasingStructLock = false
 }) {
   const { permissions, authUser, rolle } = useRBAC();
 
@@ -447,24 +447,24 @@ export default function StrukturBoardEmbedded({
   const canForceOverwrite = rolle === ROLLEN.ADMIN || rolle === ROLLEN.FACHSCHAFT;
   const versionConflict = useVersionConflict({
     invalidateKeys: [
-      ['lernpakete'],
-      ['themenfelder'],
-      ['lernziele'],
-      ['einheit', einheitId],
-      ['workspace-data', einheitId],
-    ],
+    ['lernpakete'],
+    ['themenfelder'],
+    ['lernziele'],
+    ['einheit', einheitId],
+    ['workspace-data', einheitId]],
+
     canForceOverwrite,
     // forceOverwriteFn wird in Phase 3.x aktiviert, sobald das Backend
     // einen `force: true`-Pfad akzeptiert. Bis dahin bleibt nur "neu laden".
-    forceOverwriteFn: null,
+    forceOverwriteFn: null
   });
 
-  const [spalten, setSpalten]         = useState([]);
-  const [paketeMap, setPaketeMap]     = useState({});
-  const [saving, setSaving]           = useState(false);
+  const [spalten, setSpalten] = useState([]);
+  const [paketeMap, setPaketeMap] = useState({});
+  const [saving, setSaving] = useState(false);
   const [isSavingPhase, setIsSavingPhase] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [isDirty, setIsDirty]         = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   // Warnung vor dem Entfernen eines Lernpakets (zeigt betroffene Arbeitspläne).
   const [paketDeleteConfirm, setPaketDeleteConfirm] = useState(null);
@@ -479,7 +479,7 @@ export default function StrukturBoardEmbedded({
   const [beschreibungDialog, setBeschreibungDialog] = useState(null);
 
   const toggleCollapse = (spalteId) => {
-    setCollapsedSpalten(prev => {
+    setCollapsedSpalten((prev) => {
       const next = new Set(prev);
       next.has(spalteId) ? next.delete(spalteId) : next.add(spalteId);
       return next;
@@ -494,18 +494,18 @@ export default function StrukturBoardEmbedded({
     const pakete = remotePakete || [];
     const felder = remoteThemenfelder || [];
 
-    const tfSpalten = [...felder]
-      .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
-      .map(tf => ({
-        id: `tf-${tf.id}`,
-        titel: tf.titel,
-        themenfeldId: tf.id,
-        leitfrage: tf.leitfrage || '',
-        beschreibung: tf.beschreibung || '',
-      }));
+    const tfSpalten = [...felder].
+    sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).
+    map((tf) => ({
+      id: `tf-${tf.id}`,
+      titel: tf.titel,
+      themenfeldId: tf.id,
+      leitfrage: tf.leitfrage || '',
+      beschreibung: tf.beschreibung || ''
+    }));
 
     const newMap = { [SAMMELBECKEN_ID]: [] };
-    tfSpalten.forEach(s => { newMap[s.id] = []; });
+    tfSpalten.forEach((s) => {newMap[s.id] = [];});
 
     // Lernziele pro Paket gruppieren (damit sie im Dialog + auf der Karte sichtbar sind)
     const zieleByPaket = (remoteLernziele || []).reduce((acc, lz) => {
@@ -514,21 +514,21 @@ export default function StrukturBoardEmbedded({
       return acc;
     }, {});
 
-    pakete.forEach(p => {
+    pakete.forEach((p) => {
       const sid = p.themenfeld_id ? `tf-${p.themenfeld_id}` : SAMMELBECKEN_ID;
       if (!newMap[sid]) newMap[sid] = [];
       // Lernziele an Paket hängen, damit sie im Dialog wieder angezeigt werden
       newMap[sid].push({ ...p, lernziele: zieleByPaket[p.id] || [] });
     });
 
-    Object.keys(newMap).forEach(k => {
+    Object.keys(newMap).forEach((k) => {
       newMap[k].sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
     });
 
     setSpalten(tfSpalten);
     setPaketeMap(newMap);
-    setOriginalSpaltenIds(new Set(tfSpalten.map(s => s.themenfeldId).filter(Boolean)));
-    setOriginalPaketIds(new Set(pakete.map(p => p.id)));
+    setOriginalSpaltenIds(new Set(tfSpalten.map((s) => s.themenfeldId).filter(Boolean)));
+    setOriginalPaketIds(new Set(pakete.map((p) => p.id)));
   }, [remotePakete, remoteLernziele, remoteThemenfelder, isDirty, isSavingPhase]);
 
 
@@ -542,7 +542,7 @@ export default function StrukturBoardEmbedded({
     authUser?.email
   );
   const kannStrukturBearbeiten = einheit ? unitAccess.hasFullAccess : false;
-  
+
   // 🔒 HARTE SPERRE: Nur wenn Structural Lock aktiv ist, darf bearbeitet werden
   // + GLOBALE SPERRE: Wenn isLockedByOther, dann immer Lesemodus
   // ✅ LESEMODUS für normale Lehrkräfte (können sehen, aber nicht bearbeiten)
@@ -559,8 +559,8 @@ export default function StrukturBoardEmbedded({
             Bitte laden Sie die Einheit neu.
           </p>
         </div>
-      </div>
-    );
+      </div>);
+
   }
 
 
@@ -573,7 +573,7 @@ export default function StrukturBoardEmbedded({
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     setIsDirty(true);
-    setPaketeMap(prev => {
+    setPaketeMap((prev) => {
       const next = { ...prev };
       const src = [...(next[source.droppableId] || [])];
       const [moved] = src.splice(source.index, 1);
@@ -594,23 +594,23 @@ export default function StrukturBoardEmbedded({
   // ── Aktionen ──────────────────────────────────────────────────────────────
 
   const DEFAULT_PHASEN = {
-    Input:     { disabled: false, selected_aktivitaet_id: null, field_values: {} },
-    Übung:     { disabled: false, selected_aktivitaet_id: null, field_values: {} },
-    Abschluss: { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+    Input: { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+    Übung: { disabled: false, selected_aktivitaet_id: null, field_values: {} },
+    Abschluss: { disabled: false, selected_aktivitaet_id: null, field_values: {} }
   };
 
   const handleNeuesThemenfeld = () => {
     if (istLesemodus) return;
     setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
-    setSpalten(prev => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
-    setPaketeMap(prev => ({ ...prev, [newId]: [] }));
+    setSpalten((prev) => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
+    setPaketeMap((prev) => ({ ...prev, [newId]: [] }));
   };
 
   const handleTitelChange = (spalteId, neuerTitel) => {
     if (istLesemodus) return;
     setIsDirty(true);
-    setSpalten(prev => prev.map(s => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
+    setSpalten((prev) => prev.map((s) => s.id === spalteId ? { ...s, titel: neuerTitel } : s));
   };
 
   // Themenfeld eine Position nach links/rechts verschieben.
@@ -619,8 +619,8 @@ export default function StrukturBoardEmbedded({
   // `spalten` und damit automatisch ausgeschlossen.
   const moveSpalte = (spalteId, direction) => {
     if (istLesemodus) return;
-    setSpalten(prev => {
-      const idx = prev.findIndex(s => s.id === spalteId);
+    setSpalten((prev) => {
+      const idx = prev.findIndex((s) => s.id === spalteId);
       if (idx === -1) return prev;
       const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
       if (targetIdx < 0 || targetIdx >= prev.length) return prev;
@@ -633,7 +633,7 @@ export default function StrukturBoardEmbedded({
 
   const handleDeleteSpalteRequest = (spalteId) => {
     if (istLesemodus) return;
-    const spalte = spalten.find(s => s.id === spalteId);
+    const spalte = spalten.find((s) => s.id === spalteId);
     const paketCount = (paketeMap[spalteId] || []).length;
     setDeleteConfirm({ spalteId, titel: spalte?.titel || 'Themenfeld', paketCount });
   };
@@ -643,20 +643,20 @@ export default function StrukturBoardEmbedded({
     const { spalteId } = deleteConfirm;
 
     // Sammelbecken-Liste: verschobene Pakete ans Ende anhängen, mit neuen Sort-Indizes
-    setPaketeMap(prev => {
-      const paketeInSpalte = (prev[spalteId] || []).map(p => ({ ...p, themenfeld_id: null }));
-      const sammelbecken   = prev[SAMMELBECKEN_ID] || [];
+    setPaketeMap((prev) => {
+      const paketeInSpalte = (prev[spalteId] || []).map((p) => ({ ...p, themenfeld_id: null }));
+      const sammelbecken = prev[SAMMELBECKEN_ID] || [];
       // Sort-Indizes fortführend vergeben
       const verschoben = paketeInSpalte.map((p, i) => ({
         ...p,
-        reihenfolge_nummer: sammelbecken.length + i + 1,
+        reihenfolge_nummer: sammelbecken.length + i + 1
       }));
       const next = { ...prev, [SAMMELBECKEN_ID]: [...sammelbecken, ...verschoben] };
       delete next[spalteId];
       return next;
     });
 
-    setSpalten(prev => prev.filter(s => s.id !== spalteId));
+    setSpalten((prev) => prev.filter((s) => s.id !== spalteId));
     setDeleteConfirm(null);
   };
 
@@ -667,43 +667,43 @@ export default function StrukturBoardEmbedded({
   };
 
   const handlePaketSave = ({ titel, dauer }) => {
-   setIsDirty(true);
-   const { spalteId, paket } = paketDialog;
-   if (paket) {
-     // Paket bearbeiten – nur Titel & Dauer (Lernziele werden in Tab 3 gepflegt).
-     setPaketeMap(prev => {
-       const next = {};
-       Object.entries(prev).forEach(([k, v]) => {
-         next[k] = v.map(p => p.id === paket.id
-           ? { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer }
-           : p);
-       });
-       return next;
-     });
-   } else {
-     // Neues Paket anlegen (Dialog wurde ohne paket=null geöffnet)
-     const tempId = `new-${Date.now()}`;
-     setPaketeMap(prev => ({
-       ...prev,
-       [spalteId]: [...(prev[spalteId] || []), {
-         id: tempId,
-         titel_des_pakets: titel,
-         geschaetzte_dauer_minuten: dauer,
-         lernziele: [],
-         reihenfolge_nummer: (prev[spalteId] || []).length + 1,
-         einheit_id: einheitId,
-         phasen_konfiguration: DEFAULT_PHASEN,
-         isNew: true,
-       }],
-     }));
-   }
-   setPaketDialog({ open: false, spalteId: null, paket: null });
+    setIsDirty(true);
+    const { spalteId, paket } = paketDialog;
+    if (paket) {
+      // Paket bearbeiten – nur Titel & Dauer (Lernziele werden in Tab 3 gepflegt).
+      setPaketeMap((prev) => {
+        const next = {};
+        Object.entries(prev).forEach(([k, v]) => {
+          next[k] = v.map((p) => p.id === paket.id ?
+          { ...p, titel_des_pakets: titel, geschaetzte_dauer_minuten: dauer } :
+          p);
+        });
+        return next;
+      });
+    } else {
+      // Neues Paket anlegen (Dialog wurde ohne paket=null geöffnet)
+      const tempId = `new-${Date.now()}`;
+      setPaketeMap((prev) => ({
+        ...prev,
+        [spalteId]: [...(prev[spalteId] || []), {
+          id: tempId,
+          titel_des_pakets: titel,
+          geschaetzte_dauer_minuten: dauer,
+          lernziele: [],
+          reihenfolge_nummer: (prev[spalteId] || []).length + 1,
+          einheit_id: einheitId,
+          phasen_konfiguration: DEFAULT_PHASEN,
+          isNew: true
+        }]
+      }));
+    }
+    setPaketDialog({ open: false, spalteId: null, paket: null });
   };
 
   // Schritt 1: Warndialog öffnen (statt direkt zu entfernen).
   const handleDeletePaketRequest = (paketId) => {
     if (istLesemodus) return;
-    const paket = Object.values(paketeMap).flat().find(p => p.id === paketId);
+    const paket = Object.values(paketeMap).flat().find((p) => p.id === paketId);
     if (!paket) return;
     setPaketDeleteConfirm(paket);
   };
@@ -711,9 +711,9 @@ export default function StrukturBoardEmbedded({
   const handleDeletePaket = (paketId) => {
     if (istLesemodus) return;
     setIsDirty(true);
-    setPaketeMap(prev => {
+    setPaketeMap((prev) => {
       const next = {};
-      Object.entries(prev).forEach(([k, v]) => { next[k] = v.filter(p => p.id !== paketId); });
+      Object.entries(prev).forEach(([k, v]) => {next[k] = v.filter((p) => p.id !== paketId);});
       return next;
     });
   };
@@ -742,15 +742,15 @@ export default function StrukturBoardEmbedded({
         deleteThemenfeld: typeof deleteThemenfeld,
         createLernpaket: typeof createLernpaket,
         updateLernpaket: typeof updateLernpaket,
-        deleteLernpaket: typeof deleteLernpaket,
+        deleteLernpaket: typeof deleteLernpaket
       });
 
       // ── PHASE 1: Identifiziere alle Änderungen ──────────────────────────────
-      const aktuellePacketIds = new Set(Object.values(paketeMap).flat().map(p => p.id));
-      const paketIdZumLoeschen = Array.from(originalPaketIds).filter(id => !aktuellePacketIds.has(id) && !id.startsWith('new-'));
-      
-      const aktuelleThemenfeldIds = new Set(spalten.map(s => s.themenfeldId).filter(Boolean));
-      const themenfeldIdZumLoeschen = Array.from(originalSpaltenIds).filter(id => !aktuelleThemenfeldIds.has(id));
+      const aktuellePacketIds = new Set(Object.values(paketeMap).flat().map((p) => p.id));
+      const paketIdZumLoeschen = Array.from(originalPaketIds).filter((id) => !aktuellePacketIds.has(id) && !id.startsWith('new-'));
+
+      const aktuelleThemenfeldIds = new Set(spalten.map((s) => s.themenfeldId).filter(Boolean));
+      const themenfeldIdZumLoeschen = Array.from(originalSpaltenIds).filter((id) => !aktuelleThemenfeldIds.has(id));
 
       console.log(`[StrukturBoard] 📋 Änderungen: ${paketIdZumLoeschen.length} Pakete zu löschen, ${themenfeldIdZumLoeschen.length} Themenfelder zu löschen`);
 
@@ -791,7 +791,7 @@ export default function StrukturBoardEmbedded({
             themenfeldId = neu.id;
           } else {
             console.log(`[StrukturBoard] ✏️ PHASE3[${i}] Update Themenfeld: "${spalte.titel}" (${themenfeldId})...`);
-            const originalThemenfeld = remoteThemenfelder.find(tf => tf.id === themenfeldId);
+            const originalThemenfeld = remoteThemenfelder.find((tf) => tf.id === themenfeldId);
             const updateData = { titel: spalte.titel, reihenfolge: i + 1 };
             if (originalThemenfeld && originalThemenfeld.titel !== spalte.titel) {
               console.log(`[StrukturBoard] ✏️ PHASE3[${i}] → Titel geändert: "${originalThemenfeld.titel}" → "${spalte.titel}"`);
@@ -812,7 +812,7 @@ export default function StrukturBoardEmbedded({
       let paketCounter = 0;
 
       for (const [spalteId, pakete] of Object.entries(paketeMap)) {
-        const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : spaltenMitId.find(s => s.id === spalteId)?.themenfeldId || null;
+        const themenfeldId = spalteId === SAMMELBECKEN_ID ? null : spaltenMitId.find((s) => s.id === spalteId)?.themenfeldId || null;
         console.log(`[StrukturBoard] 📦 PHASE4: Spalte ${spalteId} hat ${pakete.length} Pakete`);
 
         for (let i = 0; i < pakete.length; i++) {
@@ -828,7 +828,7 @@ export default function StrukturBoardEmbedded({
                 titel_des_pakets: paket.titel_des_pakets,
                 geschaetzte_dauer_minuten: paket.geschaetzte_dauer_minuten || 45,
                 phasen_konfiguration: paket.phasen_konfiguration || DEFAULT_PHASEN,
-                ...update,
+                ...update
               });
               console.log(`[StrukturBoard] ➕ PHASE4[${paketCounter}] ✓ Paket erstellt. ID:`, neuesPaket?.id);
               if (!neuesPaket?.id) throw new Error(`Fehler: Neu erstelltes Lernpaket hat keine ID`);
@@ -836,7 +836,7 @@ export default function StrukturBoardEmbedded({
             } else {
               console.log(`[StrukturBoard] ✏️ PHASE4[${paketCounter}] Update Paket: "${paket.titel_des_pakets}" (ID: ${paket.id})...`);
               // Titel-Änderungen auch speichern, falls geändert
-              const originalPaket = remotePakete.find(p => p.id === paket.id);
+              const originalPaket = remotePakete.find((p) => p.id === paket.id);
               const updateData = { ...update };
               if (originalPaket && originalPaket.titel_des_pakets !== paket.titel_des_pakets) {
                 updateData.titel_des_pakets = paket.titel_des_pakets;
@@ -875,31 +875,31 @@ export default function StrukturBoardEmbedded({
       // Race-Condition Fix: Gib der Datenbank Zeit, alle Schreibvorgänge zu beenden
       // bevor wir die Daten neu laden. Backend sagt "OK!" aber die DB braucht noch Zeit.
       console.log('[StrukturBoard] ⏳ Warte 800ms, damit Datenbank alle Schreibvorgänge abschließt...');
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 800));
 
       // ── PHASE 7: Query Refetch (AGGRESSIV) ───────────────────
       console.log(`[StrukturBoard] 🔄 Lade alle Daten neu...`);
-      
+
       // REFETCH statt INVALIDATE – zwingt sofortiges Neuladen
       await Promise.all([
-        queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
-        queryClient.refetchQueries({ queryKey: ['themenfelder'] }),
-        queryClient.refetchQueries({ queryKey: ['lernziele'] }),
-        queryClient.refetchQueries({ queryKey: ['einheit', einheitId] }),
-      ]);
+      queryClient.refetchQueries({ queryKey: ['lernpakete'] }),
+      queryClient.refetchQueries({ queryKey: ['themenfelder'] }),
+      queryClient.refetchQueries({ queryKey: ['lernziele'] }),
+      queryClient.refetchQueries({ queryKey: ['einheit', einheitId] })]
+      );
 
       // ── PHASE 8: Erfolg! Board-Remount wird über Callback getriggert ─────
       console.log('[StrukturBoard] ✅ Speichern 100% erfolgreich! Triggere Key-Remount im Parent...');
       clearTimeout(timeoutId);
-      
+
       // Erst nach kurzer Verzögerung: Overlay schließen + Erfolg
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       setSaving(false);
       setSaveOverlayOpen(false);
-      
+
       toast.success('✅ Struktur erfolgreich gespeichert! Bearbeitungsmodus wird beendet...');
-      
+
       // 🔄 KEY-REMOUNT: Callback triggert Lock-Release UND kompletten Board-Neustart
       // Der Neustart erzwingt Initialisierung aus 100% neuen Props
       // WICHTIG: isSavingPhase wird später im Callback auf false gesetzt
@@ -925,27 +925,27 @@ export default function StrukturBoardEmbedded({
         status: error?.response?.status,
         message: error?.message,
         data: error?.response?.data,
-        type: error?.constructor?.name,
+        type: error?.constructor?.name
       });
-      
+
       // Explizite Fehlermeldung mit vollständigen Details
-      const errorMessage = 
-        error?.response?.data?.message || 
-        error?.response?.data?.error ||
-        error?.name ||
-        error?.message || 
-        'Speichern fehlgeschlagen: Unbekannter Fehler';
+      const errorMessage =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.name ||
+      error?.message ||
+      'Speichern fehlgeschlagen: Unbekannter Fehler';
 
       // 🚨 HART UND DEUTLICH
       setSaving(false);
       toast.error(`❌ FEHLER beim Speichern: ${errorMessage}`, {
         duration: 10000 // 10 Sekunden
       });
-      
+
       // Overlay bleibt offen bis Nutzer es schließt
       console.warn('[StrukturBoard] ⚠️ Speichern fehlgeschlagen! Bearbeitungsmodus bleibt aktiv.');
       console.warn('[StrukturBoard] Lokale Änderungen sind NICHT verloren. Bitte Internet prüfen und erneut versuchen.');
-      
+
     } finally {
       clearTimeout(timeoutId);
       // Immer aufräumen, auch bei Fehler
@@ -955,7 +955,7 @@ export default function StrukturBoardEmbedded({
   };
 
   const gesamtPakete = Object.values(paketeMap).flat().length;
-  const zugeordnet   = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
+  const zugeordnet = spalten.reduce((n, s) => n + (paketeMap[s.id]?.length || 0), 0);
   const sammelbeckenPakete = paketeMap[SAMMELBECKEN_ID] || [];
 
   // Effektiver Moodle-Status der Struktur: Sobald die Einheit final freigegeben
@@ -964,164 +964,164 @@ export default function StrukturBoardEmbedded({
   // Einheiten-Feld sync_status noch auf 'new' steht.
   const lifecycle = einheit?.export_lifecycle_status || 'draft';
   const istImExport = lifecycle !== 'draft';
-  const strukturSyncStatus = istImExport
-    ? 'pending'
-    : (einheit?.sync_status || 'new');
+  const strukturSyncStatus = istImExport ?
+  'pending' :
+  einheit?.sync_status || 'new';
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Lebenszyklus-Leiste – immer sichtbar (auch im Lesemodus).
-          Zeigt den Moodle-Status der Struktur: Neu / Im Export / Synchronisiert /
-          Struktur geändert. */}
+           Zeigt den Moodle-Status der Struktur: Neu / Im Export / Synchronisiert /
+           Struktur geändert. */}
       <div className="shrink-0 px-4 py-2 border-b border-border bg-muted/20 flex items-center gap-2 flex-wrap">
         <span className="text-xs text-muted-foreground">Moodle-Status der Struktur:</span>
         <EinheitStrukturLebenszyklusBadge syncStatus={strukturSyncStatus} />
 
         {/* Kompakt-Umschalter + Struktur-bearbeiten (grün) / Bearbeitung beenden.
-            Aus der Tab-Leiste hierher verschoben. */}
+             Aus der Tab-Leiste hierher verschoben. */}
         <div className="ml-auto flex items-center gap-2">
-          {onToggleCompact && (
-            <button
-              onClick={onToggleCompact}
-              className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-colors"
-            >
+          {onToggleCompact &&
+          <button
+            onClick={onToggleCompact}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted transition-colors">
+            
               {compact ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
               {compact ? 'Normal' : 'Kompakt'}
             </button>
-          )}
+          }
 
-          {isStructuralEditingActive ? (
-            onReleaseStructLock && (
-              <button
-                onClick={onReleaseStructLock}
-                disabled={isReleasingStructLock}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50"
-              >
+          {isStructuralEditingActive ?
+          onReleaseStructLock &&
+          <button
+            onClick={onReleaseStructLock}
+            disabled={isReleasingStructLock}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-50">
+            
                 {isReleasingStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlock className="w-3.5 h-3.5" />}
                 Bearbeitung beenden
-              </button>
-            )
-          ) : (
-            canStartStructEdit && onAcquireStructLock && (
-              <button
-                onClick={onAcquireStructLock}
-                disabled={isAcquiringStructLock || structLockedByOther}
-                title={structLockedByOther ? `Gesperrt von ${structLockedByName}` : 'Strukturbearbeitung starten'}
-                className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              </button> :
+
+
+          canStartStructEdit && onAcquireStructLock &&
+          <button
+            onClick={onAcquireStructLock}
+            disabled={isAcquiringStructLock || structLockedByOther}
+            title={structLockedByOther ? `Gesperrt von ${structLockedByName}` : 'Strukturbearbeitung starten'}
+            className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+            
                 {isAcquiringStructLock ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PenLine className="w-3.5 h-3.5" />}
                 Struktur bearbeiten
               </button>
-            )
-          )}
+
+          }
         </div>
       </div>
 
       {/* Aktions-Leiste – nur im Edit-Modus */}
-      {!readOnly && isStructuralEditingActive && (
-        <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
+      {!readOnly && isStructuralEditingActive &&
+      <div className="shrink-0 px-4 py-2 border-b border-border bg-card/50 flex items-center gap-3">
           <Button
-            size="sm"
-            onClick={handleSpeichern}
-            disabled={saving || !isDirty}
-            className={cn(
-              'gap-1.5 transition-all duration-200',
-              isDirty
-              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-heartbeat'
-                : 'opacity-50'
-            )}
-          >
-            {saving
-              ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              : <Save className="w-3.5 h-3.5" />}
+          size="sm"
+          onClick={handleSpeichern}
+          disabled={saving || !isDirty}
+          className={cn(
+            'gap-1.5 transition-all duration-200',
+            isDirty ?
+            'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-200 animate-heartbeat' :
+            'opacity-50'
+          )}>
+          
+            {saving ?
+          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> :
+          <Save className="w-3.5 h-3.5" />}
             {isDirty ? '⚠ Struktur speichern' : 'Struktur gespeichert'}
           </Button>
-          {isDirty && (
-            <p className="text-sm text-amber-600 font-medium">
+          {isDirty &&
+        <p className="text-sm text-amber-600 font-medium">
               Ungespeicherte Änderungen – bitte speichern bevor du den Tab wechselst!
             </p>
-          )}
+        }
         </div>
-      )}
+      }
 
 
       {/* Sequenziell-Banner */}
-      {einheit?.bearbeitungsmodus === 'sequenziell' && (
-        <div className="shrink-0 px-4 py-2 bg-primary/5 border-b border-primary/20 text-xs text-primary flex items-center gap-2">
+      {einheit?.bearbeitungsmodus === 'sequenziell' &&
+      <div className="shrink-0 px-4 py-2 bg-primary/5 border-b border-primary/20 text-xs text-primary flex items-center gap-2">
           <ArrowRight className="w-3.5 h-3.5 shrink-0" />
           <span>
             <strong>Sequenzieller Modus:</strong> Themenfelder sind nummeriert – Schüler im Minimalpfad müssen sie in dieser Reihenfolge durcharbeiten. Einzelne Lernpakete bleiben jederzeit direkt ansteuerbar.
           </span>
         </div>
-      )}
+      }
 
       {/* Board – EINZIGER Scroll-Container für DnD! */}
       <div className={cn('flex-1 overflow-x-auto overflow-y-auto min-h-0', readOnly && 'opacity-60')}>
         <DragDropContext onDragEnd={handleDragEnd}>
           {/* Hinweis: Im Lesemodus KEIN `pointer-events-none` setzen –
-              das würde das vertikale Scrolling innerhalb der Spalten blockieren.
-              DnD selbst ist im Lesemodus bereits durch readOnly/istLesemodus
-              an den Drag-Handles deaktiviert. */}
+               das würde das vertikale Scrolling innerhalb der Spalten blockieren.
+               DnD selbst ist im Lesemodus bereits durch readOnly/istLesemodus
+               an den Drag-Handles deaktiviert. */}
           <div className="flex gap-4 h-full p-4 min-w-max items-start">
             {/* Sammelbecken */}
-            {sammelbeckenPakete.length > 0 && (
-              <>
+            {sammelbeckenPakete.length > 0 &&
+            <>
                 <Spalte
-                  id={SAMMELBECKEN_ID}
-                  titel="Nicht zugeordnet"
-                  pakete={sammelbeckenPakete}
-                  onAddPaket={(spalteId) => openPaketDialog(spalteId)}
-                  onDeletePaket={handleDeletePaketRequest}
-                  onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
-                  isSammelbecken
-                  compact={compact}
-                  collapsed={collapsedSpalten.has(SAMMELBECKEN_ID)}
-                  onToggleCollapse={() => toggleCollapse(SAMMELBECKEN_ID)}
-                  readOnly={readOnly || !isStructuralEditingActive}
-                  istLesemodus={istLesemodus || !isStructuralEditingActive}
-                />
-                <div className="w-px bg-border shrink-0 self-stretch" />
-              </>
-            )}
-
-            {/* Themenfeld-Spalten */}
-            {spalten.map((spalte, idx) => (
-              <Spalte
-                key={spalte.id}
-                id={spalte.id}
-                titel={spalte.titel}
-                pakete={paketeMap[spalte.id] || []}
+                id={SAMMELBECKEN_ID}
+                titel="Nicht zugeordnet"
+                pakete={sammelbeckenPakete}
                 onAddPaket={(spalteId) => openPaketDialog(spalteId)}
                 onDeletePaket={handleDeletePaketRequest}
-                onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
-                onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
-                onTitelChange={neuerTitel => handleTitelChange(spalte.id, neuerTitel)}
+                onEditPaket={(paket) => openPaketDialog(SAMMELBECKEN_ID, paket)}
+                isSammelbecken
                 compact={compact}
-                collapsed={collapsedSpalten.has(spalte.id)}
-                onToggleCollapse={() => toggleCollapse(spalte.id)}
-                sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
+                collapsed={collapsedSpalten.has(SAMMELBECKEN_ID)}
+                onToggleCollapse={() => toggleCollapse(SAMMELBECKEN_ID)}
                 readOnly={readOnly || !isStructuralEditingActive}
-                istLesemodus={istLesemodus || !isStructuralEditingActive}
-                onMoveLeft={() => moveSpalte(spalte.id, 'left')}
-                onMoveRight={() => moveSpalte(spalte.id, 'right')}
-                canMoveLeft={idx > 0}
-                canMoveRight={idx < spalten.length - 1}
-                leitfrage={spalte.leitfrage}
-                hatBeschreibung={!!spalte.beschreibung || !!spalte.leitfrage}
-                onEditBeschreibung={spalte.themenfeldId ? () => setBeschreibungDialog(spalte) : null}
-              />
-            ))}
+                istLesemodus={istLesemodus || !isStructuralEditingActive} />
+              
+                <div className="w-px bg-border shrink-0 self-stretch" />
+              </>
+            }
+
+            {/* Themenfeld-Spalten */}
+            {spalten.map((spalte, idx) =>
+            <Spalte
+              key={spalte.id}
+              id={spalte.id}
+              titel={spalte.titel}
+              pakete={paketeMap[spalte.id] || []}
+              onAddPaket={(spalteId) => openPaketDialog(spalteId)}
+              onDeletePaket={handleDeletePaketRequest}
+              onEditPaket={(paket) => openPaketDialog(spalte.id, paket)}
+              onDeleteSpalte={() => handleDeleteSpalteRequest(spalte.id)}
+              onTitelChange={(neuerTitel) => handleTitelChange(spalte.id, neuerTitel)}
+              compact={compact}
+              collapsed={collapsedSpalten.has(spalte.id)}
+              onToggleCollapse={() => toggleCollapse(spalte.id)}
+              sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
+              readOnly={readOnly || !isStructuralEditingActive}
+              istLesemodus={istLesemodus || !isStructuralEditingActive}
+              onMoveLeft={() => moveSpalte(spalte.id, 'left')}
+              onMoveRight={() => moveSpalte(spalte.id, 'right')}
+              canMoveLeft={idx > 0}
+              canMoveRight={idx < spalten.length - 1}
+              leitfrage={spalte.leitfrage}
+              hatBeschreibung={!!spalte.beschreibung || !!spalte.leitfrage}
+              onEditBeschreibung={spalte.themenfeldId ? () => setBeschreibungDialog(spalte) : null} />
+
+            )}
 
             {/* Neue-Spalte CTA – nur im Edit-Modus */}
-            {!readOnly && isStructuralEditingActive && !istLesemodus && (
-              <button
-                onClick={handleNeuesThemenfeld}
-                className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch"
-              >
+            {!readOnly && isStructuralEditingActive && !istLesemodus &&
+            <button
+              onClick={handleNeuesThemenfeld}
+              className="shrink-0 w-64 rounded-xl border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-primary transition-colors self-stretch">
+              
                 <Plus className="w-6 h-6" />
                 <span className="text-sm font-medium">Neues Themenfeld</span>
               </button>
-            )}
+            }
           </div>
         </DragDropContext>
       </div>
@@ -1132,12 +1132,12 @@ export default function StrukturBoardEmbedded({
         onOpenChange={(open) => !open && setPaketDialog({ open: false, spalteId: null, paket: null })}
         initialData={paketDialog.paket}
         onSave={handlePaketSave}
-        onGotoLernziele={onGotoLernziele}
-      />
+        onGotoLernziele={onGotoLernziele} />
+      
 
       {/* ── Speicher-Overlay (blocking) ── */}
-      {saveOverlayOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+      {saveOverlayOpen &&
+      <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-2xl p-8 max-w-sm w-full mx-4 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
             <div className="text-center">
@@ -1149,7 +1149,7 @@ export default function StrukturBoardEmbedded({
             </div>
           </div>
         </div>
-      )}
+      }
 
       {/* Lernpaket-Löschwarnung inkl. betroffener Arbeitspläne */}
       <LernpaketLoeschWarnDialog
@@ -1160,8 +1160,8 @@ export default function StrukturBoardEmbedded({
         onConfirm={() => {
           handleDeletePaket(paketDeleteConfirm.id);
           setPaketDeleteConfirm(null);
-        }}
-      />
+        }} />
+      
 
       {/* Themenfeld-Beschreibung: ein Satz für die Schüler */}
       <ThemenfeldBeschreibungDialog
@@ -1173,39 +1173,39 @@ export default function StrukturBoardEmbedded({
         beschreibung={beschreibungDialog?.beschreibung}
         onSaved={({ leitfrage, beschreibung }) => {
           const id = beschreibungDialog?.id;
-          setSpalten(prev => prev.map(s => (s.id === id ? { ...s, leitfrage, beschreibung } : s)));
+          setSpalten((prev) => prev.map((s) => s.id === id ? { ...s, leitfrage, beschreibung } : s));
           queryClient.refetchQueries({ queryKey: ['themenfelder'] });
-        }}
-      />
+        }} />
+      
 
       {/* Versionskonflikt-Dialog (Phase 3) */}
       <VersionConflictDialog {...versionConflict.dialogProps} />
 
       {/* Bestätigungsdialog */}
-      <AlertDialog open={!!deleteConfirm} onOpenChange={open => !open && setDeleteConfirm(null)}>
+      <AlertDialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Themenfeld „{deleteConfirm?.titel}" löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteConfirm?.paketCount > 0
-                ? <>
+              {deleteConfirm?.paketCount > 0 ?
+              <>
                     Das Themenfeld enthält <strong>{deleteConfirm.paketCount} Lernpaket{deleteConfirm.paketCount !== 1 ? 'e' : ''}</strong>.
                     {' '}Diese werden sicher zurück in das <strong>Sammelbecken</strong> verschoben und bleiben vollständig erhalten – kein Inhalt geht verloren.
-                  </>
-                : 'Das leere Themenfeld wird entfernt.'}
+                  </> :
+              'Das leere Themenfeld wird entfernt.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteSpalteConfirmed}
-              className="bg-destructive hover:bg-destructive/90"
-            >
+              className="bg-destructive hover:bg-destructive/90">
+              
               {deleteConfirm?.paketCount > 0 ? 'Löschen & ins Sammelbecken verschieben' : 'Themenfeld löschen'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
-  );
+    </div>);
+
 }
