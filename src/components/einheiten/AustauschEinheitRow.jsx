@@ -64,7 +64,7 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
           {einheit.fach} · Jg. {einheit.jahrgangsstufe} · {einheit.ist_basismodul === true
             ? 'verbindliche Basis-Einheit der Fachschaft'
             : `von ${einheit.besitzer_email || 'unbekannt'}`}
-          {istEigene && <span className="ml-1.5 text-emerald-700 font-medium">(Ihre Einheit)</span>}
+          {istEigene && <span className="ml-1.5 text-emerald-700 font-medium">(deine Einheit)</span>}
         </p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
@@ -77,12 +77,12 @@ export default function AustauschEinheitRow({ einheit, darfPoolzeit, darfZurueck
         {!istEigene && (
           <ActionButton
             onClick={() => invoke('kopie', 'duplicateEinheitSecure', { einheit_id: einheit.id },
-              (d) => `Private Kopie erstellt: „${d.titel}" — Sie finden sie in Ihrer Privaten Bibliothek.`)}
+              (d) => `Private Kopie erstellt: „${d.titel}" — du findest sie in deiner Privaten Bibliothek.`)}
             disabled={busy !== null}
             spinning={busy === 'kopie'}
             title={einheit.ist_basismodul === true
-              ? 'Private Kopie ziehen — die Basis-Einheit wird als normale private Einheit (inkl. Arbeitsplan) in Ihre Private Bibliothek übernommen'
-              : 'Private Kopie ziehen — eine eigene, unabhängige Kopie in Ihre Private Bibliothek übernehmen'}
+              ? 'Private Kopie ziehen — die Basis-Einheit wird als normale private Einheit (inkl. Arbeitsplan) in deine Private Bibliothek übernommen'
+                              : 'Private Kopie ziehen — eine eigene, unabhängige Kopie in deine Private Bibliothek übernehmen'}
             icon={Copy}
             className="hover:text-emerald-700 hover:border-emerald-400/50 hover:bg-emerald-50"
           />

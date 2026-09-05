@@ -69,7 +69,7 @@ export default function EinheitWeitergebenButton({ einheit }) {
             <DialogTitle>An Kollegen weitergeben</DialogTitle>
             <DialogDescription>
               „{einheit.titel_der_einheit}" wird als unabhängige Kopie in die Private Bibliothek
-              der ausgewählten Person gelegt. Ihr Original bleibt unverändert bei Ihnen.
+              der ausgewählten Person gelegt. Dein Original bleibt unverändert bei dir.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">

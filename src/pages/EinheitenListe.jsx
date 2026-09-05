@@ -144,8 +144,8 @@ function SchnellErstellenModal({ open, onOpenChange, onCreated, defaultPrivat = 
               </Label>
               <p className="text-xs text-muted-foreground">
                 {nurPrivatErlaubt
-                  ? 'Als Fachlehrkraft erstellen Sie Einheiten immer privat. Öffentliche Einheiten legt die Fachschaftsleitung an.'
-                  : 'Die Einheit landet nur in Ihrer Privaten Bibliothek — Sie können sie später jederzeit veröffentlichen.'}
+                  ? 'Als Fachlehrkraft legst du Einheiten immer privat an. Öffentliche Einheiten legt die Fachschaftsleitung an.'
+                                  : 'Die Einheit landet nur in deiner Privaten Bibliothek — du kannst sie später jederzeit veröffentlichen.'}
               </p>
             </div>
             <Switch checked={privat} onCheckedChange={setPrivat} disabled={nurPrivatErlaubt} />
@@ -322,7 +322,7 @@ export default function EinheitenListe() {
             <BookOpen className="w-6 h-6 text-accent" />
             {ansicht === 'privat' ? 'Private Bibliothek' : ansicht === 'austausch' ? 'Öffentliche Bibliothek' : 'Gemeinschaftliche Bibliothek'}
             <HelpBadge
-              text="Eine Einheit ist das Grundgerüst Ihrer Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
+              text="Eine Einheit ist das Grundgerüst deiner Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
               docsSlug="einheiten-struktur"
             />
           </h1>
@@ -490,7 +490,7 @@ export default function EinheitenListe() {
         <EmptyState
           icon={BookOpen}
           title="Noch keine Einheiten"
-          description="Erstellen Sie Ihre erste Unterrichtseinheit, um mit der Planung zu beginnen."
+          description="Lege deine erste Einheit an, um mit der Planung zu beginnen."
         />
       ) : (
         <p className="text-sm text-muted-foreground text-center py-10">Keine Einheiten gefunden.</p>

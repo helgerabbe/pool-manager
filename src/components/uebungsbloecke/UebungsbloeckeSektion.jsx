@@ -84,7 +84,7 @@ export default function UebungsbloeckeSektion({ einheiten = [], besitzerEmail })
 
       {bloecke.length === 0 ? (
         <p className="text-sm text-muted-foreground italic px-1 py-3">
-          Noch keine Übungsblöcke. Legen Sie den ersten an — das dauert keine zwei Minuten.
+          Noch keine Übungsblöcke. Leg den ersten an — das dauert keine zwei Minuten.
         </p>
       ) : (
         <div className="space-y-4">

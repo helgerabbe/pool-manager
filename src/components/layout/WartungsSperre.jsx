@@ -22,7 +22,7 @@ export default function WartungsSperre() {
           <h1 className="text-xl font-bold text-foreground">Wartungsmodus aktiv</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Der Pool-Manager wird gerade gewartet. Der Zugriff ist vorübergehend für alle
-            Nutzerinnen und Nutzer gesperrt. Bitte versuchen Sie es in Kürze erneut.
+            Nutzerinnen und Nutzer gesperrt. Bitte versuch es in Kürze noch einmal.
           </p>
         </div>
         <Button variant="outline" className="gap-2" onClick={() => logout(false)}>

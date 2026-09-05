@@ -18,7 +18,7 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
       <EmptyState
         icon={Library}
         title="Die Öffentliche Bibliothek ist noch leer"
-        description="Hier erscheinen private Einheiten, die Kolleg:innen für das Kollegium freigegeben haben. Geben Sie eine eigene private Einheit über das Bibliotheks-Symbol frei."
+        description="Hier erscheinen private Einheiten, die Kolleg:innen für das Kollegium freigegeben haben. Gib eine eigene private Einheit über das Bibliotheks-Symbol frei."
       />
     );
   }
@@ -40,7 +40,7 @@ export default function AustauschBibliothek({ einheiten, rolle, benutzerFaecher 
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground">
-          {einheiten.length} freigegebene Einheit{einheiten.length !== 1 ? 'en' : ''} — schauen Sie sich um und ziehen Sie sich eine private Kopie.
+          {einheiten.length} freigegebene Einheit{einheiten.length !== 1 ? 'en' : ''} — schau dich um und zieh dir eine private Kopie.
         </p>
         <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-1 gap-1">
           <button

@@ -320,7 +320,7 @@ Antworte NUR mit dem JSON-Objekt. Kein Text, keine Markdown-Blöcke.
         <div>
           <h3 className="font-semibold text-foreground">KI-Lernpaket-Assistent</h3>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Beschreiben Sie frei, welche Lernpakete und Lernziele Sie planen. Die KI strukturiert Ihren Text und legt alles auf Knopfdruck an.
+            Beschreib frei, welche Lernpakete und Lernziele du planst. Die KI strukturiert deinen Text und legt alles auf Knopfdruck an.
           </p>
         </div>
       </div>

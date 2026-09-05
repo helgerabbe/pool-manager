@@ -41,8 +41,8 @@ export default function MoodleParameterButton({ einheit }) {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              Jede Einheit hat einen eigenen Code — wie eine Hausnummer. Damit Ihre Schüler:innen in Moodle{' '}
-              <strong>genau diese Einheit</strong> („{einheit.titel_der_einheit}") sehen, kopieren Sie diesen Code
+              Jede Einheit hat einen eigenen Code — wie eine Hausnummer. Damit deine Schüler in Moodle{' '}
+              <strong>genau diese Einheit</strong> („{einheit.titel_der_einheit}") sehen, kopierst du diesen Code
               und fügen ihn in Moodle ein:
             </p>
 
@@ -60,9 +60,9 @@ export default function MoodleParameterButton({ einheit }) {
             </div>
 
             <div className="rounded-lg border border-blue-200 bg-blue-50/60 p-3 space-y-1.5">
-              <p className="text-xs font-semibold text-blue-900">So fügen Sie den Code in Moodle ein:</p>
+              <p className="text-xs font-semibold text-blue-900">So fügst du den Code in Moodle ein:</p>
               <ol className="text-xs text-blue-800/90 space-y-1 list-decimal pl-4">
-                <li>In Ihrem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
+                <li>In deinem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
                 <li>Bei „Vorkonfiguriertes Tool" das Tool <strong>„Pool-Manager"</strong> auswählen und der Aktivität einen Namen geben (z.&nbsp;B. den Titel der Einheit).</li>
                 <li>Unter „Mehr anzeigen" das Feld <strong>„Angepasste Parameter"</strong> öffnen (so heißt es in Moodle) und den kopierten Code dort einfügen.</li>
                 <li>Speichern — fertig. Der Link führt jetzt genau zu dieser Einheit.</li>

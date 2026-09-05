@@ -71,7 +71,7 @@ function TabAllgemein({ einheit, onSave, isSaving, showSaved }) {
         <textarea
           value={form.gesamtziel}
           onChange={e => set('gesamtziel', e.target.value)}
-          placeholder="Beschreiben Sie hier kurz das übergeordnete Ziel dieser Einheit (z.B. Was ist die Kernkompetenz am Ende?)..."
+          placeholder="Beschreib hier kurz das übergeordnete Ziel dieser Einheit (z.B. Was ist die Kernkompetenz am Ende?)..."
           className="w-full px-3 py-2 border rounded-lg text-sm min-h-20 resize-none"
         />
       </div>

@@ -148,7 +148,7 @@ export default function StundeErstellenModal({ open, onOpenChange, einheiten = [
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">
-                Die Einheit wird als private Einheit angelegt — Ihre Stunde landet direkt darin.
+                Die Einheit wird als private Einheit angelegt — deine Stunde landet direkt darin.
               </p>
             </div>
           )}

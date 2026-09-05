@@ -10,22 +10,22 @@ const SCHRITTE = [
   {
     icon: Hammer,
     titel: '1. Einheit im Pool-Manager bauen',
-    text: 'Legen Sie Themenfelder, Aufgaben und mindestens einen Schüler-Arbeitsplan an. Tipp: Über das Auge-Symbol Ihrer Einheiten-Karte können Sie die Einheit jederzeit aus Schülersicht prüfen.',
+    text: 'Lege Themenfelder, Aufgaben und mindestens einen Schüler-Arbeitsplan an. Tipp: Über das Auge-Symbol deiner Einheiten-Karte kannst du die Einheit jederzeit aus Schülersicht prüfen.',
   },
   {
     icon: Link2,
     titel: '2. Einheiten-Code kopieren',
-    text: 'Jede private Einheit hat einen eigenen Code — wie eine Hausnummer. Klicken Sie auf das Ketten-Symbol Ihrer Einheiten-Karte und kopieren Sie den angezeigten Code.',
+    text: 'Jede private Einheit hat einen eigenen Code — wie eine Hausnummer. Klicke auf das Ketten-Symbol deiner Einheiten-Karte und kopiere den angezeigten Code.',
   },
   {
     icon: GraduationCap,
     titel: '3. Code in Moodle einfügen',
-    text: 'Legen Sie in Ihrem Moodle-Kurs die Aktivität „Externes Tool" an, wählen Sie als vorkonfiguriertes Tool „Pool-Manager", geben Sie der Aktivität einen Namen — und fügen Sie den kopierten Code in das Feld „Angepasste Parameter" ein (so heißt es in Moodle).',
+    text: 'Lege in deinem Moodle-Kurs die Aktivität „Externes Tool" an, wähle als voreingestelltes Tool „Pool-Manager", gib der Aktivität einen Namen — und füge den kopierten Code in das Feld „Angepasste Parameter" ein (so heißt es in Moodle).',
   },
   {
     icon: PartyPopper,
     titel: '4. Fertig — Schüler legen los',
-    text: 'Ihre Schüler:innen klicken in Moodle auf den Link und landen direkt in genau dieser Einheit — ganz ohne eigenes Konto. Ihr Lernfortschritt wird automatisch gespeichert.',
+    text: 'Deine Schüler klicken in Moodle auf den Link und landen direkt in genau dieser Einheit — ganz ohne eigenes Konto. Ihr Lernfortschritt wird automatisch gespeichert.',
   },
 ];
 
@@ -39,7 +39,7 @@ export default function MoodleWegInfoBox() {
         </h2>
       </div>
       <p className="text-xs text-blue-800/80 mb-4">
-        Ihre Einheit bleibt hier in der App — die Schüler:innen erreichen sie über einen einfachen Link in ihrem Moodle-Kurs. So geht's:
+        Deine Einheit bleibt hier in der App — die Schüler erreichen sie über einen einfachen Link in ihrem Moodle-Kurs. So geht's:
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -56,7 +56,7 @@ export default function MoodleWegInfoBox() {
 
       <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
         <p className="text-[11px] text-blue-800/70">
-          Voraussetzung: Die Moodle-Verbindung wird <strong>einmalig</strong> von Ihrer Administration eingerichtet — darum müssen Sie sich nicht kümmern.
+          Voraussetzung: Die Moodle-Verbindung wird <strong>einmalig</strong> von deiner Administration eingerichtet — darum musst du dich nicht kümmern.
         </p>
         <Link
           to="/docs/moodle-anbindung"

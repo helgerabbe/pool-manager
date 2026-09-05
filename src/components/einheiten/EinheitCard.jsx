@@ -129,7 +129,7 @@ export default function EinheitCard({
                   {istPrivat && einheit.erhalten_von && (
                     <Badge
                       className="bg-violet-100 text-violet-800 border border-violet-200 gap-1"
-                      title={`Diese Einheit wurde ursprünglich von ${einheit.erhalten_von} erstellt und von Ihnen als Kopie übernommen.`}
+                      title={`Diese Einheit wurde ursprünglich von ${einheit.erhalten_von} erstellt und von dir als Kopie übernommen.`}
                     >
                       <Copy className="w-3 h-3" />
                       Kopie
@@ -233,7 +233,7 @@ export default function EinheitCard({
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDuplicate(); }}
                     disabled={isCopying}
                     className="p-1 rounded-md border border-border bg-card text-muted-foreground hover:text-primary hover:border-primary/40 transition-all disabled:opacity-60"
-                    title="Einheit als private Kopie duplizieren (landet in Ihrer Privaten Bibliothek)"
+                    title="Einheit als private Kopie duplizieren (landet in deiner Privaten Bibliothek)"
                   >
                     {isCopying
                       ? <div className="w-3.5 h-3.5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />

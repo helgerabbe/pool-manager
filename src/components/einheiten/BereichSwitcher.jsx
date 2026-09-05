@@ -13,7 +13,7 @@ export default function BereichSwitcher({ ansicht, onChange, istAdmin }) {
     {
       key: 'privat',
       label: istAdmin ? 'Private Bibliothek (alle)' : 'Private Bibliothek',
-      desc: 'Ihr persönlicher Arbeitsbereich — nur für Sie sichtbar',
+      desc: 'Dein persönlicher Arbeitsbereich — nur für dich sichtbar',
       icon: Lock,
       active: 'border-amber-500 bg-amber-50 text-amber-900 ring-2 ring-amber-500/30',
       iconActive: 'bg-amber-500 text-white',

@@ -53,7 +53,7 @@ export default function UnterrichtsstundenSektion({ einheiten = [], besitzerEmai
             Meine Unterrichtsstunden
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Moodle-Unterrichts-Generator: Stunde für Stunde planen — daraus entsteht schrittweise Ihre Einheit.
+            Moodle-Unterrichts-Generator: Stunde für Stunde planen — daraus entsteht Schritt für Schritt deine Einheit.
           </p>
         </div>
         <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2 shrink-0">

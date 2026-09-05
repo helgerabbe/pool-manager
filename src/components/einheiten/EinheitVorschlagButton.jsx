@@ -73,7 +73,7 @@ export default function EinheitVorschlagButton({ einheit }) {
             <DialogDescription>
               {istVorgeschlagen
                 ? `„${einheit.titel_der_einheit}" wird aus der Sektion „Zur Veröffentlichung vorgeschlagen" entfernt und bleibt eine private Einheit.`
-                : `„${einheit.titel_der_einheit}" erscheint für die Kolleg:innen des Fachs in der Gemeinschaftlichen Bibliothek unter „Zur Veröffentlichung vorgeschlagen" — dort nur im Ansichtsmodus. Ob sie tatsächlich übernommen wird, entscheidet die Fachschaftsleitung (oder ein Administrator). Ihre Einheit bleibt bis dahin privat und Sie können weiter daran arbeiten.`}
+                : `„${einheit.titel_der_einheit}" erscheint für die Kolleg:innen des Fachs in der Gemeinschaftlichen Bibliothek unter „Zur Veröffentlichung vorgeschlagen" — dort nur im Ansichtsmodus. Ob sie tatsächlich übernommen wird, entscheidet die Fachschaftsleitung (oder ein Administrator). Deine Einheit bleibt bis dahin privat und du kannst weiter daran arbeiten.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

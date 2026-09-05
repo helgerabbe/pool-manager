@@ -110,7 +110,7 @@ export default function UebungsblockErstellenModal({ open, onOpenChange, besitze
           </DialogTitle>
           <p className="text-xs text-muted-foreground mt-1">
             Ein kleines Format für die Poolzeit: ein Thema, ein bis drei Lernpakete, ein paar
-            Aufgaben. Alles Weitere ergänzen Sie danach.
+            Aufgaben. Alles Weitere ergänzst du danach.
           </p>
         </DialogHeader>
 

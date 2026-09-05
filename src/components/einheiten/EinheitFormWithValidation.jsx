@@ -105,7 +105,7 @@ export default function EinheitFormWithValidation({ open, onOpenChange, onSubmit
         // Validierungsfehler
         if (error.validationErrors) {
           setValidationErrors(error.validationErrors);
-          toast.error('Bitte füllen Sie alle erforderlichen Felder aus');
+          toast.error('Bitte füll alle Pflichtfelder aus.');
         } else if (error.status === 400) {
           toast.error(error.message);
         } else {
@@ -136,7 +136,7 @@ export default function EinheitFormWithValidation({ open, onOpenChange, onSubmit
     const validation = validateEntity(formData, EINHEIT_SCHEMA);
     if (!validation.valid) {
       setValidationErrors(validation.errors);
-      toast.error('Bitte füllen Sie alle erforderlichen Felder aus');
+      toast.error('Bitte füll alle Pflichtfelder aus.');
       return;
     }
 

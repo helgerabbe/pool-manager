@@ -21,7 +21,7 @@ export default function EinheitErstellenButtons({ privat, onNeueEinheit }) {
           Neue Einheit
         </Button>
         <HelpBadge
-          text="Schnell eine neue Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Themenfelder und Inhalte können Sie später im Workspace ergänzen."
+          text="Schnell eine neue Einheit anlegen: Nur Titel, Fach und Jahrgang erforderlich. Themenfelder und Inhalte ergänzst du später in der Einheit."
           docsSlug="einheiten-struktur"
         />
       </div>
@@ -31,7 +31,7 @@ export default function EinheitErstellenButtons({ privat, onNeueEinheit }) {
           Mit KI-Coach planen
         </Button>
         <HelpBadge
-          text="Der Einheiten-Coach ist ein KI-Sparringspartner: Sie entwickeln im Gespräch entspannt die Struktur Ihrer Einheit — mit kritischer Prüfung, Inspiration und Studyflix-Recherche. Das Ergebnis wird anschließend an den Wizard übergeben."
+          text="Der Einheiten-Coach ist ein KI-Sparringspartner: Du entwickelst im Gespräch entspannt die Struktur deiner Einheit — mit kritischer Prüfung, Inspiration und Studyflix-Recherche. Das Ergebnis wird anschließend an den Wizard übergeben."
           docsSlug="einheiten-struktur"
         />
       </div>
@@ -41,7 +41,7 @@ export default function EinheitErstellenButtons({ privat, onNeueEinheit }) {
           Einheiten-Wizard
         </Button>
         <HelpBadge
-          text="Der geführte Wizard hilft Ihnen Schritt für Schritt: Metadaten, Gesamtziele, Themenfelder und Lernpakete werden strukturiert angelegt. Empfohlen für neue Einheiten."
+          text="Der geführte Wizard hilft dir Schritt für Schritt: Metadaten, Gesamtziele, Themenfelder und Lernpakete werden strukturiert angelegt. Empfohlen für neue Einheiten."
           docsSlug="einheiten-struktur"
         />
       </div>

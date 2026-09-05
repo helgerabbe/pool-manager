@@ -50,7 +50,7 @@ export default function MoodleCodeSection({ einheit }) {
           </button>
         </div>
         <ol className="text-xs text-blue-800/90 space-y-1 list-decimal pl-4">
-          <li>In Ihrem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
+          <li>In deinem Moodle-Kurs: „Aktivität anlegen" → <strong>„Externes Tool"</strong> wählen.</li>
           <li>Bei „Vorkonfiguriertes Tool" das Tool <strong>„Pool-Manager"</strong> auswählen und der Aktivität einen Namen geben.</li>
           <li>Unter „Mehr anzeigen" das Feld <strong>„Angepasste Parameter"</strong> öffnen (so heißt es in Moodle) und den kopierten Code dort einfügen.</li>
           <li>Speichern — fertig. Der Link führt jetzt {texte.codeZiel}.</li>
