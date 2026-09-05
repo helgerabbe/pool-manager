@@ -35,6 +35,7 @@ import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
 import AnthropicConnectorCard from '@/components/admin/AnthropicConnectorCard';
 import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
 import MbkAdminTodoCard from '@/components/admin/MbkAdminTodoCard';
+import LeitfragenBackfillCard from '@/components/admin/LeitfragenBackfillCard';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -135,6 +136,9 @@ export default function AdminSettings() {
           <MbkAdminTodoCard />
 
           <SchulStammdatenCard />
+
+          {/* Lernlandkarte, Etappe 0: fehlende Leitfragen nachtragen */}
+          <LeitfragenBackfillCard />
 
           <WartungsmodusToggle
             aktiv={wartungsmodus}

@@ -62,6 +62,37 @@ export async function listLernzieleByLernpaket(lernpaketId) {
   return base44.entities.Lernziele.filter({ lernpaket_id: lernpaketId });
 }
 
+/**
+ * Lernlandkarte: Basispakete, die als VORWISSEN an dieser Einheit hängen.
+ * Weg: Aufgaben der Einheit → Basis-Lernziel-Verknüpfungen → deren Lernpakete.
+ * Nur eine Ebene tief — die Karte verlinkt direkt in das Basispaket.
+ */
+export async function listBasisVorwissenByEinheit(einheitId) {
+  const aufgaben = await base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId });
+  if (!aufgaben?.length) return [];
+  const mappings = (
+    await Promise.all(
+      aufgaben.map((a) =>
+        base44.entities.AllgemeineAufgabeBasisLernzielMapping
+          .filter({ aufgabe_id: a.id })
+          .catch(() => [])
+      )
+    )
+  ).flat();
+  const zielIds = [...new Set(mappings.map((m) => m.basislernziel_id).filter(Boolean))];
+  if (zielIds.length === 0) return [];
+  const ziele = (
+    await Promise.all(zielIds.map((id) => base44.entities.Lernziele.filter({ id }).catch(() => [])))
+  ).flat();
+  const paketIds = [...new Set(ziele.map((z) => z.lernpaket_id).filter(Boolean))];
+  const pakete = (
+    await Promise.all(
+      paketIds.map((id) => base44.entities.Lernpakete.filter({ id }).catch(() => []))
+    )
+  ).flat();
+  return pakete;
+}
+
 export async function listFaecher() {
   return base44.entities.LookupFaecher.list('reihenfolge');
 }

@@ -50,6 +50,12 @@ export default function LernlandkartePreviewModal({
     enabled: enabled && pakete.length > 0,
   });
 
+  const aufgabenQ = useQuery({
+    queryKey: ['lernlandkarte-preview-aufgaben', einheitId],
+    queryFn: () => base44.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
+    enabled,
+  });
+
   const loading =
     themenfelderQ.isLoading || lernpaketeQ.isLoading ||
     (pakete.length > 0 && lernzieleQ.isLoading);
@@ -83,9 +89,11 @@ export default function LernlandkartePreviewModal({
               scale={0.72}
             >
               <LernlandkarteVorschauInhalt
+                einheitTitel={einheitTitel}
                 themenfelder={themenfelderQ.data || []}
                 lernpakete={pakete}
                 lernziele={lernzieleQ.data || []}
+                aufgaben={aufgabenQ.data || []}
               />
             </IPadFrame>
           )}

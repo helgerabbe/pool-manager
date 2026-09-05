@@ -16,6 +16,7 @@ import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharb
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 import LernlandkarteSeite from '@/components/schueler/pfad/LernlandkarteSeite';
+import KleinerBildschirmHinweis from '@/components/lernlandkarte/KleinerBildschirmHinweis';
 import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
 import MerkheftDialog from '@/components/schueler/MerkheftDialog';
 import { useEinheitZeitTracker } from '@/hooks/useEinheitZeitTracker';
@@ -199,6 +200,11 @@ export default function EinheitDashboard() {
         <Menu className="w-5 h-5" />
       </button>
 
+      {/* Handy-Hinweis: erscheint nur bei zu kleinem Bildschirm */}
+      <div className="px-4 pt-3 empty:hidden">
+        <KleinerBildschirmHinweis als="banner" />
+      </div>
+
       <main className="flex-1 min-h-0 overflow-hidden">
         {activeItem && istLernpaket ? (
           <LernpaketDurcharbeiten
@@ -218,6 +224,8 @@ export default function EinheitDashboard() {
         ) : activeItem && istLernlandkarte ? (
           <LernlandkarteSeite
             einheitId={einheitId}
+            einheitTitel={einheit?.titel_der_einheit}
+            lerntyp={lerntypKey}
             userEmail={user?.email}
             flatItems={flatItems}
             aufgabenById={aufgabenById}
@@ -225,6 +233,7 @@ export default function EinheitDashboard() {
             busy={busy}
             onErledigt={handleErledigt}
             onOpenLernpaket={setActiveInstanceId}
+            onOpenAufgabe={(instanceId) => setActiveInstanceId(instanceId)}
           />
         ) : activeItem && istEinfuehrung ? (
           <ThemenfeldEinfuehrungSeite

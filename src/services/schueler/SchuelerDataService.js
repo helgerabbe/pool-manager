@@ -47,6 +47,12 @@ export const getAktivitaetenKatalog = wrap('getAktivitaetenKatalog');
 export const getAktivitaetenByLernpaket = wrap('getAktivitaetenByLernpaket');
 export const listThemenfelderByEinheit = wrap('listThemenfelderByEinheit');
 export const listLernzieleByLernpaket = wrap('listLernzieleByLernpaket');
+// Vorwissen-Ast der Lernlandkarte. Adapter ohne diese Fähigkeit (Supabase-Build,
+// LTI) liefern eine leere Liste — die Karte lässt den Ast dann einfach weg.
+export const listBasisVorwissenByEinheit = (...args) => {
+  const a = adapter();
+  return a.listBasisVorwissenByEinheit ? a.listBasisVorwissenByEinheit(...args) : Promise.resolve([]);
+};
 export const listFaecher = wrap('listFaecher');
 export const listPhasen = wrap('listPhasen');
 export const listInhaltSnapshots = wrap('listInhaltSnapshots');

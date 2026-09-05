@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Kurzbeschreibung des Themenfelds (optional)"
     },
+    "leitfrage": {
+      "type": "string",
+      "description": "Lernlandkarte (2026-09-05): Sch\u00fclergerechte Leitfrage dieses Themenfelds \u2014 die Frage, die auf dem Themenfeld-Knoten der Lernlandkarte steht (z. B. 'Was sind Quadrate und welche Eigenschaften haben sie?'). Wird von der KI aus Titel, Beschreibung und den darunterliegenden Lernzielen vorgeschlagen und kann von der Lehrkraft jederzeit \u00fcberschrieben werden. Leer = die Karte zeigt den Titel."
+    },
     "reihenfolge": {
       "type": "number",
       "description": "Sortierreihenfolge innerhalb der Einheit"
