@@ -362,7 +362,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
       {!isSammelbecken && (
       leitfrage ?
       <div className="px-3 py-2 border-b border-border/60 bg-primary/5 shrink-0">
-            <p className="leading-snug text-primary/90 italic text-xs" title={leitfrage}>
+            <p className="leading-snug text-primary/90 italic text-xs text-center" title={leitfrage}>
               „{leitfrage}"
             </p>
           </div> :
