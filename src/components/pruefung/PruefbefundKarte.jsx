@@ -18,7 +18,7 @@ import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 import InhaltGesichtetButton from './InhaltGesichtetButton';
 
 const BEWUSST_PLACEHOLDER =
-  'Warum bleibt das so? Die Begründung wird an die MBK weitergegeben.';
+  'Warum soll das so bleiben? Ein Satz reicht – das Moodle-Team liest ihn und meldet den Punkt dann nicht noch einmal.';
 
 export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstSetzen, onEntscheiden }) {
   const [kommentarOffen, setKommentarOffen] = useState(false);
@@ -42,9 +42,9 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         <Badge variant="outline" className={schwere.cls}>{schwere.label}</Badge>
         <Badge variant="outline" className="bg-slate-50">{befund.kategorie}. {getKategorieLabel(befund.kategorie)}</Badge>
         <span className="text-sm font-semibold flex-1 min-w-0">{befund.ziel_titel || 'Unbenannte Stelle'}</span>
-        {befund.entscheidung === 'behoben' && <Badge className="bg-green-100 text-green-800 border-green-300" variant="outline">Behoben</Badge>}
-        {befund.entscheidung === 'bewusst' && <Badge className="bg-violet-100 text-violet-800 border-violet-300" variant="outline">Bewusst gelassen</Badge>}
-        {befund.erneut_gefunden && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Erneut gefunden</Badge>}
+        {befund.entscheidung === 'behoben' && <Badge className="bg-green-100 text-green-800 border-green-300" variant="outline">Erledigt</Badge>}
+        {befund.entscheidung === 'bewusst' && <Badge className="bg-violet-100 text-violet-800 border-violet-300" variant="outline">Bleibt so</Badge>}
+        {befund.erneut_gefunden && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Wieder aufgetaucht</Badge>}
       </div>
 
       <p className="text-sm text-foreground">{befund.befund}</p>
@@ -77,11 +77,11 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
               />
             )}
             <Button size="sm" variant={direktErzeugbar || sichtungsZiel ? 'outline' : 'default'} onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}>
-              <Check className="w-3.5 h-3.5" /> Behoben
+              <Check className="w-3.5 h-3.5" /> Erledigt
             </Button>
             {kannBewusstSetzen && (
               <Button size="sm" variant="outline" onClick={() => setKommentarOffen((v) => !v)}>
-                <ShieldAlert className="w-3.5 h-3.5" /> Bewusst so lassen
+                <ShieldAlert className="w-3.5 h-3.5" /> Soll so bleiben
               </Button>
             )}
           </>
@@ -108,7 +108,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
               setKommentarOffen(false);
             }}
           >
-            Bewusst gelassen speichern
+            Begründung speichern
           </Button>
         </div>
       )}

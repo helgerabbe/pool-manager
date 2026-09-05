@@ -8,11 +8,11 @@
  */
 
 export const PRUEF_KATEGORIEN = Object.freeze({
-  1: { label: 'Leer oder Platzhalter', kurz: 'Leer' },
-  2: { label: 'Arbeitsauftrag unklar oder nicht bearbeitbar', kurz: 'Auftrag' },
-  3: { label: 'Erwartungshorizont fehlt oder trägt nicht', kurz: 'Horizont' },
-  4: { label: 'Rückmeldeweg nicht entschieden', kurz: 'Rückmeldung' },
-  5: { label: 'Material und Text nicht schülertauglich', kurz: 'Material' },
+  1: { label: 'Noch leer oder Platzhalter', kurz: 'Leer' },
+  2: { label: 'Aufgabenstellung unklar', kurz: 'Aufgabe' },
+  3: { label: 'Musterlösung fehlt oder reicht nicht', kurz: 'Lösung' },
+  4: { label: 'Schüler erfahren nicht, ob es richtig war', kurz: 'Rückmeldung' },
+  5: { label: 'Text oder Material zu schwer für die Schüler', kurz: 'Material' },
   // Kategorie 6 ist eine Ergänzung des Pool-Managers (2026-09-03): Sie meldet
   // keinen inhaltlichen Mangel, sondern eine kaputte Struktur — Lernpakete oder
   // Aufgaben, die keinem (noch existierenden) Themenfeld mehr zugeordnet sind.
@@ -23,21 +23,21 @@ export const PRUEF_KATEGORIEN = Object.freeze({
   // Der Bau hat etwas gemeldet, das sich keiner der sechs Kategorien zuordnen
   // lässt. Bewusst NICHT von einer KI geraten — eine falsche Kategorie führt
   // die Lehrkraft in die Irre, eine offene nicht.
-  7: { label: 'Von der MBK gemeldet, ohne Kategorie', kurz: 'MBK' },
+  7: { label: 'Hinweis vom Moodle-Team', kurz: 'Moodle-Team' },
 });
 
 export const PRUEF_KATEGORIE_NUMMERN = Object.freeze([1, 2, 3, 4, 5, 6, 7]);
 
 export const PRUEF_SCHWERE = Object.freeze({
-  blockiert: { label: 'Blockiert', cls: 'bg-red-100 text-red-800 border-red-300', rang: 0 },
+  blockiert: { label: 'Geht so nicht', cls: 'bg-red-100 text-red-800 border-red-300', rang: 0 },
   stoert: { label: 'Stört', cls: 'bg-amber-100 text-amber-800 border-amber-300', rang: 1 },
-  hinweis: { label: 'Hinweis', cls: 'bg-slate-100 text-slate-700 border-slate-300', rang: 2 },
+  hinweis: { label: 'Tipp', cls: 'bg-slate-100 text-slate-700 border-slate-300', rang: 2 },
 });
 
 export const PRUEF_ENTSCHEIDUNG = Object.freeze({
   offen: { label: 'Offen' },
-  behoben: { label: 'Behoben' },
-  bewusst: { label: 'Bewusst gelassen' },
+  behoben: { label: 'Erledigt' },
+  bewusst: { label: 'Bleibt so' },
 });
 
 export function getKategorieLabel(nr) {

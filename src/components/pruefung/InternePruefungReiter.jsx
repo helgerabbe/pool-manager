@@ -44,19 +44,20 @@ export default function InternePruefungReiter({
     <div className="space-y-4">
       <div className="flex items-start gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground flex-1 min-w-[240px]">
-          Die Prüfung geht alle Lernpakete, Aufgaben und die vorab erzeugten KI-Seiten dieser Einheit
-          durch und sammelt, was im Kurs später Probleme machen würde. Die Schnellprüfung findet
-          Leerstellen und Platzhalter; die KI-Durchsicht liest zusätzlich mit und meldet unklare
-          Aufträge, fehlende Erwartungshorizonte und schwer verständliche Materialien.
+          Der Pool-Manager schaut alle Lernpakete und Aufgaben dieser Einheit durch und sammelt, was
+          den Schülern später Probleme machen würde. Der schnelle Check findet leere Felder und
+          vergessene Platzhalter. Die gründliche Prüfung liest zusätzlich mit und sagt dir, wenn eine
+          Aufgabenstellung unklar ist, die Musterlösung fehlt oder ein Text zu schwer ist — das
+          dauert ein paar Minuten.
         </p>
         {kannStarten && (
           <div className="flex flex-col gap-2 items-end">
             <Button onClick={() => onStarten({ mitKI: false })} disabled={laeuft}>
               {laeuft ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-              Schnellprüfung
+              Schneller Check
             </Button>
             <Button variant="outline" onClick={() => onStarten({ mitKI: true })} disabled={laeuft}>
-              <Sparkles className="w-4 h-4" /> Prüfung mit KI-Durchsicht
+              <Sparkles className="w-4 h-4" /> Gründlich prüfen (mit KI)
             </Button>
           </div>
         )}
@@ -72,20 +73,20 @@ export default function InternePruefungReiter({
 
       <div className="flex items-center gap-2 flex-wrap">
         <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">{offen} offen</Badge>
-        <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">{behoben} behoben</Badge>
-        <Badge variant="outline" className="bg-violet-50 text-violet-800 border-violet-200">{bewusst} bewusst gelassen</Badge>
+        <Badge variant="outline" className="bg-green-50 text-green-800 border-green-200">{behoben} erledigt</Badge>
+        <Badge variant="outline" className="bg-violet-50 text-violet-800 border-violet-200">{bewusst} bleiben so</Badge>
         <Button size="sm" variant="ghost" onClick={() => setNurOffen((v) => !v)}>
-          {nurOffen ? 'Alle Befunde zeigen' : 'Nur offene zeigen'}
+          {nurOffen ? 'Auch erledigte Punkte zeigen' : 'Nur offene Punkte zeigen'}
         </Button>
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Befunde werden geladen …</p>
+        <p className="text-sm text-muted-foreground">Offene Punkte werden geladen …</p>
       ) : gruppen.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           {befunde.length === 0
-            ? 'Noch keine Prüfung gelaufen. Starte die Prüfung, um den Stand dieser Einheit zu sehen.'
-            : 'Keine offenen Befunde – alles abgearbeitet.'}
+            ? 'Noch nicht geprüft. Klicke oben auf „Schneller Check" oder „Gründlich prüfen", dann siehst du hier, was noch fehlt.'
+            : 'Keine offenen Punkte – alles erledigt.'}
         </div>
       ) : (
         gruppen.map((g) => (

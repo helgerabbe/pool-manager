@@ -61,10 +61,9 @@ export default function MbkBefundeReiter({
     <div className="space-y-4">
       <div className="flex items-start gap-3 flex-wrap">
         <p className="text-sm text-muted-foreground flex-1 min-w-[240px]">
-          Beim Bau des Kurses fällt der MBK auf, was im Payload fehlt oder nicht zusammenpasst. Diese
-          Rückmeldungen liegen im Repository und werden hier abgeholt – statt per E-Mail
-          weitergeleitet zu werden. Einmal täglich holt der Pool-Manager sie selbst; der Knopf ist
-          für den Fall, dass es schnell gehen soll.
+          Wenn das Moodle-Team deine Einheit in den Kurs einbaut, fällt ihm manchmal noch etwas auf.
+          Diese Hinweise landen automatisch hier — einmal am Tag. Mit dem Knopf holst du sie sofort,
+          wenn du nicht warten willst.
         </p>
         <div className="flex flex-col gap-2 items-end">
           <Button onClick={abholen} disabled={abholenLaeuft}>
@@ -73,7 +72,7 @@ export default function MbkBefundeReiter({
             ) : (
               <DownloadCloud className="w-4 h-4" />
             )}
-            Rückmeldung abholen
+            Neue Hinweise holen
           </Button>
           {kannStarten && befunde.length > 0 && (
             <Button variant="outline" onClick={dublettenPruefen} disabled={dublettenLaeuft}>
@@ -82,7 +81,7 @@ export default function MbkBefundeReiter({
               ) : (
                 <CopyCheck className="w-4 h-4" />
               )}
-              Auf Dubletten prüfen
+              Doppelte Punkte finden
             </Button>
           )}
         </div>
@@ -93,28 +92,28 @@ export default function MbkBefundeReiter({
           {offene.length - dubletten.length} zu klären
         </Badge>
         <Badge variant="outline" className="bg-slate-50">
-          {dubletten.length} als Dublette markiert
+          {dubletten.length} doppelt (stehen schon unter „Selbst prüfen")
         </Badge>
         {ungeprueft > 0 && (
           <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
-            {ungeprueft} noch nicht auf Dubletten geprüft
+            {ungeprueft} noch nicht auf Doppelte geprüft
           </Badge>
         )}
         {dubletten.length > 0 && (
           <Button size="sm" variant="ghost" onClick={() => setZeigeDubletten((v) => !v)}>
-            {zeigeDubletten ? 'Dubletten ausblenden' : 'Dubletten mitanzeigen'}
+            {zeigeDubletten ? 'Doppelte ausblenden' : 'Doppelte mitanzeigen'}
           </Button>
         )}
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Rückmeldungen werden geladen …</p>
+        <p className="text-sm text-muted-foreground">Hinweise werden geladen …</p>
       ) : sichtbar.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
           <Inbox className="w-5 h-5 mx-auto mb-2 opacity-60" />
           {befunde.length === 0
-            ? 'Noch keine Rückmeldung der MBK zu dieser Einheit.'
-            : 'Alle Rückmeldungen sind abgearbeitet oder als Dublette markiert.'}
+            ? 'Vom Moodle-Team gibt es zu dieser Einheit noch keine Hinweise.'
+            : 'Alle Hinweise sind erledigt oder stehen schon unter „Selbst prüfen".'}
         </div>
       ) : (
         <div className="space-y-2">
@@ -122,9 +121,9 @@ export default function MbkBefundeReiter({
             <div key={b.id} className="space-y-1">
               {b.dublette_status === 'dublette' && (
                 <p className="text-xs text-muted-foreground">
-                  Als Dublette markiert
-                  {b.dublette_begruendung ? `: ${b.dublette_begruendung}` : '.'} Steht schon in der
-                  internen Prüfung.
+                  Doppelt
+                  {b.dublette_begruendung ? `: ${b.dublette_begruendung}` : '.'} Steht schon unter
+                  „Selbst prüfen".
                 </p>
               )}
               <PruefbefundKarte
@@ -145,8 +144,7 @@ export default function MbkBefundeReiter({
             Für die Administration <span className="font-normal">({offeneAdminPunkte.length})</span>
           </h3>
           <p className="text-xs text-muted-foreground">
-            Diese Punkte werden außerhalb des Pool-Managers erledigt – etwa in Moodle. Sie stehen
-            deshalb nicht in der Taskliste der Lehrkraft.
+            Diese Punkte erledigt die Administration direkt in Moodle. Du musst hier nichts tun.
           </p>
           <MbkAdminPunkteListe
             punkte={offeneAdminPunkte}

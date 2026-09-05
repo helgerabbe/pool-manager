@@ -40,16 +40,16 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
           <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Hier läuft zusammen, was vor der Veröffentlichung noch zu klären ist – die eigene Prüfung
-          der Schule und die Rückmeldung des Kursbaus.
+          Der Endcheck, bevor die Einheit zu den Schülern geht. Links prüfst du selbst, rechts
+          stehen die Hinweise, die das Moodle-Team beim Bauen des Kurses gefunden hat.
         </p>
       </div>
 
       <Tabs defaultValue="intern">
         <TabsList>
-          <TabsTrigger value="intern">Interne Prüfung</TabsTrigger>
+          <TabsTrigger value="intern">Selbst prüfen</TabsTrigger>
           <TabsTrigger value="mbk" className="gap-2">
-            Rückmeldung der MBK
+            Hinweise vom Moodle-Team
             {mbkOffen > 0 && (
               <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">
                 {mbkOffen}
