@@ -33,6 +33,8 @@ import { getSektorTypLabel } from '@/lib/sektorTypen';
 import { annotateSektorItems, DASHBOARD_GATING_ENGINE } from '@/lib/dashboardGating';
 import { annotateItemArten } from '@/lib/lernpfadItemArt';
 import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboardingPayload';
+import { SEQUENZ_CONTRACT } from '@/lib/mbkSequenzContract';
+import { LERNLANDKARTE_CONTRACT } from '@/lib/mbkLernlandkarteContract';
 
 /**
  * Versionskennung der Air-Gap-Payload-Engine.
@@ -112,7 +114,7 @@ import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboa
  *     Feld und grenzt es gegen den Bündel-Modus ab — die bisherige Lesart der
  *     MBK war eine andere (sie las es als Reihenfolge der Lernpaket-Kinder).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.19.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.20.0';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -969,6 +971,11 @@ export function buildSystemContextPayload({
     // airgap-1.14.0: Einheit-Arbeitsumgebung (Einheit-Dashboard + Merkheft).
     // Der EINZIGE Teil der Hülle, der PRO EINHEIT in den SCORM-Bau wandert.
     einheit_arbeitsumgebung_contract: EINHEIT_ARBEITSUMGEBUNG_CONTRACT,
+    // airgap-1.20.0: Bauanleitung für Sequenz-Aufgaben (Seitenaufbau je
+    // Schritttyp, Verbindlichkeit des offenen Aufgaben-Fragments) und für die
+    // Lernlandkarte (Fokus-Ansicht, Knotenarten, Selbsteinschätzung).
+    sequenz_contract: SEQUENZ_CONTRACT,
+    lernlandkarte_contract: LERNLANDKARTE_CONTRACT,
   };
 }
 
@@ -1926,7 +1933,7 @@ export function buildTaskContentItemForLernpaket({
  * @param {{istKi: boolean}} opts  Im KI-Modus liefert Payload 4 die Inhalte.
  * @returns {Array}
  */
-export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) {
+export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false, katalogById = new Map() } = {}) {
   if (aufgabe?.aufgaben_modus !== 'sequenz') return [];
   const roh = Array.isArray(aufgabe?.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
 
@@ -1952,6 +1959,9 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) 
           return {
             ...basis,
             aktivitaet_id: nullable(s?.aktivitaet_id),
+            // airgap-1.20.0: Ohne den Namen der Aufgabenart konnte die MBK aus
+            // den field_values nicht ableiten, WELCHE Mechanik gebaut werden soll.
+            aktivitaet_name: nullable(katalogById?.get?.(s?.aktivitaet_id)?.name),
             field_values: s?.field_values || {},
           };
         case 'offen':
@@ -1991,7 +2001,7 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false } = {}) 
  * (Ebene 2 oder 3). Im KI-Modus reichen wir nur Header + Briefing-Marker
  * durch — das eigentliche Briefing kommt in Payload 4.
  */
-export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationContext = [] }) {
+export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationContext = [], katalogById = new Map() }) {
   // airgap-1.16.0: Tombstones liefern kein Item.
   if (isTombstone(aufgabe)) return null;
   const istKi = aufgabe?.erstellungs_modus === 'ki';
@@ -2041,7 +2051,7 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     // Sequenz-Aufgaben kamen ohne ihre Schritte bei der MBK an.
     // Leer bei Aufgaben im Modus 'einzeln'.
     aufgaben_modus: aufgabe?.aufgaben_modus || 'einzeln',
-    sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi }),
+    sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi, katalogById }),
 
     alt_text: nullable(aufgabe?.alt_text),
     // airgap-1.4.0: Metadaten für Header/Footer-Injection.
@@ -2118,6 +2128,7 @@ export function buildTaskContentBundle({
       buildTaskContentItemForAllgemeineAufgabe({
         aufgabe: aa,
         navigationContext: navFor(aa.id),
+        katalogById,
       })
     )
     .filter(Boolean);
