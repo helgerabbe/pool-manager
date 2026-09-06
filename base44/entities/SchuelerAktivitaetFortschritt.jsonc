@@ -55,6 +55,10 @@
       "default": "offen",
       "description": "Bearbeitungsstatus dieser Aktivit\u00e4t f\u00fcr diesen Sch\u00fcler."
     },
+    "eingabe": {
+      "type": "string",
+      "description": "Optionale kurze Eingabe des Sch\u00fclers zu diesem Item. Gebraucht bei Bausteinen, deren Best\u00e4tigung einen NACHWEIS verlangt statt eines blo\u00dfen Knopfdrucks \u2014 beim Baustein 'Anmeldung zur schriftlichen Arbeit' (sys_exam_register) steht hier das Datum (YYYY-MM-DD), das der Sch\u00fcler in der Poolzeit-App als Termin gew\u00e4hlt hat. Bleibt bei allen anderen Items leer."
+    },
     "erfolgreich": {
       "type": "boolean",
       "description": "Optional: Wurde die Aktivit\u00e4t erfolgreich bearbeitet? (Platzhalter f\u00fcr sp\u00e4tere Bewertung; bei reiner 'Habe ich erledigt'-Best\u00e4tigung null.)"

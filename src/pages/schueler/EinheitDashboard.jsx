@@ -16,6 +16,7 @@ import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharb
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 import LernlandkarteSeite from '@/components/schueler/pfad/LernlandkarteSeite';
+import PruefungsAnmeldungSeite from '@/components/schueler/pfad/PruefungsAnmeldungSeite';
 import KleinerBildschirmHinweis from '@/components/lernlandkarte/KleinerBildschirmHinweis';
 import LadeFehlerHinweis from '@/components/schueler/LadeFehlerHinweis';
 import MerkheftDialog from '@/components/schueler/MerkheftDialog';
@@ -48,7 +49,9 @@ export default function EinheitDashboard() {
     katalogById,
     fortschrittByInstance,
     fortschrittByCompositeId,
+    recordByInstance,
     markErledigt,
+    patchFortschritt,
     loadLernpaketAktivitaeten,
   } = useSchuelerPfad(einheitId, lerntypKey);
 
@@ -114,6 +117,10 @@ export default function EinheitDashboard() {
 
   // Ist das aktive Item die Lernlandkarte? Interaktive Lernziel-Übersicht.
   const istLernlandkarte = activeItem?.type === 'system' && activeItem?.ref_id === 'sys_map_full';
+
+  // Anmeldung zur schriftlichen Arbeit: Bestätigung nur mit eingetragenem Datum.
+  const istPruefungsAnmeldung =
+    activeItem?.type === 'system' && activeItem?.ref_id === 'sys_exam_register';
 
   // „Weiter“: nächstes nicht-gesperrtes Item nach dem aktuellen.
   const goWeiter = () => {
@@ -234,6 +241,17 @@ export default function EinheitDashboard() {
             onErledigt={handleErledigt}
             onOpenLernpaket={setActiveInstanceId}
             onOpenAufgabe={(instanceId) => setActiveInstanceId(instanceId)}
+          />
+        ) : activeItem && istPruefungsAnmeldung ? (
+          <PruefungsAnmeldungSeite
+            meta={activeMeta}
+            gespeichertesDatum={recordByInstance?.get(activeItem.instance_id)?.eingabe || ''}
+            erledigt={activeItem.gate === ITEM_GATE.ERLEDIGT}
+            busy={busy}
+            onSpeichern={(datum) =>
+              patchFortschritt(activeItem, activeItem.sektor, { eingabe: datum })
+            }
+            onErledigt={handleErledigt}
           />
         ) : activeItem && istEinfuehrung ? (
           <ThemenfeldEinfuehrungSeite

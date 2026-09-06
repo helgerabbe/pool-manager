@@ -16,6 +16,7 @@ import LerntypDiagnosePreviewModal from '@/components/lernpfade/LerntypDiagnoseP
 import ThemenfeldEinfuehrungPreviewModal from '@/components/lernpfade/ThemenfeldEinfuehrungPreviewModal';
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import LernlandkartePreviewModal from '@/components/lernpfade/LernlandkartePreviewModal';
+import PruefungsAnmeldungPreviewModal from '@/components/lernpfade/PruefungsAnmeldungPreviewModal';
 
 export default function CockpitPreviewModals({
   previews,
@@ -110,6 +111,12 @@ export default function CockpitPreviewModals({
         open={previews.lernlandkarteOpen}
         onOpenChange={previews.setLernlandkarteOpen}
         einheitId={einheitId}
+        einheitTitel={einheitTitel}
+      />
+
+      <PruefungsAnmeldungPreviewModal
+        open={previews.pruefungsAnmeldungOpen}
+        onOpenChange={previews.setPruefungsAnmeldungOpen}
         einheitTitel={einheitTitel}
       />
 

@@ -218,6 +218,45 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     [user?.email, einheitId, lerntyp, recordByInstance, queryClient]
   );
 
+  /**
+   * Speichert eine Zwischen-Eingabe an einem Item, OHNE es zu erledigen.
+   * Gebraucht z. B. beim Baustein „Anmeldung zur schriftlichen Arbeit":
+   * Der Schüler speichert erst sein Termindatum und bestätigt danach.
+   */
+  const patchFortschritt = useCallback(
+    async (item, sektor, patch) => {
+      if (!user?.email || !einheitId || !item?.instance_id) return;
+      const now = new Date().toISOString();
+      const existing = recordByInstance.get(item.instance_id);
+
+      if (existing) {
+        await SchuelerData.updateAktivitaetFortschritt(existing.id, {
+          ...patch,
+          letzte_bearbeitung_am: now,
+        });
+      } else {
+        await SchuelerData.createAktivitaetFortschritt({
+          user_email: user.email,
+          einheit_id: einheitId,
+          lerntyp,
+          instance_id: item.instance_id,
+          sektor_id: sektor?.sektor_id || null,
+          item_type: item.type,
+          ref_id: item.ref_id,
+          themenfeld_id: sektor?.themenfeld_id || null,
+          status: 'in_bearbeitung',
+          versuche: 0,
+          erste_bearbeitung_am: now,
+          letzte_bearbeitung_am: now,
+          ...patch,
+        });
+      }
+      await queryClient.invalidateQueries({ queryKey: fortschrittQueryKey });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user?.email, einheitId, lerntyp, recordByInstance, queryClient]
+  );
+
   const katalogById = useMemo(() => {
     const map = new Map();
     (katalog || []).forEach((k) => map.set(k.id, k));
@@ -248,7 +287,9 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     katalogById,
     fortschrittByInstance,
     fortschrittByCompositeId,
+    recordByInstance,
     markErledigt,
+    patchFortschritt,
     loadLernpaketAktivitaeten,
   };
 }

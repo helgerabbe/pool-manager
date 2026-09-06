@@ -193,6 +193,7 @@ export default function LernpfadeSektor({
   onPreviewDiagnoseQuiz,
   onPreviewThemenfeldIntro,
   onPreviewLernlandkarte,
+  onPreviewPruefungsAnmeldung,
   alleSektoren = [],
   // Akkordeon: Sektor zugeklappt? + Toggle-Callbacks (Sektor & Bündel).
   collapsed = false,
@@ -248,6 +249,8 @@ export default function LernpfadeSektor({
               ? onPreviewDiagnoseQuiz
               : LERNLANDKARTE_REF_IDS.includes(item.ref_id) && onPreviewLernlandkarte
               ? onPreviewLernlandkarte
+              : item.ref_id === 'sys_exam_register' && onPreviewPruefungsAnmeldung
+              ? onPreviewPruefungsAnmeldung
               : item.ref_id === 'sys_themenfeld_intro' && onPreviewThemenfeldIntro
               ? () => onPreviewThemenfeldIntro({
                   instanceId: item.instance_id,

@@ -27,6 +27,7 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
   const [diagnoseQuizOpen, setDiagnoseQuizOpen] = useState(false);
   const [lerntypDiagnoseOpen, setLerntypDiagnoseOpen] = useState(false);
   const [lernlandkarteOpen, setLernlandkarteOpen] = useState(false);
+  const [pruefungsAnmeldungOpen, setPruefungsAnmeldungOpen] = useState(false);
 
   const [einfuehrungSnapshot, setEinfuehrungSnapshot] = useState(null);
   const [qblockSnapshot, setQblockSnapshot] = useState(null);
@@ -68,6 +69,7 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
   const openDiagnoseQuiz = useCallback(() => setDiagnoseQuizOpen(true), []);
   const openLerntypDiagnose = useCallback(() => setLerntypDiagnoseOpen(true), []);
   const openLernlandkarte = useCallback(() => setLernlandkarteOpen(true), []);
+  const openPruefungsAnmeldung = useCallback(() => setPruefungsAnmeldungOpen(true), []);
   const openDashboard = useCallback(() => setDashboardOpen(true), []);
   const openThemenfeldIntro = useCallback((ctx) => setThemenfeldIntroContext(ctx), []);
 
@@ -84,6 +86,9 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       setPreviewAufgabe,
       lernlandkarteOpen,
       setLernlandkarteOpen,
+      openPruefungsAnmeldung,
+      pruefungsAnmeldungOpen,
+      setPruefungsAnmeldungOpen,
       // Zustand (wird an CockpitPreviewModals durchgereicht)
       dashboardOpen,
       setDashboardOpen,
@@ -113,6 +118,8 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       openDiagnoseQuiz,
       openLerntypDiagnose,
       openLernlandkarte,
+      openPruefungsAnmeldung,
+      pruefungsAnmeldungOpen,
       openThemenfeldIntro,
       lernlandkarteOpen,
       dashboardOpen,
