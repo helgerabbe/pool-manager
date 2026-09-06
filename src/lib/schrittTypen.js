@@ -58,6 +58,13 @@ export const SCHRITT_STATUS_LABELS = Object.freeze({
  *   - datenfeld    : Name des Nutzdaten-Blocks im Schritt (null bei 'katalog')
  *   - legacy       : true = Alt-Typ, wird in der Werkstatt nicht mehr neu
  *                    angeboten, aber weiterhin angezeigt und bearbeitet
+ *   - menu         : false = im Anlege-Menü NICHT einzeln wählbar. Gilt für
+ *                    'katalog' und 'offen': Beide entstehen seit 2026-09-06
+ *                    nicht mehr durch Auswahl eines Typs, sondern als ERGEBNIS
+ *                    des Aufgaben-Assistenten (Material & Idee → passendes
+ *                    Format oder neu bauen). Die Lehrkraft soll nicht vorab
+ *                    entscheiden müssen, ob ihre Aufgabe „Katalog" oder
+ *                    „offen" ist — das ergibt sich aus dem Vorhaben.
  *   - eingabe      : Erwartet der Schritt eine Schülereingabe?
  */
 export const SCHRITT_TYP_LISTE = Object.freeze([
@@ -69,6 +76,7 @@ export const SCHRITT_TYP_LISTE = Object.freeze([
       'Ein fertiges, deterministisches Aufgabenformat aus dem Aktivitätenkatalog (Lückentext, Zuordnung, Lehrwerk/Quelle …). Abgefragt werden nur die Attribute, die das Format braucht.',
     datenfeld: null,
     legacy: false,
+    menu: false,
     eingabe: true,
     classes: { stripe: 'bg-sky-500', badge: 'bg-sky-50 text-sky-800 border-sky-200' },
   },
@@ -80,15 +88,16 @@ export const SCHRITT_TYP_LISTE = Object.freeze([
       'Eine interaktive Aufgabe, die in der Werkstatt im Gespräch gebaut wird. Ergebnis ist ein HTML-Fragment, das die MBK später in ihre eigene Hülle einsetzt.',
     datenfeld: 'offen',
     legacy: false,
+    menu: false,
     eingabe: true,
     classes: { stripe: 'bg-violet-500', badge: 'bg-violet-50 text-violet-800 border-violet-200' },
   },
   {
     id: SCHRITT_TYPEN.BRIAN,
-    label: 'Gespräch mit Brian',
+    label: 'Aufgabe mit Brian Tutor',
     kurz: 'Brian',
     beschreibung:
-      'Die Schüler bearbeiten den Schritt im Dialog mit dem KI-Tutor. Gepflegt werden Dialogname, Lernenden-Anweisung, interne Anweisung und Abschlussregel.',
+      'Die Schüler bearbeiten die Aufgabe im Dialog mit dem KI-Tutor Brian. Gepflegt werden Dialogname, Lernenden-Anweisung, interne Anweisung und Abschlussregel.',
     datenfeld: 'brian',
     legacy: false,
     eingabe: true,
@@ -161,9 +170,12 @@ export function getSchrittTyp(id) {
   return TYP_BY_ID[id] || null;
 }
 
-/** Typen, die in der Werkstatt für NEUE Schritte angeboten werden. */
+/**
+ * Typen, die in der Werkstatt für NEUE Schritte einzeln angeboten werden.
+ * Ohne 'katalog' und 'offen' — die entstehen über den Aufgaben-Assistenten.
+ */
 export const SCHRITT_TYPEN_NEU = Object.freeze(
-  SCHRITT_TYP_LISTE.filter((t) => !t.legacy)
+  SCHRITT_TYP_LISTE.filter((t) => !t.legacy && t.menu !== false)
 );
 
 /**

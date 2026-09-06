@@ -17,6 +17,8 @@ import SchuelerVorschauSpalte from '@/components/werkstatt/SchuelerVorschauSpalt
 import StrukturPhase from '@/components/werkstatt/StrukturPhase';
 import WerkstattEinstieg from '@/components/werkstatt/WerkstattEinstieg';
 import SchrittFenster from '@/components/werkstatt/SchrittFenster';
+import AufgabeAssistentDialog from '@/components/werkstatt/AufgabeAssistentDialog';
+import { schrittAusFormatWahl } from '@/lib/aufgabeFormatWahl';
 import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import SternRating from '@/components/allgemeineAufgaben/aufgabeSections/SternRating';
@@ -76,6 +78,9 @@ export default function AufgabenWerkstatt({
   const [schrittFensterOffen, setSchrittFensterOffen] = useState(false);
   const [planerOffen, setPlanerOffen] = useState(false);
   const [generatorOffen, setGeneratorOffen] = useState(false);
+  // Aufgaben-Assistent: -1 = neuen Schritt anhängen, >=0 = diesen ersetzen
+  // (Format wechseln). null = zu.
+  const [assistentZiel, setAssistentZiel] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -92,6 +97,7 @@ export default function AufgabenWerkstatt({
     setSchrittFensterOffen(false);
     setPlanerOffen(false);
     setGeneratorOffen(false);
+    setAssistentZiel(null);
     // Eine Aufgabe, die schon Schritte hat, wird bearbeitet, nicht neu
     // begonnen — dann direkt in die Werkstatt.
     const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
@@ -200,6 +206,24 @@ export default function AufgabenWerkstatt({
       : `Folge mit ${schritte.length} Schritten übernommen.`);
     setAnsicht('werkstatt');
     setPlanerOffen(false);
+  };
+
+  /**
+   * Ergebnis des Aufgaben-Assistenten: Format gewählt → Schritt anlegen oder
+   * ersetzen. Danach öffnet sich gleich das Schritt-Fenster, denn genau dort
+   * geht die Arbeit weiter (links Inhalte angeben, rechts Vorschau).
+   */
+  const formatWahlUebernehmen = (wahl, idee2) => {
+    const neuerSchritt = schrittAusFormatWahl(wahl, idee2);
+    if (assistentZiel >= 0) {
+      folge.aendern(assistentZiel, neuerSchritt);
+      folge.setSelectedIndex(assistentZiel);
+    } else {
+      folge.folgeSetzen([neuerSchritt], { anhaengen: true });
+    }
+    setAssistentZiel(null);
+    setAnsicht('werkstatt');
+    setSchrittFensterOffen(true);
   };
 
   // Einen im Gespräch gebauten Stand in den Schritt übernehmen.
@@ -404,6 +428,8 @@ export default function AufgabenWerkstatt({
                 onSelect={folge.setSelectedIndex}
                 onOpen={(i) => { folge.setSelectedIndex(i); setSchrittFensterOffen(true); }}
                 onAdd={folge.hinzufuegen}
+                onAufgabe={() => setAssistentZiel(-1)}
+                onFormatWechsel={(i) => setAssistentZiel(i)}
                 onDelete={folge.loeschen}
                 onMoveUp={folge.nachOben}
                 onMoveDown={folge.nachUnten}
@@ -506,6 +532,17 @@ export default function AufgabenWerkstatt({
         primaerLabel="In dieses Feld übernehmen"
         primaerLabelFertig="Übernommen"
         primaerErfolg="Idee ins Feld übernommen."
+      />
+
+      {/* Aufgaben-Assistent: Material & Idee → passendes Format → Schritt. */}
+      <AufgabeAssistentDialog
+        open={assistentZiel !== null}
+        onOpenChange={(o) => { if (!o) setAssistentZiel(null); }}
+        materialien={materialien}
+        onMaterialienChange={setMaterialien}
+        startIdee={assistentZiel >= 0 ? (folge.schritte[assistentZiel]?.plan?.kurzbeschreibung || '') : ''}
+        disabled={isReleased}
+        onWahl={formatWahlUebernehmen}
       />
 
       {/* Ebene 3 — liegt über diesem Dialog (siehe zIndex in SchrittFenster). */}

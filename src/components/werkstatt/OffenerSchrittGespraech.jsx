@@ -43,10 +43,17 @@ export default function OffenerSchrittGespraech({
   });
   const staende = useWerkstattStaende({ aufgabeId, schrittId: schritt?.id });
 
-  const [eingabe, setEingabe] = useState('');
-  // Solange nichts gebaut und nichts gesagt wurde, steht die Formatwahl davor:
-  // erst nachsehen, ob es das Format schon gibt, dann bauen.
-  const [gestartet, setGestartet] = useState(!!schritt?.offen?.fragment);
+  // Kommt der Schritt aus dem Aufgaben-Assistenten, steht die Idee schon da —
+  // sie ist der natürliche erste Auftrag und muss nicht neu getippt werden.
+  const [eingabe, setEingabe] = useState(
+    schritt?.offen?.fragment ? '' : (schritt?.plan?.kurzbeschreibung || ''),
+  );
+  // Die Formatwahl steht nur davor, wenn sie noch nicht stattgefunden hat.
+  // Schritte aus dem Aufgaben-Assistenten tragen `herkunft.format_gewaehlt` —
+  // dort wäre eine zweite Formatsuche nur eine Wiederholung.
+  const [gestartet, setGestartet] = useState(
+    !!schritt?.offen?.fragment || !!schritt?.herkunft?.format_gewaehlt,
+  );
 
   // Wie viele Sitzungsstände bereits gesichert wurden. Ohne das würde jeder
   // Rerender denselben Stand erneut schreiben.

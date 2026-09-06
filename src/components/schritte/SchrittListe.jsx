@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import {
   ChevronUp, ChevronDown, Trash2, GripVertical, Plus,
   FileText, ListChecks, LayoutGrid, PencilRuler, Bot, Hand, MonitorPlay, Circle, CircleDot, CheckCircle2,
+  Puzzle, Repeat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -48,7 +49,7 @@ const STATUS_TITEL = {
  * Inhalt wird über den Bearbeiten-Knopf geöffnet — bewusst getrennt, damit
  * das Umsortieren nicht ständig ein Fenster aufreißt.
  */
-function SchrittKachel({ schritt, index, total, isSelected, onSelect, onOpen, onDelete, onMoveUp, onMoveDown }) {
+function SchrittKachel({ schritt, index, total, isSelected, onSelect, onOpen, onDelete, onMoveUp, onMoveDown, onFormatWechsel }) {
   const typInfo = getSchrittTyp(schritt.typ);
   const Icon = TYP_ICONS[schritt.typ] || FileText;
   const status = schrittStatus(schritt);
@@ -84,6 +85,18 @@ function SchrittKachel({ schritt, index, total, isSelected, onSelect, onOpen, on
         </p>
       </div>
       <div className="flex items-center gap-0.5 shrink-0">
+        {/* Format wechseln — nur bei Aufgabenschritten. Die Formatfrage darf
+            auch später noch anders beantwortet werden; der Assistent legt den
+            Schritt dann neu an. */}
+        {onFormatWechsel && (schritt.typ === SCHRITT_TYPEN.KATALOG || schritt.typ === SCHRITT_TYPEN.OFFEN) && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onFormatWechsel(index); }}
+            className="p-0.5 rounded hover:bg-muted text-muted-foreground"
+            title="Anderes Aufgabenformat wählen"
+          >
+            <Repeat className="w-3.5 h-3.5" />
+          </button>
+        )}
         <button
           onClick={(e) => { e.stopPropagation(); onOpen?.(index); }}
           className="px-1.5 py-0.5 rounded text-[11px] font-medium border border-border bg-background hover:bg-muted mr-0.5"
@@ -134,6 +147,8 @@ export default function SchrittListe({
   onSelect,
   onOpen,
   onAdd,
+  onAufgabe,
+  onFormatWechsel,
   onDelete,
   onMoveUp,
   onMoveDown,
@@ -159,6 +174,7 @@ export default function SchrittListe({
               onDelete={onDelete}
               onMoveUp={onMoveUp}
               onMoveDown={onMoveDown}
+              onFormatWechsel={onFormatWechsel}
             />
           ))
         )}
@@ -172,6 +188,21 @@ export default function SchrittListe({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-72">
+            {/* „Aufgabe" steht bewusst zuerst und ohne Typ: Welches Format es
+                wird (Katalog, Galerie-Vorlage oder neu gebaut), entscheidet
+                der Assistent aus Material und Idee. */}
+            {onAufgabe && (
+              <DropdownMenuItem onSelect={() => onAufgabe()} className="gap-2 items-start py-2">
+                <Puzzle className="w-4 h-4 mt-0.5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">Aufgabe</p>
+                  <p className="text-xs text-muted-foreground leading-snug whitespace-normal">
+                    Eine Aufgabe, die die Schüler:innen am Gerät bearbeiten. Material und Idee
+                    angeben — ich suche dazu ein passendes Format, oder wir bauen ein neues.
+                  </p>
+                </div>
+              </DropdownMenuItem>
+            )}
             {SCHRITT_TYPEN_NEU.map((t) => {
               const Icon = TYP_ICONS[t.id] || FileText;
               return (
