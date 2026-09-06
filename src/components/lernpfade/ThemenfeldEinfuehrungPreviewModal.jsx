@@ -48,17 +48,30 @@ export default function ThemenfeldEinfuehrungPreviewModal({
     setError(null);
     setInhalt(null);
     setSavedOk(false);
-    base44.entities.SchuelerInhaltSnapshot
-      .filter({ einheit_id: einheitId, lerntyp, instance_id: instanceId })
-      .then((list) => {
-        if (abort) return;
-        const snap = Array.isArray(list) ? list[0] : null;
-        setInhalt(snap?.inhalt || null);
-      })
+    // Gleiche Auflösung wie im Backend: Themenfeld-Einführungen gelten
+    // dashboard-übergreifend, deshalb zuerst über (Einheit, Baustein,
+    // Themenfeld) suchen und nur ohne Themenfeld auf die Instanz zurückfallen.
+    // Sonst wäre ein gerade übernommener Inhalt beim erneuten Öffnen "weg".
+    const ladeSnapshot = async () => {
+      if (themenfeldId) {
+        const list = await base44.entities.SchuelerInhaltSnapshot.filter({
+          einheit_id: einheitId,
+          baustein_id: 'sys_themenfeld_intro',
+          themenfeld_id: themenfeldId,
+        });
+        if (Array.isArray(list) && list.length > 0) return list[0];
+      }
+      const list = await base44.entities.SchuelerInhaltSnapshot.filter({
+        einheit_id: einheitId, lerntyp, instance_id: instanceId,
+      });
+      return Array.isArray(list) ? list[0] : null;
+    };
+    ladeSnapshot()
+      .then((snap) => { if (!abort) setInhalt(snap?.inhalt || null); })
       .catch(() => { if (!abort) setInhalt(null); })
       .finally(() => { if (!abort) setLoading(false); });
     return () => { abort = true; };
-  }, [open, einheitId, lerntyp, instanceId]);
+  }, [open, einheitId, lerntyp, instanceId, themenfeldId]);
 
   // Neu generieren — NUR Vorschau, es wird noch nichts gespeichert.
   const generieren = useCallback(async () => {
