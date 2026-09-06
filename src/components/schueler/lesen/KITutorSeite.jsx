@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
 import HinweisBox from './HinweisBox';
+import BrianSchluesselEingabe from './BrianSchluesselEingabe';
+import { hatSchluessel } from '@/lib/brianSchluessel';
 
 const BRIAN_URL = 'https://brian.study';
 const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/2d9be32ce_image.png';
@@ -20,12 +22,17 @@ const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81be
  * beiden Buttons (zurück + grün „Erledigt"). Später kann statt der Startseite
  * eine konkrete Aufgaben-ID übergeben werden.
  */
-export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack }) {
+export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null }) {
   const fv = aktivitaet?.field_values || {};
   const [kopiert, setKopiert] = useState(false);
+  // Wann der Schüler von hier aus zu Brian gewechselt ist — Grundlage der
+  // Plausibilitätsprüfung beim Schlüsselcode.
+  const [geoeffnetAm, setGeoeffnetAm] = useState(null);
+  const mitCode = hatSchluessel(schluessel);
 
-  const oeffneFenster = () => window.open(BRIAN_URL, '_blank', 'noopener,noreferrer,width=1100,height=800');
-  const oeffneTab = () => window.open(BRIAN_URL, '_blank', 'noopener,noreferrer');
+  const merkeOeffnen = () => setGeoeffnetAm((prev) => prev || Date.now());
+  const oeffneFenster = () => { merkeOeffnen(); window.open(BRIAN_URL, '_blank', 'noopener,noreferrer,width=1100,height=800'); };
+  const oeffneTab = () => { merkeOeffnen(); window.open(BRIAN_URL, '_blank', 'noopener,noreferrer'); };
   const kopiereLink = async () => {
     try {
       await navigator.clipboard.writeText(BRIAN_URL);
@@ -55,8 +62,10 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
             </div>
             <p>
               Diese Aufgabe bearbeitest du mit deinem KI-Tutor <strong>Brian</strong>. Öffne Brian,
-              löse dort deine Aufgabe und <strong>komm danach hierher zurück</strong>, um unten auf
-              „Erledigt" zu tippen.
+              löse dort deine Aufgabe und <strong>komm danach hierher zurück</strong>.
+              {mitCode
+                ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                : ' Tippe dann unten auf „Erledigt".'}
             </p>
           </HinweisBox>
 
@@ -78,22 +87,34 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
               </Button>
             </div>
           </div>
+
+          {/* Abschluss über den Schlüsselcode — nur wenn Codes vergeben sind. */}
+          {mitCode && (
+            <BrianSchluesselEingabe
+              schluessel={schluessel}
+              geoeffnetAm={geoeffnetAm}
+              busy={busy}
+              onAbschluss={(ergebnis) => onErledigt?.(ergebnis)}
+            />
+          )}
         </div>
       </div>
 
-      {/* Aktion: links zurück, rechts grün „Erledigt" */}
-      <div className="pt-4 shrink-0 grid grid-cols-2 gap-3">
+      {/* Aktion: links zurück, rechts grün „Erledigt" (ohne Codes) */}
+      <div className={cn('pt-4 shrink-0 grid gap-3', mitCode ? 'grid-cols-1' : 'grid-cols-2')}>
         <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
           <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
         </Button>
-        <Button
-          className={cn('gap-2 bg-emerald-600 hover:bg-emerald-700')}
-          disabled={busy}
-          onClick={onErledigt}
-        >
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-          Erledigt
-        </Button>
+        {!mitCode && (
+          <Button
+            className={cn('gap-2 bg-emerald-600 hover:bg-emerald-700')}
+            disabled={busy}
+            onClick={onErledigt}
+          >
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+            Erledigt
+          </Button>
+        )}
       </div>
     </div>
   );

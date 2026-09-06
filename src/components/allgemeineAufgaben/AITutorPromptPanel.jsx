@@ -17,6 +17,7 @@ import { AlertTriangle, RefreshCw, Save, Loader2, Info } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveLernzieleMitLernpaket } from '@/lib/lernzielLernpaketResolver';
 import VerknuepfteLernzieleBlock from '@/components/allgemeineAufgaben/VerknuepfteLernzieleBlock';
+import BrianSchluesselFeld from '@/components/werkstatt/BrianSchluesselFeld';
 
 // ── Tutor-Persona Auswahl ─────────────────────────────────────────────────────
 const TUTOR_PERSONAS = [
@@ -209,6 +210,8 @@ export default function AITutorPromptPanel({
     tutor_persona_zusatz: '',
   });
   const [isDirty, setIsDirty] = useState(false);
+  // Schlüsselcodes dieses Gesprächs (nur im Entwurfsmodus, d. h. am Brian-Schritt).
+  const [schluessel, setSchluessel] = useState(null);
 
   // Erwartungshorizont ist nur für allgemeine Aufgaben (nicht Ebene 3) erforderlich
   const istProjektaufgabe = aufgabe?.anforderungsebene === '3 - Projekt';
@@ -228,6 +231,7 @@ export default function AITutorPromptPanel({
         tutor_persona: b.tutor_persona || 'standard',
         tutor_persona_zusatz: b.tutor_persona_zusatz || '',
       });
+      setSchluessel(b.schluessel || null);
       setIsDirty(false);
       return;
     }
@@ -285,6 +289,8 @@ export default function AITutorPromptPanel({
         basisLernziele: basisFuerErzeugung,
         // Lernziel→Lernpaket-Zuordnung, damit Brian gezielt auf Lernpakete verweisen kann.
         lernzieleMitLernpaket,
+        // Schlüsselcodes: kommen wortgetreu in die interne Anweisung.
+        schluessel,
       });
       const result = response.data?.segments;
       if (!result) throw new Error('Keine Segmente erhalten');
@@ -462,6 +468,15 @@ export default function AITutorPromptPanel({
           onChange={kannBearbeiten ? v => updateField('brian_completion_rule', v) : undefined}
           kannBearbeiten={kannBearbeiten}
         />
+
+        {/* Schlüsselcodes: Nachweis, dass das Gespräch stattgefunden hat */}
+        {imEntwurfsModus && (
+          <BrianSchluesselFeld
+            schluessel={schluessel}
+            kannBearbeiten={kannBearbeiten}
+            onChange={(neu) => { setSchluessel(neu); onBrianChange({ schluessel: neu }); }}
+          />
+        )}
 
         {/* Verknüpfte Lernziele & Lernpakete – damit Brian gezielt verweisen kann */}
         <VerknuepfteLernzieleBlock items={lernzieleMitLernpaket} />

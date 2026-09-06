@@ -461,6 +461,7 @@ export default function AufgabensequenzSeite({
           <KITutorSeite
             aktivitaet={{ id: step.id, field_values: { instruction: b.learner_instruction || b.aufgabenstellung || '' } }}
             kat={{ name: b.dialog_name || 'KI-Tutor Aufgabe (Brian)' }}
+            schluessel={b.schluessel || null}
             busy={busy}
             onErledigt={weiter}
             onBack={zurueck}
