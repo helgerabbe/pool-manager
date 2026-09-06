@@ -121,8 +121,8 @@ function SegmentField({ label, description, value, onChange, kannBearbeiten, mul
 }
 
 // ── Erwartungshorizont-Anzeige für Ebene-2-Aufgaben (Read-only, informativ) ──
-function ErwartungshorizontSection({ aufgabe }) {
-  const horizont = aufgabe?.erwartungshorizont || aufgabe?.musterloesung || '';
+function ErwartungshorizontSection({ aufgabe, horizontOverride = null }) {
+  const horizont = horizontOverride ?? (aufgabe?.erwartungshorizont || aufgabe?.musterloesung || '');
   return (
     <div className="space-y-1.5">
       <div>
@@ -184,7 +184,10 @@ export default function AITutorPromptPanel({
   const lernzieleMitLernpaket = React.useMemo(
     () =>
       resolveLernzieleMitLernpaket({
-        analyseItems: aufgabe?.lernzielanalyse?.items || [],
+        // Beim Brian-SCHRITT zählt die Lernzielanalyse DIESES Gesprächs, nicht
+        // die der ganzen Aufgabe — zwei Gespräche einer Sequenz verfolgen
+        // verschiedene Ziele.
+        analyseItems: erzeugungsKontext?.analyseItems || aufgabe?.lernzielanalyse?.items || [],
         lernziele: mappedLernziele,
         basisLernziele: mappedBasisLernziele,
         lernpakete,
@@ -193,7 +196,7 @@ export default function AITutorPromptPanel({
         alleLernziele,
         alleBasisLernziele,
       }),
-    [aufgabe?.lernzielanalyse, mappedLernziele, mappedBasisLernziele, lernpakete, basislernpakete, basismodule, alleLernziele, alleBasisLernziele]
+    [erzeugungsKontext?.analyseItems, aufgabe?.lernzielanalyse, mappedLernziele, mappedBasisLernziele, lernpakete, basislernpakete, basismodule, alleLernziele, alleBasisLernziele]
   );
 
   // Lokaler Zustand der Segmente
@@ -249,23 +252,37 @@ export default function AITutorPromptPanel({
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Beim Brian-Schritt wird die Aufgabe mit den Werten DIESES Gesprächs
-      // überlagert. Die Function liest weiterhin dieselben Felder — sie muss
-      // von Schritten nichts wissen.
+      // Beim Brian-SCHRITT beschreibt der Auftrag NUR dieses eine Gespräch.
+      // Deshalb ein eigenständiges Objekt OHNE `id` und ohne die Sequenzfelder
+      // der Aufgabe: Mit einer `id` würde die Function die Aufgabe frisch aus
+      // der Datenbank laden und alle Schritt-Angaben verwerfen — Brian bekäme
+      // dann den gesamten Ablauf und nicht die Aufgabe dieses Schritts.
       const aufgabeFuerErzeugung = imEntwurfsModus
         ? {
-          ...aufgabe,
-          titel: erzeugungsKontext?.titel || aufgabe?.titel,
+          titel: erzeugungsKontext?.titel || '',
           aufgabenstellung: erzeugungsKontext?.aufgabenstellung || '',
           erwartungshorizont: erzeugungsKontext?.erwartungshorizont || '',
+          materialien: erzeugungsKontext?.materialien || [],
+          aufgaben_modus: 'einzeln',
+          tutor_persona: segments.tutor_persona,
+          tutor_persona_zusatz: segments.tutor_persona_zusatz,
         }
         : aufgabe;
+
+      // Lernziele des Schritts liegen als Analyse-Items vor (Feld `text`) und
+      // müssen in die Form gebracht werden, die die Function liest.
+      const lernzieleFuerErzeugung = imEntwurfsModus
+        ? mappedLernziele.map((it) => ({ schueler_uebersetzung: it.text || '' }))
+        : mappedLernziele;
+      const basisFuerErzeugung = imEntwurfsModus
+        ? mappedBasisLernziele.map((it) => ({ text: it.text || '' }))
+        : mappedBasisLernziele;
 
       const response = await base44.functions.invoke('generateBrianSegments', {
         aufgabe: aufgabeFuerErzeugung,
         einheit,
-        lernziele: mappedLernziele,
-        basisLernziele: mappedBasisLernziele,
+        lernziele: lernzieleFuerErzeugung,
+        basisLernziele: basisFuerErzeugung,
         // Lernziel→Lernpaket-Zuordnung, damit Brian gezielt auf Lernpakete verweisen kann.
         lernzieleMitLernpaket,
       });
@@ -451,7 +468,10 @@ export default function AITutorPromptPanel({
 
         {/* Feld 5: Erwartungshorizont als Tutor-Kontext (nur für Ebene-2-Aufgaben) */}
         {!istProjektaufgabe && (
-          <ErwartungshorizontSection aufgabe={aufgabe} />
+          <ErwartungshorizontSection
+            aufgabe={aufgabe}
+            horizontOverride={imEntwurfsModus ? (erzeugungsKontext?.erwartungshorizont || '') : null}
+          />
         )}
 
         <p className="text-xs text-muted-foreground pt-2 border-t border-border">

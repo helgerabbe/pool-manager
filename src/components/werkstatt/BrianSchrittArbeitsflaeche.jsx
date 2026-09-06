@@ -111,6 +111,8 @@ export default function BrianSchrittArbeitsflaeche({
             titel: schritt?.titel || b.dialog_name || '',
             aufgabenstellung: b.aufgabenstellung || b.learner_instruction || '',
             erwartungshorizont: b.erwartungshorizont || '',
+            materialien: Array.isArray(b.materialien) ? b.materialien : [],
+            analyseItems: items,
           }}
         />
       </TabsContent>
