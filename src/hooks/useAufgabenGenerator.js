@@ -79,6 +79,10 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     let gesammelt = '';
+    // Ein Ergebnis kam an? Ohne diese Merkung endete ein vorzeitig
+    // abgeschnittener Strom (z. B. Zeitgrenze der Function) stillschweigend:
+    // Das Gespräch hörte einfach auf, ohne Antwort und ohne Fehler.
+    let hatErgebnis = false;
 
     try {
       await fetchEventSource(ASSISTENT_ENDPOINT, {
@@ -111,6 +115,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
             setTeilAntwort(gesammelt);
           } else if (ev.event === 'ergebnis') {
             const d = JSON.parse(ev.data);
+            hatErgebnis = true;
             setVerlauf((v) => [...v, { rolle: 'ki', text: d.antwort || gesammelt || 'Fertig.' }]);
             setTeilAntwort('');
             if (d.warnungen?.length) setWarnungen(d.warnungen);
@@ -135,6 +140,17 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
           throw err;
         },
       });
+
+      // Strom zu Ende, aber kein Ergebnis: Die Verbindung ist mitten in der
+      // Antwort abgerissen. Das muss die Lehrkraft erfahren — und der
+      // bereits geschriebene Text bleibt sichtbar, damit nichts verpufft.
+      if (!hatErgebnis && !ctrl.signal.aborted) {
+        if (gesammelt.trim()) {
+          setVerlauf((v) => [...v, { rolle: 'ki', text: gesammelt }]);
+        }
+        setFehler('Die Verbindung ist mitten in der Antwort abgerissen — die Aufgabe wurde nicht fertig gebaut. Versuchen Sie es noch einmal, am besten mit einem kleineren Auftrag.');
+        setFehlgeschlagen(text);
+      }
     } catch (err) {
       if (err?.name !== 'AbortError') {
         setFehler(err?.uebersetzt ? err.message : verbindungsFehlerText(err));

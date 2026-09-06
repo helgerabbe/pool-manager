@@ -87,6 +87,13 @@ export default function SchrittFenster({
     <Dialog open={open} onOpenChange={(o) => { if (!o) onAbbrechen(); }}>
       <DialogContent
         className="max-h-[94vh] w-[94vw] max-w-[1300px] overflow-hidden bg-slate-50 p-4 flex flex-col"
+        // Nicht versehentlich schließbar: Ein Klick daneben oder ein Druck auf
+        // Escape schloss das Fenster mitten im Bauen — Gespräch, Teilantwort
+        // und der noch nicht übernommene Stand waren damit weg, ohne Warnung.
+        // Geschlossen wird nur bewusst über „Abbrechen", „Übernehmen" oder das
+        // Kreuz oben rechts.
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
       >
         <DialogHeader className="border-b border-slate-200 pb-3 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
