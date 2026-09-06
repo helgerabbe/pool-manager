@@ -60,25 +60,42 @@ export default function ThemenfeldEinfuehrungPreviewModal({
     return () => { abort = true; };
   }, [open, einheitId, lerntyp, instanceId]);
 
-  // Neu generieren + zentral speichern (force=true).
-  const regenerateAndSave = useCallback(async () => {
+  // Neu generieren — NUR Vorschau, es wird noch nichts gespeichert.
+  const generieren = useCallback(async () => {
     if (!einheitId || !lerntyp || !instanceId) return;
     setSaving(true);
     setError(null);
     setSavedOk(false);
     try {
       const res = await base44.functions.invoke('getOrCreateThemenfeldEinfuehrung', {
-        einheitId, lerntyp, instanceId, themenfeldId, force: true,
+        einheitId, lerntyp, instanceId, themenfeldId, nurVorschau: true,
       });
       if (res?.data?.error) throw new Error(res.data.error);
       setInhalt(res?.data?.inhalt || null);
-      setSavedOk(true);
     } catch (e) {
       setError(e?.message || 'Erzeugung fehlgeschlagen.');
     } finally {
       setSaving(false);
     }
   }, [einheitId, lerntyp, instanceId, themenfeldId]);
+
+  // Übernehmen — genau den gezeigten Inhalt zentral speichern.
+  const uebernehmen = useCallback(async () => {
+    if (!inhalt) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await base44.functions.invoke('getOrCreateThemenfeldEinfuehrung', {
+        einheitId, lerntyp, instanceId, themenfeldId, speichereInhalt: inhalt,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      setSavedOk(true);
+    } catch (e) {
+      setError(e?.message || 'Speichern fehlgeschlagen.');
+    } finally {
+      setSaving(false);
+    }
+  }, [inhalt, einheitId, lerntyp, instanceId, themenfeldId]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,7 +125,7 @@ export default function ThemenfeldEinfuehrungPreviewModal({
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <AlertTriangle className="w-8 h-8 text-amber-500 mb-3" />
               <p className="text-sm text-slate-700 font-medium">{error}</p>
-              <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={regenerateAndSave}>
+              <Button variant="outline" size="sm" className="mt-4 gap-1.5" onClick={generieren}>
                 <RefreshCw className="w-3.5 h-3.5" /> Erneut versuchen
               </Button>
             </div>
@@ -162,14 +179,18 @@ export default function ThemenfeldEinfuehrungPreviewModal({
         <DialogFooter className="sm:flex-row sm:items-center sm:justify-between gap-2">
           {savedOk && (
             <span className="inline-flex items-center gap-1.5 text-sm text-emerald-600 font-medium">
-              <CheckCircle2 className="w-4 h-4" /> Zentral gespeichert
+              <CheckCircle2 className="w-4 h-4" /> Übernommen
             </span>
           )}
           <div className="flex items-center gap-2 sm:ml-auto">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>Schließen</Button>
-            <Button className="gap-1.5" disabled={saving} onClick={regenerateAndSave}>
+            <Button variant="outline" className="gap-1.5 bg-white" disabled={saving} onClick={generieren}>
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              {inhalt ? 'Neu generieren & speichern' : 'Erzeugen & speichern'}
+              {inhalt ? 'Neu generieren' : 'Erzeugen'}
+            </Button>
+            <Button className="gap-1.5" disabled={saving || !inhalt} onClick={uebernehmen}>
+              <CheckCircle2 className="w-4 h-4" />
+              Übernehmen
             </Button>
           </div>
         </DialogFooter>

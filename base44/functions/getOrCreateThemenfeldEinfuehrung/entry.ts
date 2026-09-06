@@ -23,7 +23,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId, lerntyp, instanceId, themenfeldId, force } = await req.json();
+    // nurVorschau = generieren OHNE zu speichern (Lehrer schaut erst).
+    // speichereInhalt = einen bereits gezeigten Inhalt übernehmen (kein KI-Call).
+    const {
+      einheitId, lerntyp, instanceId, themenfeldId, force,
+      nurVorschau, speichereInhalt,
+    } = await req.json();
     if (!einheitId || !lerntyp || !instanceId) {
       return Response.json({ error: 'einheitId, lerntyp und instanceId sind erforderlich' }, { status: 400 });
     }
@@ -49,7 +54,28 @@ Deno.serve(async (req) => {
       });
     }
     const existing = Array.isArray(vorhandene) ? vorhandene[0] : null;
-    if (existing && !force) {
+
+    // ── Übernehmen: gezeigten Inhalt speichern, nichts neu erzeugen ───────
+    if (speichereInhalt) {
+      const jetzt = new Date().toISOString();
+      const felder = {
+        baustein_id: 'sys_themenfeld_intro',
+        themenfeld_id: themenfeldId || null,
+        inhalt: speichereInhalt,
+        generiert_am: jetzt,
+        generiert_von: user.email,
+      };
+      if (existing) {
+        await base44.asServiceRole.entities.SchuelerInhaltSnapshot.update(existing.id, felder);
+        return Response.json({ inhalt: speichereInhalt, snapshotId: existing.id, saved: true });
+      }
+      const neu = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.create({
+        einheit_id: einheitId, lerntyp, instance_id: instanceId, ...felder,
+      });
+      return Response.json({ inhalt: speichereInhalt, snapshotId: neu?.id, saved: true });
+    }
+
+    if (existing && !force && !nurVorschau) {
       return Response.json({ inhalt: existing.inhalt, snapshotId: existing.id, cached: true });
     }
 
@@ -166,6 +192,11 @@ Hinweis: Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || 
       abschnitte: Array.isArray(result.abschnitte) ? result.abschnitte : [],
       bild_url: bildUrl,
     };
+
+    // Vorschau-Modus: NICHT speichern — der Lehrer entscheidet über „Übernehmen".
+    if (nurVorschau) {
+      return Response.json({ inhalt, cached: false, saved: false });
+    }
 
     // ── 4. Snapshot zentral speichern (Upsert) ───────────────────────────
     const now = new Date().toISOString();
