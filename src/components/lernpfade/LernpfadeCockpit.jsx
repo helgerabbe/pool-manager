@@ -931,6 +931,7 @@ export default function LernpfadeCockpit({
     handleSetBundleConfig,
     handleSetBundleModus,
     handleToggleItemAktiv,
+    handleSetItemArbeitsauftrag,
     handleSetLernpaketZugang,
     handleAutoFillBundle,
     handleRemoveSystemItem,
@@ -1097,6 +1098,7 @@ export default function LernpfadeCockpit({
                 onSetBundleModus={handleSetBundleModus}
                 onAutoFillBundle={handleAutoFillBundle}
                 onToggleItemAktiv={handleToggleItemAktiv}
+                onSetItemArbeitsauftrag={handleSetItemArbeitsauftrag}
                 onSetLernpaketZugang={handleSetLernpaketZugang}
                 expandedSektoren={expandedSektoren}
                 onToggleSektorExpanded={toggleSektorExpanded}

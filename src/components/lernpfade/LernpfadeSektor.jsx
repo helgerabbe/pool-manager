@@ -177,6 +177,7 @@ export default function LernpfadeSektor({
   onSetBundleModus,
   onAutoFillBundle,
   onToggleItemAktiv,
+  onSetItemArbeitsauftrag,
   onSetLernpaketZugang,
   getIsDropDisabled,
   onSelectAufgabe,
@@ -257,6 +258,12 @@ export default function LernpfadeSektor({
                   themenfeldId: sektor.themenfeld_id || null,
                   sektorTitel: sektor.titel_snapshot || sektor.titel || '',
                 })
+              : undefined
+          }
+          arbeitsauftrag={item.arbeitsauftrag || ''}
+          onSetArbeitsauftrag={
+            onSetItemArbeitsauftrag && !readOnly
+              ? (text) => onSetItemArbeitsauftrag(sektor.sektor_id, item.instance_id, text)
               : undefined
           }
           bundleConfig={item.bundle_config}

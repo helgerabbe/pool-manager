@@ -104,6 +104,14 @@ export function normalizeItem(item) {
         normalized.bundle_config = bc;
       }
     }
+    // Arbeitsauftrag am Standard-Element (2026-09-06): Was soll an DIESER
+    // Stelle konkret getan werden (z. B. beim Lehrer-Check)? Hängt an der
+    // Instanz, nicht am Baustein — derselbe Baustein kann an anderer Stelle
+    // etwas anderes verlangen. Leerer Text = Feld wird weggelassen.
+    if (normalized.type === ITEM_TYPE.SYSTEM && typeof item.arbeitsauftrag === 'string') {
+      const trimmed = item.arbeitsauftrag.trim();
+      if (trimmed) normalized.arbeitsauftrag = trimmed;
+    }
     // Lernpaket-Zugang (2026-08-22): Pro Lernpaket im Dashboard überschreibbar
     // ('standard' | 'fast_track' | 'wissensspeicher'). Fehlend = Default des
     // Lerntyps (siehe lib/lernpaketZugang.js).
@@ -661,6 +669,29 @@ export function setItemLernpaketZugang(konfig, lernTyp, sektorId, instanceId, zu
         return rest; // zurück auf Lerntyp-Default
       }
       return { ...it, lernpaket_zugang: zugang };
+    });
+    return { ...s, items };
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
+ * Arbeitsauftrag eines System-Items setzen/löschen (2026-09-06). Leerer Text
+ * entfernt das Feld wieder. Operiert idempotent und immutable.
+ */
+export function setItemArbeitsauftrag(konfig, lernTyp, sektorId, instanceId, text) {
+  if (!instanceId) return konfig;
+  const trimmed = typeof text === 'string' ? text.trim() : '';
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    if (s.sektor_id !== sektorId) return s;
+    const items = s.items.map((it) => {
+      if (it.instance_id !== instanceId) return it;
+      if (it.type !== ITEM_TYPE.SYSTEM) return it;
+      if (!trimmed) {
+        const { arbeitsauftrag: _ignored, ...rest } = it;
+        return rest;
+      }
+      return { ...it, arbeitsauftrag: trimmed };
     });
     return { ...s, items };
   });

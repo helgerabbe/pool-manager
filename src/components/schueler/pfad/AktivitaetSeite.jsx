@@ -45,6 +45,18 @@ export default function AktivitaetSeite({
         </div>
       </div>
 
+      {/* Arbeitsauftrag der Lehrkraft für genau diese Stelle im Lernplan. */}
+      {!gesperrt && (item.arbeitsauftrag || '').trim() && (
+        <div className="mb-4 shrink-0 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+            Das sollst du hier tun
+          </p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+            {item.arbeitsauftrag}
+          </p>
+        </div>
+      )}
+
       {/* Platzhalter-Inhalt (echte Aktivität folgt später) */}
       <div className="flex-1 min-h-0 rounded-2xl border-2 border-dashed border-border bg-muted/30 flex items-center justify-center text-center p-6">
         {gesperrt ? (

@@ -20,6 +20,7 @@ import {
   setBundleConfig,
   setBundleModus,
   setItemAktiv,
+  setItemArbeitsauftrag,
   setItemLernpaketZugang,
   removeBundleAndCascade,
   getBundleChildren,
@@ -102,6 +103,17 @@ export function useDashboardBundleHandlers({
     (sektorId, instanceId, aktiv) => {
       if (readOnly) return;
       updateKonfiguration((prev) => setItemAktiv(prev, activeLernTyp, sektorId, instanceId, aktiv));
+    },
+    [readOnly, activeLernTyp, updateKonfiguration]
+  );
+
+  // Arbeitsauftrag eines Standard-Elements an dieser Pfad-Stelle.
+  const handleSetItemArbeitsauftrag = useCallback(
+    (sektorId, instanceId, text) => {
+      if (readOnly) return;
+      updateKonfiguration((prev) =>
+        setItemArbeitsauftrag(prev, activeLernTyp, sektorId, instanceId, text)
+      );
     },
     [readOnly, activeLernTyp, updateKonfiguration]
   );
@@ -216,6 +228,7 @@ export function useDashboardBundleHandlers({
     handleSetBundleConfig,
     handleSetBundleModus,
     handleToggleItemAktiv,
+    handleSetItemArbeitsauftrag,
     handleSetLernpaketZugang,
     handleAutoFillBundle,
     handleRemoveSystemItem,

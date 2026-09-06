@@ -26,7 +26,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { GripVertical, X, Eye } from 'lucide-react';
+import { GripVertical, X, Eye, ClipboardList } from 'lucide-react';
+import SystemBausteinAuftragDialog from '@/components/lernpfade/SystemBausteinAuftragDialog';
 import { getSystemBausteinIcon } from '@/lib/systemBausteinIcons';
 import { isPlatzhalterBaustein, PLATZHALTER_CLASSES } from '@/lib/platzhalterUtils';
 import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlichControl';
@@ -51,6 +52,9 @@ export default function SystemBausteinPill({
   onRemove,
   // Vorschau-Button (nur am Standardbaustein „Kurze Einführung").
   onPreview,
+  // Arbeitsauftrag an DIESER Stelle (z. B. beim Lehrer-Check).
+  arbeitsauftrag = '',
+  onSetArbeitsauftrag,
   // Phase 4: nur am Aufgabenbündel relevant.
   bundleConfig,
   bundleChildCount = 0,
@@ -62,6 +66,8 @@ export default function SystemBausteinPill({
 }) {
   const Icon = getSystemBausteinIcon(baustein?.icon);
   const titel = baustein?.titel || refId;
+  const [auftragOpen, setAuftragOpen] = React.useState(false);
+  const hatAuftrag = !!(arbeitsauftrag || '').trim();
   // Phase 3: Draggable-IDs müssen über Sektor- UND Bündel-Droppables hinweg
   // eindeutig sein. Wir nehmen die instance_id als stabilen Anker.
   const draggableId = `pfaditem-system-${instanceId || `${sektorId}-${index}-${refId}`}`;
@@ -166,6 +172,28 @@ export default function SystemBausteinPill({
               )}
             </span>
             <div className="ml-auto flex items-center gap-1.5 shrink-0">
+              {onSetArbeitsauftrag && !isBundle && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setAuftragOpen(true);
+                  }}
+                  title={
+                    hatAuftrag
+                      ? `Arbeitsauftrag: ${arbeitsauftrag}`
+                      : 'Noch kein Arbeitsauftrag – festlegen, was die Schüler hier tun sollen'
+                  }
+                  className={`inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] font-semibold transition-colors ${
+                    hatAuftrag
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                      : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                  }`}
+                >
+                  <ClipboardList className="w-3 h-3" />
+                  {hatAuftrag ? 'Auftrag' : 'Auftrag fehlt'}
+                </button>
+              )}
               {onPreview && (
                 <button
                   type="button"
@@ -211,6 +239,18 @@ export default function SystemBausteinPill({
                 </button>
               )}
             </div>
+            {onSetArbeitsauftrag && (
+              <div onClick={(e) => e.stopPropagation()}>
+                <SystemBausteinAuftragDialog
+                  open={auftragOpen}
+                  onOpenChange={setAuftragOpen}
+                  bausteinTitel={titel}
+                  hinweis={baustein?.admin_beschreibung || ''}
+                  value={arbeitsauftrag}
+                  onSave={onSetArbeitsauftrag}
+                />
+              </div>
+            )}
           </div>
         </TooltipProvider>
       )}

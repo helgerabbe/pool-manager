@@ -49,6 +49,9 @@ function summarizeLerntypPfad(sektoren, themenfelderById) {
         type: it?.type || null,
         ref_id: it?.ref_id || null,
         parent_instance_id: it?.parent_instance_id || null,
+        // 2026-09-06: Von der Lehrkraft festgelegter Arbeitsauftrag DIESER
+        // Stelle (z. B. was beim Lehrer-Check konkret zu tun ist).
+        arbeitsauftrag: nullable(it?.arbeitsauftrag),
       })),
     };
   });
@@ -258,6 +261,18 @@ export function buildSystembausteinPayloadItem({
       export_instruktion: nullable(systemBaustein?.export_instruktion),
     },
     lerntyp_pfad: summarizeLerntypPfad(lerntypPfad, themenfelderById),
+    // Arbeitsaufträge dieses Bausteins in diesem Pfad (pro Vorkommen). Sie
+    // sagen, was an der Stelle konkret getan werden soll — 1:1 übernehmen.
+    arbeitsauftraege: (lerntypPfad || []).flatMap((sektor) =>
+      (sektor?.items || [])
+        .filter((it) => it?.type === 'system' && it?.ref_id === bausteinId && nullable(it?.arbeitsauftrag))
+        .map((it) => ({
+          instance_id: it.instance_id || null,
+          sektor_id: sektor?.sektor_id || null,
+          sektor_titel: nullable(sektor?.titel),
+          arbeitsauftrag: it.arbeitsauftrag,
+        }))
+    ),
     // airgap-1.20.0: Der Graph der Lernlandkarte. Aufbau und Verhalten der
     // Karte stehen in Payload 1 (`lernlandkarte_contract`).
     lernlandkarte,
@@ -268,6 +283,9 @@ export function buildSystembausteinPayloadItem({
       + 'nicht "verbessern") und baue pro Eintrag den zugehörigen Abschnitt. '
       + 'Ist `fertige_inhalte` leer, erzeuge den Inhalt selbst aus '
       + '`baustein.export_instruktion` und dem Pfad-Kontext. Bei den '
+      + 'Steht in `arbeitsauftraege` ein Text, ist das die Vorgabe der Lehrkraft, '
+      + 'was an dieser Stelle konkret zu tun ist (z. B. Lehrer-Check): 1:1 '
+      + 'schülersichtbar ausgeben, nicht umformulieren. Bei den '
       + 'Karten-Bausteinen (sys_map_*) ist `lernlandkarte` die Quelle — halte '
       + 'dich an den `lernlandkarte_contract` aus Payload 1.',
     output_contract: {
