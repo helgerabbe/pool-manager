@@ -7,7 +7,7 @@ import AufgabenstellungBox from './AufgabenstellungBox';
 import HinweisBox from './HinweisBox';
 import KITutorSeite from './KITutorSeite';
 import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
-import { fragmentZuDokument } from '@/lib/aufgabeFragment';
+import { fragmentZuDokument, AUFGABE_ZIELFLAECHE } from '@/lib/aufgabeFragment';
 import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
 import { abgabeSatz } from '@/lib/abgabeFormate';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
@@ -148,12 +148,18 @@ function OffenerSchrittBlock({ offen }) {
     return <p className="text-sm text-muted-foreground italic">Für diesen Schritt ist noch keine Aufgabe gebaut.</p>;
   }
 
+  // Feste Zielfläche (Tablet quer): dieselben Maße, die die KI als
+  // Bauvorgabe bekommt — so sieht die Lehrkraft die Aufgabe im echten Format.
   return (
-    <div className="rounded-xl overflow-hidden border border-border bg-card">
+    <div
+      className="rounded-xl overflow-hidden border border-border bg-card mx-auto w-full"
+      style={{ maxWidth: AUFGABE_ZIELFLAECHE.breite }}
+    >
       <iframe
         srcDoc={dokument}
         title="Aufgabe"
-        className="w-full min-h-[420px] border-0"
+        className="w-full border-0"
+        style={{ height: AUFGABE_ZIELFLAECHE.hoehe }}
         sandbox="allow-scripts allow-forms allow-popups"
       />
     </div>
@@ -470,9 +476,12 @@ export default function AufgabensequenzSeite({
   const weiterLabel = istHandlung
     ? (step.handlung?.bestaetigungstext || 'Erledigt – ich habe das gemacht')
     : (isLast ? 'Erledigt' : 'Weiter');
+  // Offene Aufgaben sind für die Tablet-Querformat-Fläche gebaut und brauchen
+  // mehr Breite als die Lesespalte der übrigen Schritte.
+  const rahmenBreite = typ === SCHRITT_TYPEN.OFFEN ? 'max-w-5xl' : 'max-w-2xl';
 
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+    <div className={`h-full flex flex-col ${rahmenBreite} mx-auto w-full px-5 py-6`}>
       {/* Aufgabenstellung */}
       {zeigeAufgabenstellung && (
         <AufgabenstellungBox className="mb-4 shrink-0">

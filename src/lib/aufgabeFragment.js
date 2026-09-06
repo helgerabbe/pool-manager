@@ -15,6 +15,17 @@
  * selbst schreibt keine Farben fest.
  */
 
+/**
+ * Zielfläche einer offenen Aufgabe in Pixeln.
+ *
+ * Die Aufgaben werden auf Tablets im QUERFORMAT bearbeitet (iPad: 1024×768,
+ * abzüglich Browser- und Kursrahmen). Diese Fläche bekommt (a) die KI als
+ * Bauvorgabe (base44/functions/aufgabeGeneratorChat — dort steht dieselbe
+ * Zahl im Prompt, bitte synchron halten) und (b) das iframe in Vorschau und
+ * Schüleransicht, damit die Lehrkraft genau das sieht, was gebaut wurde.
+ */
+export const AUFGABE_ZIELFLAECHE = { breite: 960, hoehe: 560 };
+
 const VORSCHAU_VARIABLEN = `
   :root {
     --color-primary: #2563eb;
