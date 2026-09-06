@@ -56,7 +56,7 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
       <PruefungWarnungCard einheitId={einheitId} />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
       <div className="rounded-xl border border-border bg-card">
-        <BrianExportCockpitView einheitId={einheitId} embedded />
+        <BrianExportCockpitView einheitId={einheitId} embedded zeigeMoodleWeg={false} />
       </div>
       <GitHubExportCard einheitId={einheitId} />
       <AirGapPayloadDownloadCard einheitId={einheitId} />

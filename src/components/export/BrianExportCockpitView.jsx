@@ -233,7 +233,10 @@ function DialogCard({ dialog, onMarkAsSynced }) {
 // einheitId (optional): auf eine einzelne Einheit begrenzen — so wird das
 // Cockpit im Workspace privater Einheiten als eigener Tab wiederverwendet.
 // embedded: kompaktere Darstellung inkl. Schritt-für-Schritt-Anleitung.
-export default function BrianExportCockpitView({ einheitId = null, embedded = false }) {
+// zeigeMoodleWeg: die Erklärung „Wie kommt meine Einheit zu den Schülern nach
+// Moodle?" gehört in den Workspace privater Einheiten. Im Export-Center ist sie
+// unnötig — dort wird sie ausgeschaltet.
+export default function BrianExportCockpitView({ einheitId = null, embedded = false, zeigeMoodleWeg = true }) {
   const queryClient = useQueryClient();
   const [filterSynced, setFilterSynced] = useState(false);
   const [uebertragenDialog, setUebertragenDialog] = useState(null);
@@ -342,7 +345,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
                 Der Exportbereich deiner privaten Einheit: Einbindung in Moodle und Übertragung der KI-Tutor-Aufgaben nach Brian.study.
               </p>
             </div>
-            <MoodleWegInfoBox />
+            {zeigeMoodleWeg && <MoodleWegInfoBox />}
           </div>
         )}
 
