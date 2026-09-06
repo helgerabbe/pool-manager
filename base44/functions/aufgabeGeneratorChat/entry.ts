@@ -48,7 +48,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 
 const DEFAULT_MODELL = 'claude-sonnet-5';
 const ANTHROPIC_VERSION = '2023-06-01';
-const MAX_TOKENS = 8000;
+// Ein vollständiges Aufgaben-Fragment mit Erklärtexten sprengte 8000 Token
+// regelmäßig; die Antwort wurde dann mitten im Code abgeschnitten und war
+// unbrauchbar. Sonnet kann deutlich mehr.
+const MAX_TOKENS = 24000;
 const MAX_VERLAUF = 20; // letzte N Beiträge; ältere werden verworfen
 const ALLOWED_ROLES = new Set(['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft']);
 
@@ -196,9 +199,21 @@ async function hatZugriff(base44, user) {
   return !!p?.ist_aktiv && ALLOWED_ROLES.has(p?.rolle);
 }
 
+/**
+ * Inhalt eines Tags. Fehlt das schließende Tag (abgeschnittene Antwort oder
+ * das Modell hat es vergessen), wird bis zum nächsten Tag bzw. zum Ende
+ * gelesen — sonst ginge die ganze Antwort verloren und die Lehrkraft sähe nur
+ * ein nichtssagendes „Fertig.".
+ */
 function tagInhalt(text, tag) {
-  const m = String(text).match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i'));
-  return m ? m[1].trim() : null;
+  const s = String(text);
+  const zu = s.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i'));
+  if (zu) return zu[1].trim();
+  const offen = s.match(new RegExp(`<${tag}>([\\s\\S]*)$`, 'i'));
+  if (!offen) return null;
+  // Bis zum nächsten Protokoll-Tag, damit aus <antwort> nicht der Code mitkommt.
+  const rest = offen[1].split(/<(?:antwort|neu|edit|schritte)>/i)[0];
+  return rest.trim() || null;
 }
 
 /** Liest alle <edit>-Blöcke als { alt, neu }-Paare. */
@@ -630,13 +645,16 @@ Deno.serve(async (req) => {
         let puffer = '';       // unvollständige SSE-Zeilen des Anbieters
         let sichtbar = '';     // bereits an das Frontend gesendeter <antwort>-Text
         let tokens = { input: null, output: null };
+        let stopGrund = null;   // 'max_tokens' = Antwort wurde abgeschnitten
 
         const sendeAntwortText = () => {
           // Nur den Inhalt von <antwort> live durchreichen — der Code
           // interessiert die Lehrkraft nicht und würde nur flackern.
           const offen = roh.match(/<antwort>([\s\S]*?)(<\/antwort>|$)/i);
           if (!offen) return;
-          const jetzt = offen[1];
+          // Vergisst das Modell das schließende Tag, lief sonst der ganze
+          // HTML-Code als „Antwort" durchs Fenster.
+          const jetzt = offen[1].split(/<(?:neu|edit|schritte)>/i)[0];
           if (jetzt.length > sichtbar.length) {
             const neu = jetzt.slice(sichtbar.length);
             sichtbar = jetzt;
@@ -667,6 +685,7 @@ Deno.serve(async (req) => {
                 tokens.input = ev.message?.usage?.input_tokens ?? null;
               } else if (ev.type === 'message_delta') {
                 tokens.output = ev.usage?.output_tokens ?? null;
+                stopGrund = ev.delta?.stop_reason ?? stopGrund;
               } else if (ev.type === 'error') {
                 controller.enqueue(enc.encode(sseEvent('fehler', {
                   error: ev.error?.message || 'Fehler beim Erzeugen.',
@@ -689,13 +708,21 @@ Deno.serve(async (req) => {
             })));
           } else {
             const edits = leseEdits(roh);
-            const komplettNeu = tagInhalt(roh.replace(/<edit>[\s\S]*?<\/edit>/gi, ''), 'neu');
+            const ohneEdits = roh.replace(/<edit>[\s\S]*?<\/edit>/gi, '');
+            const komplettNeu = tagInhalt(ohneEdits, 'neu');
+            // Abgeschnitten: <neu> begonnen, aber nie geschlossen. Ein halbes
+            // Fragment darf NICHT als Aufgabe durchgehen — es würde in der
+            // Vorschau als Bruchstück erscheinen.
+            const abgeschnitten = /<neu>/i.test(ohneEdits)
+              && !/<\/neu>/i.test(ohneEdits);
 
             let neuesFragment = fragment;
             let warnungen = [];
             let geaendert = false;
 
-            if (komplettNeu) {
+            if (abgeschnitten || (stopGrund === 'max_tokens' && !komplettNeu && !edits.length)) {
+              warnungen.push('Die Antwort war zu lang und wurde abgeschnitten — die Aufgabe wurde nicht fertig gebaut. Bitten Sie um eine kürzere Fassung oder teilen Sie die Aufgabe in zwei Schritte.');
+            } else if (komplettNeu) {
               neuesFragment = saeubere(komplettNeu);
               geaendert = true;
             } else if (edits.length && fragment) {
