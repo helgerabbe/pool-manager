@@ -17,6 +17,7 @@ import { useRealtimeUpdates } from '@/hooks/useRealtimeUpdates';
 import { useQueryClient } from '@tanstack/react-query';
 import { handleRealtimeUpdate } from '@/utils/realtimeCacheManager';
 import ProblemMeldenButton from '@/components/support/ProblemMeldenButton';
+import EinheitSchnellwahl from '@/components/layout/EinheitSchnellwahl';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -180,6 +181,9 @@ export default function AppLayout() {
 
             {/* Rechts: NUR globale Icons (Home, Einheiten, Admin, Profil) */}
             <nav className="flex items-center gap-1" aria-label="Globale Navigation">
+
+              {/* Schnellsprung in eine Einheit (links vom Trennstrich) */}
+              <EinheitSchnellwahl activeEinheitId={activeEinheit?.id} />
 
               <div className="w-px h-6 bg-border mx-1" />
 
