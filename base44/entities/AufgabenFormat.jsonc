@@ -1,0 +1,85 @@
+{
+  "name": "AufgabenFormat",
+  "type": "object",
+  "description": "Interne Aufgabengalerie (2026-09-06): EIN wiederverwendbares Aufgabenformat \u2014 die Mechanik einer interaktiven Aufgabe, losgel\u00f6st von ihrem Inhalt (z. B. 'Aussagen in Spalten zuordnen', 'Textstellen markieren', 'Zielscheibe'). Gespeichert wird das fertige HTML-Fragment mit PLATZHALTER-Inhalten ('Beispielaussage 1', 'Beispieltext \u2026'), damit man die Funktionsweise ansehen kann, ohne alte Unterrichtsinhalte mitzuschleppen.\n\nWOZU: Statt jedes Format neu bauen zu lassen, sucht der Pool-Manager beim Erstellen einer Aufgabe zuerst hier nach einem passenden Format und l\u00e4sst die KI nur noch die Inhalte einsetzen. Das ist schneller, verl\u00e4sslicher (erprobte Mechanik) und billiger.\n\nZWEI STUFEN: 'vorschlag' = automatisch aufgenommen, sobald jemand ein neues Format bauen lie\u00df \u2014 sichtbar NUR in den Systemeinstellungen. 'freigegeben' = ein Administrator hat es angesehen, benannt und beschrieben; erst dann wird es Lehrkr\u00e4ften vorgeschlagen. Ohne diese Stufe w\u00fcrde die Sammlung mit halbfertigen Versuchen und Dubletten volllaufen, und ein fehlerhaftes Format w\u00fcrde seinen Fehler in jede daraus gebaute Aufgabe weitertragen.",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Kurzer, sprechender Name des Formats, den Lehrkr\u00e4fte sehen (z. B. 'Aussagen zuordnen (Kanban)')."
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Ausf\u00fchrliche, inhaltsneutrale Beschreibung der FUNKTIONSWEISE: Was sehen die Sch\u00fcler, was tun sie, welche R\u00fcckmeldung bekommen sie, wof\u00fcr eignet sich das Format. Dies ist der Text, mit dem der Abgleich arbeitet, wenn eine Lehrkraft ihr Vorhaben beschreibt \u2014 je genauer, desto besser wird das Format gefunden. Bewusst OHNE HTML: f\u00fcr die Suche wird nur diese Beschreibung \u00fcbergeben, das Fragment erst nach der Auswahl."
+    },
+    "fragment": {
+      "type": "string",
+      "description": "Das HTML-Fragment des Formats (<div class=\"aufgabe\"> mit eigenem <style> und <script>), gef\u00fcllt mit Platzhalter-Inhalten. Dient als Beispiel-Vorschau UND als Vorlage, die die KI beim Bauen anpasst."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "vorschlag",
+        "freigegeben"
+      ],
+      "default": "vorschlag",
+      "description": "'vorschlag' = nur in den Systemeinstellungen sichtbar, wird Lehrkr\u00e4ften NICHT angeboten. 'freigegeben' = Teil der offiziellen Galerie."
+    },
+    "herkunft": {
+      "type": "string",
+      "enum": [
+        "poolmanager",
+        "mbk",
+        "manuell"
+      ],
+      "default": "poolmanager",
+      "description": "Woher das Format kam: 'poolmanager' = beim Bauen einer offenen Aufgabe entstanden, 'mbk' = aus der externen Galerie des Kursbaus \u00fcbernommen, 'manuell' = von der Administration eingetragen."
+    },
+    "quelle_aufgabe_id": {
+      "type": "string",
+      "description": "Optional: FK zur AllgemeineAufgabe, bei deren Bau dieses Format entstanden ist (Nachvollziehbarkeit)."
+    },
+    "quelle_schritt_id": {
+      "type": "string",
+      "description": "Optional: ID des Schritts innerhalb der Aufgabensequenz, aus dem das Format stammt."
+    },
+    "erstellt_von": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, bei deren Aufgabe das Format entstanden ist."
+    },
+    "freigegeben_von": {
+      "type": "string",
+      "description": "E-Mail des Administrators, der das Format freigegeben hat."
+    },
+    "freigegeben_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "verwendungen": {
+      "type": "number",
+      "default": 0,
+      "description": "Wie oft dieses Format bereits als Vorlage f\u00fcr eine neue Aufgabe gedient hat. Hilft der Administration zu erkennen, welche Formate tragen und welche toter Bestand sind."
+    }
+  },
+  "required": [
+    "name",
+    "fragment"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

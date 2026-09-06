@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   ShieldCheck, Settings2, RotateCcw, AlertTriangle,
   Building2, GraduationCap, CalendarRange, BookOpen, Puzzle, Blocks, LayoutDashboard, Plug,
+  LayoutTemplate,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
@@ -37,6 +38,7 @@ import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
 import AnthropicConnectorCard from '@/components/admin/AnthropicConnectorCard';
 import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
 import MbkAdminTodoCard from '@/components/admin/MbkAdminTodoCard';
+import AufgabenFormateTab from '@/components/admin/formate/AufgabenFormateTab';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
 
@@ -115,6 +117,7 @@ export default function AdminSettings() {
             { value: 'phasen', label: 'Phasen', icon: CalendarRange },
             { value: 'faecher', label: 'Fächer', icon: BookOpen },
             { value: 'aktivitaeten', label: 'Aktivitäten', icon: Puzzle },
+            { value: 'formate', label: 'Aufgabengalerie', icon: LayoutTemplate },
             { value: 'systembausteine', label: 'Systembausteine', icon: Blocks },
             { value: 'dashboards', label: 'Arbeitspläne', icon: LayoutDashboard },
             { value: 'integrationen', label: 'Integrationen', icon: Plug },
@@ -286,6 +289,11 @@ export default function AdminSettings() {
               <PhasenTable items={phasenRaw} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Interne Aufgabengalerie — wiederverwendbare Aufgabenformate */}
+        <TabsContent value="formate" className="mt-4">
+          <AufgabenFormateTab />
         </TabsContent>
 
         {/* Aktivitäten-Katalog */}
