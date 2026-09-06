@@ -35,6 +35,7 @@ export default function OffenerSchrittGespraech({
   kontext,
   isReleased = false,
   onFragment,   // (fragment, snapshotHtml, schrittId) => void — fließt in den Entwurf
+  onVorlageGewaehlt, // (vorlageId, schrittId) => void — Herkunft festhalten
 }) {
   const gen = useAufgabenGenerator({
     kontext,
@@ -96,6 +97,10 @@ ${vorhaben}`;
   const starteMitVorlage = (treffer, vorhaben) => {
     setGestartet(true);
     letzteNachrichtRef.current = vorhaben;
+    // Herkunft festhalten: Eine aus der Galerie gebaute Aufgabe darf nicht
+    // erneut als neues Format erfasst werden — sonst verdoppelt sich mit jeder
+    // Verwendung ein Eintrag der Sammlung.
+    onVorlageGewaehlt?.(treffer.id, schritt?.id);
     gen.setzeFragment(treffer.fragment, `Vorlage: ${treffer.name}`);
     gen.senden(vorlageAuftrag(treffer, vorhaben), treffer.fragment);
   };

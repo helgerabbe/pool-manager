@@ -27,6 +27,39 @@ export async function getAnthropicConfig(base44) {
 }
 
 /**
+ * Stellt eine Frage und gibt den reinen Text zurück.
+ *
+ * Für Aufträge, deren Ergebnis selbst Code ist (HTML-Fragmente): In JSON
+ * verpackt müsste jedes Anführungszeichen und jeder Umbruch maskiert werden —
+ * ein einziger Fehler darin macht die ganze Antwort unlesbar.
+ *
+ * @returns {Promise<{ text: string, abgeschnitten: boolean }>}
+ */
+export async function askAnthropicText(cfg, { system, prompt, maxTokens = 20000 }) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': cfg.apiKey,
+      'anthropic-version': ANTHROPIC_VERSION,
+    },
+    body: JSON.stringify({
+      model: cfg.modell,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Anthropic HTTP ${res.status}. ${detail.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  const text = (data?.content || []).filter((b) => b?.type === 'text').map((b) => b.text).join('\n');
+  return { text, abgeschnitten: data?.stop_reason === 'max_tokens' };
+}
+
+/**
  * Stellt eine Frage und erwartet reines JSON zurück.
  * @returns {Promise<any|null>} geparstes JSON oder null, wenn nichts brauchbar kam
  */
