@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Check, X, Monitor, RefreshCw } from 'lucide-react';
+import { Check, X, Monitor, RefreshCw, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
 import BrianSchrittArbeitsflaeche from '@/components/werkstatt/BrianSchrittArbeitsflaeche';
@@ -45,6 +45,9 @@ export default function SchrittFenster({
   // seltenen Fällen noch den alten Stand, obwohl das Fragment längst neu ist;
   // ein Knopf ist der ehrlichere Weg als so zu tun, als käme das nie vor.
   const [vorschauZaehler, setVorschauZaehler] = useState(0);
+  // Eingabespalte einklappbar: Wenn zu, bekommt die Schülersicht die volle
+  // Breite — so sieht die Lehrkraft die Aufgabe wirklich, wie die Schüler sie sehen.
+  const [eingabeOffen, setEingabeOffen] = useState(true);
 
   // Beim Öffnen (und bei Wechsel des Schritts) frisch vom Original starten.
   useEffect(() => {
@@ -104,9 +107,9 @@ export default function SchrittFenster({
           </p>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-4 flex-1 min-h-0">
-          {/* Links: bearbeiten */}
-          <div className="flex flex-col min-h-0 gap-3">
+        <div className={`grid grid-cols-1 ${eingabeOffen ? 'lg:grid-cols-2' : ''} gap-4 pt-4 flex-1 min-h-0`}>
+          {/* Links: bearbeiten (einklappbar) */}
+          <div className={`flex flex-col min-h-0 gap-3 ${eingabeOffen ? '' : 'hidden'}`}>
             {istBrian ? (
               <div className="flex-1 min-h-0 rounded-xl border border-slate-200 bg-white p-4">
                 <BrianSchrittArbeitsflaeche
@@ -146,7 +149,18 @@ export default function SchrittFenster({
           {/* Rechts: Schülersicht des Entwurfs */}
           <div className="flex flex-col min-h-0 rounded-xl border-2 border-slate-300 bg-white overflow-hidden">
             <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 border-b border-slate-200 shrink-0">
-              <Monitor className="w-3.5 h-3.5 text-slate-500" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 gap-1.5 text-xs bg-white"
+                onClick={() => setEingabeOffen((v) => !v)}
+                title={eingabeOffen ? 'Eingabebereich ausblenden' : 'Eingabebereich einblenden'}
+              >
+                {eingabeOffen
+                  ? <><PanelLeftClose className="w-3.5 h-3.5" /> Eingabe ausblenden</>
+                  : <><PanelLeftOpen className="w-3.5 h-3.5" /> Eingabe einblenden</>}
+              </Button>
+              <Monitor className="w-3.5 h-3.5 text-slate-500 ml-2" />
               <span className="text-xs font-semibold text-slate-600">So sehen es die Schüler:innen</span>
               <Button
                 variant="ghost"
