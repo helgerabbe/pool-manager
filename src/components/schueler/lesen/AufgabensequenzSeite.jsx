@@ -304,8 +304,10 @@ export default function AufgabensequenzSeite({
   const standardAufgabe =
     'Bearbeite die folgende Aufgabensequenz Schritt für Schritt. Lies dir zuerst das Material durch und bearbeite dann die dazugehörigen Aufgaben.';
 
-  const weiter = useCallback(() => {
-    if (isLast) onErledigt?.();
+  // `ergebnis` reicht Zusatzangaben des Schritts nach oben durch — z. B. beim
+  // Brian-Schritt, ob mit dem Vollständig- oder dem Abbruch-Code beendet wurde.
+  const weiter = useCallback((ergebnis) => {
+    if (isLast) onErledigt?.(ergebnis);
     else setCurrentStep((prev) => prev + 1);
   }, [isLast, onErledigt]);
 
