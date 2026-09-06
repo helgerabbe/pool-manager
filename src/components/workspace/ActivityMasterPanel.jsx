@@ -33,6 +33,7 @@ import AufgabensequenzPreviewModal from '@/components/workspace/preview/Aufgaben
 import HtmlSeitePreviewModal from '@/components/workspace/preview/HtmlSeitePreviewModal';
 import ZuordnungstrainingPreviewModal from '@/components/workspace/preview/ZuordnungstrainingPreviewModal';
 import MaterialaufgabePreviewModal from '@/components/workspace/preview/MaterialaufgabePreviewModal';
+import KIQuizPreviewModal from '@/components/workspace/preview/KIQuizPreviewModal';
 import MaterialaufgabeModal from '@/components/workspace/MaterialaufgabeModal';
 import MaterialaufgabeReadOnly from '@/components/workspace/materialaufgabe/MaterialaufgabeReadOnly';
 import KompaktwissenSektionen from '@/components/schueler/lesen/KompaktwissenSektionen';
@@ -224,8 +225,8 @@ export default function ActivityMasterPanel({
   // Sprechaufgabe: Schüler-Vorschau (Aufnahme + KI-Rückmeldung testbar).
   const [sprechaufgabePreviewOpen, setSprechaufgabePreviewOpen] = useState(false);
   const [aufgabensequenzEditOpen, setAufgabensequenzEditOpen] = useState(false);
-  // KI-Quiz: kein eigenes Preview-Modal nötig (Fragen in Read-Only gezeigt)
-  const [kiQuizEditOpen, setKiQuizEditOpen] = useState(false);
+  // KI-Quiz: Schüler-Vorschau (Fragen beantworten, KI-Auswertung durchspielen).
+  const [kiQuizPreviewOpen, setKiQuizPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -799,12 +800,14 @@ export default function ActivityMasterPanel({
                   />
                 )}
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining') || catalogEntry?.name?.toLowerCase().includes('materialaufgabe') || catalogEntry?.name?.toLowerCase().includes('sprechaufgabe')) && !catalogEntry?.name?.toLowerCase().includes('ki-quiz') && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining') || catalogEntry?.name?.toLowerCase().includes('materialaufgabe') || catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') || catalogEntry?.name?.toLowerCase().includes('ki-quiz')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       const n = catalogEntry?.name?.toLowerCase() || '';
-                      if (n.includes('sprechaufgabe')) {
+                      if (n.includes('ki-quiz')) {
+                        setKiQuizPreviewOpen(true);
+                      } else if (n.includes('sprechaufgabe')) {
                         setSprechaufgabePreviewOpen(true);
                       } else if (n.includes('materialaufgabe')) {
                         setMaterialaufgabePreviewOpen(true);
@@ -962,6 +965,13 @@ export default function ActivityMasterPanel({
               <MaterialaufgabePreviewModal
                 open={materialaufgabePreviewOpen}
                 onOpenChange={setMaterialaufgabePreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
+              <KIQuizPreviewModal
+                open={kiQuizPreviewOpen}
+                onOpenChange={setKiQuizPreviewOpen}
                 fieldValues={fieldValues}
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
