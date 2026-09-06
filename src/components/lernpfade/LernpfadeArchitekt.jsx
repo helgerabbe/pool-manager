@@ -178,6 +178,7 @@ export default function LernpfadeArchitekt({
   onPreviewDiagnoseQuiz,
   onPreviewThemenfeldIntro,
   onPreviewLernlandkarte,
+  onPreviewPruefungsAnmeldung,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -249,6 +250,7 @@ export default function LernpfadeArchitekt({
                 onPreviewDiagnoseQuiz={onPreviewDiagnoseQuiz}
                 onPreviewThemenfeldIntro={onPreviewThemenfeldIntro}
                 onPreviewLernlandkarte={onPreviewLernlandkarte}
+              onPreviewPruefungsAnmeldung={onPreviewPruefungsAnmeldung}
                 driftStatus={
                   driftReportLoading
                     ? 'loading'
