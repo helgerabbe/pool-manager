@@ -39,6 +39,14 @@ export default function TextLesenSeite({ aktivitaet, kat, busy, onErledigt, onBa
         {fv.aufgabentext || 'Lies den folgenden Text aufmerksam durch.'}
       </AufgabenstellungBox>
 
+      {/* Titel des Textes — steht über dem Lesetext, damit die Schüler wissen,
+          was sie da lesen. */}
+      {fv.titel && (
+        <h2 className="shrink-0 mb-1 text-lg font-semibold leading-snug text-foreground">
+          {fv.titel}
+        </h2>
+      )}
+
       {/* Schriftgrößen-Umschalter (kompakt, oben rechts; nur bei direktem Text) */}
       {istText && fv.inhalt && (
         <div className="flex items-center justify-end mb-2 shrink-0">
