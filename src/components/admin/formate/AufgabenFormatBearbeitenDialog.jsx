@@ -12,7 +12,10 @@ import { Label } from '@/components/ui/label';
  * Format zu dem passt, was eine Lehrkraft vorhat. Deshalb steht der Hinweis
  * dabei, dass sie die Funktionsweise erklären soll — nicht den Inhalt.
  */
-export default function AufgabenFormatBearbeitenDialog({ format, open, onOpenChange, onSpeichern, isPending }) {
+export default function AufgabenFormatBearbeitenDialog({
+  format, open, onOpenChange, onSpeichern, isPending,
+  onPlatzhalter, platzhalterLaeuft = false,
+}) {
   const [name, setName] = useState('');
   const [beschreibung, setBeschreibung] = useState('');
 
@@ -58,6 +61,24 @@ export default function AufgabenFormatBearbeitenDialog({ format, open, onOpenCha
               Je genauer diese Beschreibung, desto sicherer wird das Format vorgeschlagen, wenn eine
               Lehrkraft ihr Vorhaben schildert. Ein oder zwei Wörter genügen nicht.
             </p>
+          </div>
+          {/* Ein erfasstes Format schleppt die Inhalte der Aufgabe mit, aus der
+              es entstanden ist. Als Vorlage stören die — deshalb hier der Weg,
+              sie durch Platzhalter zu ersetzen, ohne die Mechanik anzufassen. */}
+          <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Enthält dieses Format noch die Inhalte der Aufgabe, aus der es entstanden ist? Dann
+              lassen Sie sie durch Platzhalter ersetzen — Aufbau, Bedienung und Rückmeldung bleiben
+              unverändert. Prüfen Sie das Ergebnis danach in der Vorschau.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onPlatzhalter}
+              disabled={platzhalterLaeuft || isPending}
+            >
+              {platzhalterLaeuft ? 'Wird umgeschrieben …' : 'Inhalte durch Platzhalter ersetzen'}
+            </Button>
           </div>
         </div>
 

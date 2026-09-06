@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Check, X, Monitor, RefreshCw, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 import SchrittEditor from '@/components/schritte/SchrittEditor';
 import OffenerSchrittGespraech from '@/components/werkstatt/OffenerSchrittGespraech';
 import BrianSchrittArbeitsflaeche from '@/components/werkstatt/BrianSchrittArbeitsflaeche';
@@ -68,6 +69,17 @@ export default function SchrittFenster({
   const vollstaendig = istSchrittVollstaendig(entwurf);
 
   const uebernehmen = () => {
+    // Neu gebaute offene Aufgaben wandern als VORSCHLAG in die interne
+    // Aufgabengalerie — im Hintergrund, ohne die Lehrkraft aufzuhalten, und
+    // ohne Folgen, wenn es misslingt. Aufgaben, die selbst aus einer Vorlage
+    // entstanden sind, bleiben aussen vor: das Format ist schon in der Sammlung.
+    if (istOffen && entwurf.offen?.fragment && entwurf.herkunft?.quelle !== 'galerie') {
+      base44.functions.invoke('erfasseAufgabenFormat', {
+        fragment: entwurf.offen.fragment,
+        aufgabe_id: aufgabeId,
+        schritt_id: entwurf.id,
+      }).catch(() => {});
+    }
     // Das Übernehmen ist die bewusste Bestätigung der Lehrkraft — erst hier
     // wird aus 'geplant' ein fertiger Schritt.
     onUebernehmen({
@@ -147,6 +159,11 @@ export default function SchrittFenster({
                 onFragment={(fragment, snapshotHtml, vonSchrittId) => setEntwurf((e) => (
                   e.id === vonSchrittId
                     ? { ...e, offen: { ...(e.offen || {}), fragment, snapshot_html: snapshotHtml } }
+                    : e
+                ))}
+                onVorlageGewaehlt={(vorlageId, vonSchrittId) => setEntwurf((e) => (
+                  e.id === vonSchrittId
+                    ? { ...e, herkunft: { quelle: 'galerie', vorlage_id: vorlageId } }
                     : e
                 ))}
               />

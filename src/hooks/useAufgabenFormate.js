@@ -11,7 +11,7 @@ import { base44 } from '@/api/base44Client';
 export function useAufgabenFormate() {
   const qc = useQueryClient();
 
-  const { data: formate = [], isLoading } = useQuery({
+  const { data: formate = [], isLoading, refetch } = useQuery({
     queryKey: ['aufgabenFormate'],
     queryFn: () => base44.entities.AufgabenFormat.list('-created_date', 200),
   });
@@ -38,6 +38,7 @@ export function useAufgabenFormate() {
     vorschlaege: formate.filter((f) => f.status !== 'freigegeben'),
     galerie: formate.filter((f) => f.status === 'freigegeben'),
     isLoading,
+    refetch,
     speichern,
     anlegen,
     loeschen,

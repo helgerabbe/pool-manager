@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
+import { useMutation } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import { useAufgabenFormate } from '@/hooks/useAufgabenFormate';
 import AufgabenFormatZeile from './AufgabenFormatZeile';
 import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
@@ -15,9 +17,21 @@ import AufgabenFormatBearbeitenDialog from './AufgabenFormatBearbeitenDialog';
  * in der Sammlung, würde aber nie gefunden.
  */
 export default function AufgabenFormateTab() {
-  const { vorschlaege, galerie, isLoading, speichern, loeschen } = useAufgabenFormate();
+  const { vorschlaege, galerie, isLoading, speichern, loeschen, refetch } = useAufgabenFormate();
   const [vorschau, setVorschau] = useState(null);
   const [bearbeiten, setBearbeiten] = useState(null);
+
+  const platzhalter = useMutation({
+    mutationFn: async (id) => {
+      const res = await base44.functions.invoke('aufgabenFormatPlatzhalter', { id });
+      return res.data;
+    },
+    onSuccess: () => {
+      refetch?.();
+      toast.success('Die Inhalte wurden durch Platzhalter ersetzt. Bitte in der Vorschau prüfen.');
+    },
+    onError: (e) => toast.error('Hat nicht geklappt: ' + e.message),
+  });
 
   const statusWechseln = (format) => {
     const freigeben = format.status !== 'freigegeben';
@@ -104,6 +118,8 @@ export default function AufgabenFormateTab() {
         format={bearbeiten}
         open={!!bearbeiten}
         isPending={speichern.isPending}
+        platzhalterLaeuft={platzhalter.isPending}
+        onPlatzhalter={() => platzhalter.mutate(bearbeiten.id)}
         onOpenChange={(o) => !o && setBearbeiten(null)}
         onSpeichern={(felder) => speichern.mutate(
           { id: bearbeiten.id, ...felder },
