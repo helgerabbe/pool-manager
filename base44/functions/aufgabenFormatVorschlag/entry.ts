@@ -46,7 +46,13 @@ export default async function (req) {
     // Katalogformate dürfen ohne Beschreibung mitlaufen — ihr Name ist
     // aussagekräftig („Lückentext"), und sie sind der verlässlichere Weg.
     const formate = (formateRoh || []).filter((f) => String(f?.beschreibung || '').trim());
-    const katalog = (katalogRoh || []).filter((k) => String(k?.name || '').trim());
+    // „Offene Aufgabe" ist im Katalog KEIN Format, sondern der Auftrag, eines zu
+    // bauen. Als Vorschlag wäre sie immer die passende Antwort und würde jedes
+    // echte Format verdrängen — genau deshalb fragt der Assistent hier nach
+    // Formaten und bietet den Neubau separat als eigenen Weg an.
+    const katalog = (katalogRoh || []).filter(
+      (k) => String(k?.name || '').trim() && !/offene\s+aufgabe/i.test(String(k.name)),
+    );
     if (formate.length === 0 && katalog.length === 0) return Response.json({ treffer: [] });
 
     const zeile = (praefix, id, name, text) =>
