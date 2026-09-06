@@ -1,35 +1,51 @@
 /**
  * EinheitSchnellwahl.jsx
  *
- * Schnellsprung-Auswahl in der globalen Top-Bar: Alle Einheiten, die die
- * Lehrkraft sehen darf (Server-gefiltert über getEinheitenListSecure), in zwei
- * Gruppen — „Meine Einheiten" (privat) und „Gemeinschaftliche Einheiten"
- * (öffentliche Poolzeit-Einheiten). Auswahl springt direkt in die Einheit.
+ * Schnellsprung-Auswahl in der globalen Top-Bar: gemeinschaftliche (öffentliche)
+ * Einheiten UND die eigenen privaten Einheiten in zwei Gruppen. Auswahl springt
+ * direkt in die Einheit.
  *
- * Basismodule bleiben bewusst aussen vor: Sie haben ihre eigene Übersicht.
+ * Warum zwei Abfragen: getEinheitenListSecure liefert je Aufruf NUR eine
+ * Sichtbarkeits-Ansicht (view='oeffentlich' bzw. 'privat'). Ohne die zweite
+ * Abfrage fehlt die private Bibliothek komplett.
  */
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Library } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
 import {
   Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { useEinheitenList } from '@/hooks/useEinheitenList';
+
+function useEinheitenAnsicht(view) {
+  const { data } = useQuery({
+    queryKey: ['einheiten', 'schnellwahl', view],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getEinheitenListSecure', {
+        page: 1,
+        limit: 100,
+        view,
+      });
+      return res.data?.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  return data || [];
+}
 
 export default function EinheitSchnellwahl({ activeEinheitId }) {
   const navigate = useNavigate();
-  // Grosszügiges Limit: Die Liste soll vollständig sein, sie ist nur ein Sprungbrett.
-  const { einheiten } = useEinheitenList(1, 200);
+  const oeffentlich = useEinheitenAnsicht('oeffentlich');
+  const privat = useEinheitenAnsicht('privat');
 
-  const sichtbar = (einheiten || []).filter((e) => !e.ist_basismodul);
-  const privat = sichtbar.filter((e) => e.sichtbarkeit === 'privat');
-  const gemeinschaftlich = sichtbar.filter((e) => e.sichtbarkeit !== 'privat');
-
+  const ohneBasismodule = (list) => list.filter((e) => !e.ist_basismodul);
   const sortiert = (list) =>
-    [...list].sort((a, b) =>
+    [...ohneBasismodule(list)].sort((a, b) =>
       (a.titel_der_einheit || '').localeCompare(b.titel_der_einheit || '', 'de')
     );
 
+  const meine = sortiert(privat);
+  const gemeinschaft = sortiert(oeffentlich);
   const label = (e) => `${e.titel_der_einheit}${e.fach ? ` · ${e.fach}` : ''}`;
 
   return (
@@ -38,33 +54,30 @@ export default function EinheitSchnellwahl({ activeEinheitId }) {
         className="h-8 w-[220px] text-xs bg-muted/40"
         aria-label="Zu einer Einheit springen"
       >
-        <span className="flex items-center gap-1.5 min-w-0">
-          <Library className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-          <SelectValue placeholder="Einheit wechseln …" />
-        </span>
+        <SelectValue placeholder="Einheit wechseln …" />
       </SelectTrigger>
       <SelectContent className="max-h-[70vh]">
-        {privat.length > 0 && (
+        {meine.length > 0 && (
           <SelectGroup>
             <SelectLabel>Meine Einheiten</SelectLabel>
-            {sortiert(privat).map((e) => (
+            {meine.map((e) => (
               <SelectItem key={e.id} value={e.id} className="text-xs">
                 {label(e)}
               </SelectItem>
             ))}
           </SelectGroup>
         )}
-        {gemeinschaftlich.length > 0 && (
+        {gemeinschaft.length > 0 && (
           <SelectGroup>
             <SelectLabel>Gemeinschaftliche Einheiten</SelectLabel>
-            {sortiert(gemeinschaftlich).map((e) => (
+            {gemeinschaft.map((e) => (
               <SelectItem key={e.id} value={e.id} className="text-xs">
                 {label(e)}
               </SelectItem>
             ))}
           </SelectGroup>
         )}
-        {sichtbar.length === 0 && (
+        {meine.length === 0 && gemeinschaft.length === 0 && (
           <div className="px-3 py-2 text-xs text-muted-foreground">Keine Einheiten vorhanden.</div>
         )}
       </SelectContent>
