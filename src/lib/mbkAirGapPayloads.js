@@ -35,6 +35,30 @@ import { annotateItemArten } from '@/lib/lernpfadItemArt';
 import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboardingPayload';
 import { SEQUENZ_CONTRACT } from '@/lib/mbkSequenzContract';
 import { LERNLANDKARTE_CONTRACT } from '@/lib/mbkLernlandkarteContract';
+import {
+  MBK_AIRGAP_VERSION,
+  LERNTYP_KEYS,
+  isTombstone,
+  nullable,
+  makeMeta,
+  isPlatzhalterItem,
+  fnLernpaket,
+  fnThemenfeldBundle,
+  fnThemenfeldBundleOrphan,
+  fnProjektBundle,
+  fnSystemBaustein,
+  fnFragment,
+  fnDashboard,
+  makeSystembausteinReferenceId,
+  parseSystembausteinReferenceId,
+} from '@/lib/mbkPayloadBasis';
+
+// Kompatible Re-Exports: Bestandscode importiert diese Namen aus diesem Modul.
+export { MBK_AIRGAP_VERSION, makeSystembausteinReferenceId, parseSystembausteinReferenceId };
+export {
+  buildSystembausteinPayloadItem,
+  buildSystembausteinPayloadBundle,
+} from '@/lib/mbkSystembausteinPayload';
 
 /**
  * Versionskennung der Air-Gap-Payload-Engine.
@@ -114,22 +138,11 @@ import { LERNLANDKARTE_CONTRACT } from '@/lib/mbkLernlandkarteContract';
  *     Feld und grenzt es gegen den Bündel-Modus ab — die bisherige Lesart der
  *     MBK war eine andere (sie las es als Reihenfolge der Lernpaket-Kinder).
  */
-export const MBK_AIRGAP_VERSION = 'airgap-1.20.0';
+/* Version, Lerntyp-Schlüssel, Tombstone-Filter, nullable, makeMeta,
+   Platzhalter-Erkennung und die Dateinamen-Bildner liegen seit airgap-1.20.0
+   in @/lib/mbkPayloadBasis (unten importiert). */
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
-
-/**
- * Tombstone-Filter (airgap-1.16.0): Gelöschte Aktivitäten/Aufgaben/Master
- * werden im Lösch-Workflow nur markiert (sync_status='to_delete'), nicht
- * physisch entfernt. Die App blendet sie überall aus — der Export MUSS
- * dieselbe Regel anwenden, sonst erscheinen gelöschte Aktivitäten als
- * "leere" Einträge in den Payloads.
- */
-function isTombstone(record) {
-  return record?.sync_status === 'to_delete';
-}
 
 /**
  * Erkennt, ob eine LernpaketPhaseAktivitaet didaktisch eine
@@ -658,87 +671,27 @@ const EINHEIT_ARBEITSUMGEBUNG_CONTRACT = {
 // Bündel-IDs tragen aus historischen Gründen noch das `sys_platzhalter_`-
 // Präfix, sind aber KEINE Platzhalter mehr (typ='buendel'). Sie müssen im
 // Export erhalten bleiben und dürfen NICHT herausgefiltert werden.
-const BUENDEL_LEGACY_IDS = new Set([
-  'sys_platzhalter_moodle_buendel',
-  'sys_platzhalter_brian_buendel',
-]);
-
-function isPlatzhalterItem(item) {
-  return !!(
-    item
-    && item.type === 'system'
-    && typeof item.ref_id === 'string'
-    && item.ref_id.startsWith('sys_platzhalter_')
-    && !BUENDEL_LEGACY_IDS.has(item.ref_id)
-  );
-}
-
-/** Filename-Builder pro Datei-Typ. Reine String-Kompositoren — keine Validierung. */
-function fnLernpaket(lernpaketId) {
-  return `task-${lernpaketId}.html`;
-}
-function fnThemenfeldBundle(themenfeldId) {
-  return `tasks-themenfeld-${themenfeldId}.html`;
-}
-function fnThemenfeldBundleOrphan() {
-  return `tasks-themenfeld-orphan.html`;
-}
-function fnProjektBundle(einheitId) {
-  return `projekte-einheit-${einheitId}.html`;
-}
-/**
- * airgap-1.6.0: System-Baustein-HTMLs sind ab dieser Version pro Lerntyp
- * eindeutig — derselbe Baustein wird in Deutsch/Minimalist anders gefüllt
- * als in Mathe/Passioniert. Das SCORM-Mapping referenziert pro Lerntyp-Pfad
- * exakt eine Datei mit diesem Pattern; die MBK generiert pro Pfad-Referenz
- * einen eigenen Inhalt aus dem zugehörigen mbk_systembaustein_payload.
- */
-function fnSystemBaustein(bausteinId, lerntyp) {
-  return `system-${lerntyp}-${bausteinId}.html`;
-}
-function fnFragment(activityId) {
-  return `fragment-${activityId}.html`;
-}
-function fnDashboard(lerntyp) {
-  return `dashboard-${lerntyp}.html`;
-}
+/* isPlatzhalterItem + Dateinamen-Bildner: siehe @/lib/mbkPayloadBasis. */
 
 /**
  * Composite-Key für Payload-5-Items (mbk_systembaustein_payload).
  * Wird als reference_id in ExportPrompts persistiert und identifiziert
  * eindeutig die Kombination Baustein × Lerntyp innerhalb einer Einheit.
  */
-export function makeSystembausteinReferenceId(lerntyp, bausteinId) {
-  return `${lerntyp}::${bausteinId}`;
-}
+/* makeSystembausteinReferenceId: siehe @/lib/mbkPayloadBasis. */
 
 /**
  * Inverse zu makeSystembausteinReferenceId — splittet eine reference_id
  * in { lerntyp, bausteinId }. Liefert null bei ungültigem Format.
  */
-export function parseSystembausteinReferenceId(refId) {
-  if (typeof refId !== 'string') return null;
-  const idx = refId.indexOf('::');
-  if (idx <= 0) return null;
-  return {
-    lerntyp: refId.slice(0, idx),
-    bausteinId: refId.slice(idx + 2),
-  };
-}
+/* parseSystembausteinReferenceId: siehe @/lib/mbkPayloadBasis. */
 
 /**
  * Liefert `null` statt leerer Strings, damit das JSON-Schema
  * "Wert nicht gesetzt" sauber abbildet (siehe Designprinzip §4 im
  * docs/mbk-integration.md).
  */
-function nullable(value) {
-  if (value === null || value === undefined) return null;
-  if (typeof value === 'string') {
-    const t = value.trim();
-    return t.length > 0 ? t : null;
-  }
-  return value;
-}
+/* nullable: siehe @/lib/mbkPayloadBasis. */
 
 /**
  * Lookup für globale MBK-Prompts; nur aktive Einträge werden berücksichtigt.
@@ -775,26 +728,7 @@ function normalizeConventions(conventions) {
  * geführt, damit die MBK pro generierter HTML-Datei beide `<meta>`-Tags
  * setzen und beim Drift-Check beide validieren kann.
  */
-function makeMeta({
-  payloadType,
-  einheitId = null,
-  systemContextHash = null,
-  uiConfigHash = null,
-  itemCount = null,
-  nowIso = null,
-}) {
-  const exportedAt = nowIso || new Date().toISOString();
-  const meta = {
-    schema_version: MBK_AIRGAP_VERSION,
-    payload_type: payloadType,
-    exported_at: exportedAt,
-  };
-  if (einheitId !== null) meta.einheit_id = einheitId;
-  if (systemContextHash !== null) meta.system_context_hash = systemContextHash;
-  if (uiConfigHash !== null) meta.ui_config_hash = uiConfigHash;
-  if (itemCount !== null) meta.item_count = itemCount;
-  return meta;
-}
+/* makeMeta: siehe @/lib/mbkPayloadBasis. */
 
 // ── 0. Payload 0: UI-Config (airgap-1.5.0) ─────────────────────────────────
 
@@ -1543,269 +1477,9 @@ export function extractNavigationContextByRefId(scormFileMapping = []) {
   return m;
 }
 
-// ── 5. Payload 5: Systembaustein-Briefings (airgap-1.6.0) ───────────────────
-
-/**
- * Liefert für einen Lerntyp-Pfad eine kompakte Item-Liste, in der die
- * MBK den Kontext rund um einen Baustein findet (welcher Sektor, welche
- * Geschwister, welche Themenfelder etc.).
- *
- * Output ist bewusst schlank — die ausführliche Lernlandkarte ist Teil
- * des Strukturpayloads (Payload 2). Hier reichen die Header-Felder, damit
- * die MBK pro Baustein × Lerntyp gezielt ein passendes Briefing schreiben
- * kann (z.B. „nenne in der Einführung die drei Themenfelder X, Y, Z").
- */
-function summarizeLerntypPfad(sektoren, themenfelderById) {
-  return (sektoren || []).map((sektor) => {
-    const themenfeldTitel = sektor?.themenfeld_id
-      ? nullable(sektor?.titel_snapshot)
-        || nullable(themenfelderById.get(sektor.themenfeld_id)?.titel)
-      : null;
-    return {
-      sektor_id: sektor?.sektor_id || null,
-      sektor_typ: sektor?.sektor_typ || null,
-      sektor_typ_label: getSektorTypLabel(sektor?.sektor_typ),
-      titel: nullable(sektor?.titel),
-      themenfeld_id: sektor?.themenfeld_id || null,
-      themenfeld_titel: themenfeldTitel,
-      items: (sektor?.items || []).map((it) => ({
-        instance_id: it?.instance_id || null,
-        type: it?.type || null,
-        ref_id: it?.ref_id || null,
-        parent_instance_id: it?.parent_instance_id || null,
-      })),
-    };
-  });
-}
-
-/**
- * Payload 5 (Single Item): Briefing für EINEN Baustein × Lerntyp.
- *
- * Enthält:
- *   - GPS (Einheit-Meta, Fach, Jahrgang)
- *   - Lerntyp-Schlüssel
- *   - Baustein-Definition (id, titel, icon, export_instruktion)
- *   - Den vollständigen Lernpfad dieses Lerntyps (alle Sektoren + Items)
- *   - Eine reduzierte Lernlandkarte (Themenfelder + Lernpaket-Titel)
- *
- * Auf Basis dieses Briefings erzeugt die MBK eine HTML-Datei
- * `system-<lerntyp>-<baustein_id>.html`, die im Lernpfad an genau dieser
- * Stelle vom Merger eingehängt wird.
- */
-/**
- * Sammelt die fertigen SchuelerInhaltSnapshots, die zu einem Baustein in
- * einem Lerntyp-Pfad gehören (airgap-1.17.0).
- *
- * Ein Baustein kann in einem Pfad MEHRFACH vorkommen (z. B. eine
- * Themenfeld-Einführung pro Themenfeld) — pro Vorkommen (instance_id)
- * existiert ein eigener Snapshot. Wir geben ALLE mit, damit die MBK die
- * fertigen Texte 1:1 einsetzen kann, statt sie neu zu schreiben.
- */
-function collectFertigeInhalte({ snapshots = [], lerntyp, bausteinId, lerntypPfad = [] }) {
-  // instance_id → themenfeld_id aus dem Pfad, damit die MBK die Zuordnung
-  // auch ohne Cross-Lookup ins Strukturpayload versteht.
-  const themenfeldByInstance = new Map();
-  for (const sektor of lerntypPfad || []) {
-    for (const item of sektor?.items || []) {
-      if (item?.instance_id) {
-        themenfeldByInstance.set(item.instance_id, sektor?.themenfeld_id || null);
-      }
-    }
-  }
-
-  return (snapshots || [])
-    .filter(
-      (s) =>
-        s?.baustein_id === bausteinId
-        && s?.lerntyp === lerntyp
-        && s?.inhalt
-        && typeof s.inhalt === 'object'
-    )
-    .map((s) => ({
-      instance_id: nullable(s.instance_id),
-      themenfeld_id: nullable(s.themenfeld_id) || themenfeldByInstance.get(s.instance_id) || null,
-      generiert_am: nullable(s.generiert_am),
-      inhalt: s.inhalt,
-    }));
-}
-
-export function buildSystembausteinPayloadItem({
-  einheit,
-  lerntyp,
-  bausteinId,
-  systemBaustein,
-  lerntypPfad = [],
-  themenfelderById = new Map(),
-  lernpakete = [],
-  lernziele = [],
-  navigationContext = [],
-  // airgap-1.17.0: SchuelerInhaltSnapshot[] der Einheit (alle Bausteine/
-  // Lerntypen) — wird hier auf die passenden Einträge gefiltert.
-  snapshots = [],
-  systemContextHash = null,
-  uiConfigHash = null,
-  nowIso = null,
-}) {
-  if (!bausteinId || !lerntyp) return null;
-
-  // Reduzierte Lernlandkarte für Bausteine wie sys_map_full / sys_map_reduced.
-  const zieleByPaket = new Map();
-  for (const lz of lernziele) {
-    if (!zieleByPaket.has(lz.lernpaket_id)) zieleByPaket.set(lz.lernpaket_id, []);
-    zieleByPaket.get(lz.lernpaket_id).push(lz);
-  }
-  const lernlandkarte = (lernpakete || [])
-    .slice()
-    .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
-    .map((lp) => ({
-      lernpaket_id: lp.id,
-      titel: nullable(lp.titel_des_pakets),
-      themenfeld_id: lp.themenfeld_id || null,
-      themenfeld_titel: lp.themenfeld_id
-        ? nullable(themenfelderById.get(lp.themenfeld_id)?.titel)
-        : null,
-      lernziele: (zieleByPaket.get(lp.id) || []).map((lz) =>
-        nullable(lz.formulierung_fachsprache)
-      ).filter(Boolean),
-    }));
-
-  return {
-    meta: makeMeta({
-      payloadType: 'mbk_systembaustein_payload',
-      einheitId: einheit?.id || null,
-      systemContextHash,
-      uiConfigHash,
-      nowIso,
-    }),
-    target: {
-      kind: 'systembaustein',
-      reference_id: makeSystembausteinReferenceId(lerntyp, bausteinId),
-      lerntyp,
-      baustein_id: bausteinId,
-    },
-    gps: {
-      fach: nullable(einheit?.fach),
-      jahrgangsstufe: nullable(einheit?.jahrgangsstufe),
-      titel_einheit: nullable(einheit?.titel_der_einheit),
-      gesamtziele: Array.isArray(einheit?.gesamtziele) ? einheit.gesamtziele : [],
-    },
-    baustein: systemBaustein
-      ? {
-        baustein_id: bausteinId,
-        titel: nullable(systemBaustein.titel),
-        icon: nullable(systemBaustein.icon),
-        admin_beschreibung: nullable(systemBaustein.admin_beschreibung),
-        export_instruktion: nullable(systemBaustein.export_instruktion),
-      }
-      : {
-        baustein_id: bausteinId,
-        titel: null,
-        icon: null,
-        admin_beschreibung: null,
-        export_instruktion: null,
-      },
-    lerntyp_pfad: summarizeLerntypPfad(lerntypPfad, themenfelderById),
-    lernlandkarte,
-    // airgap-1.17.0: Bereits von der Lehrkraft erzeugte, geprüfte Inhalte
-    // dieses Bausteins in diesem Pfad. Siehe snapshot_priority_contract
-    // in Payload 1.
-    fertige_inhalte: collectFertigeInhalte({ snapshots, lerntyp, bausteinId, lerntypPfad }),
-    inhalt_regel:
-      'Enthält `fertige_inhalte` Einträge, sind das fertige, von der Lehrkraft '
-      + 'geprüfte Inhalte: übernimm sie 1:1 (nicht umformulieren, nicht kürzen, '
-      + 'nicht "verbessern") und baue pro Eintrag den zugehörigen Abschnitt. '
-      + 'Ist `fertige_inhalte` leer, erzeuge den Inhalt selbst aus '
-      + '`baustein.export_instruktion` und dem Pfad-Kontext.',
-    output_contract: {
-      format: 'full_html',
-      filename: fnSystemBaustein(bausteinId, lerntyp),
-    },
-    injection_points: {
-      title: nullable(systemBaustein?.titel) || bausteinId,
-      back_targets: Array.isArray(navigationContext) ? [...navigationContext].sort() : [fnDashboard(lerntyp)],
-    },
-  };
-}
-
-/**
- * Payload 5 als BUNDLE: alle Baustein × Lerntyp-Briefings einer Einheit.
- *
- * Strikte Regel (Spec): Pro Lerntyp wird nur dann ein Briefing erzeugt,
- * wenn der Baustein im jeweiligen Lernpfad tatsächlich referenziert ist
- * (1:1-Zuordnung Pfad ↔ Briefing ↔ SCORM-Datei).
- */
-export function buildSystembausteinPayloadBundle({
-  einheit,
-  themenfelder = [],
-  lernpakete = [],
-  lernziele = [],
-  systemBausteine = [],
-  navigationContextByRefId = new Map(),
-  // airgap-1.17.0: fertige SchuelerInhaltSnapshots der Einheit.
-  snapshots = [],
-  systemContextHash = null,
-  uiConfigHash = null,
-  nowIso = null,
-}) {
-  const themenfelderById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
-  const bausteinByKey = new Map((systemBausteine || []).map((b) => [b.baustein_id, b]));
-  const items = [];
-
-  const navFor = (refId) => {
-    const v = navigationContextByRefId?.get
-      ? navigationContextByRefId.get(refId)
-      : null;
-    return Array.isArray(v) ? v : [];
-  };
-
-  for (const lt of LERNTYP_KEYS) {
-    const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
-    const seenInLerntyp = new Set();
-    for (const sektor of sektoren) {
-      for (const item of sektor?.items || []) {
-        if (item?.type !== 'system' || !item?.ref_id) continue;
-        // Platzhalter-Bausteine (`sys_platzhalter_*`) sind reine Arbeitshilfen
-        // im Lernpfad-Architekt — sie kennzeichnen Drop-Zonen für später noch
-        // einzufügende echte Aufgaben/Bündel. Sie dürfen NIEMALS als eigenes
-        // KI-Briefing exportiert werden, weil sonst die MBK „Container-Karten"
-        // erfindet, die im Schülerpfad gar nicht erscheinen sollen. Konsistent
-        // mit dem Filter in summarizeSektor und scormFileMapping.
-        if (isPlatzhalterItem(item)) continue;
-        if (seenInLerntyp.has(item.ref_id)) continue;
-        seenInLerntyp.add(item.ref_id);
-        const refId = makeSystembausteinReferenceId(lt, item.ref_id);
-        const briefing = buildSystembausteinPayloadItem({
-          einheit,
-          lerntyp: lt,
-          bausteinId: item.ref_id,
-          systemBaustein: bausteinByKey.get(item.ref_id) || null,
-          lerntypPfad: sektoren,
-          themenfelderById,
-          lernpakete,
-          lernziele,
-          navigationContext: navFor(refId),
-          snapshots,
-          systemContextHash,
-          uiConfigHash,
-          nowIso,
-        });
-        if (briefing) items.push(briefing);
-      }
-    }
-  }
-
-  return {
-    meta: makeMeta({
-      payloadType: 'mbk_systembaustein_payload',
-      einheitId: einheit?.id || null,
-      systemContextHash,
-      uiConfigHash,
-      itemCount: items.length,
-      nowIso,
-    }),
-    items,
-  };
-}
+/* Payload 5 (Systembaustein-Briefings inkl. Lernlandkarte) liegt seit
+   airgap-1.20.0 in @/lib/mbkSystembausteinPayload — oben importiert und
+   unten aus Kompatibilitätsgründen re-exportiert. */
 
 // ── 3. Payload 3: Aufgabeninhalte (pro Lernpaket / pro Aufgabe) ─────────────
 

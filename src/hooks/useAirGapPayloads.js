@@ -167,6 +167,8 @@ export function useAirGapPayloads(einheitId) {
 
     const systembausteinePayload = buildSystembausteinPayloadBundle({
       einheit, themenfelder, lernpakete, lernziele, systemBausteine,
+      // airgap-1.20.0: für den Aufgaben-Sammelknoten der Lernlandkarte.
+      allgemeineAufgaben,
       navigationContextByRefId: navCtx,
       snapshots: inhaltSnapshots,
       systemContextHash: currentHash, uiConfigHash: currentUiHash,
