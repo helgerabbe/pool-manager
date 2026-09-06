@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner';
 import { useAufgabenFormate } from '@/hooks/useAufgabenFormate';
 import AufgabenFormatZeile from './AufgabenFormatZeile';
-import AufgabenFormatVorschauDialog from './AufgabenFormatVorschauDialog';
+import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
 import AufgabenFormatBearbeitenDialog from './AufgabenFormatBearbeitenDialog';
 
 /**
@@ -95,7 +95,7 @@ export default function AufgabenFormateTab() {
         </CardContent>
       </Card>
 
-      <AufgabenFormatVorschauDialog
+      <FormatVorschauDialog
         format={vorschau}
         open={!!vorschau}
         onOpenChange={(o) => !o && setVorschau(null)}

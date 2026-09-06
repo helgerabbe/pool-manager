@@ -4,11 +4,14 @@ import HtmlIframePreview from '@/components/allgemeineAufgaben/HtmlIframePreview
 import { fragmentZuDokument, AUFGABE_ZIELFLAECHE } from '@/lib/aufgabeFragment';
 
 /**
- * Zeigt ein Aufgabenformat so, wie Schüler es sehen würden — in der echten
- * Zielfläche (Tablet quer). Der Administrator muss ausprobieren können, ob das
- * Format funktioniert, bevor er es freigibt.
+ * Zeigt EIN Aufgabenformat der internen Galerie so, wie Schüler es sehen —
+ * in der echten Zielfläche (Tablet quer).
+ *
+ * Wird an zwei Stellen gebraucht: in der Verwaltung (vor der Freigabe) und in
+ * der Aufgabenwerkstatt (bevor die Lehrkraft ein Format übernimmt). Deshalb
+ * liegt der Dialog hier und nicht in einem der beiden Bereiche.
  */
-export default function AufgabenFormatVorschauDialog({ format, open, onOpenChange }) {
+export default function FormatVorschauDialog({ format, open, onOpenChange }) {
   if (!format) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

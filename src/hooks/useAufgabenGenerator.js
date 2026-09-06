@@ -59,9 +59,17 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     });
   }, []);
 
-  const senden = useCallback(async (nachricht) => {
+  /**
+   * `startFragmentUeberschreibung`: Ausgangsstand für DIESEN Auftrag, wenn er
+   * nicht der aktuelle Stand sein soll — nötig beim Übernehmen einer Vorlage
+   * aus der Aufgabengalerie: Dort wird der Stand im selben Wimpernschlag
+   * gesetzt und gleich der Auftrag geschickt; ohne diesen Weg würde der noch
+   * alte (leere) Stand mitgehen und die Vorlage wäre wirkungslos.
+   */
+  const senden = useCallback(async (nachricht, startFragmentUeberschreibung = null) => {
     const text = String(nachricht || '').trim();
     if (!text || busy) return;
+    const basisFragment = startFragmentUeberschreibung ?? fragment;
 
     setFehler(null);
     setFehlgeschlagen(null);
@@ -93,7 +101,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
         credentials: 'include',
         body: JSON.stringify({
           nachricht: text,
-          fragment,
+          fragment: basisFragment,
           verlauf: verlaufFuerApi,
           kontext,
         }),

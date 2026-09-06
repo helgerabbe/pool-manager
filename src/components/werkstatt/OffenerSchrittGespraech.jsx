@@ -3,6 +3,7 @@ import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useWerkstattStaende from '@/hooks/useWerkstattStaende';
 import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
 import StaendeLeiste from '@/components/werkstatt/StaendeLeiste';
+import FormatWahl from '@/components/werkstatt/FormatWahl';
 import { fragmentZuDokument } from '@/lib/aufgabeFragment';
 
 /**
@@ -42,6 +43,9 @@ export default function OffenerSchrittGespraech({
   const staende = useWerkstattStaende({ aufgabeId, schrittId: schritt?.id });
 
   const [eingabe, setEingabe] = useState('');
+  // Solange nichts gebaut und nichts gesagt wurde, steht die Formatwahl davor:
+  // erst nachsehen, ob es das Format schon gibt, dann bauen.
+  const [gestartet, setGestartet] = useState(!!schritt?.offen?.fragment);
 
   // Wie viele Sitzungsstände bereits gesichert wurden. Ohne das würde jeder
   // Rerender denselben Stand erneut schreiben.
@@ -80,6 +84,39 @@ export default function OffenerSchrittGespraech({
     const passend = staende.staende.find((st) => st.fragment === f);
     if (passend) staende.alsUebernommenMarkieren(passend.id);
   }, [gen.fragment, gen.busy, onFragment, staende, schritt?.id]);
+
+  /** Auftrag an den Assistenten, wenn eine Vorlage übernommen wird. */
+  const vorlageAuftrag = (treffer, vorhaben) => `Nimm die vorhandene Aufgabe als VORLAGE.
+
+Behalte Aufbau, Bedienung, Gestaltung und die Rückmeldelogik unverändert. Ersetze dafür ALLE Inhalte vollständig — kein Wort und keine Zahl der alten Inhalte darf stehen bleiben. Auch Überschrift und Arbeitsauftrag gehören zu den Inhalten.
+
+Neue Inhalte gemäß diesem Vorhaben der Lehrkraft:
+${vorhaben}`;
+
+  const starteMitVorlage = (treffer, vorhaben) => {
+    setGestartet(true);
+    letzteNachrichtRef.current = vorhaben;
+    gen.setzeFragment(treffer.fragment, `Vorlage: ${treffer.name}`);
+    gen.senden(vorlageAuftrag(treffer, vorhaben), treffer.fragment);
+  };
+
+  const starteOhneVorlage = (vorhaben) => {
+    setGestartet(true);
+    letzteNachrichtRef.current = vorhaben;
+    gen.senden(vorhaben);
+  };
+
+  if (!gestartet) {
+    return (
+      <div className="flex flex-col min-h-0 flex-1">
+        <FormatWahl
+          disabled={isReleased}
+          onVorlage={starteMitVorlage}
+          onOhneVorlage={starteOhneVorlage}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-0 flex-1 gap-2">
