@@ -34,8 +34,16 @@ export default function PublishAllgemeineAufgabeButton({ aufgabe, kannBearbeiten
   const isApproved = aufgabe.content_status === 'approved';
   const canRevoke = !!kannBearbeiten; // jeder mit Bearbeitungsrecht kann rückgängig machen
 
+  // Aufgabensequenz: Jeder SCHRITT trägt seine eigene Aufgabenstellung — die
+  // Aufgabenstellung der Aufgabe ist nur ein optionaler Einleitungstext und
+  // darf die Freigabe nicht blockieren (siehe completenessValidation.js).
+  const istSequenz = aufgabe.aufgaben_modus === 'sequenz';
+  const pflichtfelder = istSequenz
+    ? REQUIRED_FIELDS.filter((f) => f.key !== 'aufgabenstellung')
+    : REQUIRED_FIELDS;
+
   const validateAufgabe = () => {
-    return REQUIRED_FIELDS
+    return pflichtfelder
       .filter(({ key }) => {
         const value = aufgabe[key];
         return !value || (typeof value === 'string' && !value.trim());
@@ -76,7 +84,9 @@ export default function PublishAllgemeineAufgabeButton({ aufgabe, kannBearbeiten
     approveMutation.mutate({
       content_status: 'approved',
       titel: aufgabe.titel || 'Aufgabe ohne Titel',
-      aufgabenstellung: aufgabe.aufgabenstellung || 'Aufgabenstellung folgt',
+      // Bei Sequenzen KEIN Platzhalter — der stand sonst als Einleitungstext
+      // im Kurs, obwohl die Schritte ihre eigenen Aufgabenstellungen haben.
+      ...(istSequenz ? {} : { aufgabenstellung: aufgabe.aufgabenstellung || 'Aufgabenstellung folgt' }),
     });
   };
 
