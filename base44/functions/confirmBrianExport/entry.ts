@@ -73,7 +73,50 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { aufgabe_id, brian_dialog_id, brian_url, schritt_id } = await req.json();
+    const { aufgabe_id, brian_dialog_id, brian_url, schritt_id, master_id } = await req.json();
+
+    // Die URL ist der NACHWEIS, dass das Gespraech in Brian existiert — ohne
+    // sie gilt nichts als uebertragen (2026-09-06).
+    const urlTrimmed = typeof brian_url === 'string' ? brian_url.trim() : '';
+    if (!urlTrimmed) {
+      return Response.json(
+        { error: 'Die Brian-URL des Gespraechs ist erforderlich.' },
+        { status: 400 },
+      );
+    }
+
+    // ── KI-Tutor-Aufgabe IN einem Lernpaket (MasterAufgabe) ───────────
+    if (master_id) {
+      const master = await base44.asServiceRole.entities.MasterAufgabe.get(master_id);
+      if (!master) {
+        return Response.json({ error: 'MasterAufgabe nicht gefunden' }, { status: 404 });
+      }
+      const lernpaket = master.lernpaket_id
+        ? await base44.asServiceRole.entities.Lernpakete.get(master.lernpaket_id)
+        : null;
+      const einheitLp = lernpaket?.einheit_id
+        ? await base44.asServiceRole.entities.Einheiten.get(lernpaket.einheit_id)
+        : null;
+      if (!einheitLp) {
+        return Response.json({ error: 'Einheit der Aufgabe nicht gefunden' }, { status: 404 });
+      }
+      const permLp = await checkAufgabePermission(base44, user, einheitLp);
+      if (!permLp.allowed) {
+        return Response.json({ error: permLp.reason }, { status: 403 });
+      }
+      const jetzt = new Date().toISOString();
+      await base44.asServiceRole.entities.MasterAufgabe.update(master_id, {
+        field_values: {
+          ...(master.field_values || {}),
+          brian_url: urlTrimmed,
+          brian_dialog_id: typeof brian_dialog_id === 'string' ? brian_dialog_id.trim() : '',
+          brian_sync_status: 'synced',
+          brian_synced_at: jetzt,
+        },
+      });
+      return Response.json({ success: true, brian_synced: true, timestamp: jetzt });
+    }
+
     if (!aufgabe_id) {
       return Response.json({ error: 'aufgabe_id erforderlich' }, { status: 400 });
     }
@@ -103,7 +146,7 @@ Deno.serve(async (req) => {
       aufgabe.moodle_sync_status === 'synced' || aufgabe.sync_status === 'synced';
 
     const dialogId = typeof brian_dialog_id === 'string' ? brian_dialog_id.trim() : '';
-    const dialogUrl = typeof brian_url === 'string' ? brian_url.trim() : '';
+    const dialogUrl = urlTrimmed;
 
     const updatePayload: Record<string, any> = {};
 

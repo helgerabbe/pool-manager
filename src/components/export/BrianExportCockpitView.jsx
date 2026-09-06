@@ -19,6 +19,7 @@ import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { sammleBrianDialoge, istVeraltet } from '@/lib/brianDialoge';
+import { sammleBrianDialogeAusLernpaketen } from '@/lib/brianLernpaketDialoge';
 
 // ── Brian-relevante Aufgabentypen ──
 // Nur KI-Tutor-Aufgaben ('inhalt', inkl. Sequenz-Modus) brauchen Brian.
@@ -83,7 +84,13 @@ function DialogCard({ dialog, onMarkAsSynced }) {
                 Schritt {dialog.schrittNummer} aus „{aufgabe.titel || 'Aufgabe'}“
               </Badge>
             )}
-            <Badge variant="outline" className="text-[10px] shrink-0">{ebeneLabel}</Badge>
+            {dialog.quelle === 'lernpaket_master' ? (
+              <Badge variant="outline" className="text-[10px] shrink-0">
+                📦 Lernpaket „{aufgabe.titel}“
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="text-[10px] shrink-0">{ebeneLabel}</Badge>
+            )}
             {aufgabe.aufgabentyp_projekt && (
               <Badge variant="secondary" className="text-[10px] shrink-0">{aufgabe.aufgabentyp_projekt}</Badge>
             )}
@@ -99,6 +106,16 @@ function DialogCard({ dialog, onMarkAsSynced }) {
               </Badge>
             )}
           </div>
+          {isSynced && dialog.url && (
+            <a
+              href={dialog.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-primary underline mt-0.5"
+            >
+              {dialog.url} <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
           {isSynced && dialog.synced_at && (
             <p className="text-[11px] text-muted-foreground mt-0.5">
               Zuletzt nach Brian übertragen am {new Date(dialog.synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -163,14 +180,15 @@ function DialogCard({ dialog, onMarkAsSynced }) {
             </div>
           )}
 
-          {/* Fünf Segmente */}
+          {/* Segmente zum Kopieren — bei Lernpaket-Aufgaben liefert der
+              Sammler eigene Abschnitte (Aufgabenstellung, Erwartungshorizont). */}
           <div className="space-y-3">
-            {[
+            {(dialog.segmente || [
               { label: '1. Dialogname', value: felder.dialog_name },
               { label: '2. Anweisung für Lernende', value: felder.learner_instruction },
               { label: '3. System-Anweisung (Tutor-Persona)', value: felder.system_instruction },
               { label: '4. Completion-Rule', value: felder.completion_rule },
-            ].map(({ label, value }) => (
+            ]).map(({ label, value }) => (
               <div key={label} className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{label}</p>
@@ -229,10 +247,42 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
         : base44.entities.AllgemeineAufgabe.list(),
   });
 
+  // KI-Tutor-Aufgaben INNERHALB von Lernpaketen müssen ebenfalls in Brian
+  // angelegt werden — dafür braucht das Cockpit Lernpakete, Aktivitäten,
+  // Masteraufgaben und den Aufgabenarten-Katalog.
+  const { data: lernpakete = [] } = useQuery({
+    queryKey: ['lernpakete', einheitId],
+    queryFn: () =>
+      einheitId
+        ? base44.entities.Lernpakete.filter({ einheit_id: einheitId })
+        : base44.entities.Lernpakete.list(),
+  });
+  const { data: aktivitaeten = [] } = useQuery({
+    queryKey: ['lernpaketPhaseAktivitaeten', 'brianExport'],
+    queryFn: () => base44.entities.LernpaketPhaseAktivitaet.list(),
+  });
+  const { data: masterAufgaben = [] } = useQuery({
+    queryKey: ['masterAufgaben', 'brianExport'],
+    queryFn: () => base44.entities.MasterAufgabe.list(),
+  });
+  const { data: katalog = [] } = useQuery({
+    queryKey: ['aktivitaetenKatalog'],
+    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+  });
+
   // Gezählt und gelistet werden DIALOGE, nicht Aufgaben: Eine Folge mit zwei
   // Brian-Schritten ergibt zwei Dialoge, die einzeln nach Brian gehen und
   // unterschiedlich weit sein können.
-  const alleDialoge = useMemo(() => sammleBrianDialoge(allAufgaben), [allAufgaben]);
+  const alleDialoge = useMemo(() => {
+    const lernpaketById = new Map(lernpakete.map((lp) => [lp.id, lp]));
+    const lernpaketDialoge = sammleBrianDialogeAusLernpaketen({
+      aktivitaeten,
+      masterAufgaben: masterAufgaben.filter((m) => lernpaketById.has(m.lernpaket_id)),
+      katalogById: new Map(katalog.map((k) => [k.id, k])),
+      lernpaketById,
+    });
+    return [...sammleBrianDialoge(allAufgaben), ...lernpaketDialoge];
+  }, [allAufgaben, lernpakete, aktivitaeten, masterAufgaben, katalog]);
 
   const dialoge = useMemo(() => alleDialoge.filter((d) =>
     d.aufgabe.content_status === 'approved'
@@ -250,7 +300,10 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
       // und löst im selben Update den Dual-Lock auf, falls Moodle bereits
       // synced ist (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
       const result = await base44.functions.invoke('confirmBrianExport', {
-        aufgabe_id: uebertragenDialog.aufgabe.id,
+        // Lernpaket-KI-Tutor-Aufgaben werden über die MasterAufgabe bestätigt,
+        // alle anderen über die Aufgabe (ggf. mit Schritt).
+        master_id: uebertragenDialog.masterId || null,
+        aufgabe_id: uebertragenDialog.masterId ? null : uebertragenDialog.aufgabe.id,
         // Ohne schritt_id gilt die Bestätigung für die ganze Aufgabe
         // (Einzelaufgabe), mit für genau dieses eine Gespräch.
         schritt_id: uebertragenDialog.schrittId || null,
@@ -259,9 +312,12 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
       });
 
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
+      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       setUebertragenDialog(null);
 
-      if (result.data?.lock_released) {
+      if (uebertragenDialog.masterId) {
+        toast.success('Als "In Brian" markiert – die URL wurde an die Aufgabe geschrieben.');
+      } else if (result.data?.lock_released) {
         toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
       } else {
         toast.success('Als "In Brian" markiert. Bearbeitungssperre bleibt bis Moodle-Export bestätigt.');
@@ -359,6 +415,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
         open={!!uebertragenDialog}
         onOpenChange={(open) => { if (!open) setUebertragenDialog(null); }}
         aufgabe={uebertragenDialog?.aufgabe}
+        dialog={uebertragenDialog}
         onConfirm={handleConfirmUebertragen}
         isSaving={isSaving}
       />

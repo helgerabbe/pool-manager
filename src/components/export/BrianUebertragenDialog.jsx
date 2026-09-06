@@ -14,16 +14,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { CheckCircle2, Loader2 } from 'lucide-react';
 
-export default function BrianUebertragenDialog({ open, onOpenChange, aufgabe, onConfirm, isSaving }) {
+export default function BrianUebertragenDialog({ open, onOpenChange, aufgabe, dialog, onConfirm, isSaving }) {
   const [dialogId, setDialogId] = useState('');
   const [url, setUrl] = useState('');
 
   useEffect(() => {
     if (open) {
-      setDialogId(aufgabe?.brian_dialog_id || '');
-      setUrl(aufgabe?.brian_url || '');
+      setDialogId(dialog?.dialog_id || aufgabe?.brian_dialog_id || '');
+      setUrl(dialog?.url || aufgabe?.brian_url || '');
     }
-  }, [open, aufgabe]);
+  }, [open, aufgabe, dialog]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -31,28 +31,30 @@ export default function BrianUebertragenDialog({ open, onOpenChange, aufgabe, on
         <DialogHeader>
           <DialogTitle>In Brian übertragen bestätigen</DialogTitle>
           <DialogDescription>
-            Trage die ID ein, unter der die Aufgabe „{aufgabe?.titel || 'Aufgabe'}" in Brian.study angelegt wurde.
-            Sie wird in den Moodle-Export übernommen, damit direkt auf die richtige Brian-Aufgabe verlinkt werden kann.
+            Trage die Adresse (URL) ein, unter der „{dialog?.titel || aufgabe?.titel || 'die Aufgabe'}" in Brian.study
+            erreichbar ist. Die URL ist der Nachweis, dass das Gespräch dort wirklich existiert — erst damit gilt die
+            Aufgabe als übertragen. Sie wird an die Aufgabe geschrieben und in den Export übernommen, sodass die
+            Schüler den Link erhalten.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label htmlFor="brian-dialog-id">Brian-Aufgaben-ID *</Label>
-            <Input
-              id="brian-dialog-id"
-              value={dialogId}
-              onChange={(e) => setDialogId(e.target.value)}
-              placeholder="z.B. dlg_8f3a21…"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="brian-url">Direkte Brian-URL (optional)</Label>
+            <Label htmlFor="brian-url">Brian-URL des Gesprächs *</Label>
             <Input
               id="brian-url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://brian.study/…"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="brian-dialog-id">Brian-Aufgaben-ID (optional)</Label>
+            <Input
+              id="brian-dialog-id"
+              value={dialogId}
+              onChange={(e) => setDialogId(e.target.value)}
+              placeholder="z.B. dlg_8f3a21…"
             />
           </div>
         </div>
@@ -63,7 +65,7 @@ export default function BrianUebertragenDialog({ open, onOpenChange, aufgabe, on
           </Button>
           <Button
             onClick={() => onConfirm({ brian_dialog_id: dialogId.trim(), brian_url: url.trim() })}
-            disabled={!dialogId.trim() || isSaving}
+            disabled={!url.trim() || isSaving}
             className="gap-1.5 bg-green-600 hover:bg-green-700"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}

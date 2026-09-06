@@ -11,7 +11,8 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Sparkles, Loader2, Save, Upload, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Sparkles, Loader2, Save, Upload, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
 
@@ -28,6 +29,11 @@ export default function KITutorMasterForm({
   const [material, setMaterial] = useState(master?.field_values?.material || '');
   const [bildUrl, setBildUrl] = useState(master?.field_values?.bild_url || '');
   const [erwartungshorizont, setErwartungshorizont] = useState(master?.field_values?.erwartungshorizont || '');
+  // Brian-URL: Adresse des Gesprächs in Brian.study. Wird beim Übertragen im
+  // Export-Center automatisch gesetzt, kann hier aber auch von Hand gepflegt
+  // werden. Sie ist der Nachweis, dass die Aufgabe in Brian existiert, und
+  // wandert mit den field_values in den Export.
+  const [brianUrl, setBrianUrl] = useState(master?.field_values?.brian_url || '');
   const [isDirty, setIsDirty] = useState(false);
 
   const [aiPromptLoading, setAiPromptLoading] = useState(false);
@@ -53,10 +59,14 @@ export default function KITutorMasterForm({
       // 2. Speichere die Aufgabe mit Hidden Prompt
       return base44.entities.MasterAufgabe.update(master.id, {
         field_values: {
+          // Bestehende Werte erhalten — hier liegt auch der Brian-Nachweis
+          // (brian_url, brian_sync_status …), der nicht verloren gehen darf.
+          ...(master.field_values || {}),
           aufgabenstellung,
           material,
           bild_url: bildUrl,
           erwartungshorizont,
+          brian_url: brianUrl.trim(),
         },
         tutor_prompt: tutorPrompt, // Hidden Prompt für Moodle-Export
       });
@@ -247,6 +257,32 @@ Fokus: Die konkrete, richtige Lösung dieser Aufgabe - nicht allgemeine pädagog
           className="resize-none text-sm"
           disabled={isReadOnly}
         />
+      </div>
+
+      {/* ── Brian-URL (Nachweis, dass das Gespräch in Brian existiert) ── */}
+      <div className="space-y-2">
+        <Label className="text-sm font-medium">Brian-URL des Gesprächs</Label>
+        <Input
+          value={brianUrl}
+          onChange={(e) => { setBrianUrl(e.target.value); setIsDirty(true); }}
+          placeholder="https://brian.study/…"
+          disabled={isReadOnly}
+          className="text-sm"
+        />
+        <p className="text-xs text-muted-foreground">
+          Diese Adresse erhalten die Schüler. Sie wird beim Bestätigen der Übertragung im Export-Center
+          automatisch eingetragen.
+        </p>
+        {brianUrl.trim() && (
+          <a
+            href={brianUrl.trim()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-primary underline"
+          >
+            Gespräch in Brian öffnen <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
 
       {/* ── Speichern-Button ── */}

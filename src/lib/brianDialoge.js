@@ -61,6 +61,7 @@ export function sammleBrianDialoge(aufgaben = []) {
           };
           dialoge.push({
             key: `${a.id}:${s.id}`,
+            quelle: 'aufgabe',
             aufgabe: a,
             schrittId: s.id,
             schrittNummer: (s.reihenfolge ?? 0) + 1,
@@ -85,6 +86,7 @@ export function sammleBrianDialoge(aufgaben = []) {
     };
     dialoge.push({
       key: a.id,
+      quelle: 'aufgabe',
       aufgabe: a,
       schrittId: null,
       schrittNummer: null,
