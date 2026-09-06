@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle, ExternalLink } from 'lucide-react';
 import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
 import BrianAnleitungPanel from '@/components/export/BrianAnleitungPanel';
+import OnboardingBrianUrlCard from '@/components/export/OnboardingBrianUrlCard';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
@@ -395,6 +396,10 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
               {filterSynced ? 'Nur offene anzeigen' : 'Bereits exportierte auch anzeigen'}
             </button>
           </div>
+
+          {/* Brian-Gespräch der Orientierungsphase — es steckt in der Einheit,
+              nicht in einer Aufgabe, und fehlte darum in der Liste. */}
+          {einheitId && <OnboardingBrianUrlCard einheitId={einheitId} />}
 
           {dialoge.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-xl">

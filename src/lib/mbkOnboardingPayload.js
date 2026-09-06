@@ -89,7 +89,9 @@ export const ONBOARDING_CONTRACT = {
         + '(dialog_name, learner_instruction, system_instruction, '
         + 'completion_rule). Dieses Element ist eine BRIAN-AUFGABE: baue hier '
         + 'den Einstieg in den Brian-Dialog und verwende die vier '
-        + 'Übergabefelder unverändert — erfinde keine eigenen.',
+        + 'Übergabefelder unverändert — erfinde keine eigenen. Steht in '
+        + '`brian_url` eine Adresse, ist das Gespräch in Brian.study bereits '
+        + 'angelegt: verlinke genau diese URL statt einen neuen Dialog anzunehmen.',
     },
   ],
   hinweis_fuer_mbk:
@@ -119,11 +121,19 @@ export function buildOnboardingForStructure(konfig, inhaltSnapshots = []) {
     .sort()
     .pop();
 
+  // Brian-Nachweis der Intensitätsstufen-Diagnose (2026-09-06): Die URL wird im
+  // Export-Center an der Einheit gepflegt, der Inhalt kann aus dem Snapshot
+  // stammen — beides wird hier zusammengeführt.
+  const diagnoseInhalt = pick('lerntyp_diagnose');
+  const diagnoseUrl = (obj(k.lerntyp_diagnose)?.brian_url || '').trim();
+
   return {
     einfuehrung: pick('einfuehrung'),
     fragenblock: pick('fragenblock'),
     einstiegsdiagnose: pick('einstiegsdiagnose'),
-    lerntyp_diagnose: pick('lerntyp_diagnose'),
+    lerntyp_diagnose: diagnoseInhalt
+      ? { ...diagnoseInhalt, brian_url: diagnoseUrl || null }
+      : (diagnoseUrl ? { brian_url: diagnoseUrl } : null),
     generiert_am: letzterSnapshot || k.generiert_am || null,
   };
 }
