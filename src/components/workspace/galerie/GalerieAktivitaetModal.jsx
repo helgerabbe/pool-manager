@@ -7,21 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Loader2, Sparkles, Save, X, Images, ClipboardList } from 'lucide-react';
-import useAktivitaetenGalerie from '@/hooks/useAktivitaetenGalerie';
-import GalerieBrowser, { sichtbareGalerieEintraege } from '@/components/workspace/galerie/GalerieBrowser';
-import GalerieDemoDialog from '@/components/workspace/galerie/GalerieDemoDialog';
+import { useAufgabenFormate } from '@/hooks/useAufgabenFormate';
+import EigeneFormatListe from '@/components/workspace/galerie/EigeneFormatListe';
+import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
 
 /**
- * Editor-Modal für die Aktivität „Aktivitätengalerie".
+ * Editor-Modal für die Aktivität „Aufgabengalerie".
+ *
+ * Seit 2026-09-06 greift diese Aktivität AUSSCHLIESSLICH auf die EIGENE
+ * Aufgabengalerie zu (Entity AufgabenFormat, Status 'freigegeben') — nicht mehr
+ * auf das Galerie-Verzeichnis der MBK. Grund: Angeboten werden soll nur, was
+ * hier angesehen, von Unterrichtsinhalten befreit und freigegeben wurde. Formate
+ * der MBK kommen weiterhin herein, aber über den Abruf in den
+ * Systemeinstellungen — und dort erst als Vorschlag.
  *
  * Workflow:
- *  1. Lehrkraft wählt links eine Galerie-Aktivität (mit Demo-Vorschau).
- *  2. Rechts erscheint die Anforderungsbeschreibung (uebergabe_beschreibung)
- *     aus dem Galerie-Manifest.
- *  3. Lehrkraft füllt den Übergabetext aus — manuell oder KI-gestützt
- *     (die KI nutzt den Einheiten-/Lernpaket-Kontext als Grundlage).
+ *  1. Lehrkraft wählt links ein Format (mit Vorschau der Mechanik).
+ *  2. Rechts steht die Funktionsbeschreibung des Formats.
+ *  3. Lehrkraft füllt den Übergabetext aus — manuell oder KI-gestützt.
  *
- * Gespeichert werden nur: galerie_id, galerie_name, galerie_stand, inhalt.
+ * Gespeichert werden nur: galerie_id, galerie_name, inhalt.
  */
 export default function GalerieAktivitaetModal({
   open,
@@ -33,10 +38,10 @@ export default function GalerieAktivitaetModal({
   kontext = '',
   parentLernpaketName = '',
 }) {
-  const { data: galerie, isLoading, error } = useAktivitaetenGalerie(open);
+  const { galerie, isLoading } = useAufgabenFormate();
   const [selectedId, setSelectedId] = useState(initialFieldValues?.galerie_id || null);
   const [inhalt, setInhalt] = useState(initialFieldValues?.inhalt || '');
-  const [demoEntry, setDemoEntry] = useState(null);
+  const [vorschau, setVorschau] = useState(null);
   const [generating, setGenerating] = useState(false);
 
   // Beim Öffnen mit den gespeicherten Werten initialisieren
@@ -47,12 +52,10 @@ export default function GalerieAktivitaetModal({
     }
   }, [open]);
 
-  const eintraege = sichtbareGalerieEintraege(galerie?.aktivitaeten || []);
-  const selectedEntry = eintraege.find((e) => e.id === selectedId)
-    || (galerie?.aktivitaeten || []).find((e) => e.id === selectedId)
-    || null;
+  const eintraege = galerie || [];
+  const selectedEntry = eintraege.find((e) => e.id === selectedId) || null;
 
-  const anforderung = selectedEntry?.uebergabe_beschreibung || '';
+  const anforderung = selectedEntry?.beschreibung || '';
   const canSave = !!selectedId && inhalt.trim() !== '' && !isSaving;
 
   const handleKiAssist = async () => {
@@ -63,7 +66,7 @@ export default function GalerieAktivitaetModal({
         'Du unterstützt eine Lehrkraft dabei, den Übergabetext für eine interaktive Lernaktivität zu erstellen.',
         'Die Aktivität wird später von einem Baukasten-System auf Basis genau dieses Textes zusammengebaut.',
         '',
-        `## Gewählte Aktivität\n${selectedEntry.name}${selectedEntry.kurzbeschreibung ? ` — ${selectedEntry.kurzbeschreibung}` : ''}`,
+        `## Gewähltes Aufgabenformat\n${selectedEntry.name}`,
         '',
         anforderung
           ? `## Anforderungen an den Übergabetext (unbedingt vollständig erfüllen)\n${anforderung}`
@@ -89,7 +92,6 @@ export default function GalerieAktivitaetModal({
     onSave({
       galerie_id: selectedEntry.id,
       galerie_name: selectedEntry.name || '',
-      galerie_stand: galerie?.stand || '',
       inhalt: inhalt.trim(),
     });
   };
@@ -101,12 +103,11 @@ export default function GalerieAktivitaetModal({
           <DialogHeader className="px-6 pt-5 pb-3 border-b border-border shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Images className="w-5 h-5 text-primary" />
-              Aktivitätengalerie
+              Aufgabengalerie
             </DialogTitle>
             <DialogDescription>
               {parentLernpaketName ? `Lernpaket: ${parentLernpaketName} · ` : ''}
-              Wähle eine Aktivität aus der Galerie und beschreibe die Inhalte, die übergeben werden sollen.
-              {galerie?.stand ? ` (Galerie-Stand: ${galerie.stand})` : ''}
+              Wähle ein Format aus der Aufgabengalerie und beschreibe die Inhalte, die übergeben werden sollen.
             </DialogDescription>
           </DialogHeader>
 
@@ -114,23 +115,19 @@ export default function GalerieAktivitaetModal({
             {/* ── Linke Spalte: Galerie-Browser ── */}
             <div className="border-r border-border overflow-y-auto p-4">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                1. Aktivität wählen
+                1. Format wählen
               </p>
               {isLoading ? (
                 <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span className="text-sm">Galerie wird geladen…</span>
                 </div>
-              ) : error ? (
-                <p className="text-sm text-destructive py-8 text-center">
-                  Galerie konnte nicht geladen werden: {error.message}
-                </p>
               ) : (
-                <GalerieBrowser
-                  eintraege={eintraege}
+                <EigeneFormatListe
+                  formate={eintraege}
                   selectedId={selectedId}
                   onSelect={setSelectedId}
-                  onShowDemo={setDemoEntry}
+                  onAnsehen={setVorschau}
                 />
               )}
             </div>
@@ -144,7 +141,7 @@ export default function GalerieAktivitaetModal({
               {!selectedEntry ? (
                 <div className="rounded-lg border border-dashed border-border bg-muted/30 p-6 text-center">
                   <p className="text-sm text-muted-foreground">
-                    Wähle links zuerst eine Aktivität aus der Galerie.
+                    Wähle links zuerst ein Format aus der Aufgabengalerie.
                   </p>
                 </div>
               ) : (
@@ -161,7 +158,7 @@ export default function GalerieAktivitaetModal({
                       </div>
                     ) : (
                       <p className="text-xs text-amber-900 italic">
-                        Für diese Aktivität ist noch keine Anforderungsbeschreibung in der Galerie hinterlegt.
+                        Für dieses Format ist noch keine Beschreibung hinterlegt.
                         Beschreibe die Inhalte so konkret und vollständig wie möglich.
                       </p>
                     )}
@@ -193,8 +190,8 @@ export default function GalerieAktivitaetModal({
                       disabled={generating}
                     />
                     <p className="text-[11px] text-muted-foreground">
-                      Beim Export werden nur die Aktivitäts-ID („{selectedEntry.id}") und dieser Text übergeben —
-                      die Aktivität wird daraus auf Basis der Galerie-Vorlage gebaut.
+                      Beim Export werden nur das gewählte Format („{selectedEntry.name}") und dieser Text
+                      übergeben — die Aufgabe wird daraus auf Basis der Formatvorlage gebaut.
                     </p>
                   </div>
                 </>
@@ -216,10 +213,10 @@ export default function GalerieAktivitaetModal({
         </DialogContent>
       </Dialog>
 
-      <GalerieDemoDialog
-        open={!!demoEntry}
-        onOpenChange={(o) => { if (!o) setDemoEntry(null); }}
-        entry={demoEntry}
+      <FormatVorschauDialog
+        format={vorschau}
+        open={!!vorschau}
+        onOpenChange={(o) => { if (!o) setVorschau(null); }}
       />
     </>
   );

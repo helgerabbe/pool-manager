@@ -7,6 +7,7 @@ import { useAufgabenFormate } from '@/hooks/useAufgabenFormate';
 import AufgabenFormatZeile from './AufgabenFormatZeile';
 import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
 import AufgabenFormatBearbeitenDialog from './AufgabenFormatBearbeitenDialog';
+import MbkGalerieAbrufCard from './MbkGalerieAbrufCard';
 
 /**
  * Verwaltung der internen Aufgabengalerie.
@@ -78,6 +79,8 @@ export default function AufgabenFormateTab() {
 
   return (
     <div className="space-y-6">
+      <MbkGalerieAbrufCard onFertig={() => refetch?.()} />
+
       <Card className="border shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base">Neue Vorschläge ({vorschlaege.length})</CardTitle>

@@ -10,6 +10,44 @@
  */
 
 /**
+ * Zugang zum Galerie-Repository der MBK: Konfiguration lesen und einzelne
+ * Dateien holen. Liegt hier, weil inzwischen zwei Wege dasselbe Repo lesen —
+ * die Ideen-Liste für KI-Prompts und das Abholen der Formate in die eigene
+ * Galerie. Ein zweiter Satz Fetch-Code würde beim nächsten Feldwechsel
+ * auseinanderlaufen.
+ *
+ * @returns {Promise<{cfg: object, holeDatei: (pfad: string) => Promise<string|null>}|null>}
+ */
+export async function galerieRepoZugang(base44) {
+  const settings = await base44.asServiceRole.entities.Systemeinstellungen.filter({
+    schluessel: 'github_connector',
+  });
+  const record = settings && settings[0];
+  if (!record?.wert_text) return null;
+  const cfg = JSON.parse(record.wert_text);
+  if (!cfg.owner || !cfg.repo || !cfg.access_token) return null;
+  const branch = cfg.branch || 'main';
+
+  const holeDatei = async (pfad) => {
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${pfad}?ref=${branch}`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${cfg.access_token}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    });
+    if (!res.ok) return null;
+    const file = await res.json();
+    const b64 = String(file.content || '').replace(/\s/g, '');
+    const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    return new TextDecoder('utf-8').decode(bytes);
+  };
+
+  return { cfg, holeDatei };
+}
+
+/**
  * @returns {Promise<Array<{id: string, name: string, kurzbeschreibung: string, uebergabe_beschreibung: string}>>}
  *   Nur galerie_sichtbare Einträge, sortiert nach reihenfolge/Name.
  */

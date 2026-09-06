@@ -1,7 +1,7 @@
 {
   "name": "AufgabenFormat",
   "type": "object",
-  "description": "Interne Aufgabengalerie (2026-09-06): EIN wiederverwendbares Aufgabenformat \u2014 die Mechanik einer interaktiven Aufgabe, losgel\u00f6st von ihrem Inhalt (z. B. 'Aussagen in Spalten zuordnen', 'Textstellen markieren', 'Zielscheibe'). Gespeichert wird das fertige HTML-Fragment mit PLATZHALTER-Inhalten ('Beispielaussage 1', 'Beispieltext \u2026'), damit man die Funktionsweise ansehen kann, ohne alte Unterrichtsinhalte mitzuschleppen.\n\nWOZU: Statt jedes Format neu bauen zu lassen, sucht der Pool-Manager beim Erstellen einer Aufgabe zuerst hier nach einem passenden Format und l\u00e4sst die KI nur noch die Inhalte einsetzen. Das ist schneller, verl\u00e4sslicher (erprobte Mechanik) und billiger.\n\nZWEI STUFEN: 'vorschlag' = automatisch aufgenommen, sobald jemand ein neues Format bauen lie\u00df \u2014 sichtbar NUR in den Systemeinstellungen. 'freigegeben' = ein Administrator hat es angesehen, benannt und beschrieben; erst dann wird es Lehrkr\u00e4ften vorgeschlagen. Ohne diese Stufe w\u00fcrde die Sammlung mit halbfertigen Versuchen und Dubletten volllaufen, und ein fehlerhaftes Format w\u00fcrde seinen Fehler in jede daraus gebaute Aufgabe weitertragen.",
+  "description": "Interne Aufgabengalerie (2026-09-06): EIN wiederverwendbares Aufgabenformat \u2014 die Mechanik einer interaktiven Aufgabe, losgel\u00f6st von ihrem Inhalt (z. B. 'Aussagen in Spalten zuordnen', 'Textstellen markieren', 'Zielscheibe'). Gespeichert wird das fertige HTML-Fragment mit PLATZHALTER-Inhalten ('Beispielaussage 1', 'Beispieltext \u2026'), damit man die Funktionsweise ansehen kann, ohne alte Unterrichtsinhalte mitzuschleppen.\n\nWOZU: Statt jedes Format neu bauen zu lassen, sucht der Pool-Manager beim Erstellen einer Aufgabe zuerst hier nach einem passenden Format und l\u00e4sst die KI nur noch die Inhalte einsetzen. Das ist schneller, verl\u00e4sslicher (erprobte Mechanik) und billiger.\n\nZWEI STUFEN: 'vorschlag' = automatisch aufgenommen, sobald jemand ein neues Format bauen lie\u00df oder ein Format aus der MBK-Galerie abgerufen wurde \u2014 sichtbar NUR in den Systemeinstellungen. 'freigegeben' = ein Administrator hat es angesehen, benannt und beschrieben; erst dann wird es Lehrkr\u00e4ften vorgeschlagen. Ohne diese Stufe w\u00fcrde die Sammlung mit halbfertigen Versuchen und Dubletten volllaufen, und ein fehlerhaftes Format w\u00fcrde seinen Fehler in jede daraus gebaute Aufgabe weitertragen.",
   "properties": {
     "name": {
       "type": "string",
@@ -32,7 +32,11 @@
         "manuell"
       ],
       "default": "poolmanager",
-      "description": "Woher das Format kam: 'poolmanager' = beim Bauen einer offenen Aufgabe entstanden, 'mbk' = aus der externen Galerie des Kursbaus \u00fcbernommen, 'manuell' = von der Administration eingetragen."
+      "description": "Woher das Format kam: 'poolmanager' = beim Bauen einer offenen Aufgabe entstanden, 'mbk' = aus der externen Galerie des Kursbaus \u00fcbernommen (importMbkAufgabenFormate), 'manuell' = von der Administration eingetragen."
+    },
+    "mbk_id": {
+      "type": "string",
+      "description": "Nur bei herkunft='mbk': die Kennung des Eintrags im Galerie-Verzeichnis der MBK. Grundlage der Wiedererkennung \u2014 ein erneuter Abruf aktualisiert diesen Eintrag statt einen zweiten anzulegen."
     },
     "quelle_aufgabe_id": {
       "type": "string",
