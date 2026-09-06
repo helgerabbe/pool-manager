@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, Trash2, Loader2, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import QuizGeneratorModal from '@/components/workspace/QuizGeneratorModal';
+import QuizTextImportPanel from '@/components/workspace/QuizTextImportPanel';
 
 const MAX_QUESTIONS = 12;
 
@@ -155,6 +156,25 @@ export default function MiniQuizEditor({
           </Button>
         )}
       </div>
+
+      {/* Fertige Fragen aus eingefügtem Text übernehmen */}
+      {!readOnly && (
+        <QuizTextImportPanel
+          maxQuestions={MAX_QUESTIONS}
+          disabled={isAtLimit}
+          onImport={(imported) => {
+            const merged = [...questions, ...imported];
+            const truncated = merged.slice(0, MAX_QUESTIONS);
+            if (merged.length > MAX_QUESTIONS) {
+              toast.warning(`Nur ${MAX_QUESTIONS} Fragen möglich — überzählige wurden verworfen.`);
+            } else {
+              toast.success(`${imported.length} Frage${imported.length !== 1 ? 'n' : ''} übernommen.`);
+            }
+            setQuestions(truncated);
+            onChange?.();
+          }}
+        />
+      )}
 
       {/* Neue Frage hinzufügen */}
       {!readOnly && (
