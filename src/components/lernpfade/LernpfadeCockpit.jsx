@@ -69,6 +69,7 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
+import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
 import { autoAssembleLerntyp, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
@@ -1192,14 +1193,31 @@ export default function LernpfadeCockpit({
         onConfirm={handleConfirmArbeitsphase}
       />
 
+      {/* Sequenz-Aufgaben gehören in die Werkstatt: Der Einzelaufgaben-Editor
+          zeigte für sie ein völlig fremdes Formular (KI-Tutor-Felder), obwohl
+          alle Inhalte an den Schritten hängen. */}
       <AufgabeCreateView
-        open={!!editorAufgabe}
+        open={!!editorAufgabe && editorAufgabe.aufgaben_modus !== 'sequenz'}
         onOpenChange={(v) => !v && setEditorAufgabe(null)}
         einheitId={einheit?.id}
         themenfelder={[]}
         initialData={editorAufgabe}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit?.id] });
+        }}
+      />
+
+      <AufgabenWerkstatt
+        open={!!editorAufgabe && editorAufgabe.aufgaben_modus === 'sequenz'}
+        onOpenChange={(v) => !v && setEditorAufgabe(null)}
+        einheitId={einheit?.id}
+        einheit={einheit}
+        themenfelder={themenfelder}
+        initialData={editorAufgabe}
+        isReleased={editorAufgabe?.content_status === 'approved'}
+        onSuccess={() => {
+          queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheit?.id] });
+          setEditorAufgabe(null);
         }}
       />
     </div>
