@@ -4,6 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { useMutation } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
+import { Sparkles } from 'lucide-react';
 
 /**
  * Name und Beschreibung eines Formats pflegen.
@@ -26,6 +30,22 @@ export default function AufgabenFormatBearbeitenDialog({
     }
   }, [open, format]);
 
+  // Vorschlag der KI: Sie sieht sich die Aufgabe an und formuliert Name und
+  // Funktionsweise. Die Felder werden nur GEFÜLLT, nicht gespeichert — der Text
+  // entscheidet über die Trefferqualität und gehört gelesen, bevor er gilt.
+  const vorschlag = useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('aufgabenFormatBeschreibungVorschlag', { id: format.id });
+      return res.data;
+    },
+    onSuccess: (d) => {
+      if (d?.name && !name.trim()) setName(d.name);
+      if (d?.beschreibung) setBeschreibung(d.beschreibung);
+      toast.success('Vorschlag eingesetzt — bitte durchlesen und anpassen.');
+    },
+    onError: (e) => toast.error('Kein Vorschlag möglich: ' + e.message),
+  });
+
   if (!format) return null;
 
   return (
@@ -37,6 +57,19 @@ export default function AufgabenFormatBearbeitenDialog({
             Name und Beschreibung entscheiden darüber, ob dieses Format später gefunden wird.
           </DialogDescription>
         </DialogHeader>
+
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 self-start"
+          onClick={() => vorschlag.mutate()}
+          disabled={vorschlag.isPending || isPending}
+        >
+          {vorschlag.isPending
+            ? <div className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin" />
+            : <Sparkles className="w-3.5 h-3.5" />}
+          {vorschlag.isPending ? 'Ich sehe mir die Aufgabe an …' : 'Vorschlag von der KI'}
+        </Button>
 
         <div className="space-y-4">
           <div className="space-y-1.5">

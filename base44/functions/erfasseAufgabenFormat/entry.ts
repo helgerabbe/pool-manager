@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { beschreibeAufgabenFormat } from '../../shared/aufgabenFormatBeschreibung.js';
 
 /**
  * erfasseAufgabenFormat
@@ -25,8 +26,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
  * Request  (POST): { fragment, aufgabe_id?, schritt_id? }
  * Response:        { erfasst: boolean, id?, grund? }
  */
-
-const MAX_FRAGMENT_FUER_KI = 16000;
 
 export default async function (req) {
   try {
@@ -58,24 +57,10 @@ export default async function (req) {
       ? (vorhandene || []).find((f) => f?.quelle_schritt_id === schrittId && f?.status === 'vorschlag')
       : null;
 
-    const beschreibungKI = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Unten steht der Code einer interaktiven Übungsaufgabe für Schüler:innen. Beschreibe daraus das FORMAT — also die Mechanik, losgelöst von den konkreten Fachinhalten.
-
-Antworte als JSON mit:
-- "name": kurzer, sprechender Name der Mechanik, den Lehrkräfte verstehen (z. B. "Aussagen in Spalten zuordnen", "Textstellen markieren"). Kein Fachinhalt im Namen.
-- "beschreibung": 3 bis 6 Sätze, INHALTSNEUTRAL: Was sehen die Schüler:innen, was tun sie, welche Rückmeldung bekommen sie, wofür eignet sich das Format? Nenne keine Fachbegriffe aus dem Beispielinhalt und keine Technik. Dieser Text ist die Grundlage dafür, dass das Format später gefunden wird, wenn eine Lehrkraft ihr Vorhaben beschreibt — sei deshalb genau in der Mechanik.
-
-AUFGABE:
-${fragment.slice(0, MAX_FRAGMENT_FUER_KI)}`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          beschreibung: { type: 'string' },
-        },
-        required: ['name', 'beschreibung'],
-      },
-    }).catch(() => null);
+    // Misslingt die Benennung, wird trotzdem erfasst: Die Aufgabe ist dann in
+    // der Sammlung und kann von Hand beschrieben werden — verloren wäre sie nicht
+    // wiederzuholen.
+    const beschreibungKI = await beschreibeAufgabenFormat(base44, fragment).catch(() => null);
 
     const felder = {
       name: String(beschreibungKI?.name || '').trim() || 'Neues Aufgabenformat',
