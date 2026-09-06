@@ -355,6 +355,21 @@ export function validateAllgemeineAufgabe(aufgabe) {
     return { isComplete: missingFields.length === 0, missingFields };
   }
 
+  // Aufgabensequenz (2026-09-06): Hier trägt JEDER SCHRITT seine eigene
+  // Aufgabenstellung — die übergeordnete Aufgabenstellung der Aufgabe ist nur
+  // ein optionaler Einleitungstext. Sie als Pflichtfeld zu melden war irre-
+  // führend: Die Lehrkraft sah 15 fertige Schritte und eine Fehlermeldung, die
+  // auf keine Stelle zeigte. Geprüft wird deshalb, dass es überhaupt Schritte
+  // gibt; deren Vollständigkeit zeigt die Werkstatt Schritt für Schritt an.
+  if (aufgabe.aufgaben_modus === 'sequenz') {
+    const schritte = Array.isArray(aufgabe.sequenz_schritte) ? aufgabe.sequenz_schritte : [];
+    if (schritte.length === 0) {
+      missingFields.push(miss('sequenz_schritte', 'Schritte', 'Die Aufgabe hat noch keinen Schritt'));
+    }
+    missingFields.push(...brianMissing);
+    return { isComplete: missingFields.length === 0, missingFields };
+  }
+
   // Manueller Modus — typabhängig:
   switch (typ) {
     case 'inhalt':

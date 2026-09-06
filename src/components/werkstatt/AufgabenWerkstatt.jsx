@@ -324,6 +324,13 @@ export default function AufgabenWerkstatt({
               </SelectContent>
             </Select>
 
+            {/* Schwierigkeit steht offen im Kopf — im Akkordeon versteckt war
+                sie für Sequenzen praktisch nicht zu finden. */}
+            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
+              <span className="text-[11px] text-slate-500">Schwierigkeit</span>
+              <SternRating value={schwierigkeit} onChange={setSchwierigkeit} disabled={isReleased} />
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -335,9 +342,6 @@ export default function AufgabenWerkstatt({
               {gewaehlteKategorie
                 ? <>{gewaehlteKategorie.emoji} {gewaehlteKategorie.label}</>
                 : 'Noch keine Kategorie gewählt'}
-              {schwierigkeit ? (
-                <span className="text-amber-500">{'★'.repeat(schwierigkeit)}</span>
-              ) : null}
               {kopfOffen ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
             </Button>
           </div>
@@ -361,16 +365,6 @@ export default function AufgabenWerkstatt({
                   rows={3}
                   disabled={isReleased}
                 />
-              </div>
-
-              {/* Schwierigkeit: Sie war seit dem Wegfall der alten Reiter bei
-                  Sequenzen nirgends mehr erreichbar. Gehört zur ganzen Folge,
-                  nicht zu einem Schritt. */}
-              <div className="space-y-1">
-                <p className="text-[11px] text-slate-500">
-                  Wie anspruchsvoll ist diese Aufgabe? (optional)
-                </p>
-                <SternRating value={schwierigkeit} onChange={setSchwierigkeit} />
               </div>
 
               <div className="border-t border-slate-100 pt-3 space-y-2">

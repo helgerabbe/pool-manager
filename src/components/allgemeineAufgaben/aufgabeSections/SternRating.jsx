@@ -5,15 +5,16 @@ import React from 'react';
  * Kleines 1–3 Sterne-Rating mit Reset.
  * 1:1 aus AufgabeCreateView extrahiert.
  */
-export default function SternRating({ value, onChange }) {
+export default function SternRating({ value, onChange, disabled = false }) {
   return (
     <div className="flex items-center gap-2">
       {[1, 2, 3].map((star) => (
         <button
           key={star}
           type="button"
+          disabled={disabled}
           onClick={() => onChange(value === star ? null : star)}
-          className={`text-2xl transition-transform hover:scale-110 ${
+          className={`text-2xl transition-transform hover:scale-110 disabled:cursor-default disabled:hover:scale-100 ${
             value && value >= star ? 'text-amber-400' : 'text-gray-300'
           }`}
           title={`${star} Stern${star > 1 ? 'e' : ''}`}
