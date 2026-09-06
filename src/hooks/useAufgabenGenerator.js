@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { fetchEventSource } from '@microsoft/fetch-event-source';
-import { base44 } from '@/api/base44Client';
+import { ASSISTENT_ENDPOINT, assistentHeaders } from '@/lib/assistentEndpunkt';
 import { fehlerText, verbindungsFehlerText } from '@/lib/assistentFehler';
 
 /**
@@ -13,24 +13,6 @@ import { fehlerText, verbindungsFehlerText } from '@/lib/assistentFehler';
  * Diese Datei ist die EINZIGE Stelle im Frontend, die den Endpunkt kennt.
  * Beim Umzug nach Vercel wird hier eine Zeile getauscht.
  */
-
-const ENDPOINT = '/functions/aufgabeGeneratorChat';
-
-/** Holt einen gültigen Token — gleiche Logik wie useRealtimeUpdates. */
-async function holeToken() {
-  try {
-    const keys = Object.keys(localStorage);
-    const tokenKey = keys.find((k) => k.startsWith('base44_') && k.endsWith('_token'));
-    if (tokenKey) {
-      const t = localStorage.getItem(tokenKey);
-      if (t) return t;
-    }
-  } catch { /* Storage gesperrt */ }
-  try {
-    if (typeof base44.auth?.getToken === 'function') return await base44.auth.getToken();
-  } catch { /* ignorieren */ }
-  return null;
-}
 
 export default function useAufgabenGenerator({ kontext = {}, startFragment = '' } = {}) {
   const [verlauf, setVerlauf] = useState([]);        // [{ rolle:'lehrkraft'|'ki', text }]
@@ -99,15 +81,11 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     let gesammelt = '';
 
     try {
-      const token = await holeToken();
-      await fetchEventSource(ENDPOINT, {
+      await fetchEventSource(ASSISTENT_ENDPOINT, {
         method: 'POST',
         signal: ctrl.signal,
         openWhenHidden: true,
-        headers: {
-          'content-type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: await assistentHeaders(),
         credentials: 'include',
         body: JSON.stringify({
           nachricht: text,
