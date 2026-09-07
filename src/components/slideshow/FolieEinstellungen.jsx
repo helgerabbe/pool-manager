@@ -30,6 +30,9 @@ export default function FolieEinstellungen({ folie, onChange }) {
       <div className="space-y-2">
         <Label className="text-xs">Vorlage</Label>
         <VorlageWahl kompakt value={folie.vorlage} onSelect={(key) => onChange(folieMitVorlage(folie, key))} />
+        <p className="text-[11px] text-muted-foreground">
+          Du kannst das Design jederzeit wechseln – auch nachträglich. Texte und Bilder, für die das neue Design keinen Platz hat, werden nur ausgeblendet und kommen zurück, sobald du wieder ein passendes Design wählst.
+        </p>
       </div>
 
       <div className="space-y-2">

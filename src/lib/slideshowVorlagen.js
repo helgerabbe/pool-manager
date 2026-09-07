@@ -115,14 +115,49 @@ export function neueFolie(vorlageKey = 'text') {
   };
 }
 
-/** Vorlage wechseln: Elemente mit gleichem Slot-Namen bleiben erhalten. */
+/**
+ * Verwandte Slots: Beim Vorlagenwechsel wandert der Inhalt in den nächsten
+ * passenden Platz, wenn die neue Vorlage den alten Slot nicht kennt (z. B.
+ * „text" → „links"). Erste Übereinstimmung gewinnt.
+ */
+const VERWANDTE_SLOTS = {
+  ueberschrift: ['titel', 'text'],
+  titel: ['ueberschrift'],
+  untertitel: ['bildunterschrift', 'text', 'links'],
+  text: ['links', 'rechts', 'untertitel', 'bildunterschrift'],
+  links: ['text', 'rechts'],
+  rechts: ['text', 'links'],
+  bildunterschrift: ['untertitel', 'text'],
+  bild: [],
+};
+
+/**
+ * Vorlage wechseln — VERLUSTFREI: Alle bisherigen Elemente bleiben im
+ * Datensatz erhalten, auch wenn die neue Vorlage den Platz nicht hat. Sie
+ * werden nur nicht angezeigt und kehren zurück, sobald wieder eine Vorlage mit
+ * diesem Platz gewählt wird. Nichts, was die Lehrkraft geschrieben oder
+ * hochgeladen hat, darf durch einen Layoutwechsel verschwinden.
+ *
+ * Zusätzlich wandert Inhalt in verwandte Plätze, damit der Wechsel nach dem
+ * Schreiben sichtbar etwas bewirkt statt scheinbar alles zu leeren.
+ */
 export function folieMitVorlage(folie, vorlageKey) {
   const v = getVorlage(vorlageKey);
-  const elemente = {};
+  const alt = { ...(folie?.elemente || {}) };
+  const elemente = { ...alt };
+  const vergeben = new Set();
+
   v.slots.forEach((s) => {
-    const alt = folie?.elemente?.[s.key];
-    if (alt) elemente[s.key] = alt;
+    if (alt[s.key]) { vergeben.add(s.key); return; }
+    const quelle = (VERWANDTE_SLOTS[s.key] || [])
+      .find((k) => alt[k] && !vergeben.has(k)
+        && (s.art === 'bild' ? !!alt[k].url : !!textAusHtml(alt[k].html)));
+    if (quelle) {
+      elemente[s.key] = alt[quelle];
+      vergeben.add(quelle);
+    }
   });
+
   return { ...folie, vorlage: v.key, elemente, reihenfolge: v.slots.map((s) => s.key) };
 }
 
