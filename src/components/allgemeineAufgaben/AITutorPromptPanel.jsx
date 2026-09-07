@@ -324,6 +324,10 @@ export default function AITutorPromptPanel({
           system_instruction: updates.brian_system_instruction,
           completion_rule: updates.brian_completion_rule,
           generiert_am: new Date().toISOString(),
+          // Neu gewürfelte Codes MÜSSEN in derselben Meldung nach oben gehen:
+          // zwei getrennte Meldungen im selben Render überschreiben sich, und
+          // die Codes wären beim Übernehmen wieder weg.
+          ...(schluesselOverride ? { schluessel: schluesselOverride } : {}),
         });
         setIsDirty(false);
         toast.success('Brian-Felder erzeugt. Zum Sichern noch speichern.');
@@ -480,9 +484,9 @@ export default function AITutorPromptPanel({
             istGenerierend={isGenerating}
             onChange={(neu) => {
               setSchluessel(neu);
-              onBrianChange({ schluessel: neu });
               // Die Codes stehen wortgetreu in den Brian-Feldern — nach dem
-              // Würfeln sofort neu erzeugen, statt es der Lehrkraft zu überlassen.
+              // Würfeln sofort neu erzeugen. Codes und Felder gehen dabei in
+              // EINER Meldung nach oben (siehe handleGenerate).
               handleGenerate(neu);
             }}
           />
