@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, AlertCircle, Trash2, Plus, Sparkles, X } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import ReleaseStatusToggle from '@/components/workspace/ReleaseStatusToggle';
+import PaareListeEinfuegen from '@/components/workspace/matchterms/PaareListeEinfuegen';
 import { toast } from 'sonner';
 
 // ── Manueller Editor ──────────────────────────────────────────────────────────
@@ -51,6 +52,16 @@ function ManualEditor({ data, onChange }) {
   });
   const updatePair = (idx, side, val) => setPairs(p => p.map((item, i) => i === idx ? { ...item, [side]: val } : item));
   const removePair = (idx) => setPairs(p => p.filter((_, i) => i !== idx));
+  const addPairList = (neue) => setPairs(p => {
+    const platz = Math.max(0, MAX_PAIRS - p.length);
+    const genommen = neue.slice(0, platz);
+    if (neue.length > genommen.length) {
+      toast.warning(`Nur ${genommen.length} ${genommen.length === 1 ? 'Paar' : 'Paare'} übernommen — Maximum ${MAX_PAIRS}.`);
+    } else {
+      toast.success(`${genommen.length} ${genommen.length === 1 ? 'Paar' : 'Paare'} übernommen.`);
+    }
+    return [...p, ...genommen];
+  });
 
   const addDistractor = () => setDistractors(d => [...d, '']);
   const updateDistractor = (idx, val) => setDistractors(d => d.map((item, i) => i === idx ? val : item));
@@ -88,6 +99,7 @@ function ManualEditor({ data, onChange }) {
             <Plus className="w-3 h-3" /> Paar hinzufügen
           </Button>
         </div>
+        <PaareListeEinfuegen onAdd={addPairList} freieSlots={Math.max(0, MAX_PAIRS - pairs.length)} />
         {pairs.length === 0 && (
           <p className="text-xs text-muted-foreground italic py-2 text-center">Noch keine Paare. Klicke auf „Paar hinzufügen".</p>
         )}
@@ -343,7 +355,10 @@ export default function MatchTermsModal({
     setSavedReleased(src.content_status === 'approved');
     setEditorData({ instruction: src.instruction || '', pairs, distractors });
     setEditorKey(k => k + 1); // Editor mit frischen DB-Inhalten neu aufsetzen
-    setActiveTab('manual');
+    // Der Reiter wird NUR beim Öffnen gesetzt. Bei einer noch leeren Aufgabe
+    // läuft dieser Effekt bei jedem Refetch erneut — früher sprang die
+    // Lehrkraft dadurch alle paar Sekunden aus dem KI-Assistenten zurück.
+    if (justOpened) { setActiveTab('manual'); }
     setDeleteConfirm(false);
   }, [open, initialData]);
 
