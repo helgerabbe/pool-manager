@@ -141,8 +141,10 @@ Deno.serve(async (req) => {
     let touchedMasterId = null;
     let touchedMasterIsComplete = null;
 
-    // ── Bei update: inhaltliche Vollständigkeitsprüfung ────────────────────
-    if (eventType === 'update' && masterData) {
+    // ── Bei create/update: inhaltliche Vollständigkeitsprüfung ─────────────
+    // Auch beim Anlegen nötig: Master, die mit fertigen Inhalten entstehen
+    // (z. B. aus einer umgewandelten Kopie), wären sonst dauerhaft „unvollständig".
+    if ((eventType === 'update' || eventType === 'create') && masterData) {
       const masterId = event.entity_id || masterData.id;
       if (masterId) {
         // Master FRISCH aus der DB lesen (nicht dem Payload vertrauen).
