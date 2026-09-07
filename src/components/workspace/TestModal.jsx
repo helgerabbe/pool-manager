@@ -26,9 +26,14 @@ export default function TestModal({
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
+  // NUR beim Öffnen zurücksetzen. `initialData` kommt als neues Objekt bei
+  // jedem Rendern des Elternteils (Hintergrund-Refetch alle 5 Sek.) — stünde
+  // es in den Abhängigkeiten, würde der Bearbeitungsstand laufend auf den
+  // Ausgangsstand zurückfallen und beim Speichern leer überschrieben.
   useEffect(() => {
     if (open) setEditorData(initialData);
-  }, [open, initialData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   return (
     <BaseActivityModal
