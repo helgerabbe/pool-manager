@@ -20,7 +20,68 @@ export function buildKlonPromptSchema(fieldValues = {}, count = 1, hint = '') {
   const fokus = hint ? `\nThematischer Fokus: ${hint}` : '';
   const kopf = `${BASIS_REGELN}\n\nErstelle genau ${count} Variation(en).${fokus}\n`;
 
-  // ── Quiz-Formate (Miniquiz, Multiple-Choice, Test): questions[] ──
+  // ── Test-Format: questions[] mit `type` (mc | true_false | solution_word)
+  //    und Antwortoptionen in `options`. MUSS vor dem Quiz-Zweig stehen,
+  //    sonst würden die Antworten in ein falsches Feld (`answers`) wandern
+  //    und die Kopie hätte Fragen ohne Antworten.
+  if (Array.isArray(fieldValues.questions) &&
+      fieldValues.questions.some(q => q?.type || Array.isArray(q?.options))) {
+    return {
+      prompt: `${kopf}
+FORMAT: Test mit genau ${fieldValues.questions.length} Frage(n). Behalte für JEDE Frage den Fragetyp ("type") und die Punktzahl ("points") des Originals bei.
+- type "mc": Feld "options" mit genau so vielen Optionen wie im Original, genau eine mit isCorrect: true (Position variieren).
+- type "true_false": Feld "correctAnswer" (boolean) und kurze "explanation".
+- type "solution_word": Feld "expectedAnswer" (ein Wort/kurzer Begriff).
+Jede Frage MUSS ihre Antwort(en) enthalten — Fragen ohne Antworten sind unbrauchbar.
+${fieldValues.instruction ? `Übernimm eine sinngemäß gleiche Arbeitsanweisung wie: "${fieldValues.instruction}"` : ''}
+
+ORIGINAL-AUFGABE:
+${JSON.stringify(fieldValues)}
+
+Antworte als JSON mit einem "klone"-Array, jedes Element: { "instruction": string, "questions": [{ "type": "mc"|"true_false"|"solution_word", "question": string, "points": number, "options"?: [{ "text": string, "isCorrect": boolean }], "correctAnswer"?: boolean, "explanation"?: string, "expectedAnswer"?: string }] }`,
+      schema: {
+        type: 'object',
+        properties: {
+          klone: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                instruction: { type: 'string' },
+                questions: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      type: { type: 'string', enum: ['mc', 'true_false', 'solution_word'] },
+                      question: { type: 'string' },
+                      points: { type: 'number' },
+                      options: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: { text: { type: 'string' }, isCorrect: { type: 'boolean' } },
+                          required: ['text', 'isCorrect'],
+                        },
+                      },
+                      correctAnswer: { type: 'boolean' },
+                      explanation: { type: 'string' },
+                      expectedAnswer: { type: 'string' },
+                    },
+                    required: ['type', 'question'],
+                  },
+                },
+              },
+              required: ['questions'],
+            },
+          },
+        },
+        required: ['klone'],
+      },
+    };
+  }
+
+  // ── Quiz-Formate (Miniquiz, Multiple-Choice): questions[] mit answers[] ──
   if (Array.isArray(fieldValues.questions)) {
     const fragenAnzahl = fieldValues.questions.length;
     const antwortAnzahl = fieldValues.questions[0]?.answers?.length || 4;

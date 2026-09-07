@@ -176,6 +176,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
   const removeDistractor = (idx) => setData(d => ({ ...d, distractors: d.distractors.filter((_, i) => i !== idx) }));
 
   const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Implizites Locking: Lock erwerben → richtiges Modal öffnen
   const handleEditKlon = async () => {
@@ -294,6 +295,19 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               {acquiringLock
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Sperren…</>
                 : <><Pencil className="w-3.5 h-3.5" /> Kopie bearbeiten</>}
+            </Button>
+          )}
+          {/* Kopien müssen sich immer löschen lassen – unabhängig vom Aufgabentyp. */}
+          {kannBearbeiten && !lockedByOther && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={deleteMutation.isPending}
+              className="gap-1.5 text-destructive border-destructive/40 hover:bg-red-50"
+              title="Diese Kopie löschen"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Kopie löschen
             </Button>
           )}
         </div>
@@ -530,6 +544,27 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
         )}
       </div>
       </div>
+
+      {/* Bestätigungsdialog: Kopie löschen */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kopie {klon.klon_index} löschen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Diese Kopie wird dauerhaft entfernt. Die Masteraufgabe bleibt bestehen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteMutation.mutate()}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Ja, löschen
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Bestätigungsdialog: Klon → Masteraufgabe */}
       <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
