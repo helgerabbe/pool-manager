@@ -19,6 +19,7 @@ import TranskriptField, { shouldShowTranskript } from '@/components/workspace/ki
 import TextLesenAIGeneratorPanel from '@/components/workspace/TextLesenAIGeneratorPanel';
 import TextLesenBilderUploader from '@/components/workspace/TextLesenBilderUploader';
 import BildEinfuegenFeld from '@/components/workspace/BildEinfuegenFeld';
+import FormatierbaresTextfeld from '@/components/workspace/FormatierbaresTextfeld';
 import KompaktwissenGrafikFeld from '@/components/workspace/KompaktwissenGrafikFeld';
 import KompaktwissenVorlageBox from '@/components/workspace/KompaktwissenVorlageBox';
 import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
@@ -286,6 +287,26 @@ export default function TextLesenModal({
                 out.push(
                   <div key={field.field_name} className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
                     {field.label}
+                  </div>
+                );
+              } else if (
+                (catalogEntry?.name || '').toLowerCase().includes('ki-tutor')
+                && field.field_name === 'instruction'
+              ) {
+                // Aufgabenstellung der Brian-Aufgabe: mit Fett-/Kursiv-Knöpfen,
+                // damit längere Texte für die Schüler gegliedert werden können.
+                out.push(
+                  <div key={field.field_name} className="space-y-1.5">
+                    <Label>
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-1">*</span>}
+                    </Label>
+                    <FormatierbaresTextfeld
+                      value={fieldValues.instruction || ''}
+                      onChange={(val) => handleFieldChange('instruction', val)}
+                      placeholder={field.placeholder || ''}
+                      disabled={isSaving || exportLocked}
+                    />
                   </div>
                 );
               } else {

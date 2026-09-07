@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import EinfachFormatierterText from './EinfachFormatierterText';
 import HinweisBox from './HinweisBox';
 import BrianSchluesselEingabe from './BrianSchluesselEingabe';
 import BrianAnweisungKopieren from './BrianAnweisungKopieren';
@@ -53,7 +54,9 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
         <div className="space-y-5 pb-2">
           {/* Aufgabenstellung – einheitlicher blauer Anker. */}
           {fv.instruction && (
-            <AufgabenstellungBox>{fv.instruction}</AufgabenstellungBox>
+            <AufgabenstellungBox>
+              <EinfachFormatierterText text={fv.instruction} />
+            </AufgabenstellungBox>
           )}
 
           {/* Hinweis: Wechsel zu Brian – gelber Anker mit Brian-Logo. */}
