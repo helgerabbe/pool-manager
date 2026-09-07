@@ -16,7 +16,9 @@ export default function AufgabenstellungBox({ children, className = '' }) {
       </span>
       <div className="min-w-0 pt-0.5">
         <p className="text-[11px] font-bold uppercase tracking-wide text-blue-700/80 mb-0.5">Deine Aufgabe</p>
-        <div className="text-sm text-blue-900 leading-relaxed">{children}</div>
+        {/* whitespace-pre-line: Absätze und Zeilenumbrüche aus der
+            Aufgabenstellung der Lehrkraft bleiben für die Schüler erhalten. */}
+        <div className="text-sm text-blue-900 leading-relaxed whitespace-pre-line">{children}</div>
       </div>
     </div>
   );
