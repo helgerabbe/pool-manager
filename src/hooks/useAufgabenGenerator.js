@@ -21,6 +21,9 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
   );
   const [index, setIndex] = useState(startFragment ? 0 : -1);
   const [teilAntwort, setTeilAntwort] = useState('');  // strömt während der Antwort
+  // Baufortschritt in der stillen Codephase: { zeichen, sekunden } — kommt
+  // alle zwei Sekunden vom Server und hält zugleich die Leitung offen.
+  const [fortschritt, setFortschritt] = useState(null);
   const [busy, setBusy] = useState(false);
   const [fehler, setFehler] = useState(null);
   // Bei einem Fehler geht die getippte Nachricht sonst verloren — die
@@ -37,6 +40,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     abortRef.current = null;
     setBusy(false);
     setTeilAntwort('');
+    setFortschritt(null);
   }, []);
 
   const springeZu = useCallback((i) => {
@@ -91,6 +95,10 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     // abgeschnittener Strom (z. B. Zeitgrenze der Function) stillschweigend:
     // Das Gespräch hörte einfach auf, ohne Antwort und ohne Fehler.
     let hatErgebnis = false;
+    // Kam ein ausdrücklicher Serverfehler? Dann darf ihn die allgemeine
+    // „Verbindung abgerissen"-Meldung nicht überdecken — sonst sucht man an
+    // der falschen Stelle.
+    let hatServerFehler = false;
 
     try {
       await fetchEventSource(ASSISTENT_ENDPOINT, {
@@ -121,11 +129,14 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
             const { text: stueck } = JSON.parse(ev.data);
             gesammelt += stueck;
             setTeilAntwort(gesammelt);
+          } else if (ev.event === 'fortschritt') {
+            setFortschritt(JSON.parse(ev.data));
           } else if (ev.event === 'ergebnis') {
             const d = JSON.parse(ev.data);
             hatErgebnis = true;
             setVerlauf((v) => [...v, { rolle: 'ki', text: d.antwort || gesammelt || 'Fertig.' }]);
             setTeilAntwort('');
+            setFortschritt(null);
             if (d.warnungen?.length) setWarnungen(d.warnungen);
             if (d.geaendert && d.fragment) {
               setStaende((alt) => {
@@ -140,7 +151,8 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
             }
           } else if (ev.event === 'fehler') {
             const d = JSON.parse(ev.data);
-            setFehler(d.error || 'Unbekannter Fehler.');
+            hatServerFehler = true;
+            setFehler(`Beim Bauen ist ein Fehler aufgetreten: ${d.error || 'Unbekannter Fehler.'}`);
           }
         },
         onerror: (err) => {
@@ -156,7 +168,9 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
         if (gesammelt.trim()) {
           setVerlauf((v) => [...v, { rolle: 'ki', text: gesammelt }]);
         }
-        setFehler('Die Verbindung ist mitten in der Antwort abgerissen — die Aufgabe wurde nicht fertig gebaut. Versuchen Sie es noch einmal, am besten mit einem kleineren Auftrag.');
+        if (!hatServerFehler) {
+          setFehler('Die Verbindung ist mitten in der Antwort abgerissen — die Aufgabe wurde nicht fertig gebaut. Versuchen Sie es noch einmal, am besten mit einem kleineren Auftrag.');
+        }
         setFehlgeschlagen(text);
       }
     } catch (err) {
@@ -175,6 +189,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
     } finally {
       setBusy(false);
       setTeilAntwort('');
+      setFortschritt(null);
       abortRef.current = null;
     }
   }, [busy, fragment, kontext, verlauf]);
@@ -187,6 +202,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
   return {
     verlauf,
     teilAntwort,
+    fortschritt,
     fragment,
     staende,
     index,

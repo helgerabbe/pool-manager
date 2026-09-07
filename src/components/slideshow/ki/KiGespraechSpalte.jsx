@@ -9,6 +9,7 @@ import { Send, Loader2, RotateCcw, AlertTriangle, Sparkles, Square } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import KiBilderSammlung from '@/components/slideshow/ki/KiBilderSammlung';
+import BauFortschritt from '@/components/werkstatt/BauFortschritt';
 import { cn } from '@/lib/utils';
 
 const STARTHILFEN = [
@@ -75,6 +76,7 @@ export default function KiGespraechSpalte({ gen, startvorschlaege = STARTHILFEN 
         {gen.busy && (
           <div className="rounded-lg bg-muted px-3 py-2 text-sm mr-6 whitespace-pre-wrap leading-relaxed">
             {gen.teilAntwort || <span className="inline-flex items-center gap-2 text-muted-foreground"><Loader2 className="w-3.5 h-3.5 animate-spin" /> Die Folien werden gebaut …</span>}
+            <BauFortschritt fortschritt={gen.fortschritt} was="den Foliensatz" />
           </div>
         )}
 

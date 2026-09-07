@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, AlertTriangle, RotateCcw } from 'lucide-react';
+import BauFortschritt from '@/components/werkstatt/BauFortschritt';
 
 /**
  * GespraechsSpalte
@@ -64,6 +65,7 @@ export default function GespraechsSpalte({
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> denkt nach…
               </span>
             )}
+            <BauFortschritt fortschritt={gen.fortschritt} />
           </div>
         )}
 

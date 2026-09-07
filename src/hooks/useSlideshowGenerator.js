@@ -23,6 +23,7 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
   const [index, setIndex] = useState(startFolien?.length ? 0 : -1);
   const [bilder, setBilder] = useState([]);              // [{ url, label }]
   const [teilAntwort, setTeilAntwort] = useState('');
+  const [fortschritt, setFortschritt] = useState(null);   // { zeichen, sekunden }
   const [busy, setBusy] = useState(false);
   const [fehler, setFehler] = useState(null);
   const [fehlgeschlagen, setFehlgeschlagen] = useState(null);
@@ -70,6 +71,7 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
     abortRef.current = ctrl;
     let gesammelt = '';
     let hatErgebnis = false;
+    let hatServerFehler = false;
 
     try {
       await fetchEventSource(ENDPOINT, {
@@ -94,11 +96,14 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
           if (ev.event === 'chunk') {
             gesammelt += JSON.parse(ev.data).text;
             setTeilAntwort(gesammelt);
+          } else if (ev.event === 'fortschritt') {
+            setFortschritt(JSON.parse(ev.data));
           } else if (ev.event === 'ergebnis') {
             const d = JSON.parse(ev.data);
             hatErgebnis = true;
             setVerlauf((v) => [...v, { rolle: 'ki', text: d.antwort || gesammelt || 'Fertig.' }]);
             setTeilAntwort('');
+            setFortschritt(null);
             if (d.warnungen?.length) setWarnungen(d.warnungen);
             if (d.geaendert && d.folien?.length) {
               setStaende((alt) => {
@@ -111,7 +116,8 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
               });
             }
           } else if (ev.event === 'fehler') {
-            setFehler(JSON.parse(ev.data).error || 'Unbekannter Fehler.');
+            hatServerFehler = true;
+            setFehler(`Beim Bauen ist ein Fehler aufgetreten: ${JSON.parse(ev.data).error || 'Unbekannter Fehler.'}`);
           }
         },
         onerror: (err) => { throw err; },
@@ -119,7 +125,9 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
 
       if (!hatErgebnis && !ctrl.signal.aborted) {
         if (gesammelt.trim()) setVerlauf((v) => [...v, { rolle: 'ki', text: gesammelt }]);
-        setFehler('Die Verbindung ist mitten in der Antwort abgerissen — der Foliensatz wurde nicht fertig. Versuchen Sie es noch einmal, am besten mit weniger Folien.');
+        if (!hatServerFehler) {
+          setFehler('Die Verbindung ist mitten in der Antwort abgerissen — der Foliensatz wurde nicht fertig. Versuchen Sie es noch einmal, am besten mit weniger Folien.');
+        }
         setFehlgeschlagen(text);
       }
     } catch (err) {
@@ -134,6 +142,7 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
     } finally {
       setBusy(false);
       setTeilAntwort('');
+      setFortschritt(null);
       abortRef.current = null;
     }
   }, [busy, folien, kontext, verlauf, bilder]);
@@ -143,7 +152,7 @@ export default function useSlideshowGenerator({ kontext = {}, startFolien = [] }
   }, [fehlgeschlagen, senden]);
 
   return {
-    verlauf, teilAntwort, folien, staende, index, bilder,
+    verlauf, teilAntwort, fortschritt, folien, staende, index, bilder,
     busy, fehler, fehlgeschlagen, warnungen,
     senden, nochmalVersuchen, springeZu, abbrechen,
     bildHinzufuegen, bildEntfernen,

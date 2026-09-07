@@ -51,3 +51,49 @@ export function saeubereBlock(code) {
 export function sseEvent(name, daten) {
   return `event: ${name}\ndata: ${JSON.stringify(daten)}\n\n`;
 }
+
+/**
+ * Entfernt ein angebrochenes schließendes Tag am Ende eines live gestreamten
+ * Antwort-Textes („…gebaut.</antw"). Ohne das stand der Tag-Rest sichtbar im
+ * Gespräch, sobald die Verbindung genau dort abriss.
+ */
+export function ohneAngebrochenesTag(text) {
+  const s = String(text);
+  const m = s.match(/<\/?[a-z]*$/i);
+  return m ? s.slice(0, m.index) : s;
+}
+
+/**
+ * Herzschlag während der stillen Bauphase.
+ *
+ * Nach dem <antwort>-Text schreibt das Modell minutenlang Code, von dem NICHTS
+ * an den Browser geht — für jeden Zwischenproxy sieht die Verbindung dann tot
+ * aus und wird gekappt („Die Verbindung ist mitten in der Antwort
+ * abgerissen"). Deshalb geht alle zwei Sekunden ein kleines
+ * `fortschritt`-Ereignis raus (Zeichen bisher, Sekunden bisher). Das hält die
+ * Leitung offen und zeigt der Lehrkraft, dass gebaut wird.
+ *
+ * @returns {() => void} stoppt den Herzschlag
+ */
+export function starteHerzschlag(controller, enc, status, intervallMs = 2000) {
+  const start = Date.now();
+  const timer = setInterval(() => {
+    try {
+      controller.enqueue(enc.encode(sseEvent('fortschritt', {
+        zeichen: status(),
+        sekunden: Math.round((Date.now() - start) / 1000),
+      })));
+    } catch (_e) { /* Strom bereits geschlossen */ }
+  }, intervallMs);
+  return () => clearInterval(timer);
+}
+
+/**
+ * Zeitbudget eines Generator-Aufrufs. Backend-Funktionen werden nach fünf
+ * Minuten hart beendet — dann käme gar kein Ergebnis mehr, nicht einmal eine
+ * Fehlermeldung. Wir hören deshalb rechtzeitig vorher auf und melden es
+ * sauber. Der Rest ist Reserve für Anlauf, Auswertung und Übertragung.
+ */
+export const ZEITBUDGET_MS = 4 * 60 * 1000 + 20 * 1000;
+
+export const ZEITBUDGET_WARNUNG = 'Der Bau hat zu lange gedauert und wurde abgebrochen, bevor er fertig war. Bitten Sie um eine kompaktere Fassung (weniger Elemente, weniger Erklärtext) oder teilen Sie die Aufgabe in zwei Schritte.';

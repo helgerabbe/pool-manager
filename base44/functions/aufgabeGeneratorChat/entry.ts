@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   hatAssistentZugriff, tagInhalt, saeubereBlock, sseEvent,
+  ohneAngebrochenesTag, starteHerzschlag, ZEITBUDGET_MS, ZEITBUDGET_WARNUNG,
 } from '../../shared/assistentProtokoll.js';
 
 /**
@@ -70,6 +71,14 @@ Ein HTML-FRAGMENT — kein vollständiges Dokument.
 - JavaScript in genau einem <script>-Block am Ende des divs. Kein Zugriff auf document.body, document.head oder Elemente außerhalb des Fragments; arbeite ausschließlich innerhalb von .aufgabe.
 - KEINE externen Dateien, keine CDNs, keine Bilder von außen, keine Netzwerkaufrufe. Alles muss offline im iframe laufen. Grafik erzeugst du mit CSS oder inline-SVG.
 - KEINE Navigation, KEINE Kopf- oder Fußzeile, KEIN "Zurück"- oder "Erledigt"-Knopf. Die Plattform liefert das drumherum.
+
+# KNAPP BAUEN — DAS IST WICHTIG
+Die Ausgabe wird live übertragen; jedes Zeichen kostet Zeit, und nach wenigen Minuten wird die Verbindung beendet. Deshalb:
+- KEINE Kommentare im HTML, CSS oder JavaScript. Kein erklärender Text im Code.
+- Kompaktes CSS: nur Regeln, die sichtbar etwas bewirken; keine Reset-Blöcke, keine Alternativen für Browser, die es nicht braucht.
+- Kompaktes JavaScript: kurze Funktionen, keine Hilfsfunktionen für Einmaliges, keine Konsolenausgaben, keine Fehlerbehandlung für Fälle, die nicht eintreten können.
+- Inhalte (Fragen, Aussagen, Hinweise) so kurz wie fachlich vertretbar. Bei zufällig erzeugten Aufgaben: lieber acht gute Einträge als zwanzig.
+- Ziel: Ein vollständiges Fragment ist typischerweise 6.000 bis 12.000 Zeichen lang. Wird es deutlich länger, kürze — die Aufgabe kommt sonst nicht fertig an.
 
 # GESTALTUNG
 - Benutze für Farben, Abstände und Schrift bevorzugt CSS-Variablen (z. B. var(--color-primary, #2563eb)) IMMER mit sinnvollem Fallback. So fügt sich die Aufgabe später in das Layout des Kurses ein, sieht aber schon in der Vorschau gut aus.
@@ -618,7 +627,7 @@ Deno.serve(async (req) => {
           if (!offen) return;
           // Vergisst das Modell das schließende Tag, lief sonst der ganze
           // HTML-Code als „Antwort" durchs Fenster.
-          const jetzt = offen[1].split(/<(?:neu|edit|schritte)>/i)[0];
+          const jetzt = ohneAngebrochenesTag(offen[1].split(/<(?:neu|edit|schritte)>/i)[0]);
           if (jetzt.length > sichtbar.length) {
             const neu = jetzt.slice(sichtbar.length);
             sichtbar = jetzt;
@@ -626,8 +635,18 @@ Deno.serve(async (req) => {
           }
         };
 
+        // Herzschlag: hält die Leitung während der stillen Codephase offen.
+        const stoppeHerzschlag = starteHerzschlag(controller, enc, () => roh.length);
+        const startZeit = Date.now();
+        let zeitUeberschritten = false;
+
         try {
           while (true) {
+            if (Date.now() - startZeit > ZEITBUDGET_MS) {
+              zeitUeberschritten = true;
+              await reader.cancel().catch(() => {});
+              break;
+            }
             const { done, value } = await reader.read();
             if (done) break;
             puffer += dec.decode(value, { stream: true });
@@ -657,9 +676,22 @@ Deno.serve(async (req) => {
               }
             }
           }
+          stoppeHerzschlag();
 
           // ── Auswertung ───────────────────────────────────────────────
           const antwort = tagInhalt(roh, 'antwort') || 'Fertig.';
+
+          if (zeitUeberschritten) {
+            controller.enqueue(enc.encode(sseEvent('ergebnis', {
+              antwort,
+              fragment,
+              schritte: null,
+              geaendert: false,
+              warnungen: [ZEITBUDGET_WARNUNG],
+              tokens,
+            })));
+            return;
+          }
 
           if (istStruktur) {
             const res = leseSchritte(roh, katalogNamen, galerieEintraege);
@@ -687,7 +719,7 @@ Deno.serve(async (req) => {
             if (abgeschnitten || (stopGrund === 'max_tokens' && !komplettNeu && !edits.length)) {
               warnungen.push('Die Antwort war zu lang und wurde abgeschnitten — die Aufgabe wurde nicht fertig gebaut. Bitten Sie um eine kürzere Fassung oder teilen Sie die Aufgabe in zwei Schritte.');
             } else if (komplettNeu) {
-              neuesFragment = saeubere(komplettNeu);
+              neuesFragment = saeubereBlock(komplettNeu);
               geaendert = true;
             } else if (edits.length && fragment) {
               const res = wendeEditsAn(fragment, edits);
@@ -707,6 +739,7 @@ Deno.serve(async (req) => {
         } catch (err) {
           controller.enqueue(enc.encode(sseEvent('fehler', { error: err.message })));
         } finally {
+          stoppeHerzschlag();
           controller.close();
         }
       },

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import {
   hatAssistentZugriff, tagInhalt, saeubereBlock, sseEvent,
+  ohneAngebrochenesTag, starteHerzschlag, ZEITBUDGET_MS, ZEITBUDGET_WARNUNG,
 } from '../../shared/assistentProtokoll.js';
 
 /**
@@ -361,7 +362,7 @@ Deno.serve(async (req) => {
         const sendeAntwortText = () => {
           const offen = roh.match(/<antwort>([\s\S]*?)(<\/antwort>|$)/i);
           if (!offen) return;
-          const jetzt = offen[1].split(/<folien>/i)[0];
+          const jetzt = ohneAngebrochenesTag(offen[1].split(/<folien>/i)[0]);
           if (jetzt.length > sichtbar.length) {
             const neu = jetzt.slice(sichtbar.length);
             sichtbar = jetzt;
@@ -369,8 +370,18 @@ Deno.serve(async (req) => {
           }
         };
 
+        // Herzschlag: hält die Leitung während der stillen JSON-Phase offen.
+        const stoppeHerzschlag = starteHerzschlag(controller, enc, () => roh.length);
+        const startZeit = Date.now();
+        let zeitUeberschritten = false;
+
         try {
           while (true) {
+            if (Date.now() - startZeit > ZEITBUDGET_MS) {
+              zeitUeberschritten = true;
+              await reader.cancel().catch(() => {});
+              break;
+            }
             const { done, value } = await reader.read();
             if (done) break;
             puffer += dec.decode(value, { stream: true });
@@ -401,17 +412,20 @@ Deno.serve(async (req) => {
             }
           }
 
+          stoppeHerzschlag();
           const antwort = tagInhalt(roh, 'antwort') || 'Fertig.';
           // Abgeschnitten: <folien> begonnen, aber nie geschlossen. Ein halber
           // Foliensatz darf NICHT durchgehen.
           const abgeschnitten = /<folien>/i.test(roh) && !/<\/folien>/i.test(roh);
 
-          if (abgeschnitten || stopGrund === 'max_tokens') {
+          if (zeitUeberschritten || abgeschnitten || stopGrund === 'max_tokens') {
             controller.enqueue(enc.encode(sseEvent('ergebnis', {
               antwort,
               folien: null,
               geaendert: false,
-              warnungen: ['Die Antwort war zu lang und wurde abgeschnitten — der Foliensatz wurde nicht fertig. Bitten Sie um weniger Folien oder lassen Sie das Thema in zwei Teilen bauen.'],
+              warnungen: [zeitUeberschritten
+                ? ZEITBUDGET_WARNUNG
+                : 'Die Antwort war zu lang und wurde abgeschnitten — der Foliensatz wurde nicht fertig. Bitten Sie um weniger Folien oder lassen Sie das Thema in zwei Teilen bauen.'],
               tokens,
             })));
           } else {
@@ -427,6 +441,7 @@ Deno.serve(async (req) => {
         } catch (err: any) {
           controller.enqueue(enc.encode(sseEvent('fehler', { error: err.message })));
         } finally {
+          stoppeHerzschlag();
           controller.close();
         }
       },
