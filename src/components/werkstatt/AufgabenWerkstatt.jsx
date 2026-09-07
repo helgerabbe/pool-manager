@@ -81,6 +81,11 @@ export default function AufgabenWerkstatt({
   // Aufgaben-Assistent: -1 = neuen Schritt anhängen, >=0 = diesen ersetzen
   // (Format wechseln). null = zu.
   const [assistentZiel, setAssistentZiel] = useState(null);
+  /* Datenbank-ID der Aufgabe. Eigener Zustand, weil die Werkstatt jetzt
+     SELBST anlegt: Wird ein Schritt übernommen, bevor die Aufgabe je
+     gespeichert wurde, entsteht der Datensatz sofort — und alle weiteren
+     Sicherungen laufen dann als Änderung auf dieser ID. */
+  const [aufgabeId, setAufgabeId] = useState(initialData?.id || null);
 
   useEffect(() => {
     if (!open) return;
@@ -98,6 +103,7 @@ export default function AufgabenWerkstatt({
     setPlanerOffen(false);
     setGeneratorOffen(false);
     setAssistentZiel(null);
+    setAufgabeId(initialData?.id || null);
     // Eine Aufgabe, die schon Schritte hat, wird bearbeitet, nicht neu
     // begonnen — dann direkt in die Werkstatt.
     const hatSchritte = Array.isArray(initialData?.sequenz_schritte)
@@ -227,40 +233,65 @@ export default function AufgabenWerkstatt({
   };
 
   // Einen im Gespräch gebauten Stand in den Schritt übernehmen.
-  /** Ergebnis aus dem Schritt-Fenster zurück in die Folge schreiben. */
+  /**
+   * Ergebnis aus dem Schritt-Fenster zurück in die Folge schreiben — UND
+   * sofort sichern. Vorher lebte fertige Arbeit nur im Speicher: Wer sieben
+   * Schritte gebaut hat und dann das Fenster neu lädt, verlor alles. Ein
+   * bewusst übernommener Schritt ist Arbeit, die nicht mehr verschwinden darf.
+   */
   const schrittUebernehmen = (neuerSchritt) => {
     if (folge.selectedIndex < 0) return;
     folge.aendern(folge.selectedIndex, neuerSchritt);
     setSchrittFensterOffen(false);
-    toast.success('Schritt übernommen. Zum Sichern noch speichern.');
+    const neueFolge = folge.schritte.map((s, i) => (i === folge.selectedIndex ? neuerSchritt : s));
+    if (!isReleased) sichern.mutate(neueFolge);
   };
 
   /* ── Speichern ─────────────────────────────────────────────────────── */
 
-  const gemeinsameFelder = () => ({
+  const gemeinsameFelder = (schritte) => ({
     themenfeld_id: themenfeldId || null,
     titel: titel || null,
     mission_type: missionType || null,
     schwierigkeitsgrad: schwierigkeit ?? null,
     aufgabenstellung: aufgabenstellung || null,
     materialien,
-    sequenz_schritte: folge.schritte,
+    sequenz_schritte: schritte,
+  });
+
+  /** Schreibt den übergebenen Stand in die Datenbank (anlegen oder ändern). */
+  const schreiben = (schritte) => (aufgabeId
+    ? updateAllgemeineAufgabe(aufgabeId, gemeinsameFelder(schritte))
+    : createAllgemeineAufgabe({
+      einheit_id: einheitId,
+      anforderungsebene: defaultAnforderungsebene,
+      aufgaben_typ: 'inhalt',
+      aufgaben_modus: 'sequenz',
+      ...gemeinsameFelder(schritte),
+    }));
+
+  /* Automatische Sicherung nach dem Übernehmen eines Schritts. Bewusst OHNE
+     Schließen und ohne die Aufgabenliste neu zu laden — die Lehrkraft arbeitet
+     weiter, das Fenster darf sich nicht unter ihr neu aufbauen. */
+  const sichern = useMutation({
+    mutationFn: (schritte) => schreiben(schritte),
+    onSuccess: (result) => {
+      if (!aufgabeId && result?.id) setAufgabeId(result.id);
+      folge.alsGespeichertMarkieren();
+      toast.success('Schritt übernommen und gespeichert.');
+    },
+    onError: (err) => toast.error(
+      'Schritt konnte nicht gespeichert werden: ' + (err?.message || 'Unbekannter Fehler')
+      + ' — bitte unten auf „Speichern" drücken.',
+    ),
   });
 
   const speichern = useMutation({
-    mutationFn: () => (initialData?.id
-      ? updateAllgemeineAufgabe(initialData.id, gemeinsameFelder())
-      : createAllgemeineAufgabe({
-        einheit_id: einheitId,
-        anforderungsebene: defaultAnforderungsebene,
-        aufgaben_typ: 'inhalt',
-        aufgaben_modus: 'sequenz',
-        ...gemeinsameFelder(),
-      })),
+    mutationFn: () => schreiben(folge.schritte),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
       folge.alsGespeichertMarkieren();
-      toast.success(initialData?.id ? 'Aufgabe gespeichert' : 'Aufgabe angelegt');
+      toast.success(aufgabeId ? 'Aufgabe gespeichert' : 'Aufgabe angelegt');
       onSuccess?.(result);
       onOpenChange(false);
     },
