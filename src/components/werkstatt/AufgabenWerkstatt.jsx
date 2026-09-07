@@ -507,7 +507,9 @@ export default function AufgabenWerkstatt({
               : (folge.schritte.length === 0
                 ? 'Noch keine Schritte'
                 : `${folge.schritte.length} Schritte${unfertige > 0 ? `, ${unfertige} noch unvollständig` : ''}`)}
-            {folge.dirty && ' · nicht gespeichert'}
+            {sichern.isPending
+              ? ' · wird gesichert…'
+              : (folge.dirty ? ' · nicht gespeichert' : (aufgabeId ? ' · gespeichert' : ''))}
           </p>
           <div className="ml-auto flex items-center gap-2">
             {/* Zurück zum Einstieg — Material und Idee bleiben erreichbar,
@@ -575,7 +577,7 @@ export default function AufgabenWerkstatt({
         open={schrittFensterOffen && !!schritt}
         schritt={schritt}
         nummer={folge.selectedIndex + 1}
-        aufgabeId={initialData?.id}
+        aufgabeId={aufgabeId}
         aufgabenstellung={aufgabenstellung}
         aufgabe={initialData}
         einheit={einheit}
