@@ -35,6 +35,7 @@
  *   - ki_tutor         → KI-Tutor-Platzhalter (LLM-Anbindung extern)
  *   - ki_check         → KI-Check-Platzhalter (LLM-Anbindung extern)
  *   - open_task        → Offene Aufgabe ohne Auto-Korrektur
+ *   - slideshow        → Folien Seite für Seite (feste 960×540-Vorlagen)
  */
 
 import {
@@ -52,6 +53,9 @@ import {
 import {
   PLUGIN_TEST_CSS, PLUGIN_TEST_JS,
 } from '@/lib/runtime/plugin_test';
+import {
+  PLUGIN_SLIDESHOW_CSS, PLUGIN_SLIDESHOW_JS,
+} from '@/lib/runtime/plugin_slideshow';
 
 export const MBK_ACTIVITY_RUNTIME_VERSION = '0.3.0';
 
@@ -266,6 +270,7 @@ export const MBK_ACTIVITY_RUNTIME_CSS = [
   PLUGIN_IMAGE_LABELING_CSS,
   PLUGIN_STATIC_MEDIA_CSS,
   PLUGIN_TEST_CSS,
+  PLUGIN_SLIDESHOW_CSS,
 ].join('\n');
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -858,6 +863,7 @@ export const MBK_ACTIVITY_RUNTIME_JS = [
   PLUGIN_IMAGE_LABELING_JS,
   PLUGIN_STATIC_MEDIA_JS,
   PLUGIN_TEST_JS,
+  PLUGIN_SLIDESHOW_JS,
   CORE_JS_TAIL,
 ].join('\n');
 

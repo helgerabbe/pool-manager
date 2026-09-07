@@ -16,6 +16,7 @@
 
 import { istMaterialBefuellt, istFrageVollstaendig } from '@/lib/materialaufgabe';
 import { istBrianAufgabe, fehlendeBrianFelder } from '@/lib/brianFelder';
+import { folieHatInhalt } from '@/lib/slideshowVorlagen';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -204,9 +205,21 @@ function validateMaterialFragen(data, fieldValues = {}) {
   return null;
 }
 
+/**
+ * Slideshow: mindestens eine Folie mit Inhalt (Text oder Bild).
+ * Struktur: [{ vorlage, elemente: { <slot>: { html } | { url } } }]
+ */
+function validateSlidesData(data) {
+  const folien = Array.isArray(data) ? data : [];
+  const befuellt = folien.filter(folieHatInhalt);
+  if (befuellt.length < 1) return 'Mindestens eine Folie mit Inhalt erforderlich';
+  return null;
+}
+
 // JSON-Validatoren pro field_name. Wenn ein field_name hier nicht gelistet ist,
 // wird der generische „nicht leer"-Check verwendet.
 const JSON_FIELD_VALIDATORS = {
+  slides: validateSlidesData,
   lueckentext_data: validateLueckentextData,
   match_data: validateMatchData,
   mc_data: validateMcData,

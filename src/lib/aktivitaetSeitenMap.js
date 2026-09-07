@@ -25,6 +25,7 @@ import HtmlSeite from '@/components/schueler/lesen/HtmlSeite';
 import MaterialaufgabeSeite from '@/components/schueler/lesen/MaterialaufgabeSeite';
 import SprechaufgabeSeite from '@/components/schueler/lesen/SprechaufgabeSeite';
 import KIQuizSeite from '@/components/schueler/lesen/KIQuizSeite';
+import SlideshowSeite from '@/components/schueler/lesen/SlideshowSeite';
 
 /**
  * @returns Die passende Schüler-Seiten-Komponente oder null, wenn es für
@@ -32,6 +33,7 @@ import KIQuizSeite from '@/components/schueler/lesen/KIQuizSeite';
  */
 export function getAktivitaetSeite(katName = '') {
   const n = (katName || '').toLowerCase();
+  if (n.includes('slideshow')) return SlideshowSeite;
   if (n.includes('sprechaufgabe')) return SprechaufgabeSeite;
   if (n.includes('ki-quiz')) return KIQuizSeite;
   if (n.includes('materialaufgabe')) return MaterialaufgabeSeite;

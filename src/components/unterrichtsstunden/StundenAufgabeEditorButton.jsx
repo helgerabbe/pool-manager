@@ -24,6 +24,7 @@ import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalD
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
+import SlideshowModal from '@/components/workspace/SlideshowModal';
 import StundenAufgabeKiButton from '@/components/unterrichtsstunden/StundenAufgabeKiButton';
 import StundenOffeneAufgabeVorschauButton from '@/components/unterrichtsstunden/StundenOffeneAufgabeVorschauButton';
 // Zuordnung Aufgabenart → Editor: geteilt mit der Aufgaben-Werkstatt, damit
@@ -105,6 +106,7 @@ export default function StundenAufgabeEditorButton({ phase, katalogEntry, stunde
         />
       )}
       {typ === 'offen' && <OffeneAufgabeModal {...gemeinsam} />}
+      {typ === 'slideshow' && <SlideshowModal {...gemeinsam} />}
       {/* Galerie-Vorlage: eigener Dialog mit Vorlagenliste und Demo-Vorschau.
           Muss hier stehen, seit editorTyp geteilt wird — sonst liefe dieser
           Fall ins Leere und es oeffnete sich gar kein Editor. */}

@@ -12,6 +12,7 @@ import ImageLabelingModalDetail from '@/components/workspace/ImageLabelingModalD
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
+import SlideshowModal from '@/components/workspace/SlideshowModal';
 import { editorTyp, editorKnopfText } from '@/lib/aktivitaetEditorMap';
 import { FreigabeAusblenden } from '@/components/workspace/ReleaseStatusToggle';
 
@@ -103,6 +104,7 @@ export default function AktivitaetInhaltEditor({
       {typ === 'kitutor' && <KITutorModalDetail {...gemeinsam} />}
       {typ === 'bild' && <ImageLabelingModalDetail {...gemeinsam} />}
       {typ === 'offen' && <OffeneAufgabeModal {...gemeinsam} />}
+      {typ === 'slideshow' && <SlideshowModal {...gemeinsam} />}
       {typ === 'galerie' && (
         <GalerieAktivitaetModal
           open={open}

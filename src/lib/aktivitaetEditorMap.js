@@ -25,6 +25,7 @@
 export function editorTyp(name = '') {
   const n = String(name).toLowerCase();
   if (n.includes('galerie')) return 'galerie';
+  if (n.includes('slideshow')) return 'slideshow';
   if (n.includes('test')) return 'test';
   if (n.includes('quiz')) return 'quiz';
   if (['lückentext', 'lueckentext', 'lücken', 'cloze'].some((k) => n.includes(k))) return 'lueckentext';

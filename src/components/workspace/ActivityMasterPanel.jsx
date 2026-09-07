@@ -44,6 +44,9 @@ import ZuordnungstrainingModal from '@/components/workspace/ZuordnungstrainingMo
 import ZuordnungstrainingReadOnly from '@/components/workspace/zuordnungstraining/ZuordnungstrainingReadOnly';
 import AufgabensequenzModal from '@/components/workspace/AufgabensequenzModal';
 import KIQuizModal from '@/components/workspace/KIQuizModal';
+import SlideshowModal from '@/components/workspace/SlideshowModal';
+import SlideshowPreviewModal from '@/components/workspace/preview/SlideshowPreviewModal';
+import SlideshowReadOnly from '@/components/workspace/slideshow/SlideshowReadOnly';
 import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerkstattModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
@@ -227,6 +230,8 @@ export default function ActivityMasterPanel({
   const [aufgabensequenzEditOpen, setAufgabensequenzEditOpen] = useState(false);
   // KI-Quiz: Schüler-Vorschau (Fragen beantworten, KI-Auswertung durchspielen).
   const [kiQuizPreviewOpen, setKiQuizPreviewOpen] = useState(false);
+  // Slideshow: Schüler-Vorschau (Folien durchblättern).
+  const [slideshowPreviewOpen, setSlideshowPreviewOpen] = useState(false);
   const [acquiringLock, setAcquiringLock] = useState(false);
   const modalUsesExistingLockRef = React.useRef(false);
 
@@ -800,12 +805,14 @@ export default function ActivityMasterPanel({
                   />
                 )}
                 {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining') || catalogEntry?.name?.toLowerCase().includes('materialaufgabe') || catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') || catalogEntry?.name?.toLowerCase().includes('ki-quiz')) && (
+                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining') || catalogEntry?.name?.toLowerCase().includes('materialaufgabe') || catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') || catalogEntry?.name?.toLowerCase().includes('ki-quiz') || catalogEntry?.name?.toLowerCase().includes('slideshow')) && (
                   <Button
                     variant="outline"
                     onClick={() => {
                       const n = catalogEntry?.name?.toLowerCase() || '';
-                      if (n.includes('ki-quiz')) {
+                      if (n.includes('slideshow')) {
+                        setSlideshowPreviewOpen(true);
+                      } else if (n.includes('ki-quiz')) {
                         setKiQuizPreviewOpen(true);
                       } else if (n.includes('sprechaufgabe')) {
                         setSprechaufgabePreviewOpen(true);
@@ -976,6 +983,13 @@ export default function ActivityMasterPanel({
                 catalogName={catalogEntry?.name}
                 phase={activityRecord?.phase}
               />
+              <SlideshowPreviewModal
+                open={slideshowPreviewOpen}
+                onOpenChange={setSlideshowPreviewOpen}
+                fieldValues={fieldValues}
+                catalogName={catalogEntry?.name}
+                phase={activityRecord?.phase}
+              />
 
             {/* Spezielle Vorschau für Bildbeschriftung */}
             {isImageLabeling ? (
@@ -993,6 +1007,8 @@ export default function ActivityMasterPanel({
                   </div>
                 )}
               </div>
+            ) : catalogEntry?.name?.toLowerCase().includes('slideshow') ? (
+              <SlideshowReadOnly fieldValues={fieldValues} />
             ) : catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') ? (
               <SprechaufgabeReadOnly fieldValues={fieldValues} />
             ) : catalogEntry?.name?.toLowerCase().includes('materialaufgabe') ? (
@@ -1282,7 +1298,18 @@ export default function ActivityMasterPanel({
               );
             })()}
 
-              {catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') ? (
+              {catalogEntry?.name?.toLowerCase().includes('slideshow') ? (
+                <SlideshowModal
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
+                  initialFieldValues={{ ...fieldValues, moodle_sync_status: activityRecord?.moodle_sync_status }}
+                  onSave={handleModalSave}
+                  onCancel={handleModalCancel}
+                  onReset={handleModalReset}
+                  isSaving={saveFieldsMutation.isPending}
+                  parentLernpaketName={parentLernpaketName || ''}
+                />
+              ) : catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') ? (
                 <SprechaufgabeModal
                   open={editModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
