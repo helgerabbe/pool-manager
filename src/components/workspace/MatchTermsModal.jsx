@@ -350,6 +350,10 @@ export default function MatchTermsModal({
     wasOpenRef.current = true;
     // Bereits mit echten Inhalten befüllt → nicht erneut überschreiben.
     if (!justOpened && populatedRef.current) return;
+    // Noch leere Aufgabe: Ein Refetch bringt hier nichts Neues. Früher wurde
+    // der Editor dabei trotzdem neu aufgesetzt — laufende Eingaben und
+    // geöffnete Bereiche verschwanden also alle paar Sekunden von selbst.
+    if (!justOpened && pairs.length === 0 && !(src.instruction || '').trim()) return;
     if (pairs.length > 0 || (src.instruction || '').trim()) populatedRef.current = true;
     setIsReleased(src.content_status === 'approved');
     setSavedReleased(src.content_status === 'approved');
