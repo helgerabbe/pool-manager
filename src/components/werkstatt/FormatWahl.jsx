@@ -20,8 +20,8 @@ import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
  *
  * Findet sich nichts (oder gefällt nichts), geht es wie bisher weiter: neu bauen.
  */
-export default function FormatWahl({ onVorlage, onOhneVorlage, disabled }) {
-  const [beschreibung, setBeschreibung] = useState('');
+export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initialBeschreibung = '' }) {
+  const [beschreibung, setBeschreibung] = useState(initialBeschreibung);
   const [treffer, setTreffer] = useState(null);   // null = noch nicht gesucht
   const [vorschau, setVorschau] = useState(null);
 
@@ -30,7 +30,9 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled }) {
       const res = await base44.functions.invoke('aufgabenFormatVorschlag', { beschreibung: text });
       return res.data;
     },
-    onSuccess: (d) => setTreffer(d?.treffer || []),
+    // Nur Galerie-Formate taugen hier als Vorlage: Sie bringen ihr HTML mit,
+    // aus dem die KI die neue Aufgabe baut. Katalogformate haben kein Fragment.
+    onSuccess: (d) => setTreffer((d?.treffer || []).filter((t) => t.art !== 'katalog' && t.fragment)),
   });
 
   const text = beschreibung.trim();

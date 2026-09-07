@@ -47,7 +47,6 @@ import KIQuizModal from '@/components/workspace/KIQuizModal';
 import SlideshowModal from '@/components/workspace/SlideshowModal';
 import SlideshowPreviewModal from '@/components/workspace/preview/SlideshowPreviewModal';
 import SlideshowReadOnly from '@/components/workspace/slideshow/SlideshowReadOnly';
-import OffeneAufgabeModal from '@/components/workspace/OffeneAufgabeModal';
 import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerkstattModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
@@ -429,19 +428,24 @@ export default function ActivityMasterPanel({
 
   // Offene Aufgabe: gerade in der Vorschau gezeigte Umsetzung als
   // "Vorschau-Vorlage" (Snapshot) einfrieren und an der Aktivität ablegen.
-  const persistOffeneSnapshot = async (html, fragment = '') => {
+  const persistOffeneSnapshot = async (html, fragment = '', beschreibung = '') => {
     const u = await base44.auth.me().catch(() => null);
+    // Die Beschreibung entsteht jetzt in der Werkstatt (Vorhaben der Lehrkraft).
+    // Sie ist der Text, der die Aufgabe erklärt — also auch die Beschreibung
+    // der Aktivität, wenn dort noch keine steht bzw. eine neue formuliert wurde.
+    const beschreibungText = String(beschreibung || '').trim() || fieldValues.description || '';
     const newFieldValues = {
       ...fieldValues,
+      description: beschreibungText,
       approved_snapshot_html: html,
       // Das Fragment ist die Fassung, die spaeter an die MBK uebergeben wird
       // (ohne Dokumentgeruest). Leer bei aelteren Staenden.
       ...(fragment ? { approved_fragment: fragment } : {}),
-      snapshot_briefing: fieldValues.description || '',
+      snapshot_briefing: beschreibungText,
       snapshot_approved_at: new Date().toISOString(),
       ...(u?.email ? { snapshot_approved_by: u.email } : {}),
     };
-    const payload = { field_values: newFieldValues };
+    const payload = { field_values: newFieldValues, is_complete: !!html };
     if (activityRecord?.moodle_sync_status === 'synced') {
       payload.moodle_sync_status = 'modified';
       payload.is_dirty_since_export = true;
@@ -1140,21 +1144,17 @@ export default function ActivityMasterPanel({
                     )}
                   </div>
                 )}
-                {/* Offene Aufgabe Modal */}
-                <OffeneAufgabeModal
-                  open={editModalOpen}
-                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
-                  initialData={fieldValues}
-                  isSaving={saveFieldsMutation.isPending}
-                  onSave={handleModalSave}
-                  onCancel={handleModalCancel}
-                  onReset={handleModalReset}
-                  exportLocked={lernpaket?.moodle_sync_status === 'locked' || lernpaket?.export_locked}
-                />
-                {/* Schüler-Vorschau (Sandbox-Snapshot) */}
+                {/* Offene Aufgabe: „Inhalt bearbeiten" UND „Vorschau" führen in die
+                    Aufgaben-Werkstatt. Dort wird zuerst geprüft, ob es für das
+                    Vorhaben schon ein Format in der Galerie gibt; erst danach
+                    wird eine neue Aufgabe gebaut. */}
                 <AufgabenWerkstattModal
-                  open={offenePreviewOpen}
-                  onOpenChange={setOffenePreviewOpen}
+                  open={editModalOpen || offenePreviewOpen}
+                  onOpenChange={(isOpen) => {
+                    if (isOpen) return;
+                    setOffenePreviewOpen(false);
+                    if (editModalOpen) handleModalCancel();
+                  }}
                   description={fieldValues.description || ''}
                   kontext={aufgabenKontext}
                   catalogName={catalogEntry?.name}

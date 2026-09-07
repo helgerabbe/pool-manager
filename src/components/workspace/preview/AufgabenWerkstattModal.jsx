@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import useAufgabenGenerator from '@/hooks/useAufgabenGenerator';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 import GespraechsSpalte from '@/components/werkstatt/GespraechsSpalte';
+import FormatWahl from '@/components/werkstatt/FormatWahl';
 import {
   fragmentZuDokument, dokumentZuFragment, pruefeFragment,
 } from '@/lib/aufgabeFragment';
@@ -61,18 +62,40 @@ export default function AufgabenWerkstattModal({
   const [eingabe, setEingabe] = useState('');
   const [speichert, setSpeichert] = useState(false);
   const [gespeichertHinweis, setGespeichertHinweis] = useState(false);
+  // Erster Halt: Gibt es für das Vorhaben schon ein erprobtes Format? Erst
+  // wenn diese Frage beantwortet ist, beginnt das Baugespräch.
+  const [gestartet, setGestartet] = useState(false);
+  const [vorhaben, setVorhaben] = useState(description || '');
 
-  // Beim Öffnen den ersten Auftrag vorbereiten, aber nicht abschicken —
-  // die Lehrkraft soll ihn noch ergänzen können.
   useEffect(() => {
     if (!open) return;
     setGespeichertHinweis(false);
-    setEingabe(
-      gen.staende.length === 0 && description.trim()
-        ? `Bau mir daraus eine interaktive Übungsaufgabe:\n\n${description.trim()}`
-        : '',
-    );
+    setEingabe('');
+    setGestartet(false);
+    setVorhaben(description || '');
   }, [open]);
+
+  const zeigeFormatwahl = !gestartet && !startFragment && !gen.fragment && !isReleased;
+
+  const vorlageAuftrag = (text) => `Nimm die vorhandene Aufgabe als VORLAGE.
+
+Behalte Aufbau, Bedienung, Gestaltung und die Rückmeldelogik unverändert. Ersetze dafür ALLE Inhalte vollständig — kein Wort und keine Zahl der alten Inhalte darf stehen bleiben. Auch Überschrift und Arbeitsauftrag gehören zu den Inhalten.
+
+Neue Inhalte gemäß diesem Vorhaben der Lehrkraft:
+${text}`;
+
+  const startMitVorlage = (treffer, text) => {
+    setGestartet(true);
+    setVorhaben(text);
+    gen.setzeFragment(treffer.fragment, `Vorlage: ${treffer.name}`);
+    gen.senden(vorlageAuftrag(text), treffer.fragment);
+  };
+
+  const startOhneVorlage = (text) => {
+    setGestartet(true);
+    setVorhaben(text);
+    gen.senden(`Bau mir daraus eine interaktive Übungsaufgabe:\n\n${text}`);
+  };
 
   const abschicken = () => {
     const t = eingabe.trim();
@@ -86,7 +109,7 @@ export default function AufgabenWerkstattModal({
     if (!gen.fragment || !onApproveSnapshot) return;
     setSpeichert(true);
     try {
-      await onApproveSnapshot(fragmentZuDokument(gen.fragment), gen.fragment);
+      await onApproveSnapshot(fragmentZuDokument(gen.fragment), gen.fragment, vorhaben);
       setGespeichertHinweis(true);
     } catch (err) {
       toast.error('Übernehmen fehlgeschlagen: ' + (err?.message || 'Unbekannter Fehler'));
@@ -124,6 +147,15 @@ export default function AufgabenWerkstattModal({
           </div>
         )}
 
+        {zeigeFormatwahl ? (
+          <div className="pt-3 max-w-2xl">
+            <FormatWahl
+              initialBeschreibung={description || ''}
+              onVorlage={startMitVorlage}
+              onOhneVorlage={startOhneVorlage}
+            />
+          </div>
+        ) : (
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,2fr)_3fr] gap-4 pt-3 min-h-0">
           <GespraechsSpalte
             gen={gen}
@@ -211,6 +243,7 @@ export default function AufgabenWerkstattModal({
             </div>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );
