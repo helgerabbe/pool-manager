@@ -9,6 +9,7 @@ import AufgabenstellungBox from './AufgabenstellungBox';
 import EinfachFormatierterText from './EinfachFormatierterText';
 import HinweisBox from './HinweisBox';
 import BrianSchluesselEingabe from './BrianSchluesselEingabe';
+import BrianAnweisungKopieren from './BrianAnweisungKopieren';
 import { hatSchluessel } from '@/lib/brianSchluessel';
 
 const BRIAN_URL = 'https://brian.study';
@@ -26,9 +27,13 @@ const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81be
 export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null, dialogUrl = null }) {
   const fv = aktivitaet?.field_values || {};
   const [kopiert, setKopiert] = useState(false);
-  // Die Aufgabe liegt IN Brian bereits vorbereitet (die vier Brian-Felder sind
-  // übertragen). Die Schüler übergeben deshalb NIE einen Start-Prompt, sondern
-  // folgen nur dem hinterlegten Link direkt in ihre Aufgabe.
+  // ZWEI WEGE — bewusst so, nicht vereinfachen:
+  // (a) Sind die vier Brian-Felder übertragen (dialogUrl liegt vor), führt ein
+  //     HARTER LINK direkt in die in Brian vorbereitete Aufgabe. Nichts kopieren.
+  // (b) Fehlt der Link (kleine Brian-Aufgaben in Lernpaketen, Tab 4), bekommen
+  //     die Schüler den START-PROMPT zum Kopieren — Lernpakete laufen ohne
+  //     eigene Brian-Dialoge, das Gespräch startet aus der Anweisung heraus.
+  const direkt = !!dialogUrl;
   const zielUrl = dialogUrl || BRIAN_URL;
   // Wann der Schüler von hier aus zu Brian gewechselt ist — Grundlage der
   // Plausibilitätsprüfung beim Schlüsselcode.
@@ -70,27 +75,42 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
             <p>
               Diese Aufgabe bearbeitest du mit deinem KI-Tutor <strong>Brian</strong>. So geht's:
             </p>
-            <ol className="mt-1.5 space-y-1 list-decimal list-inside">
-              <li>Öffne Brian – der Link führt <strong>direkt zu dieser Aufgabe</strong>. Du musst nichts kopieren oder eintippen.</li>
-              <li>Bearbeite die Aufgabe im Gespräch mit Brian und <strong>komm danach hierher zurück</strong>.
-                {mitCode
-                  ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
-                  : ' Tippe dann unten auf „Erledigt".'}
-              </li>
-            </ol>
+            {direkt ? (
+              <ol className="mt-1.5 space-y-1 list-decimal list-inside">
+                <li>Öffne Brian – der Link führt <strong>direkt zu dieser Aufgabe</strong>. Du musst nichts kopieren.</li>
+                <li>Bearbeite die Aufgabe im Gespräch mit Brian und <strong>komm danach hierher zurück</strong>.
+                  {mitCode
+                    ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                    : ' Tippe dann unten auf „Erledigt".'}
+                </li>
+              </ol>
+            ) : (
+              <ol className="mt-1.5 space-y-1 list-decimal list-inside">
+                <li>Öffne Brian und starte dort ein <strong>allgemeines Tutorgespräch</strong>.</li>
+                <li>Kopiere die Anweisung unten und füge sie als erste Nachricht ein.</li>
+                <li>Bearbeite die Aufgabe gemeinsam mit Brian und <strong>komm danach hierher zurück</strong>.
+                  {mitCode
+                    ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                    : ' Tippe dann unten auf „Erledigt".'}
+                </li>
+              </ol>
+            )}
           </HinweisBox>
+
+          {/* Ohne vorbereiteten Dialog: der Start-Prompt zum Kopieren. */}
+          {!direkt && (
+            <BrianAnweisungKopieren
+              aufgabe={fv.instruction || ''}
+              erwartungshorizont={fv.system_prompt || fv.erwartungshorizont || ''}
+            />
+          )}
 
           {/* Brian-Öffnen-Optionen */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-sm font-semibold text-foreground">Aufgabe in Brian öffnen</p>
-            <p className="text-xs text-muted-foreground truncate mb-1">{zielUrl}</p>
-            {!dialogUrl && (
-              <p className="text-xs text-amber-700 mb-2">
-                Für diese Aufgabe ist noch kein direkter Brian-Link hinterlegt — er wird beim
-                Übertragen nach Brian eingetragen.
-              </p>
-            )}
-            <div className="mb-3" />
+            <p className="text-sm font-semibold text-foreground">
+              {direkt ? 'Aufgabe in Brian öffnen' : 'Brian öffnen'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate mb-3">{zielUrl}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Button onClick={oeffneFenster} className="gap-2 bg-primary hover:bg-primary/90">
                 <AppWindow className="w-4 h-4" /> Neues Fenster
