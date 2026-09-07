@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Trash2, Plus, CheckCircle2, Circle, X } from 'lucide-react';
+import TestKIPanel from '@/components/workspace/test/TestKIPanel';
 
 const createDefaultQuestion = () => ({
   id: crypto.randomUUID(),
@@ -54,7 +55,7 @@ const normalizeQuestionForType = (question, type) => {
   return base;
 };
 
-export default function TestEditor({ initialData = {}, onChange, readOnly = false }) {
+export default function TestEditor({ initialData = {}, onChange, readOnly = false, lernpaketId = null }) {
   const [instruction, setInstruction] = useState(initialData.instruction || '');
   const [passingThreshold, setPassingThreshold] = useState(initialData.passingThreshold || 0);
   const [passFeedback, setPassFeedback] = useState(initialData.passFeedback || 'Herzlichen Glückwunsch, du hast den Test bestanden!');
@@ -82,8 +83,31 @@ export default function TestEditor({ initialData = {}, onChange, readOnly = fals
 
   const disabled = readOnly;
 
+  // KI-Vorschläge ersetzen die Fragenliste — die Lehrkraft prüft danach im
+  // Editor und speichert selbst.
+  const uebernehmeKiFragen = (fragen) => {
+    setQuestions(fragen.map((f) => ({
+      ...normalizeQuestionForType({
+        id: crypto.randomUUID(),
+        question: f.question || '',
+        points: f.points || 1,
+        options: f.options,
+        correctAnswer: f.correctAnswer,
+        explanation: f.explanation,
+        expectedAnswer: f.expectedAnswer,
+      }, f.type || 'mc'),
+    })));
+  };
+
   return (
     <div className="space-y-8">
+      {!disabled && (
+        <TestKIPanel
+          lernpaketId={lernpaketId}
+          onFragenUebernehmen={uebernehmeKiFragen}
+        />
+      )}
+
       {/* Globale Test-Einstellungen */}
       <div className="space-y-4 bg-muted/30 p-5 rounded-xl border border-border">
         <h3 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Test-Einstellungen</h3>

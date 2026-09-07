@@ -22,6 +22,7 @@ export default function TestModal({
   footerExtra = null,
   readOnly = false,
   lockedMessage = null,
+  lernpaketId = null,
 }) {
   const [editorData, setEditorData] = useState(initialData);
 
@@ -52,6 +53,7 @@ export default function TestModal({
         initialData={initialData}
         onChange={(data) => !readOnly && setEditorData(data)}
         readOnly={readOnly}
+        lernpaketId={lernpaketId}
       />
     </BaseActivityModal>
   );

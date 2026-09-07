@@ -1014,6 +1014,7 @@ export default function MasterDetailView({
                   open={testModalOpen}
                   onOpenChange={(isOpen) => { if (!isOpen) handleCloseModal(); }}
                   initialData={activeData}
+                  lernpaketId={master?.lernpaket_id}
                   isSaving={isSavingAny}
                   footerExtra={testReleaseFooter}
                   readOnly={masterIsReleased}

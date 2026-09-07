@@ -993,6 +993,7 @@ export default function MasterAufgabeCard({
                   }
                 }}
                 initialData={{ ...fieldValues, content_status: master.content_status }}
+                lernpaketId={master.lernpaket_id}
                 onSave={(data) => {
                   const { content_status, ...fvData } = data;
                   const newFv = { ...fieldValues, ...fvData };
