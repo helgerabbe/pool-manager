@@ -115,6 +115,11 @@ Es gibt eine vorgefertigte, statische **Activity-Runtime** (\`mbk-activity-runti
 
 Die konkreten Render-Anweisungen pro Aktivitätstyp werden vom Aufruf-System dynamisch an diesen System-Prompt angehängt — du findest sie weiter unten im Abschnitt **"AKTIVITÄTSTYP-SPEZIFISCHE ANWEISUNGEN"**. Nur die Typen, die im aktuellen Auftrag tatsächlich vorkommen, werden dort eingewoben.
 
+## Aktivitäten, die eine KI brauchen (KI-EINBINDUNG ERFORDERLICH)
+Einige Aktivitätstypen (z.B. KI-Check, KI-Tutor Aufgabe, Sprechaufgabe) sind nur mit einem angebundenen Sprachmodell funktionsfähig — sie haben KEINE deterministische richtig/falsch-Auswertung. Ihre Container tragen deshalb IMMER \`data-mbk-ai-required="true"\` und zusätzlich \`data-mbk-ai-brief='{…}'\` mit dem nicht schülersichtbaren Auftrag an die KI (Rolle, Auftrag, Kriterien/Erwartungshorizont, Rückmeldeform). Das genaue Feldschema steht in der jeweiligen typspezifischen Anweisung. Regeln:
+- Diese Attribute NIE weglassen und NIE durch statischen Text ersetzen — daran erkennt der Kurs-Bau, dass hier eine KI angebunden werden muss.
+- Der Inhalt von \`data-mbk-ai-brief\` (insbesondere die Bewertungskriterien) darf NIEMALS im sichtbaren Seitentext erscheinen.
+
 ## Aktivitäts-Typen ohne spezifische Anweisung
 Wenn ein Aktivitätstyp im Abschnitt "AKTIVITÄTSTYP-SPEZIFISCHE ANWEISUNGEN" NICHT auftaucht, **rendere ihn statisch** gemäß den Regeln in Abschnitt "WAS DU GENAU ERZEUGST" weiter unten: Karte mit Titel, \`field_values\` als Definition-List (\`<dl>\`), optional \`master_aufgaben[].field_values\` als verschachtelte \`<dl>\` darunter.
 

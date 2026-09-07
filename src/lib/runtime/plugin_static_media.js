@@ -306,6 +306,21 @@ export const PLUGIN_STATIC_MEDIA_JS = `
     mbkRenderConfirmFooter(host, 'Gepr\\u00fcft — weiter');
   });
 
+  // ── Plugin: Sprechaufgabe (KI-Bewertung, Anbindung extern) ──
+  registerPlugin('ki_speech', function (host, config) {
+    host.innerHTML = '';
+    host.classList.add('mbk-activity');
+    mbkRenderInstruction(host, config.instruction);
+    var body = el('div', { className: 'mbk-sm__body' });
+    body.appendChild(el('h3', { className: 'mbk-sm__title', text: 'Sprechaufgabe' }));
+    var hinweis = 'Sprich deine Antwort ein. Deine Aufnahme wird ausgewertet und du bekommst eine R\\u00fcckmeldung.';
+    if (config.minSeconds) hinweis += ' Sprich mindestens ' + config.minSeconds + ' Sekunden.';
+    body.appendChild(el('div', { className: 'mbk-sm__text', text: hinweis }));
+    body.appendChild(el('p', { className: 'mbk-sm__hint', text: 'Hinweis: Aufnahme und KI-Bewertung werden im Moodle-Kontext bereitgestellt.' }));
+    host.appendChild(body);
+    mbkRenderConfirmFooter(host, 'Eingesprochen — weiter');
+  });
+
   // ── Plugin: Offene Aufgabe ───────────────────────────────
   registerPlugin('open_task', function (host, config) {
     host.innerHTML = '';

@@ -34,6 +34,7 @@
  *   - confirm          → "Bearbeitung bestätigen"
  *   - ki_tutor         → KI-Tutor-Platzhalter (LLM-Anbindung extern)
  *   - ki_check         → KI-Check-Platzhalter (LLM-Anbindung extern)
+ *   - ki_speech        → Sprechaufgabe mit KI-Bewertung (Anbindung extern)
  *   - open_task        → Offene Aufgabe ohne Auto-Korrektur
  *   - slideshow        → Folien Seite für Seite (feste 960×540-Vorlagen)
  */
