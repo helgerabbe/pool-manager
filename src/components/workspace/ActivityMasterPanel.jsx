@@ -47,6 +47,7 @@ import KIQuizModal from '@/components/workspace/KIQuizModal';
 import SlideshowModal from '@/components/workspace/SlideshowModal';
 import SlideshowPreviewModal from '@/components/workspace/preview/SlideshowPreviewModal';
 import SlideshowReadOnly from '@/components/workspace/slideshow/SlideshowReadOnly';
+import OffeneAufgabeSchuelerVorschau from '@/components/workspace/preview/OffeneAufgabeSchuelerVorschau';
 import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerkstattModal';
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
@@ -1144,17 +1145,19 @@ export default function ActivityMasterPanel({
                     )}
                   </div>
                 )}
-                {/* Offene Aufgabe: „Inhalt bearbeiten" UND „Vorschau" führen in die
-                    Aufgaben-Werkstatt. Dort wird zuerst geprüft, ob es für das
-                    Vorhaben schon ein Format in der Galerie gibt; erst danach
-                    wird eine neue Aufgabe gebaut. */}
+                {/* „Vorschau" = reine Schüleransicht des übernommenen Stands. */}
+                <OffeneAufgabeSchuelerVorschau
+                  open={offenePreviewOpen}
+                  onOpenChange={setOffenePreviewOpen}
+                  snapshotHtml={fieldValues.approved_snapshot_html || ''}
+                  catalogName={catalogEntry?.name}
+                  phase={activityRecord?.phase}
+                />
+                {/* „Inhalt bearbeiten" führt in die Aufgaben-Werkstatt: dort wird
+                    zuerst nach einem passenden Format gesucht, dann gebaut. */}
                 <AufgabenWerkstattModal
-                  open={editModalOpen || offenePreviewOpen}
-                  onOpenChange={(isOpen) => {
-                    if (isOpen) return;
-                    setOffenePreviewOpen(false);
-                    if (editModalOpen) handleModalCancel();
-                  }}
+                  open={editModalOpen}
+                  onOpenChange={(isOpen) => { if (!isOpen) handleModalCancel(); }}
                   description={fieldValues.description || ''}
                   kontext={aufgabenKontext}
                   catalogName={catalogEntry?.name}
