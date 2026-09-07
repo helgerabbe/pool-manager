@@ -24,7 +24,13 @@ const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81be
  * beiden Buttons (zurück + grün „Erledigt"). Später kann statt der Startseite
  * eine konkrete Aufgaben-ID übergeben werden.
  */
-export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null, dialogUrl = null }) {
+export default function KITutorSeite({
+  aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null, dialogUrl = null,
+  // true = Aufgabe mit eigenen Brian-Feldern (Aufgabenwerkstatt): IMMER der
+  // Link-Weg, auch wenn die URL noch nicht hinterlegt ist — der Dialog wird
+  // in Brian angelegt, die Schüler kopieren hier nie eine Anweisung.
+  eigenerDialog = false,
+}) {
   const fv = aktivitaet?.field_values || {};
   const [kopiert, setKopiert] = useState(false);
   // ZWEI WEGE — bewusst so, nicht vereinfachen:
@@ -33,7 +39,7 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
   // (b) Fehlt der Link (kleine Brian-Aufgaben in Lernpaketen, Tab 4), bekommen
   //     die Schüler den START-PROMPT zum Kopieren — Lernpakete laufen ohne
   //     eigene Brian-Dialoge, das Gespräch startet aus der Anweisung heraus.
-  const direkt = !!dialogUrl;
+  const direkt = !!dialogUrl || eigenerDialog;
   const zielUrl = dialogUrl || BRIAN_URL;
   // Wann der Schüler von hier aus zu Brian gewechselt ist — Grundlage der
   // Plausibilitätsprüfung beim Schlüsselcode.
@@ -77,7 +83,11 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
             </p>
             {direkt ? (
               <ol className="mt-1.5 space-y-1 list-decimal list-inside">
-                <li>Öffne Brian – der Link führt <strong>direkt zu dieser Aufgabe</strong>. Du musst nichts kopieren.</li>
+                <li>
+                  {dialogUrl
+                    ? <>Öffne Brian – der Link führt <strong>direkt zu dieser Aufgabe</strong>. Du musst nichts kopieren.</>
+                    : <>Öffne Brian und wähle dort die Aufgabe <strong>„{kat?.name || 'aus deinem Unterricht'}"</strong>. Du musst nichts kopieren.</>}
+                </li>
                 <li>Bearbeite die Aufgabe im Gespräch mit Brian und <strong>komm danach hierher zurück</strong>.
                   {mitCode
                     ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'

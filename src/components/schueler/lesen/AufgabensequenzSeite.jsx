@@ -467,6 +467,7 @@ export default function AufgabensequenzSeite({
             /* Vier Brian-Felder übertragen → eigener Dialog in Brian: direkter
                Einstieg über den Link, ohne Anweisung zu kopieren. */
             dialogUrl={b.url || null}
+            eigenerDialog
             busy={busy}
             onErledigt={weiter}
             onBack={zurueck}
