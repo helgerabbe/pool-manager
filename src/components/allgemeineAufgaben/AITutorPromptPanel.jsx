@@ -253,7 +253,9 @@ export default function AITutorPromptPanel({
   };
 
   // Segmente per KI generieren
-  const handleGenerate = async () => {
+  // schluesselOverride: beim Würfeln der Codes wird sofort neu generiert; der
+  // React-State ist zu diesem Zeitpunkt noch nicht aktualisiert.
+  const handleGenerate = async (schluesselOverride = null) => {
     setIsGenerating(true);
     try {
       // Beim Brian-SCHRITT beschreibt der Auftrag NUR dieses eine Gespräch.
@@ -291,7 +293,7 @@ export default function AITutorPromptPanel({
         lernzieleMitLernpaket,
         // Schlüsselcodes: kommen wortgetreu in die Brian-Felder. Die am
         // Schritt gespeicherten Codes haben Vorrang vor dem lokalen Stand.
-        schluessel: brianWerte?.schluessel || schluessel,
+        schluessel: schluesselOverride || brianWerte?.schluessel || schluessel,
       });
       const result = response.data?.segments;
       if (!result) throw new Error('Keine Segmente erhalten');
@@ -397,7 +399,7 @@ export default function AITutorPromptPanel({
           <Button
             size="sm"
             variant="default"
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={isGenerating || !kannBearbeiten}
             className="gap-2 shrink-0"
           >
@@ -475,7 +477,14 @@ export default function AITutorPromptPanel({
           <BrianSchluesselFeld
             schluessel={schluessel}
             kannBearbeiten={kannBearbeiten}
-            onChange={(neu) => { setSchluessel(neu); onBrianChange({ schluessel: neu }); }}
+            istGenerierend={isGenerating}
+            onChange={(neu) => {
+              setSchluessel(neu);
+              onBrianChange({ schluessel: neu });
+              // Die Codes stehen wortgetreu in den Brian-Feldern — nach dem
+              // Würfeln sofort neu erzeugen, statt es der Lehrkraft zu überlassen.
+              handleGenerate(neu);
+            }}
           />
         )}
 

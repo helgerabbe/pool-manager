@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { KeyRound, Dices } from 'lucide-react';
+import { KeyRound, Dices, Loader2 } from 'lucide-react';
 import { neueSchluessel, hatSchluessel, MINDESTDAUER_MINUTEN } from '@/lib/brianSchluessel';
 
 /**
@@ -10,7 +10,7 @@ import { neueSchluessel, hatSchluessel, MINDESTDAUER_MINUTEN } from '@/lib/brian
  * nennt sie nach den Regeln in lib/brianSchluessel. Neu würfeln, sobald ein
  * Code erkennbar in der Klasse herumgeht.
  */
-export default function BrianSchluesselFeld({ schluessel, onChange, kannBearbeiten }) {
+export default function BrianSchluesselFeld({ schluessel, onChange, kannBearbeiten, istGenerierend = false }) {
   const gesetzt = hatSchluessel(schluessel);
 
   return (
@@ -20,7 +20,7 @@ export default function BrianSchluesselFeld({ schluessel, onChange, kannBearbeit
           <KeyRound className="w-3.5 h-3.5" /> Schlüsselcodes
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Nachweis, dass das Gespräch stattgefunden hat. Fließt beim Generieren in die interne Anweisung ein — nach dem Würfeln also neu generieren.
+          Nachweis, dass das Gespräch stattgefunden hat. Nach dem Würfeln werden die Brian-Felder automatisch neu erzeugt.
         </p>
       </div>
 
@@ -47,10 +47,12 @@ export default function BrianSchluesselFeld({ schluessel, onChange, kannBearbeit
             size="sm"
             variant="outline"
             className="gap-2"
+            disabled={istGenerierend}
             onClick={() => onChange(neueSchluessel())}
           >
-            <Dices className="w-3.5 h-3.5" />
-            {gesetzt ? 'Codes neu würfeln' : 'Codes erzeugen'}
+            {istGenerierend
+              ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Felder werden erzeugt…</>
+              : <><Dices className="w-3.5 h-3.5" /> {gesetzt ? 'Codes neu würfeln' : 'Codes erzeugen'}</>}
           </Button>
         )}
 
