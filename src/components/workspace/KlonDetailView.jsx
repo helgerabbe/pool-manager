@@ -27,6 +27,7 @@ import MatchTermsForm from '@/components/aufgaben/placeholders/MatchTermsForm';
 import SortingListEditor from '@/components/workspace/SortingListEditor';
 import SortingListModal from '@/components/workspace/SortingListModal';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
+import KlonQuizReadOnly from '@/components/workspace/KlonQuizReadOnly';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 
@@ -51,6 +52,11 @@ function isLueckentext(name = '') {
 
 function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+function isQuiz(name = '') {
+  const n = name.toLowerCase();
+  return !n.includes('test') && ['miniquiz', 'mini-quiz', 'quiz'].some(k => n.includes(k));
 }
 
 export default function KlonDetailView({ klon, kannBearbeiten, userEmail, masterAufgabe, activityRecord, catalogEntry, parentLernpaketName = null, onKlonDeleted, onEditModeChange }) {
@@ -467,6 +473,8 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onConvertToMaster={() => convertToMasterMutation.mutate(undefined, { onSuccess: () => handleCloseModal() })}
             />
           </div>
+        ) : isQuiz(catalogEntry?.name) ? (
+          <KlonQuizReadOnly data={data} />
         ) : (
           /* Fallback: Arbeitsanweisung + Distraktoren */
           <>
