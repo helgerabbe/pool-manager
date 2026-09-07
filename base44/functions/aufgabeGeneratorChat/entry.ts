@@ -1,4 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import {
+  hatAssistentZugriff, tagInhalt, saeubereBlock, sseEvent,
+} from '../../shared/assistentProtokoll.js';
 
 /**
  * aufgabeGeneratorChat
@@ -53,7 +56,6 @@ const ANTHROPIC_VERSION = '2023-06-01';
 // unbrauchbar. Sonnet kann deutlich mehr.
 const MAX_TOKENS = 24000;
 const MAX_VERLAUF = 20; // letzte N Beiträge; ältere werden verworfen
-const ALLOWED_ROLES = new Set(['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft']);
 
 // ═══════════════════════════════════════════════════════════════════════
 // Systemanweisung — die feste Bauordnung für jede erzeugte Aufgabe.
@@ -189,32 +191,6 @@ Die Lehrkraft ist Fachfrau für ihren Unterricht, aber keine Programmiererin. Fr
 // ═══════════════════════════════════════════════════════════════════════
 // Hilfsfunktionen
 // ═══════════════════════════════════════════════════════════════════════
-
-async function hatZugriff(base44, user) {
-  if (user.role === 'admin' || user.role === 'Administrator') return true;
-  const profile = await base44.asServiceRole.entities.Benutzer
-    .filter({ user_id: user.email })
-    .catch(() => []);
-  const p = profile?.[0];
-  return !!p?.ist_aktiv && ALLOWED_ROLES.has(p?.rolle);
-}
-
-/**
- * Inhalt eines Tags. Fehlt das schließende Tag (abgeschnittene Antwort oder
- * das Modell hat es vergessen), wird bis zum nächsten Tag bzw. zum Ende
- * gelesen — sonst ginge die ganze Antwort verloren und die Lehrkraft sähe nur
- * ein nichtssagendes „Fertig.".
- */
-function tagInhalt(text, tag) {
-  const s = String(text);
-  const zu = s.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i'));
-  if (zu) return zu[1].trim();
-  const offen = s.match(new RegExp(`<${tag}>([\\s\\S]*)$`, 'i'));
-  if (!offen) return null;
-  // Bis zum nächsten Protokoll-Tag, damit aus <antwort> nicht der Code mitkommt.
-  const rest = offen[1].split(/<(?:antwort|neu|edit|schritte)>/i)[0];
-  return rest.trim() || null;
-}
 
 /** Liest alle <edit>-Blöcke als { alt, neu }-Paare. */
 function leseEdits(text) {
@@ -377,7 +353,7 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
 
   let liste;
   try {
-    liste = JSON.parse(saeubere(roh));
+    liste = JSON.parse(saeubereBlock(roh));
   } catch (_e) {
     return { schritte: null, warnungen: ['Der Vorschlag war nicht lesbar. Frag am besten noch einmal nach.'] };
   }
@@ -445,25 +421,13 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
   return { schritte, warnungen };
 }
 
-/** Entfernt versehentliche Codefences um ein Fragment herum. */
-function saeubere(code) {
-  let s = String(code || '').trim();
-  const fence = s.match(/^```(?:html)?\s*([\s\S]*?)```$/i);
-  if (fence) s = fence[1].trim();
-  return s;
-}
-
-function sseEvent(name, daten) {
-  return `event: ${name}\ndata: ${JSON.stringify(daten)}\n\n`;
-}
-
 // ═══════════════════════════════════════════════════════════════════════
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (!(await hatZugriff(base44, user))) {
+    if (!(await hatAssistentZugriff(base44, user))) {
       return Response.json({ error: 'Keine Berechtigung.' }, { status: 403 });
     }
 

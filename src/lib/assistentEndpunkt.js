@@ -15,6 +15,11 @@ import { appParams } from '@/lib/app-params';
 
 export const ASSISTENT_ENDPOINT = `/api/apps/${appParams.appId}/functions/aufgabeGeneratorChat`;
 
+/** Adresse einer beliebigen streamenden Assistenz-Funktion (gleicher Weg). */
+export function assistentEndpointFuer(funktionsName) {
+  return `/api/apps/${appParams.appId}/functions/${funktionsName}`;
+}
+
 /** Holt einen gültigen Token — gleiche Logik wie useRealtimeUpdates. */
 async function holeToken() {
   try {

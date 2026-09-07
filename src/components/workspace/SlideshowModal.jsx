@@ -13,7 +13,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Save, Presentation } from 'lucide-react';
+import { Loader2, Save, Presentation, Sparkles } from 'lucide-react';
+import SlideshowKIDialog from '@/components/slideshow/ki/SlideshowKIDialog';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import FolienListe from '@/components/slideshow/FolienListe';
 import FolieEinstellungen from '@/components/slideshow/FolieEinstellungen';
@@ -33,12 +34,15 @@ export default function SlideshowModal({
   onReset,
   isSaving = false,
   parentLernpaketName = '',
+  kiKontext = {},
 }) {
   const [fieldValues, setFieldValues] = useState({});
   const [folien, setFolien] = useState([]);
   const [aktuell, setAktuell] = useState(0);
   const [aktiverSlot, setAktiverSlot] = useState(null); // { key, el }
   const [vorlageWahlOffen, setVorlageWahlOffen] = useState(false);
+  // KI-Assistent: baut Erklärfolien im Gespräch, Ergebnis wird hier übernommen.
+  const [kiOffen, setKiOffen] = useState(false);
   const prevOpenRef = useRef(false);
 
   useEffect(() => {
@@ -50,6 +54,7 @@ export default function SlideshowModal({
       setAktuell(0);
       setAktiverSlot(null);
       setVorlageWahlOffen(false);
+      setKiOffen(false);
     }
     prevOpenRef.current = open;
   }, [open]);
@@ -107,6 +112,14 @@ export default function SlideshowModal({
     onElementChange(aktiverSlot.key, { html: el.innerHTML });
   };
 
+  /** Übernahme aus dem KI-Assistenten: ersetzen oder hinten anhängen. */
+  const kiUebernehmen = (kiFolien, modus) => {
+    const neu = modus === 'anhaengen' ? [...folien, ...kiFolien] : kiFolien;
+    setFolien(neu);
+    setAktuell(modus === 'anhaengen' ? folien.length : 0);
+    setAktiverSlot(null);
+  };
+
   const handleSave = () => {
     const payload = { ...fieldValues, slides: folien };
     if ((initialFieldValues || initialData)?.moodle_sync_status === 'synced') {
@@ -132,6 +145,14 @@ export default function SlideshowModal({
         </DialogHeader>
 
         <div className="shrink-0 px-6 py-2.5 border-b bg-muted/20 flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 text-xs shrink-0 border-violet-300 text-violet-700 hover:bg-violet-50"
+            onClick={() => setKiOffen(true)}
+          >
+            <Sparkles className="w-3.5 h-3.5" /> Mit KI erstellen
+          </Button>
           <span className="text-xs font-medium text-muted-foreground shrink-0">Aufgabenstellung (optional)</span>
           <Input
             value={fieldValues.aufgabentext || ''}
@@ -196,6 +217,14 @@ export default function SlideshowModal({
             {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Speichern…</> : <><Save className="w-4 h-4" /> Speichern</>}
           </Button>
         </DialogFooter>
+
+        <SlideshowKIDialog
+          open={kiOffen}
+          onOpenChange={setKiOffen}
+          kontext={{ ...kiKontext, lernpaket: parentLernpaketName || undefined, aufgabentext: fieldValues.aufgabentext || undefined }}
+          vorhandeneFolien={folien.filter((f) => Object.keys(f.elemente || {}).length > 0)}
+          onUebernehmen={kiUebernehmen}
+        />
       </DialogContent>
     </Dialog>
   );
