@@ -289,8 +289,9 @@ export default function AITutorPromptPanel({
         basisLernziele: basisFuerErzeugung,
         // Lernziel→Lernpaket-Zuordnung, damit Brian gezielt auf Lernpakete verweisen kann.
         lernzieleMitLernpaket,
-        // Schlüsselcodes: kommen wortgetreu in die interne Anweisung.
-        schluessel,
+        // Schlüsselcodes: kommen wortgetreu in die Brian-Felder. Die am
+        // Schritt gespeicherten Codes haben Vorrang vor dem lokalen Stand.
+        schluessel: brianWerte?.schluessel || schluessel,
       });
       const result = response.data?.segments;
       if (!result) throw new Error('Keine Segmente erhalten');
