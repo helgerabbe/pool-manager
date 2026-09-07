@@ -23,20 +23,25 @@ const BRIAN_LOGO = 'https://media.base44.com/images/public/69cb7e99726da2a1d81be
  * beiden Buttons (zurück + grün „Erledigt"). Später kann statt der Startseite
  * eine konkrete Aufgaben-ID übergeben werden.
  */
-export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null }) {
+export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, onErledigt, onBack, schluessel = null, dialogUrl = null }) {
   const fv = aktivitaet?.field_values || {};
   const [kopiert, setKopiert] = useState(false);
+  // Direkter Modus: Für diese Aufgabe ist in Brian bereits ein eigener Dialog
+  // hinterlegt (die vier Brian-Felder sind übertragen). Dann gibt es NICHTS zu
+  // kopieren – der Link führt direkt in die vorbereitete Aufgabe.
+  const direkt = !!dialogUrl;
+  const zielUrl = dialogUrl || BRIAN_URL;
   // Wann der Schüler von hier aus zu Brian gewechselt ist — Grundlage der
   // Plausibilitätsprüfung beim Schlüsselcode.
   const [geoeffnetAm, setGeoeffnetAm] = useState(null);
   const mitCode = hatSchluessel(schluessel);
 
   const merkeOeffnen = () => setGeoeffnetAm((prev) => prev || Date.now());
-  const oeffneFenster = () => { merkeOeffnen(); window.open(BRIAN_URL, '_blank', 'noopener,noreferrer,width=1100,height=800'); };
-  const oeffneTab = () => { merkeOeffnen(); window.open(BRIAN_URL, '_blank', 'noopener,noreferrer'); };
+  const oeffneFenster = () => { merkeOeffnen(); window.open(zielUrl, '_blank', 'noopener,noreferrer,width=1100,height=800'); };
+  const oeffneTab = () => { merkeOeffnen(); window.open(zielUrl, '_blank', 'noopener,noreferrer'); };
   const kopiereLink = async () => {
     try {
-      await navigator.clipboard.writeText(BRIAN_URL);
+      await navigator.clipboard.writeText(zielUrl);
       setKopiert(true);
       setTimeout(() => setKopiert(false), 2000);
     } catch { /* Clipboard nicht verfügbar – still ignorieren */ }
@@ -64,27 +69,42 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
             <p>
               Diese Aufgabe bearbeitest du mit deinem KI-Tutor <strong>Brian</strong>. So geht's:
             </p>
-            <ol className="mt-1.5 space-y-1 list-decimal list-inside">
-              <li>Öffne Brian und starte dort ein <strong>allgemeines Tutorgespräch</strong>.</li>
-              <li>Kopiere die Anweisung unten und füge sie als erste Nachricht ein.</li>
-              <li>Bearbeite die Aufgabe gemeinsam mit Brian und <strong>komm danach hierher zurück</strong>.
-                {mitCode
-                  ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
-                  : ' Tippe dann unten auf „Erledigt".'}
-              </li>
-            </ol>
+            {direkt ? (
+              <ol className="mt-1.5 space-y-1 list-decimal list-inside">
+                <li>Öffne Brian – der Link führt <strong>direkt zu dieser Aufgabe</strong>. Du musst nichts kopieren.</li>
+                <li>Bearbeite die Aufgabe im Gespräch mit Brian und <strong>komm danach hierher zurück</strong>.
+                  {mitCode
+                    ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                    : ' Tippe dann unten auf „Erledigt".'}
+                </li>
+              </ol>
+            ) : (
+              <ol className="mt-1.5 space-y-1 list-decimal list-inside">
+                <li>Öffne Brian und starte dort ein <strong>allgemeines Tutorgespräch</strong>.</li>
+                <li>Kopiere die Anweisung unten und füge sie als erste Nachricht ein.</li>
+                <li>Bearbeite die Aufgabe gemeinsam mit Brian und <strong>komm danach hierher zurück</strong>.
+                  {mitCode
+                    ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                    : ' Tippe dann unten auf „Erledigt".'}
+                </li>
+              </ol>
+            )}
           </HinweisBox>
 
-          {/* Schritt 2: die Anweisung für Brian zum Kopieren */}
-          <BrianAnweisungKopieren
-            aufgabe={fv.instruction || ''}
-            erwartungshorizont={fv.system_prompt || fv.erwartungshorizont || ''}
-          />
+          {/* Nur ohne vorbereiteten Dialog: die Anweisung zum Kopieren */}
+          {!direkt && (
+            <BrianAnweisungKopieren
+              aufgabe={fv.instruction || ''}
+              erwartungshorizont={fv.system_prompt || fv.erwartungshorizont || ''}
+            />
+          )}
 
           {/* Brian-Öffnen-Optionen */}
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-sm font-semibold text-foreground">Brian öffnen</p>
-            <p className="text-xs text-muted-foreground truncate mb-3">{BRIAN_URL}</p>
+            <p className="text-sm font-semibold text-foreground">
+              {direkt ? 'Aufgabe in Brian öffnen' : 'Brian öffnen'}
+            </p>
+            <p className="text-xs text-muted-foreground truncate mb-3">{zielUrl}</p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <Button onClick={oeffneFenster} className="gap-2 bg-primary hover:bg-primary/90">
                 <AppWindow className="w-4 h-4" /> Neues Fenster

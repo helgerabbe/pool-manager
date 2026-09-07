@@ -464,6 +464,9 @@ export default function AufgabensequenzSeite({
             aktivitaet={{ id: step.id, field_values: { instruction: b.learner_instruction || b.aufgabenstellung || '' } }}
             kat={{ name: b.dialog_name || 'KI-Tutor Aufgabe (Brian)' }}
             schluessel={b.schluessel || null}
+            /* Vier Brian-Felder übertragen → eigener Dialog in Brian: direkter
+               Einstieg über den Link, ohne Anweisung zu kopieren. */
+            dialogUrl={b.url || null}
             busy={busy}
             onErledigt={weiter}
             onBack={zurueck}
