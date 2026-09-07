@@ -38,6 +38,7 @@ import { base44 } from '@/api/base44Client';
 // Block am Ende dieser Datei.
 // import AiTaskWizardModal from '@/components/ui/AiTaskWizardModal';
 // import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
+import DeleteAufgabeConfirmDialog from '@/components/allgemeineAufgaben/DeleteAufgabeConfirmDialog';
 import HelpBadge from '@/components/ui/HelpBadge';
 import HelpDialog from '@/components/ui/HelpDialog';
 import MissionBadge from '@/components/missionen/MissionBadge';
@@ -591,6 +592,9 @@ export default function AllgemeineAufgabenView({
   const [editingAufgabe, setEditingAufgabe] = useState(null);
   const [currentUserEmail, setCurrentUserEmail] = useState(null);
   const [previewAufgabe, setPreviewAufgabe] = useState(null);
+  // Sicherheitsabfrage vor dem Löschen: hier liegt die ID der Aufgabe, die
+  // gelöscht werden SOLL – gelöscht wird erst nach Bestätigung im Dialog.
+  const [deleteAufgabeId, setDeleteAufgabeId] = useState(null);
   // Aufgabenart-Picker (Handlung | digitale Aufgabe | externe Seite) – nur in Ebene 2.
   const [artPickerOpen, setArtPickerOpen] = useState(false);
   const [handlungViewOpen, setHandlungViewOpen] = useState(false);
@@ -926,7 +930,7 @@ export default function AllgemeineAufgabenView({
                       setCreateFormOpen(true);
                     }
                   }}
-                  onDelete={(id) => deleteAufgabe.mutate(id)}
+                  onDelete={(id) => setDeleteAufgabeId(id)}
                   onPreview={(a) => setPreviewAufgabe(a)}
                 />
               </main>
@@ -970,7 +974,7 @@ export default function AllgemeineAufgabenView({
                       setCreateFormOpen(true);
                     }
                   }}
-                  onDelete={(id) => deleteAufgabe.mutate(id)}
+                  onDelete={(id) => setDeleteAufgabeId(id)}
                   onPreview={(a) => setPreviewAufgabe(a)}
                 />
               </TabsContent>
@@ -1033,6 +1037,17 @@ export default function AllgemeineAufgabenView({
         )}
       </div>
 
+
+      {/* Sicherheitsabfrage vor dem endgültigen Löschen einer Aufgabe */}
+      <DeleteAufgabeConfirmDialog
+        open={!!deleteAufgabeId}
+        onOpenChange={(o) => { if (!o) setDeleteAufgabeId(null); }}
+        aufgabe={allgemeineAufgaben.find((a) => a.id === deleteAufgabeId)}
+        isDeleting={deleteAufgabe.isPending}
+        onConfirm={() => {
+          deleteAufgabe.mutate(deleteAufgabeId, { onSuccess: () => setDeleteAufgabeId(null) });
+        }}
+      />
 
       {/* Aufgabenart-Picker (Handlung / digitale Aufgabe / externe Seite) */}
       <AufgabenArtPicker
