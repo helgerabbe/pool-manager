@@ -28,6 +28,7 @@ import SortingListEditor from '@/components/workspace/SortingListEditor';
 import SortingListModal from '@/components/workspace/SortingListModal';
 import MatchTermsModal from '@/components/workspace/MatchTermsModal';
 import KlonQuizReadOnly from '@/components/workspace/KlonQuizReadOnly';
+import KlonTestReadOnly from '@/components/workspace/KlonTestReadOnly';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { toast } from 'sonner';
 
@@ -52,6 +53,10 @@ function isLueckentext(name = '') {
 
 function isSorting(name = '') {
   return SORTING_NAMES.some(n => name.toLowerCase().includes(n));
+}
+
+function isTest(name = '') {
+  return name.toLowerCase().includes('test');
 }
 
 function isQuiz(name = '') {
@@ -473,6 +478,8 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onConvertToMaster={() => convertToMasterMutation.mutate(undefined, { onSuccess: () => handleCloseModal() })}
             />
           </div>
+        ) : isTest(catalogEntry?.name) ? (
+          <KlonTestReadOnly data={data} />
         ) : isQuiz(catalogEntry?.name) ? (
           <KlonQuizReadOnly data={data} />
         ) : (
