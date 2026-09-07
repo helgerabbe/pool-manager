@@ -144,7 +144,7 @@ export default async function (req) {
           systemBausteine: bausteine || [],
           themenfelder: themenfelder || [],
         }),
-        ...findeFehlendeOnboardingInhalte({ einheit }),
+        ...findeFehlendeOnboardingInhalte({ einheit, snapshots: snapshots || [] }),
         // Vorhanden, aber von keiner Lehrkraft gelesen — der Kern der
         // MBK-Meldung vom 2026-09-01.
         ...findeUngesichteteInterneInhalte({

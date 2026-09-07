@@ -52,7 +52,7 @@ function getEinschaetzung(avg) {
 }
 
 export default function EinstiegsdiagnosePreviewModal({
-  open, onOpenChange, einheitId, einheitTitel, fach, onUebernehmen,
+  open, onOpenChange, einheitId, einheitTitel, fach, initialSnapshot, onUebernehmen,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -82,8 +82,19 @@ export default function EinstiegsdiagnosePreviewModal({
     }
   }, [einheitId]);
 
+  // Gespeicherten Stand zeigen statt jedes Mal neu (und teuer) zu erzeugen.
   useEffect(() => {
-    if (open) generate();
+    if (!open) return;
+    setError(null);
+    setAuswertung(false);
+    if (initialSnapshot) {
+      setDiagnose(initialSnapshot);
+      const init = {};
+      (initialSnapshot.fragen || []).forEach((_, i) => { init[i] = 50; });
+      setWerte(init);
+      return;
+    }
+    generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

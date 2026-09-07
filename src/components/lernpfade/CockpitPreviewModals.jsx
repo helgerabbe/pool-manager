@@ -25,6 +25,7 @@ export default function CockpitPreviewModals({
   sektoren,
   aufgabenById,
   systemBausteineById,
+  onboardingSnapshots = {},
 }) {
   const einheitId = einheit?.id;
   const einheitTitel = einheit?.titel_der_einheit;
@@ -56,6 +57,7 @@ export default function CockpitPreviewModals({
         einheitId={einheitId}
         einheitTitel={einheitTitel}
         fach={fach}
+        initialSnapshot={previews.einfuehrungSnapshot || onboardingSnapshots.einfuehrung || null}
         onUebernehmen={(snap) => {
           previews.setEinfuehrungSnapshot(snap);
           persistOnboardingElement('einfuehrung', snap);
@@ -68,6 +70,7 @@ export default function CockpitPreviewModals({
         einheitId={einheitId}
         einheitTitel={einheitTitel}
         fach={fach}
+        initialSnapshot={previews.qblockSnapshot || onboardingSnapshots.fragenblock || null}
         onUebernehmen={(snap) => {
           previews.setQblockSnapshot(snap);
           persistOnboardingElement('fragenblock', snap);
@@ -80,7 +83,7 @@ export default function CockpitPreviewModals({
         einheitId={einheitId}
         einheitTitel={einheitTitel}
         fach={fach}
-        initialSnapshot={previews.diagnoseQuizSnapshot}
+        initialSnapshot={previews.diagnoseQuizSnapshot || onboardingSnapshots.einstiegsdiagnose || null}
         onUebernehmen={(snap) => {
           previews.setDiagnoseQuizSnapshot(snap);
           persistOnboardingElement('einstiegsdiagnose', snap);
@@ -93,6 +96,7 @@ export default function CockpitPreviewModals({
         einheitId={einheitId}
         einheitTitel={einheitTitel}
         fach={fach}
+        initialSnapshot={onboardingSnapshots.lerntyp_diagnose || null}
         onUebernehmen={(snap) => persistOnboardingElement('lerntyp_diagnose', snap)}
       />
 

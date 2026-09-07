@@ -1139,6 +1139,7 @@ export default function LernpfadeCockpit({
         sektoren={konfiguration?.[activeLernTyp] || []}
         aufgabenById={aufgabenById}
         systemBausteineById={systemBausteineById}
+        onboardingSnapshots={onboardingSnapshots}
       />
 
       <ReleaseBlockerModal

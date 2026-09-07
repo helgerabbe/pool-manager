@@ -22,7 +22,7 @@ import PreviewActionBar from './preview/PreviewActionBar';
 import BrianUebergabeFelder from './BrianUebergabeFelder';
 
 export default function LerntypDiagnosePreviewModal({
-  open, onOpenChange, einheitId, einheitTitel, fach, onUebernehmen,
+  open, onOpenChange, einheitId, einheitTitel, fach, initialSnapshot, onUebernehmen,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -44,8 +44,15 @@ export default function LerntypDiagnosePreviewModal({
     }
   }, [einheitId]);
 
+  // Gespeicherten Stand zeigen statt jedes Mal neu (und teuer) zu erzeugen.
   useEffect(() => {
-    if (open) generate();
+    if (!open) return;
+    setError(null);
+    if (initialSnapshot) {
+      setDiagnose(initialSnapshot);
+      return;
+    }
+    generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

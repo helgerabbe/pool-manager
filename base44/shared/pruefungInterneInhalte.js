@@ -31,10 +31,10 @@ const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
  * Lehrkraft überlässt sie bewusst der MBK.
  */
 const ONBOARDING_ELEMENTE = [
-  { key: 'einfuehrung', titel: 'Kurze Einführung in die Einheit' },
-  { key: 'fragenblock', titel: 'Freiwilliger Fragenblock (Selbsteinschätzung)' },
-  { key: 'einstiegsdiagnose', titel: 'Einstiegsdiagnose (Wissensquiz)' },
-  { key: 'lerntyp_diagnose', titel: 'KI-Intensitätsstufen-Diagnose' },
+  { key: 'einfuehrung', baustein_id: 'onboarding_einfuehrung', titel: 'Kurze Einführung in die Einheit' },
+  { key: 'fragenblock', baustein_id: 'onboarding_fragenblock', titel: 'Freiwilliger Fragenblock (Selbsteinschätzung)' },
+  { key: 'einstiegsdiagnose', baustein_id: 'onboarding_einstiegsdiagnose', titel: 'Einstiegsdiagnose (Wissensquiz)' },
+  { key: 'lerntyp_diagnose', baustein_id: 'onboarding_lerntyp_diagnose', titel: 'KI-Intensitätsstufen-Diagnose' },
 ];
 
 function leeresObjekt(inhalt) {
@@ -131,10 +131,19 @@ export function findeUngesichteteInterneInhalte({ snapshots = [], systemBaustein
  * Prüft die vier festen Onboarding-Elemente der Einheit.
  * @returns {Array<{ziel_id, ziel_titel, themenfeld_id, themenfeld_titel, kandidat}>}
  */
-export function findeFehlendeOnboardingInhalte({ einheit }) {
+export function findeFehlendeOnboardingInhalte({ einheit, snapshots = [] }) {
+  // Gespeichert wird seit 2026-09 in SchuelerInhaltSnapshot
+  // (geltungsbereich='einheit', baustein_id='onboarding_*'). Der alte Ort
+  // Einheiten.onboarding_konfiguration bleibt als Fallback für Altbestand.
   const konfig = einheit?.onboarding_konfiguration || {};
+  const snapshotIds = new Set(
+    (snapshots || [])
+      .filter((s) => s?.geltungsbereich === 'einheit' && !leeresObjekt(s.inhalt))
+      .map((s) => s.baustein_id)
+  );
   const treffer = [];
   for (const el of ONBOARDING_ELEMENTE) {
+    if (snapshotIds.has(el.baustein_id)) continue;
     if (!leeresObjekt(konfig[el.key])) continue;
     treffer.push({
       ziel_id: `onboarding::${el.key}`,

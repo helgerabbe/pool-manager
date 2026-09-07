@@ -17,7 +17,7 @@ import { Sparkles, RefreshCw, Loader2, ImageIcon, AlertTriangle } from 'lucide-r
 import PreviewActionBar from './preview/PreviewActionBar';
 
 export default function EinfuehrungPreviewModal({
-  open, onOpenChange, einheitId, einheitTitel, fach, onUebernehmen,
+  open, onOpenChange, einheitId, einheitTitel, fach, initialSnapshot, onUebernehmen,
 }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -51,14 +51,20 @@ export default function EinfuehrungPreviewModal({
     }
   }, [einheitId]);
 
-  // Beim Öffnen automatisch generieren (einmalig pro Öffnen).
+  // Beim Öffnen: bereits gespeicherten Stand zeigen (keine erneute, kosten-
+  // pflichtige Generierung). Nur wenn noch nichts gespeichert ist, wird
+  // automatisch generiert. „Neu erzeugen" bleibt jederzeit möglich.
   useEffect(() => {
-    if (open) {
-      setEinfuehrung(null);
-      setImageUrl(null);
-      setError(null);
-      generate();
+    if (!open) return;
+    setError(null);
+    if (initialSnapshot) {
+      setEinfuehrung(initialSnapshot);
+      setImageUrl(initialSnapshot.imageUrl || null);
+      return;
     }
+    setEinfuehrung(null);
+    setImageUrl(null);
+    generate();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
