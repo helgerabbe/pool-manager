@@ -93,6 +93,17 @@ export const VORLAGEN = [
       { key: 'rechts', art: 'text', label: 'Rechte Spalte', platzhalter: 'Rechte Spalte …', groesse: 's', box: { left: 500, top: 140, width: 400, height: 350 } },
     ],
   },
+  {
+    // Überschrift + Unterüberschrift, darunter zwei Textspalten und rechts ein Bild.
+    key: 'zwei_spalten_bild', label: 'Zwei Spalten + Bild',
+    slots: [
+      { ...UEBERSCHRIFT, box: { left: 60, top: 36, width: 840, height: 66 } },
+      { key: 'unterueberschrift', art: 'text', label: 'Unterüberschrift', platzhalter: 'Unterüberschrift', groesse: 'm', fett: true, box: { left: 60, top: 108, width: 840, height: 52 } },
+      { key: 'links', art: 'text', label: 'Linke Spalte', platzhalter: 'Linke Spalte …', groesse: 'xs', box: { left: 60, top: 176, width: 270, height: 320 } },
+      { key: 'rechts', art: 'text', label: 'Rechte Spalte', platzhalter: 'Rechte Spalte …', groesse: 'xs', box: { left: 350, top: 176, width: 270, height: 320 } },
+      { key: 'bild', art: 'bild', label: 'Bild', box: { left: 640, top: 176, width: 260, height: 320 } },
+    ],
+  },
 ];
 
 function uid() {
@@ -123,6 +134,7 @@ export function neueFolie(vorlageKey = 'text') {
 const VERWANDTE_SLOTS = {
   ueberschrift: ['titel', 'text'],
   titel: ['ueberschrift'],
+  unterueberschrift: ['untertitel', 'text', 'links'],
   untertitel: ['bildunterschrift', 'text', 'links'],
   text: ['links', 'rechts', 'untertitel', 'bildunterschrift'],
   links: ['text', 'rechts'],
