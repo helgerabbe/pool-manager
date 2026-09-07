@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
 import HinweisBox from './HinweisBox';
 import BrianSchluesselEingabe from './BrianSchluesselEingabe';
+import BrianAnweisungKopieren from './BrianAnweisungKopieren';
 import { hatSchluessel } from '@/lib/brianSchluessel';
 
 const BRIAN_URL = 'https://brian.study';
@@ -61,13 +62,24 @@ export default function KITutorSeite({ aktivitaet, kat, lernpaketTitel, busy, on
               <p className="font-semibold">Du wechselst jetzt zu Brian.</p>
             </div>
             <p>
-              Diese Aufgabe bearbeitest du mit deinem KI-Tutor <strong>Brian</strong>. Öffne Brian,
-              löse dort deine Aufgabe und <strong>komm danach hierher zurück</strong>.
-              {mitCode
-                ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
-                : ' Tippe dann unten auf „Erledigt".'}
+              Diese Aufgabe bearbeitest du mit deinem KI-Tutor <strong>Brian</strong>. So geht's:
             </p>
+            <ol className="mt-1.5 space-y-1 list-decimal list-inside">
+              <li>Öffne Brian und starte dort ein <strong>allgemeines Tutorgespräch</strong>.</li>
+              <li>Kopiere die Anweisung unten und füge sie als erste Nachricht ein.</li>
+              <li>Bearbeite die Aufgabe gemeinsam mit Brian und <strong>komm danach hierher zurück</strong>.
+                {mitCode
+                  ? ' Brian nennt dir am Ende einen Schlüsselcode — den gibst du unten ein.'
+                  : ' Tippe dann unten auf „Erledigt".'}
+              </li>
+            </ol>
           </HinweisBox>
+
+          {/* Schritt 2: die Anweisung für Brian zum Kopieren */}
+          <BrianAnweisungKopieren
+            aufgabe={fv.instruction || ''}
+            erwartungshorizont={fv.system_prompt || fv.erwartungshorizont || ''}
+          />
 
           {/* Brian-Öffnen-Optionen */}
           <div className="rounded-xl border border-border bg-card p-4">

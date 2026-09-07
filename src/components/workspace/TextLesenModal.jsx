@@ -403,11 +403,10 @@ export default function TextLesenModal({
                   <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-xs text-amber-800">
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                     <p>
-                      <span className="font-semibold">Wichtig:</span> Brian kennt diese Aufgabe (und das Bild) nicht.
-                      Er bekommt sie nur, wenn der Schüler sie ihm selbst erklärt – z. B. indem er das Bild als
-                      Screenshot in den Chat kopiert. Brian gibt keine Lösung vor, sondern unterstützt nur bei der Bearbeitung.
-                      Soll eine Aufgabe wirklich ausführlich gemeinsam mit Brian gelöst werden, gehört sie eher zu den
-                      allgemeinen Aufgaben (Tab 6).
+                      <span className="font-semibold">So läuft es ab:</span> Die Schüler öffnen bei Brian ein
+                      allgemeines Tutorgespräch und kopieren eine fertige Anweisung hinein – sie enthält die
+                      Aufgabenstellung und Ihren Erwartungshorizont als verdeckten Hinweis für Brian. Ein Bild kann
+                      Brian nicht mitbekommen; es müssten die Schüler selbst als Screenshot in den Chat einfügen.
                     </p>
                   </div>
                   <BildEinfuegenFeld
