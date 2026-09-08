@@ -47,8 +47,10 @@ export default function LernpaketZielKarte({
     releaseLock,
   } = useLernpaketLock(paket.id);
 
-  // Freigegebenes Lernpaket → alle Inhalte gesperrt, kein Bearbeiten.
-  const lernpaketReleased = paket.content_status === 'approved' && !!paket.released_at;
+  // Lernziele sind von der Freigabe-Sperre bewusst ausgenommen: Ein Lernziel
+  // zu ergänzen oder zu streichen ändert keine exportierte Aktivität. Für
+  // Aktivitäten im Paket gilt die Sperre weiterhin.
+  const lernpaketReleased = false;
 
   // Effektive Bearbeitbarkeit: nur wenn Rolle erlaubt UND Lock gehalten wird.
   const editierbar = kannBearbeiten && canEdit;
