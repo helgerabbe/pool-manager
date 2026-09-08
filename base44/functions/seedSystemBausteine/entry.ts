@@ -54,13 +54,13 @@ const PFLICHT_BAUSTEINE = [
   },
   {
     baustein_id: 'sys_themenfeld_intro',
-    titel: 'Einführung in das Themenfeld',
+    titel: 'Einführung in den Sektor',
     icon: 'info',
     typ: 'baustein',
     admin_beschreibung:
-      'Kurze Einführung in das jeweilige Themenfeld – worum geht es, was sind die Schwerpunkte.',
+      'Kurze Einführung in genau diesen Lernabschnitt (Sektor): worum geht es hier, was liegt in diesem Abschnitt. Bezieht sich ausschließlich auf die Elemente im selben Sektor.',
     export_instruktion:
-      'Gib dem Schüler eine kurze, motivierende Einführung in das aktuelle Themenfeld: worum geht es, welche Schwerpunkte erwarten ihn.',
+      'Gib dem Schüler eine kurze, motivierende Einführung in genau diesen Lernabschnitt: worum geht es hier und was wird er in diesem Abschnitt tun. Beziehe dich ausschließlich auf die Elemente dieses Abschnitts.',
     ist_aktiv: true,
     reihenfolge: 45,
   },

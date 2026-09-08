@@ -34,6 +34,7 @@ import BundleErforderlichControl from '@/components/lernpfade/BundleErforderlich
 import { resolveBundleModus } from '@/lib/dashboardGating';
 import { getBundleFarbe } from '@/lib/lernpfadFarben';
 import BundleModusToggle from '@/components/lernpfade/BundleModusToggle';
+import SektorIntroVorschauButton from '@/components/lernpfade/SektorIntroVorschauButton';
 
 // Phase 4: Nur das Aufgabenbündel zeigt das "X von Y"-Control. Lernpaket-
 // und Projektbündel haben andere Semantik (alle Pflicht / freiwillig).
@@ -194,7 +195,10 @@ export default function SystemBausteinPill({
                   {hatAuftrag ? 'Auftrag' : 'Auftrag fehlt'}
                 </button>
               )}
-              {onPreview && (
+              {onPreview && refId === 'sys_themenfeld_intro' && (
+                <SektorIntroVorschauButton instanceId={instanceId} onPreview={onPreview} />
+              )}
+              {onPreview && refId !== 'sys_themenfeld_intro' && (
                 <button
                   type="button"
                   onClick={(e) => {
