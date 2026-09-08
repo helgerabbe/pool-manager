@@ -26,15 +26,18 @@ export default function StrukturPhase({
     struktur.senden(t);
   };
 
+  // min-h-0 an BEIDEN Spalten: Grid-Kinder haben von sich aus
+  // min-height:auto und wachsen sonst über den Dialog hinaus — dann scrollt
+  // weder das Gespräch noch die Ablaufliste.
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,1fr)_minmax(380px,1.2fr)] gap-4 h-full min-h-0">
+    <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,1fr)_minmax(380px,1.2fr)] gap-4 h-full min-h-0 [&>*]:min-h-0">
       <GespraechsSpalte
         gen={struktur}
         eingabe={eingabe}
         onEingabe={setEingabe}
         onAbschicken={abschicken}
         disabled={disabled}
-        className="min-h-[300px]"
+        className="h-full"
         platzhalter={struktur.vorschlag?.length
           ? 'Was soll am Ablauf anders sein? z. B. „Mach daraus vier Schritte“ oder „Schritt 2 als Lückentext“'
           : 'Worum geht es in dieser Aufgabe? Was sollen die Schüler am Ende können?'}

@@ -325,7 +325,7 @@ export default function AufgabenWerkstatt({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[95vh] w-[97vw] max-w-[1600px] overflow-hidden bg-slate-50 p-4 flex flex-col">
+      <DialogContent className="h-[95vh] w-[97vw] max-w-[1600px] overflow-hidden bg-slate-50 p-4 flex flex-col">
         <DialogHeader className="border-b border-slate-200 pb-3 shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Hammer className="w-4 h-4 text-violet-600" />
