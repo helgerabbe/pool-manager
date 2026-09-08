@@ -46,10 +46,10 @@ export default async function (req) {
         .filter((p) => p.themenfeld_id === tf.id)
         .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
       const zeilen = eigene.map((p) => {
-        const ziele = (zieleJePaket.get(p.id) || [])
+        const zielZeilen = (zieleJePaket.get(p.id) || [])
           .map((z) => `      • ${z.formulierung_fachsprache || z.schueler_uebersetzung || ''}`)
           .filter((s) => s.trim().length > 8);
-        return `   – Lernpaket: ${p.titel_des_pakets}\n${zeilen.length ? ziele.join('\n') : '      (ohne eingetragene Lernziele)'}`;
+        return `   – Lernpaket: ${p.titel_des_pakets}\n${zielZeilen.length ? zielZeilen.join('\n') : '      (ohne eingetragene Lernziele)'}`;
       });
       bloecke.push(
         `THEMENFELD: ${tf.titel}${tf.leitfrage ? `\n   Leitfrage: ${tf.leitfrage}` : ''}\n${zeilen.join('\n') || '   (noch keine Lernpakete)'}`,
