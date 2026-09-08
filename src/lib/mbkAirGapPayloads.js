@@ -36,6 +36,11 @@ import { ONBOARDING_CONTRACT, buildOnboardingForStructure } from '@/lib/mbkOnboa
 import { SEQUENZ_CONTRACT } from '@/lib/mbkSequenzContract';
 import { LERNLANDKARTE_CONTRACT } from '@/lib/mbkLernlandkarteContract';
 import {
+  LERNPAKET_ZUGANG_CONTRACT,
+  ITEM_ARBEITSAUFTRAG_CONTRACT,
+} from '@/lib/mbkDashboardContracts';
+import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
+import {
   MBK_AIRGAP_VERSION,
   LERNTYP_KEYS,
   isTombstone,
@@ -910,6 +915,11 @@ export function buildSystemContextPayload({
     // Lernlandkarte (Fokus-Ansicht, Knotenarten, Selbsteinschätzung).
     sequenz_contract: SEQUENZ_CONTRACT,
     lernlandkarte_contract: LERNLANDKARTE_CONTRACT,
+    // airgap-1.21.0: Zugang zu einem Lernpaket (Standard/Fast-Track/
+    // Wissensspeicher) und Arbeitsauftrag einer einzelnen Pfad-Stelle. Die
+    // konkreten Werte stehen pro Item in Payload 2.
+    lernpaket_zugang_contract: LERNPAKET_ZUGANG_CONTRACT,
+    item_arbeitsauftrag_contract: ITEM_ARBEITSAUFTRAG_CONTRACT,
   };
 }
 
@@ -960,7 +970,7 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
  * portierbare Struktur um. Items werden hierarchisch (parent/children)
  * gerendert, damit Bündel-Verschachtelungen klar bleiben.
  */
-function summarizeSektor(sektor, themenfelderById, bausteinById = new Map(), refIndex = {}) {
+function summarizeSektor(sektor, themenfelderById, bausteinById = new Map(), refIndex = {}, lerntyp = null) {
   // Platzhalter-Bausteine bleiben in der DB-Konfiguration als Arbeitshilfe
   // für Tab 7 erhalten, fließen aber NICHT in den Export. Wir filtern sie
   // hier ein einziges Mal raus — alles weiter unten arbeitet auf der
@@ -976,13 +986,22 @@ function summarizeSektor(sektor, themenfelderById, bausteinById = new Map(), ref
     }
   }
 
-  const renderItem = (it) => ({
-    instance_id: it?.instance_id || null,
-    type: it?.type || null,
-    ref_id: it?.ref_id || null,
-    parent_instance_id: it?.parent_instance_id || null,
-    bundle_config: it?.bundle_config || null,
-  });
+  const renderItem = (it) => {
+    // airgap-1.21.0: Zugang gilt nur für Lernpaket-Items. Effektiver Wert =
+    // Vorgabe der Intensitätsstufe, ggf. am Item überschrieben.
+    const istLernpaket = !!(it?.ref_id && refIndex?.lernpaketById?.has?.(it.ref_id));
+    return {
+      instance_id: it?.instance_id || null,
+      type: it?.type || null,
+      ref_id: it?.ref_id || null,
+      parent_instance_id: it?.parent_instance_id || null,
+      bundle_config: it?.bundle_config || null,
+      // Arbeitsauftrag dieser Stelle (Lehrer-Check, Präsentation, externer Test).
+      arbeitsauftrag: nullable(it?.arbeitsauftrag),
+      lernpaket_zugang: istLernpaket ? resolveLernpaketZugang(it, lerntyp) : null,
+      lernpaket_zugang_override: istLernpaket ? nullable(it?.lernpaket_zugang) : null,
+    };
+  };
 
   const itemsOut = [];
   rootItems.forEach((root) => {
@@ -1148,6 +1167,9 @@ export function buildStructurePayload({
     themenfeld_id: tf.id,
     titel: nullable(tf.titel),
     beschreibung: nullable(tf.beschreibung),
+    // airgap-1.21.0: Leitfrage des Themenfelds — die Beschriftung, die auf der
+    // Lernlandkarte und in den Sektor-Einführungen steht.
+    leitfrage: nullable(tf.leitfrage),
     reihenfolge: tf.reihenfolge ?? null,
     bearbeitungsmodus: nullable(tf.bearbeitungsmodus),
     lernpakete: (paketeByTf.get(tf.id) || [])
@@ -1165,6 +1187,14 @@ export function buildStructurePayload({
     themenfeld_id: aa.themenfeld_id || null,
     schwierigkeitsgrad: aa.schwierigkeitsgrad ?? null,
     erstellungs_modus: aa.erstellungs_modus || 'manuell',
+    // airgap-1.21.0: Verhalten von Bündel-/Auswahl-Aufgaben. Ohne diese Felder
+    // wusste der Bau nicht, wie viele der verlinkten Elemente Pflicht sind,
+    // in welcher Reihenfolge sie zu bearbeiten sind und mit welchem Zugang die
+    // verlinkten Lernpakete geöffnet werden.
+    aufgaben_modus: aa.aufgaben_modus || 'einzeln',
+    lernpaket_logik: aa.lernpaket_logik || 'standard',
+    erforderliche_anzahl: aa.erforderliche_anzahl ?? 0,
+    interne_reihenfolge: aa.interne_reihenfolge || 'frei',
     verlinkte_lernpaket_ids: Array.isArray(aa.verlinkte_lernpaket_ids) ? aa.verlinkte_lernpaket_ids : [],
     verlinkte_aufgaben_ids: Array.isArray(aa.verlinkte_aufgaben_ids) ? aa.verlinkte_aufgaben_ids : [],
     verlinkte_projekt_ids: Array.isArray(aa.verlinkte_projekt_ids) ? aa.verlinkte_projekt_ids : [],
@@ -1190,7 +1220,7 @@ export function buildStructurePayload({
   for (const lt of LERNTYP_KEYS) {
     const sektoren = einheit?.lernpfade_konfiguration?.[lt] || [];
     lernpfade[lt] = sektoren.map((s) =>
-      summarizeSektor(s, themenfelderById, bausteinByKey, itemRefIndex)
+      summarizeSektor(s, themenfelderById, bausteinByKey, itemRefIndex, lt)
     );
     const dashboardFile = fnDashboard(lt);
     for (const sektor of sektoren) {
@@ -1726,6 +1756,17 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     // Leer bei Aufgaben im Modus 'einzeln'.
     aufgaben_modus: aufgabe?.aufgaben_modus || 'einzeln',
     sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi, katalogById }),
+
+    // airgap-1.21.0: Bündel-/Auswahl-Verhalten und die verlinkten Elemente.
+    // Bei aufgaben_typ='buendel'/'auswahl_buendel' ist das der ganze Inhalt
+    // der Aufgabe — er fehlte im Erstellungspaket bisher komplett.
+    lernpaket_logik: aufgabe?.lernpaket_logik || 'standard',
+    erforderliche_anzahl: aufgabe?.erforderliche_anzahl ?? 0,
+    interne_reihenfolge: aufgabe?.interne_reihenfolge || 'frei',
+    hinweise_zum_material: nullable(aufgabe?.hinweise_zum_material),
+    verlinkte_lernpaket_ids: Array.isArray(aufgabe?.verlinkte_lernpaket_ids) ? aufgabe.verlinkte_lernpaket_ids : [],
+    verlinkte_aufgaben_ids: Array.isArray(aufgabe?.verlinkte_aufgaben_ids) ? aufgabe.verlinkte_aufgaben_ids : [],
+    verlinkte_projekt_ids: Array.isArray(aufgabe?.verlinkte_projekt_ids) ? aufgabe.verlinkte_projekt_ids : [],
 
     alt_text: nullable(aufgabe?.alt_text),
     // airgap-1.4.0: Metadaten für Header/Footer-Injection.

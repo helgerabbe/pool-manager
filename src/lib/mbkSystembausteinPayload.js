@@ -44,6 +44,21 @@ function summarizeLerntypPfad(sektoren, themenfelderById) {
       titel: nullable(sektor?.titel),
       themenfeld_id: sektor?.themenfeld_id || null,
       themenfeld_titel: themenfeldTitel,
+      // airgap-1.21.0: Verhalten des Abschnitts — auch die Karten- und
+      // Einführungs-Bausteine müssen wissen, ob hier der Reihe nach gearbeitet
+      // wird und wann der Abschnitt überhaupt zugänglich ist.
+      modus:
+        sektor?.modus === 'frei' || sektor?.modus === 'sequenziell'
+          ? sektor.modus
+          : (sektor?.bearbeitungsmodus === 'frei' ? 'frei' : 'sequenziell'),
+      freischalt_bedingung:
+        sektor?.freischalt_bedingung?.modus === 'nach_sektor'
+        && sektor?.freischalt_bedingung?.voraussetzung_sektor_id
+          ? {
+            modus: 'nach_sektor',
+            voraussetzung_sektor_id: sektor.freischalt_bedingung.voraussetzung_sektor_id,
+          }
+          : { modus: 'sofort', voraussetzung_sektor_id: null },
       items: (sektor?.items || []).map((it) => ({
         instance_id: it?.instance_id || null,
         type: it?.type || null,

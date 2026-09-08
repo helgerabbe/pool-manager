@@ -17,7 +17,7 @@
  * (lib/exportPromptSync.js) markiert daran alle Payloads als veraltet.
  */
 
-export const MBK_AIRGAP_VERSION = 'airgap-1.20.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.21.0';
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
