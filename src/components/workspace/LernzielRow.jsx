@@ -95,19 +95,66 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, read
     toast.success('KI-Vorschlag übernommen.');
   };
 
+  // Große Lese-Ansicht: ruhige Typografie statt Formularfelder. Nummer, Text,
+  // darunter leise die Schülerfassung — Kategorie als kleines Kürzel rechts.
+  if (gross && readOnly) {
+    return (
+      <div className="group flex items-start gap-3 px-4 py-3">
+        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+          {idx + 1}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[15px] font-medium leading-snug text-foreground">
+            {lz.formulierung_fachsprache || <span className="italic text-muted-foreground">Noch keine Formulierung</span>}
+          </p>
+          {lz.schueler_uebersetzung && (
+            <p className="mt-1 flex items-start gap-1.5 text-sm italic leading-snug text-muted-foreground">
+              <GraduationCap className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500" />
+              <span>{lz.schueler_uebersetzung}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5 pt-0.5">
+          {istVerknuepft && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="flex h-5 items-center gap-0.5 rounded-full border border-blue-200 bg-blue-50 px-1.5 text-[10px] font-semibold text-blue-700 cursor-help">
+                    <Link2 className="h-2.5 w-2.5" />{verknuepftCount}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-[240px] text-[11px]">
+                  Mit {verknuepftCount} Aufgabe{verknuepftCount === 1 ? '' : 'n'} verknüpft
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+          {aktuelleKat && (
+            <span
+              title={aktuelleKat.value}
+              className="flex h-5 w-5 items-center justify-center rounded-full border border-border text-[10px] font-semibold text-muted-foreground"
+            >
+              {aktuelleKat.kurz}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       gross
-        ? 'rounded-xl border bg-card shadow-sm px-4 py-3.5'
+        ? 'px-4 py-3'
         : 'rounded-md border bg-muted/20 px-2 py-1.5'
     )}>
-      <div className={cn('flex items-start', gross ? 'gap-4' : 'gap-2')}>
+      <div className={cn('flex items-start', gross ? 'gap-3' : 'gap-2')}>
         {/* Aktionsspalte: Nummer + EIN Kategorie-Toggle (W/F) + Verknüpfungs-Badge + KI-Symbol */}
         <TooltipProvider>
         <div className={cn('flex flex-col items-center shrink-0', gross ? 'gap-1.5' : 'gap-1')}>
           <span className={cn(
-            'flex items-center justify-center rounded-full bg-primary/10 text-primary font-bold',
-            gross ? 'w-7 h-7 text-sm' : 'w-4 h-4 bg-green-100 text-green-700 text-[10px]'
+            'flex items-center justify-center rounded-full bg-primary/10 text-primary font-semibold',
+            gross ? 'w-6 h-6 text-xs' : 'w-4 h-4 bg-green-100 text-green-700 text-[10px] font-bold'
           )}>{idx + 1}</span>
           {/* Ein einziges Kategorie-Feld: zeigt W oder F, durchschalten per Klick */}
           <Tooltip>
@@ -170,47 +217,38 @@ export default function LernzielRow({ lz, idx, onUpdate, onRemove, kontext, read
         </div>
         </TooltipProvider>
 
-        <div className={cn('flex-1 min-w-0', gross ? 'space-y-3' : 'space-y-1')}>
+        <div className={cn('flex-1 min-w-0', gross ? 'space-y-1.5' : 'space-y-1')}>
           {/* Fachsprache */}
-          {gross && (
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">Lernziel (Fachsprache)</p>
-          )}
           <Textarea
             placeholder="Offizielle Formulierung (Fachsprache) – z.B. „Ich kann…"
             value={lz.formulierung_fachsprache}
             onChange={e => onUpdate(lz.id, 'formulierung_fachsprache', e.target.value)}
             readOnly={readOnly}
-            rows={gross ? 3 : 2}
+            rows={gross ? 2 : 2}
             className={cn(
               gross
-                ? 'text-base leading-relaxed min-h-[76px] resize-y py-2 px-3 font-medium text-foreground'
+                ? 'text-[15px] leading-snug min-h-[44px] resize-y py-1.5 px-2.5 font-medium text-foreground bg-white'
                 : 'text-xs min-h-[42px] resize-y leading-snug py-1',
-              readOnly && (gross ? 'bg-muted/20 border-transparent shadow-none cursor-default' : 'bg-muted/40 cursor-default')
+              readOnly && 'bg-muted/40 cursor-default'
             )}
           />
           {/* Schülergerecht – grafisch klar als Schüler-Variante markiert. */}
-          <div className={cn(
-            'flex items-start border-l-2 border-amber-300',
-            gross ? 'gap-2 pl-3 rounded-r-lg bg-amber-50/60 py-2 pr-2' : 'gap-1 pl-1'
-          )}>
-            <GraduationCap className={cn('text-amber-500 shrink-0', gross ? 'w-4 h-4 mt-1.5' : 'w-2.5 h-2.5 mt-1.5')} />
+          <div className={cn('flex items-start', gross ? 'gap-1.5' : 'gap-1 pl-1 border-l-2 border-amber-300')}>
+            <GraduationCap className={cn('text-amber-500 shrink-0', gross ? 'w-3.5 h-3.5 mt-2' : 'w-2.5 h-2.5 mt-1.5')} />
             <div className="flex-1 min-w-0">
-              {gross && (
-                <p className="text-[11px] uppercase tracking-wide font-semibold text-amber-700 mb-1">So lesen es die Schüler:innen</p>
-              )}
               <Textarea
-                placeholder="Schülergerechte Formulierung (optional)"
+                placeholder="So lesen es die Schüler:innen (optional)"
                 value={lz.schueler_uebersetzung || ''}
                 onChange={e => onUpdate(lz.id, 'schueler_uebersetzung', e.target.value)}
                 readOnly={readOnly}
-                rows={gross ? 2 : 1}
+                rows={1}
                 style={gross ? undefined : { fontSize: '10px', lineHeight: '1.3' }}
                 className={cn(
-                  'italic resize-y text-amber-900 placeholder:text-amber-400/70 placeholder:not-italic',
+                  'italic resize-y placeholder:not-italic',
                   gross
-                    ? 'text-sm leading-relaxed min-h-[48px] py-1.5 px-2.5 bg-transparent border-amber-200/70'
-                    : 'min-h-[20px] py-0.5 bg-amber-50/50 border-amber-200',
-                  readOnly && (gross ? 'border-transparent shadow-none cursor-default' : 'cursor-default')
+                    ? 'text-sm leading-snug min-h-[34px] py-1.5 px-2.5 text-muted-foreground bg-white placeholder:text-muted-foreground/60'
+                    : 'min-h-[20px] py-0.5 bg-amber-50/50 border-amber-200 text-amber-900 placeholder:text-amber-400/70',
+                  readOnly && 'cursor-default'
                 )}
               />
             </div>

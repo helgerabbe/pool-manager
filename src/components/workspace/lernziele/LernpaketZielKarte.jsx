@@ -250,7 +250,7 @@ export default function LernpaketZielKarte({
           Noch keine Lernziele für dieses Lernpaket.
         </p>
       )}
-      <div className="space-y-3">
+      <div className={draft.length > 0 ? 'rounded-xl border bg-card divide-y divide-border/70 shadow-sm' : ''}>
         {draft.map((lz, idx) => (
           <LernzielRow
             key={lz.id}
@@ -265,8 +265,8 @@ export default function LernpaketZielKarte({
         ))}
 
         {editierbar && (
-          <div className="flex items-center pt-1">
-            <Button type="button" size="sm" variant="outline" onClick={addZiel} className="gap-1.5 h-7 text-xs">
+          <div className="flex items-center px-4 py-2.5">
+            <Button type="button" size="sm" variant="ghost" onClick={addZiel} className="gap-1.5 h-7 text-xs text-primary">
               <Plus className="w-3.5 h-3.5" /> Lernziel hinzufügen
             </Button>
           </div>
