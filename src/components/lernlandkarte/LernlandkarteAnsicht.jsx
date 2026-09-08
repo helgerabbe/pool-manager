@@ -35,6 +35,7 @@ export default function LernlandkarteAnsicht({
   lerntyp = 'pragmatiker',
   einschaetzungByZiel = {},
   bearbeiteteAufgabenIds = [],
+  pfadRefIds = null,
   onOeffnen,
   onMarkieren,
   busy,
@@ -48,8 +49,9 @@ export default function LernlandkarteAnsicht({
         lernziele,
         aufgaben,
         vorwissenPakete,
+        pfadRefIds,
       }),
-    [einheitTitel, themenfelder, lernpakete, lernziele, aufgaben, vorwissenPakete]
+    [einheitTitel, themenfelder, lernpakete, lernziele, aufgaben, vorwissenPakete, pfadRefIds]
   );
 
   const status = useMemo(

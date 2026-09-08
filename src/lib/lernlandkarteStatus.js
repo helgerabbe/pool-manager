@@ -34,6 +34,12 @@ export function berechneStatus({
 
   // 1. Blätter/Basiswerte
   for (const n of nodes) {
+    // Knoten, die nicht zum Weg dieses Lerntyps gehören: sichtbar, aber
+    // ausgegraut und ohne Einfluss auf den Fortschritt.
+    if (n.imPfad === false) {
+      status[n.id] = { geschafft: false, anteil: 0, gesperrt: false, nichtImPfad: true };
+      continue;
+    }
     if (n.typ === 'lernpaket') {
       const einschaetzung = einschaetzungByZiel[n.refs.lernzielId] || null;
       status[n.id] = {
@@ -67,7 +73,9 @@ export function berechneStatus({
     const list = kinder.get(node.id) || [];
     list.forEach(aggregiere);
     if (node.typ === 'lernpaket' || node.typ === 'aufgaben') return status[node.id].anteil;
-    const relevant = list.filter((c) => c.typ === 'lernpaket' || c.typ === 'aufgaben');
+    const relevant = list.filter(
+      (c) => (c.typ === 'lernpaket' || c.typ === 'aufgaben') && c.imPfad !== false
+    );
     if (relevant.length === 0) return status[node.id].anteil;
     const anteil =
       relevant.reduce((s, c) => s + (status[c.id]?.anteil || 0), 0) / relevant.length;
@@ -88,7 +96,9 @@ export function berechneStatus({
   // 3. Gating für Minimalisten: der nächste offene Knoten je Themenfeld ist frei
   if (lerntyp === 'minimalist') {
     for (const tf of nodes.filter((n) => n.typ === 'themenfeld')) {
-      const reihe = nodes.filter((n) => n.parentId === tf.id && n.typ === 'lernpaket');
+      const reihe = nodes.filter(
+        (n) => n.parentId === tf.id && n.typ === 'lernpaket' && n.imPfad !== false
+      );
       let naechsterFrei = true;
       for (const lp of reihe) {
         if (status[lp.id].geschafft) continue;

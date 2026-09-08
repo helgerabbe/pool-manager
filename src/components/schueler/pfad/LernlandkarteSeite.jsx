@@ -108,6 +108,16 @@ export default function LernlandkarteSeite({
     return map;
   }, [flatItems]);
 
+  // Alles, was im Dashboard DIESES Lerntyps vorkommt (Lernpakete + Aufgaben).
+  // Was hier fehlt, erscheint auf der Karte ausgegraut als Zusatz.
+  const pfadRefIds = useMemo(
+    () =>
+      new Set(
+        (flatItems || []).filter((it) => it.type === 'aufgabe').map((it) => it.ref_id)
+      ),
+    [flatItems]
+  );
+
   const bearbeiteteAufgabenIds = useMemo(
     () =>
       (flatItems || [])
@@ -177,6 +187,7 @@ export default function LernlandkarteSeite({
           lerntyp={lerntyp}
           einschaetzungByZiel={einschaetzungByZiel}
           bearbeiteteAufgabenIds={bearbeiteteAufgabenIds}
+          pfadRefIds={pfadRefIds}
           onOeffnen={handleOeffnen}
           onMarkieren={handleMarkieren}
           busy={speichert}

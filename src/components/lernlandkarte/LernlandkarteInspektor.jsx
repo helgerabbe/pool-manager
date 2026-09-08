@@ -33,7 +33,10 @@ export default function LernlandkarteInspektor({
 }) {
   if (!node) return null;
 
-  const gesperrt = status?.gesperrt;
+  // Zusatzstoff: gehört nicht zum Weg dieses Lerntyps — anschauen ja,
+  // bearbeiten nein (die Aufgabe steht in seinem Dashboard nicht).
+  const nichtImPfad = status?.nichtImPfad;
+  const gesperrt = status?.gesperrt || nichtImPfad;
   const istLernziel = node.typ === 'lernpaket';
   const stufe = stufeVon(status?.einschaetzung);
 
@@ -60,7 +63,9 @@ export default function LernlandkarteInspektor({
         {gesperrt && (
           <p className="flex items-start gap-2 rounded-xl bg-white/5 px-3 py-2.5 text-sm text-white/60">
             <Lock className="mt-0.5 h-4 w-4 shrink-0" />
-            Das ist noch zu. Arbeite erst den Schritt davor ab — dann geht es hier weiter.
+            {nichtImPfad
+              ? 'Das gehört nicht zu deinem Weg — du musst es nicht bearbeiten. Schön, dass du trotzdem schaust!'
+              : 'Das ist noch zu. Arbeite erst den Schritt davor ab — dann geht es hier weiter.'}
           </p>
         )}
 

@@ -57,6 +57,8 @@ export default function LernlandkarteKnoten({ node, position, status, aktiv, onC
   const istLernziel = node.typ === 'lernpaket';
   const stufenFarbe = istLernziel ? stufeVon(status?.einschaetzung)?.farbe : null;
   const rahmen = aktiv ? art.akzent : stufenFarbe || 'rgba(255,255,255,0.12)';
+  // Nicht im eigenen Weg: sichtbar, aber ausgegraut („das musst du nicht").
+  const grau = status?.nichtImPfad ? 'opacity-40 saturate-0' : '';
 
   // ── Einheit: runder Mittelpunkt ────────────────────────────────────────
   if (istEinheit) {
@@ -99,7 +101,7 @@ export default function LernlandkarteKnoten({ node, position, status, aktiv, onC
         }}
         className={`absolute flex items-center gap-2.5 rounded-full border-2 bg-[#2a1c0f] px-5 py-3 transition-all duration-500 hover:border-[#f77f00] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f77f00] ${
           status?.gesperrt ? 'opacity-45' : ''
-        }`}
+        } ${grau}`}
       >
         <ListChecks className="h-4 w-4 shrink-0 text-[#f77f00]" />
         <span className="font-display text-sm font-bold text-white">{node.titel}</span>
@@ -128,7 +130,7 @@ export default function LernlandkarteKnoten({ node, position, status, aktiv, onC
       }}
       className={`absolute overflow-hidden rounded-2xl border-2 text-left transition-all duration-500 hover:border-white/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#48cae4] ${
         istThemenfeld ? 'bg-[#1c2541]' : 'bg-[#16203c]'
-      } ${status?.gesperrt ? 'opacity-45' : ''}`}
+      } ${status?.gesperrt ? 'opacity-45' : ''} ${grau}`}
     >
       {istThemenfeld && (
         <div
@@ -174,7 +176,13 @@ export default function LernlandkarteKnoten({ node, position, status, aktiv, onC
           </div>
         </div>
 
-        {istLernziel && <StufenPunkte wert={status?.einschaetzung} />}
+        {status?.nichtImPfad && (
+          <p className="mt-1.5 text-[11px] font-semibold text-white/60">
+            Zusatz — nicht in deinem Weg
+          </p>
+        )}
+
+        {istLernziel && !status?.nichtImPfad && <StufenPunkte wert={status?.einschaetzung} />}
 
         {!istLernziel && status?.zaehler?.gesamt > 0 && (
           <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">

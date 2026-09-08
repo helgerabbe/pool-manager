@@ -28,6 +28,9 @@ export function buildLernlandkarte({
   lernziele = [],
   aufgaben = [],
   vorwissenPakete = [],
+  // Kennungen der Lernpakete/Aufgaben, die im Pfad DIESES Lerntyps vorkommen.
+  // null = keine Einschränkung (Lehrer-Vorschau): dann gehört alles zum Weg.
+  pfadRefIds = null,
 }) {
   const nodes = [];
   const push = (n) => {
@@ -66,18 +69,24 @@ export function buildLernlandkarte({
     gruppen.push({ id: '_rest', titel: 'Weitere Themen', kurz: '', pakete: ohneFeld });
   }
 
+  // Gehört diese Kennung zum Weg des Lerntyps?
+  const imPfad = (refId) => !pfadRefIds || pfadRefIds.has(refId);
+
   for (const gruppe of gruppen) {
     const tfNodeId = `tf:${gruppe.id}`;
-    push({
+    const tfNode = push({
       id: tfNodeId,
       typ: 'themenfeld',
       parentId: 'root',
       titel: gruppe.titel,
       kurz: gruppe.kurz,
+      imPfad: false,
       refs: { themenfeldId: gruppe.id },
     });
 
     for (const paket of gruppe.pakete) {
+      const paketImPfad = imPfad(paket.id);
+      if (paketImPfad) tfNode.imPfad = true;
       for (const ziel of zieleByPaket.get(paket.id) || []) {
         const lpNodeId = `lz:${ziel.id}`;
         push({
@@ -85,6 +94,7 @@ export function buildLernlandkarte({
           typ: 'lernpaket',
           parentId: tfNodeId,
           titel: ziel.schueler_uebersetzung?.trim() || ziel.formulierung_fachsprache,
+          imPfad: paketImPfad,
           refs: {
             lernzielId: ziel.id,
             lernpaketId: paket.id,
@@ -101,10 +111,13 @@ export function buildLernlandkarte({
       (a) => a.themenfeld_id === gruppe.id && a.sync_status !== 'to_delete'
     );
     if (tfAufgaben.length > 0) {
+      const aufgabenImPfad = tfAufgaben.some((a) => imPfad(a.id));
+      if (aufgabenImPfad) tfNode.imPfad = true;
       push({
         id: `auf:${gruppe.id}`,
         typ: 'aufgaben',
         parentId: tfNodeId,
+        imPfad: aufgabenImPfad,
         titel: 'Zu den Aufgaben',
         kurz: `Hier findest du ${tfAufgaben.length} ${
           tfAufgaben.length === 1 ? 'Aufgabe' : 'Aufgaben'
