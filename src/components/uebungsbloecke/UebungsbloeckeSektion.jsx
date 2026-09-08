@@ -11,6 +11,8 @@ import {
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import UebungsblockErstellenModal from './UebungsblockErstellenModal';
+import UebungsblockMoodleWegInfoBox from './UebungsblockMoodleWegInfoBox';
+import MoodleParameterButton from '@/components/einheiten/MoodleParameterButton';
 import { istUebungsblock } from '@/lib/einheitFormat';
 
 /**
@@ -82,6 +84,8 @@ export default function UebungsbloeckeSektion({ einheiten = [], besitzerEmail })
         </Button>
       </div>
 
+      <UebungsblockMoodleWegInfoBox />
+
       {bloecke.length === 0 ? (
         <p className="text-sm text-muted-foreground italic px-1 py-3">
           Noch keine Übungsblöcke. Leg den ersten an — das dauert keine zwei Minuten.
@@ -111,6 +115,8 @@ export default function UebungsbloeckeSektion({ einheiten = [], besitzerEmail })
                         {b.last_exported_at ? ' · in Moodle' : ' · Entwurf'}
                       </p>
                     </Link>
+                    {/* Schritt 2 der Anleitung: der Code für Moodle. */}
+                    <MoodleParameterButton einheit={b} />
                     <button
                       type="button"
                       onClick={() => setLoeschZiel(b)}
