@@ -40,6 +40,11 @@ import SektorIntroVorschauButton from '@/components/lernpfade/SektorIntroVorscha
 // und Projektbündel haben andere Semantik (alle Pflicht / freiwillig).
 const AUFGABEN_BUENDEL_REF_ID = 'sys_platzhalter_brian_buendel';
 
+// Nur an DIESEN Stellen tun die Schüler etwas, das die Lehrkraft festlegen
+// muss (2026-09-08). Alle anderen Systembausteine zeigen den Schülern nur
+// ihren eigenen Inhalt — dort wäre ein Arbeitsauftrag sinnlos.
+const BRAUCHT_AUFTRAG = ['sys_lehrer_check', 'sys_praesentation'];
+
 export default function SystemBausteinPill({
   baustein,
   refId,
@@ -173,7 +178,7 @@ export default function SystemBausteinPill({
               )}
             </span>
             <div className="ml-auto flex items-center gap-1.5 shrink-0">
-              {onSetArbeitsauftrag && !isBundle && (
+              {onSetArbeitsauftrag && !isBundle && BRAUCHT_AUFTRAG.includes(refId) && (
                 <button
                   type="button"
                   onClick={(e) => {
@@ -243,7 +248,7 @@ export default function SystemBausteinPill({
                 </button>
               )}
             </div>
-            {onSetArbeitsauftrag && (
+            {onSetArbeitsauftrag && BRAUCHT_AUFTRAG.includes(refId) && (
               <div onClick={(e) => e.stopPropagation()}>
                 <SystemBausteinAuftragDialog
                   open={auftragOpen}
