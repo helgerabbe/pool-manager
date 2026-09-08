@@ -11,6 +11,7 @@ import {
 import { buildSichtbarePfadItems } from '@/lib/schuelerPfadView';
 import PfadNavigation from '@/components/schueler/pfad/PfadNavigation';
 import AktivitaetSeite from '@/components/schueler/pfad/AktivitaetSeite';
+import AufgabeInhaltSeite from '@/components/schueler/pfad/AufgabeInhaltSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
@@ -263,6 +264,17 @@ export default function EinheitDashboard() {
             erledigt={activeItem.gate === ITEM_GATE.ERLEDIGT}
             busy={busy}
             onErledigt={handleErledigt}
+          />
+        ) : activeItem && activeItem.type !== 'system' ? (
+          /* Allgemeine Aufgabe: echten Inhalt zeigen (Schrittfolge oder
+             Einzelaufgabe) — vorher stand hier nur ein Platzhalter. */
+          <AufgabeInhaltSeite
+            item={activeItem}
+            meta={activeMeta}
+            aufgabe={aufgabenById.get(activeItem.ref_id)}
+            busy={busy}
+            onErledigt={handleErledigt}
+            onBack={() => setActiveInstanceId(null)}
           />
         ) : activeItem ? (
           <AktivitaetSeite
