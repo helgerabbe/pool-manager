@@ -55,6 +55,7 @@ export default function ThemenfeldEinfuehrungPreviewModal({
     const ladeSnapshot = async () => {
       const list = await base44.entities.SchuelerInhaltSnapshot.filter({
         einheit_id: einheitId, lerntyp, instance_id: instanceId,
+        baustein_id: 'sys_themenfeld_intro',
       });
       return Array.isArray(list) ? list[0] : null;
     };

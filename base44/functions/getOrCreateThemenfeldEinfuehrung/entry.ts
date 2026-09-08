@@ -34,25 +34,16 @@ Deno.serve(async (req) => {
     }
 
     // ── 1. Vorhandenen Snapshot prüfen (Single Source of Truth) ──────────
-    // Themenfeld-Einführungen sind inhaltlich für ALLE Dashboards identisch.
-    // Lookup daher primär dashboard-übergreifend über (einheit_id, baustein_id,
-    // themenfeld_id) – egal, welcher Lerntyp den Snapshot ursprünglich erzeugt
-    // hat. Nur ohne Themenfeld-Bezug bleibt der alte Instance-Lookup.
-    let vorhandene = [];
-    if (themenfeldId) {
-      vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
-        einheit_id: einheitId,
-        baustein_id: 'sys_themenfeld_intro',
-        themenfeld_id: themenfeldId,
-      });
-    }
-    if (!Array.isArray(vorhandene) || vorhandene.length === 0) {
-      vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
-        einheit_id: einheitId,
-        lerntyp,
-        instance_id: instanceId,
-      });
-    }
+    // Die Einführung gehört zu GENAU DIESEM Sektor: Schlüssel ist die
+    // instance_id. Der frühere themenfeld-weite Lookup führte dazu, dass beim
+    // Übernehmen der Snapshot eines ANDEREN Sektors/Dashboards überschrieben
+    // wurde — an dieser Stelle blieb dann dauerhaft „Vorschau fehlt".
+    const vorhandene = await base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({
+      einheit_id: einheitId,
+      lerntyp,
+      instance_id: instanceId,
+      baustein_id: 'sys_themenfeld_intro',
+    });
     const existing = Array.isArray(vorhandene) ? vorhandene[0] : null;
 
     // ── Übernehmen: gezeigten Inhalt speichern, nichts neu erzeugen ───────
