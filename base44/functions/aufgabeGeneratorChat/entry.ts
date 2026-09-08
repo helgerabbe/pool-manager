@@ -216,23 +216,53 @@ function leseEdits(text) {
 }
 
 /**
+ * Zweiter Versuch für einen Patch, der zeichengenau nicht passt.
+ *
+ * Grund: Beim NACHBEARBEITEN einer gespeicherten Aufgabe zitiert das Modell
+ * die alte Stelle fast immer richtig, aber nicht bis auf jedes Leerzeichen und
+ * jeden Zeilenumbruch. Der Patch fiel dann durch, das Fragment blieb
+ * unverändert — für die Lehrkraft sah es aus, als führe der Assistent ihren
+ * Auftrag nicht aus. Deshalb wird hier ein zweiter Versuch gemacht, bei dem
+ * Folgen von Leerraum als gleichwertig gelten. Eindeutig muss der Treffer
+ * weiterhin sein — sonst wird der Patch ausgelassen wie bisher.
+ *
+ * Gibt die Fundstelle als [start, ende] zurück, oder null.
+ */
+function findeToleranteStelle(text, alt) {
+  const kern = String(alt).trim();
+  if (!kern) return null;
+  const muster = kern
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/\s+/g, '\\s+');
+  let re;
+  try { re = new RegExp(muster, 'g'); } catch (_e) { return null; }
+  const treffer = [...text.matchAll(re)];
+  if (treffer.length !== 1) return null;
+  return [treffer[0].index, treffer[0].index + treffer[0][0].length];
+}
+
+/**
  * Wendet die Patches an. Jeder Patch muss genau einmal passen — sonst wird er
- * uebersprungen und gemeldet, statt an falscher Stelle zuzuschlagen.
+ * uebersprungen und gemeldet, statt an falscher Stelle zuzuschlagen. Passt er
+ * zeichengenau nicht, wird leerraum-tolerant nachgesucht (siehe oben).
  */
 function wendeEditsAn(fragment, edits) {
   let aktuell = fragment;
   const warnungen = [];
   for (const [i, e] of edits.entries()) {
     const treffer = aktuell.split(e.alt).length - 1;
-    if (treffer === 0) {
-      warnungen.push(`Änderung ${i + 1} passte auf keine Stelle und wurde ausgelassen.`);
+    if (treffer === 1) {
+      aktuell = aktuell.replace(e.alt, () => e.neu);
       continue;
     }
-    if (treffer > 1) {
-      warnungen.push(`Änderung ${i + 1} war nicht eindeutig (${treffer} Fundstellen) und wurde ausgelassen.`);
+    const stelle = findeToleranteStelle(aktuell, e.alt);
+    if (stelle) {
+      aktuell = aktuell.slice(0, stelle[0]) + e.neu + aktuell.slice(stelle[1]);
       continue;
     }
-    aktuell = aktuell.replace(e.alt, () => e.neu);
+    warnungen.push(treffer > 1
+      ? `Änderung ${i + 1} war nicht eindeutig (${treffer} Fundstellen) und wurde ausgelassen.`
+      : `Änderung ${i + 1} passte auf keine Stelle und wurde ausgelassen.`);
   }
   return { fragment: aktuell, warnungen };
 }
@@ -733,6 +763,11 @@ Deno.serve(async (req) => {
               neuesFragment = res.fragment;
               warnungen = res.warnungen;
               geaendert = res.fragment !== fragment;
+              // Keine einzige Änderung gegriffen: Das muss die Lehrkraft
+              // erfahren, sonst wartet sie auf eine Wirkung, die nie kommt.
+              if (!geaendert) {
+                warnungen.push('Die Änderung konnte nicht eingesetzt werden. Bitten Sie um eine vollständige neue Fassung der Aufgabe („Bau die Aufgabe mit dieser Änderung neu").');
+              }
             }
 
             controller.enqueue(enc.encode(sseEvent('ergebnis', {
