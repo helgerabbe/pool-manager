@@ -43,7 +43,7 @@ const AUFGABEN_BUENDEL_REF_ID = 'sys_platzhalter_brian_buendel';
 // Nur an DIESEN Stellen tun die Schüler etwas, das die Lehrkraft festlegen
 // muss (2026-09-08). Alle anderen Systembausteine zeigen den Schülern nur
 // ihren eigenen Inhalt — dort wäre ein Arbeitsauftrag sinnlos.
-const BRAUCHT_AUFTRAG = ['sys_lehrer_check', 'sys_praesentation'];
+const BRAUCHT_AUFTRAG = ['sys_lehrer_check', 'sys_praesentation', 'sys_external_test'];
 
 export default function SystemBausteinPill({
   baustein,
