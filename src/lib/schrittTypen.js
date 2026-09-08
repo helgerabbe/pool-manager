@@ -427,3 +427,74 @@ export function vorschlagZuSchritten(vorschlag = [], katalogListe = []) {
 export function neuNummerieren(schritte) {
   return (schritte || []).map((s, i) => ({ ...s, reihenfolge: i }));
 }
+
+/**
+ * Steckt in diesem Schritt schon Arbeit? Ein geplanter Schritt ohne Inhalt
+ * darf beim Umbau des Ablaufs verschwinden — einer mit Inhalt nicht ohne
+ * Warnung.
+ */
+export function schrittHatInhalt(schritt) {
+  if (!schritt) return false;
+  if (schritt.status && schritt.status !== SCHRITT_STATUS.GEPLANT) return true;
+  return istSchrittVollstaendig(schritt);
+}
+
+/**
+ * Umkehrung von vorschlagZuSchritten: Die vorhandene Folge in die Form
+ * bringen, in der der Ablauf-Assistent sie kennt — MIT `id`, damit er
+ * beibehaltene Schritte wiedererkennbar zurückgibt.
+ */
+export function schritteZuVorschlag(schritte = [], katalogListe = []) {
+  const nameById = Object.fromEntries(
+    (katalogListe || []).filter((k) => k?.id).map((k) => [k.id, k.name]),
+  );
+  return (schritte || []).map((s) => {
+    const v = {
+      id: s.id,
+      titel: s.titel || '',
+      typ: s.typ,
+      kurzbeschreibung: s.plan?.kurzbeschreibung || schrittZusammenfassung(s) || '',
+    };
+    if (Number.isFinite(s.plan?.dauer_minuten)) v.dauer_minuten = s.plan.dauer_minuten;
+    if (s.typ === SCHRITT_TYPEN.KATALOG) {
+      if (s.aktivitaet_id && nameById[s.aktivitaet_id]) v.aktivitaet_name = nameById[s.aktivitaet_id];
+      if (s.field_values?.galerie_id) {
+        v.galerie_id = String(s.field_values.galerie_id);
+        v.galerie_name = String(s.field_values.galerie_name || '');
+      }
+    }
+    return v;
+  });
+}
+
+/**
+ * Neuen Ablauf mit dem Bestand verschmelzen: Schritte, die der Assistent per
+ * `id` beibehalten hat (gleicher Typ, gleiches Format), behalten ihren Inhalt
+ * und bekommen nur Titel/Kurzbeschreibung aktualisiert. Alle anderen werden
+ * neu angelegt. `verloren` nennt die Bestandsschritte mit Inhalt, die dabei
+ * wegfallen würden — Grundlage für die Warnung vor dem Übernehmen.
+ */
+export function vorschlagMitBestandVerschmelzen(vorschlag = [], bestand = [], katalogListe = []) {
+  const { schritte: neu, hinweise } = vorschlagZuSchritten(vorschlag, katalogListe);
+  const bestandById = new Map((bestand || []).filter((s) => s?.id).map((s) => [s.id, s]));
+  const behalten = new Set();
+
+  const schritte = neu.map((n, i) => {
+    const alt = vorschlag[i]?.id ? bestandById.get(vorschlag[i].id) : null;
+    if (!alt || alt.typ !== n.typ) return n;
+    if (n.typ === SCHRITT_TYPEN.KATALOG && alt.aktivitaet_id !== n.aktivitaet_id) return n;
+    behalten.add(alt.id);
+    return {
+      ...alt,
+      titel: n.titel || alt.titel,
+      plan: {
+        ...(alt.plan || {}),
+        kurzbeschreibung: n.plan?.kurzbeschreibung || alt.plan?.kurzbeschreibung || '',
+        dauer_minuten: n.plan?.dauer_minuten ?? alt.plan?.dauer_minuten ?? null,
+      },
+    };
+  });
+
+  const verloren = (bestand || []).filter((s) => !behalten.has(s.id) && schrittHatInhalt(s));
+  return { schritte: neuNummerieren(schritte), hinweise, verloren };
+}

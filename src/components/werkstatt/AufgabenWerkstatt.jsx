@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Save, Loader2, Hammer, Lock, ListOrdered, FolderOpen, ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
+import WerkstattPhasenLeiste from '@/components/werkstatt/WerkstattPhasenLeiste';
+import AblaufUebernehmenWarnung from '@/components/werkstatt/AblaufUebernehmenWarnung';
 import { toast } from 'sonner';
 
 import { createAllgemeineAufgabe, updateAllgemeineAufgabe } from '@/services/AllgemeineAufgabeService';
@@ -22,7 +24,9 @@ import { schrittAusFormatWahl } from '@/lib/aufgabeFormatWahl';
 import ThemenfeldIdeenModal from '@/components/missionen/ThemenfeldIdeenModal';
 import MissionPicker from '@/components/missionen/MissionPicker';
 import SternRating from '@/components/allgemeineAufgaben/aufgabeSections/SternRating';
-import { istSchrittVollstaendig, vorschlagZuSchritten } from '@/lib/schrittTypen';
+import {
+  istSchrittVollstaendig, schritteZuVorschlag, vorschlagMitBestandVerschmelzen,
+} from '@/lib/schrittTypen';
 import { getMission } from '@/lib/missionen';
 
 /**
@@ -68,15 +72,18 @@ export default function AufgabenWerkstatt({
   const [schwierigkeit, setSchwierigkeit] = useState(null);
   const [materialien, setMaterialien] = useState([]);
   const [idee, setIdee] = useState('');
-  // 'einstieg' = Material + Idee, 'werkstatt' = Schrittfolge bearbeiten.
-  // Der Wechsel passiert, sobald es Schritte gibt (oder die Lehrkraft ihn
-  // ausdrücklich verlangt), nicht als eigener Bedienschritt.
+  // Drei klar getrennte Bereiche:
+  //   'einstieg'  = Material + Idee sammeln
+  //   'struktur'  = NUR den Ablauf planen (Anzahl, Reihenfolge, Art der Schritte)
+  //   'werkstatt' = die Aufgaben der Schritte ausarbeiten
   const [ansicht, setAnsicht] = useState('einstieg');
   const [gesamtdurchlauf, setGesamtdurchlauf] = useState(false);
   const [kopfOffen, setKopfOffen] = useState(false);
   // Ebene 3: Fenster zum Bearbeiten EINES Schritts.
   const [schrittFensterOffen, setSchrittFensterOffen] = useState(false);
-  const [planerOffen, setPlanerOffen] = useState(false);
+  // Geänderter Ablauf, der ausgearbeitete Schritte wegwerfen würde — wartet
+  // auf Bestätigung. null = keine Warnung offen.
+  const [ablaufWarnung, setAblaufWarnung] = useState(null);
   const [generatorOffen, setGeneratorOffen] = useState(false);
   // Aufgaben-Assistent: -1 = neuen Schritt anhängen, >=0 = diesen ersetzen
   // (Format wechseln). null = zu.
@@ -100,7 +107,7 @@ export default function AufgabenWerkstatt({
     setIdee('');
     setGesamtdurchlauf(false);
     setSchrittFensterOffen(false);
-    setPlanerOffen(false);
+    setAblaufWarnung(null);
     setGeneratorOffen(false);
     setAssistentZiel(null);
     setAufgabeId(initialData?.id || null);
@@ -112,13 +119,6 @@ export default function AufgabenWerkstatt({
   }, [open, initialData, defaultThemenfeldId]);
 
   const schritt = folge.aktuellerSchritt;
-
-  /* Welche Arbeit gerade ansteht, entscheidet über die Spaltenbreiten.
-     Am Ablauf zu arbeiten heißt lesen und umstellen — dafür braucht die
-     linke Spalte Platz, und die Schülersicht ist noch nebensächlich, weil
-     die Schritte ja noch leer sind. Sobald es ans Füllen geht, dreht sich
-     das um. */
-  const arbeitetAmAblauf = planerOffen || folge.schritte.length === 0;
   const gewaehlteKategorie = getMission(missionType);
 
   /* Kontext für den Assistenten beim Bau eines offenen Schritts. Gebaut wird
@@ -148,20 +148,32 @@ export default function AufgabenWerkstatt({
    * sonst stünde die Lehrkraft vor einer leeren Werkstatt und wüsste nicht,
    * ob noch etwas kommt.
    */
+  /** Die vorhandene Folge in der Form, in der der Ablauf-Assistent sie kennt. */
+  const aktuelleFolgeAlsVorschlag = () => (folge.schritte.length
+    ? schritteZuVorschlag(folge.schritte, katalogListe)
+    : null);
+
   const ablaufVorschlagen = () => {
     const text = idee.trim();
     if (!text && materialien.length === 0) {
       toast.error('Erzählen Sie kurz, worum es gehen soll — oder legen Sie die Folge selbst an.');
       return;
     }
+    // Gibt es schon Schritte, ist die Idee ein Änderungswunsch an DIESER
+    // Folge — der Assistent soll nicht von vorn anfangen.
+    const basis = aktuelleFolgeAlsVorschlag();
+    struktur.setVorschlag(basis);
     struktur.senden(
       text || 'Ich habe nur Material, aber noch keine ausformulierte Idee. Schlag mir auf dieser Grundlage einen Ablauf vor.',
-      { materialien },
+      { materialien, basis },
     );
-    setAnsicht('werkstatt');
-    // Der Kasten MUSS offen sein — dort erscheint die Antwort. Zugeklappt
-    // sähe es aus, als sei nichts passiert.
-    setPlanerOffen(true);
+    setAnsicht('struktur');
+  };
+
+  /** Aus der Werkstatt zurück in die Ablaufplanung — mit der aktuellen Folge. */
+  const zurStruktur = () => {
+    struktur.setVorschlag(aktuelleFolgeAlsVorschlag());
+    setAnsicht('struktur');
   };
 
   /** Eine gesammelte Idee in den Einstieg holen — Text und Material. */
@@ -203,15 +215,26 @@ export default function AufgabenWerkstatt({
     setGeneratorOffen(false);
   };
 
-  const vorschlagUebernehmen = (vorschlag, { anhaengen }) => {
-    const { schritte, hinweise } = vorschlagZuSchritten(vorschlag, katalogListe);
-    folge.folgeSetzen(schritte, { anhaengen });
+  /**
+   * Ablauf übernehmen. Schritte, die der Assistent per id beibehalten hat,
+   * behalten ihren Inhalt. Würden ausgearbeitete Schritte wegfallen, wird
+   * ERST gewarnt — übernommen wird dann nur nach Bestätigung.
+   */
+  const ablaufAnwenden = ({ schritte, hinweise }) => {
+    folge.folgeSetzen(schritte);
     hinweise.forEach((h) => toast.warning(h));
-    toast.success(anhaengen
-      ? `${schritte.length} Schritte angehängt.`
-      : `Folge mit ${schritte.length} Schritten übernommen.`);
+    toast.success(`Ablauf mit ${schritte.length} Schritten übernommen.`);
+    setAblaufWarnung(null);
     setAnsicht('werkstatt');
-    setPlanerOffen(false);
+  };
+
+  const vorschlagUebernehmen = (vorschlag) => {
+    const ergebnis = vorschlagMitBestandVerschmelzen(vorschlag, folge.schritte, katalogListe);
+    if (ergebnis.verloren.length > 0) {
+      setAblaufWarnung(ergebnis);
+      return;
+    }
+    ablaufAnwenden(ergebnis);
   };
 
   /**
@@ -309,11 +332,14 @@ export default function AufgabenWerkstatt({
             Aufgaben-Werkstatt
             {titel && <span className="text-xs font-normal text-slate-500 ml-1">· {titel}</span>}
           </DialogTitle>
-          <p className="text-xs text-slate-500 mt-1">
-            {ansicht === 'einstieg'
-              ? 'Zuerst sammeln: Was haben Sie schon, und was soll passieren? Daraus entsteht der Ablauf.'
-              : 'Eine Aufgabe ist eine Folge von Schritten. Jeder Schritt hat seinen eigenen Typ — links die Folge, in der Mitte die Schüleransicht, rechts der Schritt selbst.'}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
+            <p className="text-xs text-slate-500">
+              {ansicht === 'einstieg' && 'Zuerst sammeln: Was haben Sie schon, und was soll passieren? Daraus entsteht der Ablauf.'}
+              {ansicht === 'struktur' && 'Hier geht es nur um den Ablauf: Wie viele Schritte, in welcher Reihenfolge, welcher Art. Der Assistent ändert den Ablauf rechts nach Ihren Wünschen — Inhalte entstehen erst im nächsten Bereich.'}
+              {ansicht === 'werkstatt' && 'Hier werden die einzelnen Aufgaben ausgearbeitet — links die Folge, rechts die Schüleransicht. Soll sich der Ablauf ändern, gehen Sie zurück zu „Ablauf planen“.'}
+            </p>
+            <WerkstattPhasenLeiste ansicht={ansicht} />
+          </div>
         </DialogHeader>
 
         {isReleased && (
@@ -431,19 +457,25 @@ export default function AufgabenWerkstatt({
               disabled={isReleased}
             />
           </div>
+        ) : ansicht === 'struktur' ? (
+          /* Bereich 2: NUR der Ablauf — Gespräch links, Ablauf rechts. */
+          <div className="flex-1 min-h-0 pt-4">
+            <StrukturPhase
+              struktur={struktur}
+              hatSchritte={folge.schritte.length > 0}
+              onUebernehmen={vorschlagUebernehmen}
+              onZurueck={() => setAnsicht('werkstatt')}
+              disabled={isReleased}
+            />
+          </div>
         ) : (
-        /* Zwei Spalten: Struktur links, Schülersicht rechts. Der INHALT
-           eines Schritts wird nicht hier, sondern im SchrittFenster
-           bearbeitet (Ebene 3). Diese Seite ist für den Ablauf zuständig:
-           anlegen, löschen, umsortieren. */
-        <div className={`grid grid-cols-1 gap-4 pt-4 flex-1 min-h-0 transition-[grid-template-columns] duration-200 ${
-          arbeitetAmAblauf
-            ? 'lg:grid-cols-[minmax(460px,1fr)_minmax(240px,340px)]'
-            : 'lg:grid-cols-[minmax(320px,400px)_1fr]'
-        }`}>
-          {/* Links: Schrittfolge + Ablaufplanung */}
+        /* Bereich 3: Aufgaben ausarbeiten. Links die Folge, rechts die
+           Schülersicht. Der INHALT eines Schritts wird im SchrittFenster
+           bearbeitet (Ebene 3). */
+        <div className="grid grid-cols-1 gap-4 pt-4 flex-1 min-h-0 lg:grid-cols-[minmax(320px,400px)_1fr]">
+          {/* Links: Schrittfolge */}
           <div className="flex flex-col min-h-0 gap-3">
-            <div className={`${arbeitetAmAblauf ? 'shrink-0 max-h-[38vh]' : 'flex-1'} min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white p-3`}>
+            <div className="flex-1 min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white p-3">
               <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-2 shrink-0">
                 Ablauf der Aufgabe
               </p>
@@ -461,31 +493,17 @@ export default function AufgabenWerkstatt({
               />
             </div>
 
-            {/* Der Assistent bleibt erreichbar, nimmt aber zugeklappt keinen
-                Platz weg — auf dieser Seite geht es meist um Feinschliff. */}
-            <div className={`${planerOffen ? 'flex-1' : 'shrink-0'} min-h-0 flex flex-col rounded-xl border border-slate-200 bg-white overflow-hidden`}>
-              <button
-                type="button"
-                onClick={() => setPlanerOffen((o) => !o)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-left hover:bg-slate-50 transition-colors shrink-0"
-              >
-                {planerOffen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
-                <ListOrdered className="w-4 h-4 text-violet-600 shrink-0" />
-                <span className="text-xs font-semibold text-slate-700">
-                  Ablauf mit dem Assistenten ändern
-                </span>
-              </button>
-              {planerOffen && (
-                <div className="px-3 pb-3 border-t border-slate-100 pt-3 flex-1 min-h-0 flex flex-col">
-                  <StrukturPhase
-                    struktur={struktur}
-                    hatSchritte={folge.schritte.length > 0}
-                    onUebernehmen={vorschlagUebernehmen}
-                    disabled={isReleased}
-                  />
-                </div>
-              )}
-            </div>
+            {/* Der Ablauf wird nicht hier geändert, sondern im eigenen
+                Bereich — dieser Knopf führt dorthin. */}
+            <Button
+              variant="outline"
+              className="shrink-0 gap-2 bg-white justify-start"
+              onClick={zurStruktur}
+              disabled={isReleased}
+            >
+              <ListOrdered className="w-4 h-4 text-violet-600" />
+              Ablauf mit dem Assistenten ändern
+            </Button>
           </div>
 
           {/* Rechts: Schülervorschau des gewählten Schritts */}
@@ -504,6 +522,8 @@ export default function AufgabenWerkstatt({
           <p className="text-xs text-slate-500">
             {ansicht === 'einstieg'
               ? 'Material und Idee sammeln'
+              : ansicht === 'struktur'
+              ? 'Ablauf planen — noch nichts übernommen'
               : (folge.schritte.length === 0
                 ? 'Noch keine Schritte'
                 : `${folge.schritte.length} Schritte${unfertige > 0 ? `, ${unfertige} noch unvollständig` : ''}`)}
@@ -514,7 +534,7 @@ export default function AufgabenWerkstatt({
           <div className="ml-auto flex items-center gap-2">
             {/* Zurück zum Einstieg — Material und Idee bleiben erreichbar,
                 ohne dauerhaft Platz zu belegen. */}
-            {ansicht === 'werkstatt' && (
+            {ansicht !== 'einstieg' && (
               <Button variant="ghost" onClick={() => setAnsicht('einstieg')} className="gap-2 text-slate-600">
                 <FolderOpen className="w-4 h-4" />
                 Material &amp; Idee
@@ -544,6 +564,14 @@ export default function AufgabenWerkstatt({
           </div>
         </div>
       </DialogContent>
+
+      {/* Warnung: Der neue Ablauf würde ausgearbeitete Schritte wegwerfen. */}
+      <AblaufUebernehmenWarnung
+        open={!!ablaufWarnung}
+        verloren={ablaufWarnung?.verloren || []}
+        onBestaetigen={() => ablaufAnwenden(ablaufWarnung)}
+        onAbbrechen={() => setAblaufWarnung(null)}
+      />
 
       {/* Ideengenerator — liegt über der Werkstatt. Kann nie gleichzeitig
           mit dem Schritt-Fenster offen sein: der eine gehört zum Einstieg,

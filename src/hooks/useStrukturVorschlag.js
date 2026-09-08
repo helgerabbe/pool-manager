@@ -50,13 +50,15 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
     setWarnungen([]);
   }, []);
 
-  const senden = useCallback(async (nachricht, { materialien = [] } = {}) => {
+  // `basis`: die Folge, auf die sich die Nachricht bezieht — wenn der Aufrufer
+  // sie gerade erst gesetzt hat, steht sie noch nicht in `vorschlag`.
+  const senden = useCallback(async (nachricht, { materialien = [], basis = null } = {}) => {
     const text = String(nachricht || '').trim();
     if (!text || busy) return;
 
     setFehler(null);
     setFehlgeschlagen(null);
-    letzteOptionenRef.current = { materialien };
+    letzteOptionenRef.current = { materialien, basis };
     setWarnungen([]);
     setBusy(true);
     setTeilAntwort('');
@@ -81,7 +83,7 @@ export default function useStrukturVorschlag({ kontext = {} } = {}) {
         body: JSON.stringify({
           modus: 'struktur',
           nachricht: text,
-          schritte: vorschlag || [],
+          schritte: basis || vorschlag || [],
           materialien,
           verlauf: verlaufFuerApi,
           kontext,

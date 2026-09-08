@@ -190,8 +190,11 @@ Regeln für <schritte>:
 - "galerie_id"/"galerie_name": NUR bei aktivitaet_name "Aktivitätengalerie", und NUR eine id aus der Galerie-Liste, zeichengenau.
 - "kurzbeschreibung": ein Satz für die Lehrkraft, was in diesem Schritt passiert. Nicht schülersichtbar.
 - "dauer_minuten": grobe Schätzung als Zahl, oder weglassen.
-- Reine Rückfragen: nur <antwort>, ohne <schritte>.
+- "id": Schritte der AKTUELLEN FOLGE tragen eine id. Behältst du einen Schritt (auch umsortiert, umbenannt oder mit anderer Kurzbeschreibung), übernimm seine id UNVERÄNDERT — daran hängt bereits ausgearbeiteter Inhalt der Lehrkraft. Neue Schritte bekommen keine id. Ändert sich der Typ eines Schritts, lass die id weg.
 - Ändert die Lehrkraft den Vorschlag, gib die VOLLSTÄNDIGE neue Folge aus, nicht nur die Änderung.
+
+# WENN EINE AKTUELLE FOLGE VORLIEGT
+Die Lehrkraft sieht genau diese Folge vor sich. Jede ihrer Nachrichten ist ein ÄNDERUNGSWUNSCH an dieser Folge: Schritte hinzufügen, entfernen, umsortieren, anders gestalten, Anzahl oder Abwechslung ändern. Setze den Wunsch um und gib die geänderte Folge vollständig in <schritte> aus — frage nicht zurück und beginne nicht von vorn. Was sie nicht erwähnt, bleibt, wie es ist. Nur wenn noch KEINE Folge vorliegt und die Idee wirklich unklar ist, darfst du eine reine Rückfrage stellen (nur <antwort>, ohne <schritte>).
 
 # GESPRÄCHSFÜHRUNG
 Die Lehrkraft ist Fachfrau für ihren Unterricht, aber keine Programmiererin. Frage nur nach, wenn ohne die Antwort wirklich nicht weitergeplant werden kann — sonst schlage etwas vor und lass sie korrigieren. Am konkreten Vorschlag merkt man schneller, was man will.`;
@@ -384,7 +387,7 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
     }
 
     const eintrag: {
-      titel: string; typ: string; kurzbeschreibung: string;
+      id?: string; titel: string; typ: string; kurzbeschreibung: string;
       dauer_minuten?: number; aktivitaet_name?: string;
       galerie_id?: string; galerie_name?: string;
     } = {
@@ -392,6 +395,10 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
       typ,
       kurzbeschreibung: String(s?.kurzbeschreibung || '').trim(),
     };
+    // Die id eines beibehaltenen Bestandsschritts durchreichen — sie ist der
+    // Schlüssel, mit dem das Frontend dessen Inhalt bewahrt.
+    const id = String(s?.id || '').trim();
+    if (id) eintrag.id = id;
 
     const dauer = Number(s?.dauer_minuten);
     if (Number.isFinite(dauer) && dauer > 0) eintrag.dauer_minuten = Math.round(dauer);
@@ -513,7 +520,7 @@ Deno.serve(async (req) => {
     let letzte;
     if (istStruktur) {
       const bisher = Array.isArray(body.schritte) && body.schritte.length
-        ? `BISHERIGER VORSCHLAG:\n${JSON.stringify(body.schritte, null, 2)}\n\n---\n\n`
+        ? `AKTUELLE FOLGE (so sieht die Lehrkraft sie gerade — die Nachricht unten ist ein Änderungswunsch daran):\n${JSON.stringify(body.schritte, null, 2)}\n\n---\n\n`
         : '';
 
       // Materialsammlung der Lehrkraft. Bewusst nur, was als TEXT vorliegt:
