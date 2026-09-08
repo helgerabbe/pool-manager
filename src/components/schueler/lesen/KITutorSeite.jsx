@@ -10,6 +10,7 @@ import EinfachFormatierterText from './EinfachFormatierterText';
 import HinweisBox from './HinweisBox';
 import BrianSchluesselEingabe from './BrianSchluesselEingabe';
 import BrianAnweisungKopieren from './BrianAnweisungKopieren';
+import BildLightbox from './BildLightbox';
 import { hatSchluessel } from '@/lib/brianSchluessel';
 
 const BRIAN_URL = 'https://brian.study';
@@ -32,6 +33,11 @@ export default function KITutorSeite({
   eigenerDialog = false,
 }) {
   const fv = aktivitaet?.field_values || {};
+  // Lernpaket-Master (KITutorMasterForm) speichert `aufgabenstellung` + `bild_url`,
+  // ältere Aufgaben `instruction` — beide Quellen lesen, sonst bleibt die Seite leer.
+  const aufgabenText = fv.instruction || fv.aufgabenstellung || '';
+  const bildUrl = fv.bild_url || fv.aufgaben_bild_url || '';
+  const [bildGross, setBildGross] = useState(false);
   const [kopiert, setKopiert] = useState(false);
   // ZWEI WEGE — bewusst so, nicht vereinfachen:
   // (a) Sind die vier Brian-Felder übertragen (dialogUrl liegt vor), führt ein
@@ -39,8 +45,8 @@ export default function KITutorSeite({
   // (b) Fehlt der Link (kleine Brian-Aufgaben in Lernpaketen, Tab 4), bekommen
   //     die Schüler den START-PROMPT zum Kopieren — Lernpakete laufen ohne
   //     eigene Brian-Dialoge, das Gespräch startet aus der Anweisung heraus.
-  const direkt = !!dialogUrl || eigenerDialog;
-  const zielUrl = dialogUrl || BRIAN_URL;
+  const direkt = !!dialogUrl || !!fv.brian_url || eigenerDialog;
+  const zielUrl = dialogUrl || fv.brian_url || BRIAN_URL;
   // Wann der Schüler von hier aus zu Brian gewechselt ist — Grundlage der
   // Plausibilitätsprüfung beim Schlüsselcode.
   const [geoeffnetAm, setGeoeffnetAm] = useState(null);
@@ -62,11 +68,24 @@ export default function KITutorSeite({
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-5 pb-2">
           {/* Aufgabenstellung – einheitlicher blauer Anker. */}
-          {fv.instruction && (
+          {aufgabenText && (
             <AufgabenstellungBox>
-              <EinfachFormatierterText text={fv.instruction} />
+              <EinfachFormatierterText text={aufgabenText} />
             </AufgabenstellungBox>
           )}
+
+          {/* Bild zur Aufgabe (z. B. Tabelle) – antippen vergrößert. */}
+          {bildUrl && (
+            <button
+              type="button"
+              onClick={() => setBildGross(true)}
+              className="block w-full rounded-xl border border-border bg-card overflow-hidden"
+              aria-label="Bild vergrößern"
+            >
+              <img src={bildUrl} alt="Bild zur Aufgabe" className="w-full h-auto object-contain max-h-72" />
+            </button>
+          )}
+          {bildGross && <BildLightbox url={bildUrl} onClose={() => setBildGross(false)} />}
 
           {/* Hinweis: Wechsel zu Brian – gelber Anker mit Brian-Logo. */}
           <HinweisBox>
@@ -110,7 +129,7 @@ export default function KITutorSeite({
           {/* Ohne vorbereiteten Dialog: der Start-Prompt zum Kopieren. */}
           {!direkt && (
             <BrianAnweisungKopieren
-              aufgabe={fv.instruction || ''}
+              aufgabe={aufgabenText}
               erwartungshorizont={fv.system_prompt || fv.erwartungshorizont || ''}
             />
           )}
