@@ -7,6 +7,8 @@ import { Plus, Trash2, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import HelpBadge from '@/components/ui/HelpBadge';
+import GesamtzieleEntwickelnDialog from '@/components/workspace/GesamtzieleEntwickelnDialog';
+import { Sparkles } from 'lucide-react';
 
 export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdate ,
   // Beschriftung je Format — siehe lib/einheitFormat.
@@ -14,6 +16,22 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
   const [ziele, setZiele] = useState(gesamtziele);
   const [newZiel, setNewZiel] = useState('');
   const [saving, setSaving] = useState(false);
+  const [kiOffen, setKiOffen] = useState(false);
+
+  // KI-Vorschläge übernehmen: dieselbe Persistenz wie die manuelle Eingabe.
+  const handleKiUebernehmen = async (neueZiele) => {
+    setSaving(true);
+    try {
+      await base44.entities.Einheiten.update(einheitId, { gesamtziele: neueZiele });
+      setZiele(neueZiele);
+      onUpdate?.(neueZiele);
+      toast.success('Gesamtziele übernommen.');
+    } catch {
+      toast.error('Fehler beim Speichern der Gesamtziele.');
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // Synchronisiere mit externen Props-Updates (z.B. nach Refetch durch Parent)
   // aber NUR wenn gerade kein Speichervorgang läuft (sonst würden lokale Änderungen überschrieben)
@@ -68,12 +86,32 @@ export default function GesamtzielManager({ einheitId, gesamtziele = [], onUpdat
 
   return (
     <div className="space-y-3">
-      <Label className="flex items-center gap-1.5">
-        {titel}
-        <HelpBadge
-          text="Gesamtziele sind die großen Grobziele dieser Einheit – nicht alle einzelnen Lernziele, die in der Einheit vorkommen. Sie bilden später die Kompetenzkarte und beschreiben in wenigen Sätzen, was Schüler nach Abschluss der Einheit übergreifend können."
-        />
-      </Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label className="flex items-center gap-1.5">
+          {titel}
+          <HelpBadge
+            text="Gesamtziele sind die großen Grobziele dieser Einheit – nicht alle einzelnen Lernziele, die in der Einheit vorkommen. Sie bilden später die Kompetenzkarte und beschreiben in wenigen Sätzen, was Schüler nach Abschluss der Einheit übergreifend können. Höchstens fünf, formuliert wie für einen Lernentwicklungsbericht."
+          />
+        </Label>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => setKiOffen(true)}
+          className="h-7 gap-1.5 text-xs shrink-0"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          Aus der Einheit entwickeln
+        </Button>
+      </div>
+
+      <GesamtzieleEntwickelnDialog
+        open={kiOffen}
+        onOpenChange={setKiOffen}
+        einheitId={einheitId}
+        bestehende={ziele}
+        onUebernehmen={handleKiUebernehmen}
+      />
       
       {/* Bestehende Ziele */}
       {ziele.length > 0 && (
