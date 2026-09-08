@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Sparkles, RefreshCw, Loader2, ImageIcon, AlertTriangle, CheckCircle2 } from 'lucide-react';
 
@@ -35,6 +36,7 @@ export default function ThemenfeldEinfuehrungPreviewModal({
   const [error, setError] = useState(null);
   const [inhalt, setInhalt] = useState(null);
   const [savedOk, setSavedOk] = useState(false);
+  const queryClient = useQueryClient();
 
   const lerntyp = context?.lerntyp;
   const instanceId = context?.instanceId;
@@ -48,19 +50,9 @@ export default function ThemenfeldEinfuehrungPreviewModal({
     setError(null);
     setInhalt(null);
     setSavedOk(false);
-    // Gleiche Auflösung wie im Backend: Themenfeld-Einführungen gelten
-    // dashboard-übergreifend, deshalb zuerst über (Einheit, Baustein,
-    // Themenfeld) suchen und nur ohne Themenfeld auf die Instanz zurückfallen.
-    // Sonst wäre ein gerade übernommener Inhalt beim erneuten Öffnen "weg".
+    // Sektor-Einführung: Der Inhalt gehört zu GENAU DIESEM Sektor, deshalb ist
+    // die instance_id der Schlüssel — kein themenfeld-weiter Lookup.
     const ladeSnapshot = async () => {
-      if (themenfeldId) {
-        const list = await base44.entities.SchuelerInhaltSnapshot.filter({
-          einheit_id: einheitId,
-          baustein_id: 'sys_themenfeld_intro',
-          themenfeld_id: themenfeldId,
-        });
-        if (Array.isArray(list) && list.length > 0) return list[0];
-      }
       const list = await base44.entities.SchuelerInhaltSnapshot.filter({
         einheit_id: einheitId, lerntyp, instance_id: instanceId,
       });
@@ -103,6 +95,8 @@ export default function ThemenfeldEinfuehrungPreviewModal({
       });
       if (res?.data?.error) throw new Error(res.data.error);
       setSavedOk(true);
+      // Damit die Kennzeichnung „Vorschau fehlt" am Baustein verschwindet.
+      queryClient.invalidateQueries({ queryKey: ['sektorIntroSnapshot', instanceId] });
     } catch (e) {
       setError(e?.message || 'Speichern fehlgeschlagen.');
     } finally {
@@ -116,7 +110,7 @@ export default function ThemenfeldEinfuehrungPreviewModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-violet-600" />
-            Vorschau: Einführung in das Themenfeld
+            Vorschau: Einführung in den Sektor
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             {LERNTYP_LABEL[lerntyp] || lerntyp}
@@ -150,8 +144,8 @@ export default function ThemenfeldEinfuehrungPreviewModal({
                 <Sparkles className="w-7 h-7" />
               </span>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Für diese Instanz wurde noch kein Inhalt erstellt. Lass ihn jetzt
-                erzeugen und zentral speichern.
+                Für diesen Sektor wurde noch keine Einführung erstellt. Lass sie
+                jetzt erzeugen und übernehmen.
               </p>
             </div>
           )}
