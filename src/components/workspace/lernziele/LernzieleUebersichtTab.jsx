@@ -16,8 +16,10 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { Target, Inbox } from 'lucide-react';
+import { Target, Inbox, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import HelpDialog from '@/components/ui/HelpDialog';
+import LernzielWerkstatt from '@/components/workspace/lernziele/LernzielWerkstatt';
 import { getLernpaketStatus } from '@/lib/statusLogic';
 import { StatusBadge } from '@/components/workspace/panels/SharedUI';
 import {
@@ -63,6 +65,7 @@ export default function LernzieleUebersichtTab({
   const queryClient = useQueryClient();
   const [selectedPaketId, setSelectedPaketId] = useState(null);
   const [autoEditToken, setAutoEditToken] = useState(null);
+  const [werkstattOffen, setWerkstattOffen] = useState(false);
 
   useEffect(() => {
     if (!jumpToken || !jumpPaketId) return;
@@ -242,7 +245,26 @@ export default function LernzieleUebersichtTab({
                 }
               />
               <LernpaketLebenszyklusBadge syncStatus={selectedPaket.sync_status} />
+              {kannBearbeiten && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="ml-auto gap-2"
+                  onClick={() => setWerkstattOffen(true)}
+                  title="Aus dem fertigen Material prüfen, welche Lernziele belegt sind und welche fehlen"
+                >
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                  Lernziel-Werkstatt
+                </Button>
+              )}
             </div>
+            <LernzielWerkstatt
+              open={werkstattOffen}
+              onOpenChange={setWerkstattOffen}
+              paket={selectedPaket}
+              ziele={zieleProPaket.get(selectedPaket.id) || []}
+              einheitId={einheit?.id}
+            />
             <LernpaketZielKarte
               key={selectedPaket.id}
               paket={selectedPaket}
