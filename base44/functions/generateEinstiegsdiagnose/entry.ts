@@ -63,13 +63,19 @@ Deno.serve(async (req) => {
     // Fällt der DB-Text weg, greift der bewährte Default.
     const FALLBACK_INSTRUKTION = `Du erstellst einen FREIWILLIGEN ORIENTIERUNGS-FRAGENBLOCK für die Einstiegsdiagnose einer Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
 
-ZIEL: Ein Schüler, der noch nicht weiß, ob er Vorwissen hat oder sich selbst schwer einschätzen kann, soll durch 5-6 Fragen ein GEFÜHL dafür bekommen, ob er sich in dieser Einheit sicher fühlt. Das hilft ihm, seinen Lerntyp zu wählen.
+ZIEL: Der Schüler steht VOR der Einheit und kennt deren Thema in der Regel noch nicht. Er soll sich deshalb NICHT zur neuen Einheit einschätzen, sondern zu seiner GRUNDSÄTZLICHEN Sicherheit: im Fach allgemein, im übergeordneten Bereich des Fachs (z. B. Geometrie, Grammatik, Mechanik) und in den Arbeitsweisen und dem VORWISSEN, auf die die Einheit aufbaut. Daraus zieht er ein Gefühl für seine Ausgangslage und wählt seinen Lerntyp.
 
-WICHTIG – das ist KEIN Quiz und KEINE Wissensabfrage:
-- Frage NICHT nach richtigen Antworten.
-- Frage nach Selbsteinschätzung / Erfahrung / Bauchgefühl.
-- Gute Frage-Muster: „Hast du schon mal …?", „Wenn du dieses Beispiel siehst – könntest du damit etwas anfangen?", „In dieser Einheit kommen Aufgaben wie … vor. Hast du eine Idee, wie man die lösen könnte?", „Wie sicher fühlst du dich beim Thema …?"
-- Beziehe dich KONKRET auf die Inhalte/Themen/Lernziele der Einheit aus dem Kontext.
+STRIKT VERBOTEN:
+- Fragen zum konkreten NEUEN Thema der Einheit („Wie sicher fühlst du dich bei Zylinder-Volumen?") – das würde fast alle Schüler unsicher wirken lassen, obwohl sie es einfach noch nicht hatten.
+- Jede Wissensabfrage mit richtigen Antworten.
+
+SO SIEHT ES RICHTIG AUS – frage nach Selbsteinschätzung, Erfahrung, Bauchgefühl:
+- Sicherheit im Fach: „Wie sicher fühlst du dich generell im Fach …?"
+- Sicherheit im übergeordneten Bereich: „Wie sicher fühlst du dich, wenn es um … (Bereich, z. B. Geometrie / Textarbeit) geht?"
+- Vorwissen und Grundlagen, auf denen die Einheit aufbaut: „Wie sicher bist du beim Rechnen mit Flächen?", „Wie gut kannst du Formeln einsetzen?"
+- Haltung und Erfahrung: „Hast du solche Aufgaben bisher gern gemacht?", „Wie gut klappt es bei dir, allein an einer Aufgabe dranzubleiben?"
+
+VORGEHEN: Leite aus dem Kontext der Einheit ab, welche VORAUSSETZUNGEN (Vorwissen, Fertigkeiten, Arbeitsweisen aus früheren Jahren) sie braucht, und frage NUR diese ab – nicht die Einheitsinhalte selbst.
 
 REGELN:
 - Sehr schülergerechte, einfache, freundliche Sprache. Direkte Ansprache ("du").

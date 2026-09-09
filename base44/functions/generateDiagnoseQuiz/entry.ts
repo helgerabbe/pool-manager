@@ -89,7 +89,12 @@ Deno.serve(async (req) => {
     // Fällt der DB-Text weg, greift der bewährte Default.
     const FALLBACK_INSTRUKTION = `Du erstellst eine EINSTIEGSDIAGNOSE als Multiple-Choice-Quiz für eine Unterrichtseinheit – direkt an Schülerinnen und Schüler gerichtet.
 
-ZIEL: Ein Schüler, der die Einheit NOCH NICHT bearbeitet hat, soll mit diesen Fragen ein grobes Gefühl dafür bekommen, ob er die Themen der Einheit schon kennt und versteht. Es ist KEIN benoteter Test – es geht um Selbsteinschätzung und Orientierung. Schüler überschätzen oder unterschätzen sich oft; die Diagnose hilft ihnen, sich realistisch einzuordnen.
+ZIEL: Der Schüler steht VOR der Einheit und hat ihr Thema meist noch nie gehabt. Die Diagnose prüft deshalb NICHT die Inhalte der neuen Einheit, sondern das VORWISSEN und die GRUNDLAGEN, auf denen die Einheit aufbaut – also das, was aus früheren Themen und Jahrgängen mitgebracht werden sollte. Es ist KEIN benoteter Test: Der Schüler soll erkennen, wie tragfähig seine Ausgangslage ist, und daraus seinen Lerntyp ableiten.
+
+WAS ABGEFRAGT WIRD:
+- Leite aus dem Kontext der Einheit ab, welche VORAUSSETZUNGEN sie braucht (z. B. Flächenberechnung, Umgang mit Formeln, Grundbegriffe, Rechenwege, Fachsprache aus früheren Themen) und frage GENAU DIESE ab.
+- Beispiel: Bei einer Einheit über Zylinder-Volumen gehören Fragen zu Kreisfläche, Umfang und Formel-Einsetzen dazu – NICHT Fragen zur Zylinder-Volumenformel selbst.
+- VERBOTEN sind Fragen, die man nur beantworten kann, wenn man die neue Einheit schon bearbeitet hat.
 
 ANZAHL DER FRAGEN: Entscheide SELBST je nach Umfang der Einheit zwischen 3 und 8 Fragen. Kleine Einheit (wenige Themenfelder/Lernpakete) → eher 3-4 Fragen. Umfangreiche Einheit → eher 6-8 Fragen.
 
@@ -101,13 +106,13 @@ STRIKTE REGELN ZU DEN FRAGEN:
   NEGATIV-BEISPIEL (verboten): Frage „Wie heißt der Erdtrabant?" mit Optionen Mond / Banane / Affe / Schaukel → die falschen Optionen sind absurd, die richtige ist sofort erkennbar.
   POSITIV-BEISPIEL: Frage „Wie heißt der Erdtrabant?" mit Optionen Mond / Phobos / Io / Titan / Europa → alle sind echte Monde, also alle plausibel.
 - Sehr schülergerechte, einfache, klare Sprache. Direkte Ansprache ("du").
-- Beziehe dich KONKRET auf die Inhalte/Themen/Lernziele der Einheit aus dem Kontext.
+- Beziehe dich auf das VORWISSEN, das die Einheit voraussetzt – nicht auf ihre neuen Inhalte.
 - KEINE erfundenen Fakten. Wenn du unsicher bist, formuliere die Frage allgemeiner statt falsch.
 
 ABSCHLUSS-RÜCKMELDUNGEN: Liefere drei ermutigende Rückmeldungstexte (schülergerecht, motivierend), passend zu drei Ergebnis-Bändern:
-- 'hoch' (viele richtig): z. B. „Stark – du hast schon richtig viel Ahnung!"
-- 'mittel' (teils richtig): z. B. „Nicht schlecht, du hast schon ein gutes Überblickswissen!"
-- 'niedrig' (wenige richtig): z. B. „Noch viel Neues für dich – aber genau dafür ist die Einheit ja da!"`;
+- 'hoch' (viele richtig): z. B. „Stark – deine Grundlagen sitzen, damit startest du gut in die Einheit!"
+- 'mittel' (teils richtig): z. B. „Deine Grundlagen sind schon ordentlich, an ein paar Stellen lohnt ein Blick zurück."
+- 'niedrig' (wenige richtig): z. B. „Ein paar Grundlagen fehlen noch – gut, dass du es jetzt weißt, wir holen sie unterwegs auf!"`;
 
     let instruktion = FALLBACK_INSTRUKTION;
     try {
