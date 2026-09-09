@@ -25,6 +25,7 @@ import {
 import PruefbefundKarte from './PruefbefundKarte';
 import MbkAdminPunkteListe from './MbkAdminPunkteListe';
 import MbkAntwortSenden from './MbkAntwortSenden';
+import BrianAdressenInfoCard from './BrianAdressenInfoCard';
 
 export default function MbkBefundeReiter({
   einheitId,
@@ -35,8 +36,16 @@ export default function MbkBefundeReiter({
 }) {
   const { data: befunde = [], isLoading } = useMbkBefunde(einheitId);
   const { data: adminPunkte = [] } = useMbkAdminTodos(einheitId);
-  const { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft, antwortSenden, antwortLaeuft } =
-    useMbkRueckmeldungAktionen(einheitId);
+  const {
+    abholen,
+    abholenLaeuft,
+    dublettenPruefen,
+    dublettenLaeuft,
+    antwortSenden,
+    antwortLaeuft,
+    brianAdressenHolen,
+    brianLaeuft,
+  } = useMbkRueckmeldungAktionen(einheitId);
   const erledigen = useMbkAdminTodoErledigen();
   const [zeigeDubletten, setZeigeDubletten] = useState(false);
 
@@ -106,6 +115,13 @@ export default function MbkBefundeReiter({
           </Button>
         )}
       </div>
+
+      {/* Nur Information: welche Brian-Gespräche haben schon ihre Adresse? */}
+      <BrianAdressenInfoCard
+        aufgaben={aufgaben}
+        laeuft={brianLaeuft}
+        onAbholen={brianAdressenHolen}
+      />
 
       {/* Rückweg: Entscheidungen zurückmelden und den Bau anstoßen. */}
       {befunde.length > 0 && (

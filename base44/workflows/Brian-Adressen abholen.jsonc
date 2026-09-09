@@ -1,0 +1,43 @@
+{
+  "name": "Brian-Adressen abholen",
+  "description": "Holt regelm\u00e4\u00dfig die Brian-Adressen (URLs der KI-Tutor-Dialoge) aus dem GitHub-Austauschordner und tr\u00e4gt sie automatisch in die zugeh\u00f6rigen Aufgaben aller exportierten Einheiten ein.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "20 */3 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "brian_adressen_abholen",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "pullBrianUrls",
+            "args": {
+              "alle": true
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}

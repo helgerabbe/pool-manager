@@ -38,6 +38,7 @@ export function useMbkRueckmeldungAktionen(einheitId) {
   const [abholenLaeuft, setAbholenLaeuft] = useState(false);
   const [dublettenLaeuft, setDublettenLaeuft] = useState(false);
   const [antwortLaeuft, setAntwortLaeuft] = useState(false);
+  const [brianLaeuft, setBrianLaeuft] = useState(false);
 
   const neuLaden = useCallback(async () => {
     await Promise.all([
@@ -116,7 +117,40 @@ export function useMbkRueckmeldungAktionen(einheitId) {
     [einheitId, antwortLaeuft, neuLaden]
   );
 
-  return { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft, antwortSenden, antwortLaeuft };
+  /** Brian-Adressen aus dem Austauschordner holen und in die Aufgaben eintragen. */
+  const brianAdressenHolen = useCallback(async () => {
+    if (!einheitId || brianLaeuft) return;
+    setBrianLaeuft(true);
+    try {
+      const res = await invokeFunction('pullBrianUrls', { einheit_id: einheitId });
+      const d = res.data || {};
+      if (!d.gefunden) {
+        toast.info(d.hinweis || 'Es liegen noch keine Brian-Adressen bereit.');
+      } else {
+        await queryClient.invalidateQueries({ queryKey: ['workspaceEinheitData', einheitId] });
+        toast.success(
+          d.uebernommen > 0
+            ? `${d.uebernommen} Brian-Adressen übernommen.`
+            : 'Alle bekannten Brian-Adressen sind schon eingetragen.'
+        );
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.error || 'Die Brian-Adressen konnten nicht geholt werden.');
+    } finally {
+      setBrianLaeuft(false);
+    }
+  }, [einheitId, brianLaeuft, queryClient]);
+
+  return {
+    abholen,
+    abholenLaeuft,
+    dublettenPruefen,
+    dublettenLaeuft,
+    antwortSenden,
+    antwortLaeuft,
+    brianAdressenHolen,
+    brianLaeuft,
+  };
 }
 
 export function useMbkAdminTodoErledigen() {
