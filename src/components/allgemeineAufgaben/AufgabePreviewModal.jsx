@@ -17,6 +17,8 @@ const BRIAN_LOGO_URL = 'https://media.base44.com/images/public/69cb7e99726da2a1d
 
 function AufgabeBody({ aufgabe }) {
   const aufgabenstellung = (aufgabe?.aufgabenstellung || '').trim();
+  // Handlungsaufgaben laufen an echtem Material — kein KI-Tutor.
+  const istHandlung = aufgabe?.aufgaben_typ === 'handlung';
   const bild = aufgabe?.aufgaben_bild_url;
   const materialien = Array.isArray(aufgabe?.materialien) ? aufgabe.materialien : [];
   const brianUrl = aufgabenstellung
@@ -26,7 +28,9 @@ function AufgabeBody({ aufgabe }) {
   return (
     <div className="h-full overflow-y-auto px-6 py-5 space-y-4">
       <div className="flex items-center gap-3">
-        <img src={BRIAN_LOGO_URL} alt="Brian – KI-Tutor" className="w-11 h-11 object-contain shrink-0" />
+        {!istHandlung && (
+          <img src={BRIAN_LOGO_URL} alt="Brian – KI-Tutor" className="w-11 h-11 object-contain shrink-0" />
+        )}
         <div>
           <div className="text-[11px] font-bold uppercase tracking-wider text-violet-700">Deine Aufgabe</div>
           <div className="text-base font-bold text-slate-900 leading-tight">{aufgabe?.titel || 'Aufgabe'}</div>
@@ -91,7 +95,16 @@ function AufgabeBody({ aufgabe }) {
         </div>
       )}
 
-      {aufgabenstellung && (
+      {istHandlung && (aufgabe?.hinweise_zum_material || '').trim() && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 mb-1">
+            Damit arbeitest du
+          </div>
+          <p className="text-[14px] text-slate-800 whitespace-pre-wrap">{aufgabe.hinweise_zum_material}</p>
+        </div>
+      )}
+
+      {!istHandlung && aufgabenstellung && (
         <div className="flex flex-col items-center gap-2 pt-2 text-center">
           <a href={brianUrl} target="_blank" rel="noopener noreferrer"
              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white text-[15px] font-semibold shadow-lg shadow-violet-200 transition-all">

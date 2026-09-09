@@ -41,6 +41,10 @@ const CONTAINER_TYPEN = new Set([
   'auswahl_buendel',
   'projekt_anker',
   'externe_html_seite',
+  // Handlungsaufgaben (2026-09-09): Sie werden an echtem Material bearbeitet
+  // (Arbeitsheft, Buch) und schülerseitig nur bestätigt — es gibt kein
+  // KI-Gespräch. Vorher meldete die Prüfung hier vier fehlende Brian-Felder.
+  'handlung',
 ]);
 
 /** True, wenn diese AllgemeineAufgabe (Ebene 2 oder 3) einen Brian-Dialog braucht. */
