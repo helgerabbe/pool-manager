@@ -45,6 +45,10 @@ export function findeVerwaisteZuordnungen({ lernpakete = [], aufgaben = [], them
 
   for (const a of aufgaben) {
     if (a?.sync_status === 'to_delete' || !istVerwaist(a, ids)) continue;
+    // Projektaufgaben (Ebene 3) und Projekt-Anker hängen bewusst an der EINHEIT,
+    // nicht an einem Themenfeld — sie sind also nie verwaist. Ohne diese
+    // Ausnahme meldete die Prüfung jedes Projekt als Fehler.
+    if (a?.anforderungsebene === '3 - Projekt' || a?.aufgaben_typ === 'projekt_anker') continue;
     treffer.push({
       ziel_typ: 'allgemeine_aufgabe',
       ziel_id: a.id,
