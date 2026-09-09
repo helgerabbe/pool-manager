@@ -7,19 +7,17 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle, ExternalLink } from 'lucide-react';
-import BrianUebertragenDialog from '@/components/export/BrianUebertragenDialog';
-import BrianAnleitungPanel from '@/components/export/BrianAnleitungPanel';
 import OnboardingBrianUrlCard from '@/components/export/OnboardingBrianUrlCard';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import HelpBadge from '@/components/ui/HelpBadge';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { sammleBrianDialoge, istVeraltet } from '@/lib/brianDialoge';
+import { sammleBrianDialoge } from '@/lib/brianDialoge';
 import { sammleBrianDialogeAusLernpaketen } from '@/lib/brianLernpaketDialoge';
 
 // ── Brian-relevante Aufgabentypen ──
@@ -54,12 +52,13 @@ function SegmentCopyButton({ label, value }) {
 // Ein Dialog ist entweder eine ganze Einzelaufgabe oder EIN Brian-Schritt
 // einer Folge — Brian legt pro Dialog eine Aufgabe an. Woher er stammt,
 // liefert lib/brianDialoge; diese Karte muss den Unterschied nicht kennen.
-function DialogCard({ dialog, onMarkAsSynced }) {
+function DialogCard({ dialog }) {
   const [expanded, setExpanded] = useState(false);
   const { aufgabe, felder } = dialog;
-  const isSynced = dialog.sync_status === 'synced';
+  // „Adresse bekannt" = das Moodle-Team hat den Dialog angelegt und die Adresse
+  // zurückgemeldet (pullBrianUrls). Angelegt wird dort, nicht hier.
+  const hatAdresse = !!dialog.url;
   const isReady = dialog.bereit;
-  const modifiedSinceExport = istVeraltet(dialog);
 
   // Direkter Weg zur Aufgabe: neuer Tab, damit das Export-Center offen bleibt.
   const aufgabeLink = aufgabe?.einheit_id
@@ -73,7 +72,7 @@ function DialogCard({ dialog, onMarkAsSynced }) {
   return (
     <div className={cn(
       'rounded-xl border bg-card shadow-sm transition-all',
-      isSynced ? 'border-green-200 bg-green-50/20' : 'border-border'
+      hatAdresse ? 'border-green-200 bg-green-50/20' : 'border-border'
     )}>
       {/* Header */}
       <div className="flex items-center gap-3 p-4">
@@ -95,19 +94,14 @@ function DialogCard({ dialog, onMarkAsSynced }) {
             {aufgabe.aufgabentyp_projekt && (
               <Badge variant="secondary" className="text-[10px] shrink-0">{aufgabe.aufgabentyp_projekt}</Badge>
             )}
-            {isSynced && (
+            {hatAdresse && (
               <Badge className="bg-green-100 text-green-800 border border-green-300 text-[10px] shrink-0 gap-1">
                 <CheckCircle2 className="w-3 h-3" /> In Brian
                 {dialog.dialog_id ? ` · ${dialog.dialog_id}` : ''}
               </Badge>
             )}
-            {modifiedSinceExport && (
-              <Badge className="bg-amber-100 text-amber-800 border border-amber-300 text-[10px] shrink-0 gap-1">
-                <AlertTriangle className="w-3 h-3" /> Seit Brian-Export geändert
-              </Badge>
-            )}
           </div>
-          {isSynced && dialog.url && (
+          {hatAdresse && (
             <a
               href={dialog.url}
               target="_blank"
@@ -117,10 +111,9 @@ function DialogCard({ dialog, onMarkAsSynced }) {
               {dialog.url} <ExternalLink className="w-3 h-3" />
             </a>
           )}
-          {isSynced && dialog.synced_at && (
+          {hatAdresse && dialog.synced_at && (
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Zuletzt nach Brian übertragen am {new Date(dialog.synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
-              {modifiedSinceExport && ' — die Aufgabe wurde danach noch bearbeitet. Prüfe, ob die Brian-Version noch aktuell ist.'}
+              Adresse übernommen am {new Date(dialog.synced_at).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' })}
             </p>
           )}
           {felder.learner_instruction && (
@@ -133,16 +126,10 @@ function DialogCard({ dialog, onMarkAsSynced }) {
               ✓ Bereit
             </Badge>
           )}
-          {!isSynced && (
-            <Button
-              size="sm"
-              onClick={() => onMarkAsSynced(dialog)}
-              className="gap-1.5 text-xs h-8 bg-green-600 hover:bg-green-700 whitespace-nowrap"
-              disabled={!isReady}
-            >
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              Übertragen
-            </Button>
+          {!hatAdresse && (
+            <Badge variant="outline" className="text-[10px] shrink-0 whitespace-nowrap">
+              Adresse folgt
+            </Badge>
           )}
           <button
             onClick={() => setExpanded(p => !p)}
@@ -238,10 +225,7 @@ function DialogCard({ dialog, onMarkAsSynced }) {
 // Moodle?" gehört in den Workspace privater Einheiten. Im Export-Center ist sie
 // unnötig — dort wird sie ausgeschaltet.
 export default function BrianExportCockpitView({ einheitId = null, embedded = false, zeigeMoodleWeg = true }) {
-  const queryClient = useQueryClient();
   const [filterSynced, setFilterSynced] = useState(false);
-  const [uebertragenDialog, setUebertragenDialog] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
 
   const { data: allAufgaben = [] } = useQuery({
     queryKey: ['allgemeineAufgaben', einheitId],
@@ -290,48 +274,11 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
 
   const dialoge = useMemo(() => alleDialoge.filter((d) =>
     d.aufgabe.content_status === 'approved'
-    && (filterSynced ? true : d.sync_status !== 'synced')
+    && (filterSynced ? true : !d.url)
   ), [alleDialoge, filterSynced]);
 
-  const synced = alleDialoge.filter((d) => d.sync_status === 'synced').length;
-  const pending = alleDialoge.filter((d) => d.aufgabe.content_status === 'approved' && d.sync_status !== 'synced').length;
-
-  const handleConfirmUebertragen = async ({ brian_dialog_id, brian_url }) => {
-    if (!uebertragenDialog) return;
-    setIsSaving(true);
-    try {
-      // Atomarer Server-Call: setzt brian_sync_status='synced' + Brian-ID/URL
-      // und löst im selben Update den Dual-Lock auf, falls Moodle bereits
-      // synced ist (siehe OPTIMISTIC_LOCKING_VERSION_FIELD.md §14).
-      const result = await base44.functions.invoke('confirmBrianExport', {
-        // Lernpaket-KI-Tutor-Aufgaben werden über die MasterAufgabe bestätigt,
-        // alle anderen über die Aufgabe (ggf. mit Schritt).
-        master_id: uebertragenDialog.masterId || null,
-        aufgabe_id: uebertragenDialog.masterId ? null : uebertragenDialog.aufgabe.id,
-        // Ohne schritt_id gilt die Bestätigung für die ganze Aufgabe
-        // (Einzelaufgabe), mit für genau dieses eine Gespräch.
-        schritt_id: uebertragenDialog.schrittId || null,
-        brian_dialog_id,
-        brian_url,
-      });
-
-      queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-      queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
-      setUebertragenDialog(null);
-
-      if (uebertragenDialog.masterId) {
-        toast.success('Als "In Brian" markiert – die URL wurde an die Aufgabe geschrieben.');
-      } else if (result.data?.lock_released) {
-        toast.success('Als "In Brian" markiert – Dual-Lock aufgehoben (Moodle + Brian beide synced).');
-      } else {
-        toast.success('Als "In Brian" markiert. Bearbeitungssperre bleibt bis Moodle-Export bestätigt.');
-      }
-    } catch (error) {
-      toast.error('Fehler: ' + (error?.response?.data?.error || error.message));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const mitAdresse = alleDialoge.filter((d) => !!d.url).length;
+  const ohneAdresse = alleDialoge.filter((d) => d.aufgabe.content_status === 'approved' && !d.url).length;
 
   return (
     <div className={cn(embedded ? 'p-6' : 'min-h-screen bg-muted/20 p-6')}>
@@ -353,28 +300,25 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
         {/* Header */}
         <div className={cn(embedded && 'pt-2 border-t border-border')}>
           <h2 className={cn('font-bold tracking-tight flex items-center gap-2', embedded ? 'text-xl' : 'text-3xl')}>
-            Brian.study Export
+            KI-Tutor Brian: Übersicht
             <HelpBadge
-              text="Hier kopierst du die KI-Tutor-Segmente für jede Aufgabe, legst sie händisch in Brian.study an und trägst die Brian-ID zurück ein."
+              text="Das Moodle-Team legt die Brian-Gespräche beim Kursbau selbst an. Die Adressen kommen automatisch zurück und werden hier eingetragen — du musst nichts kopieren."
               docsSlug="export-workflow"
             />
           </h2>
           <p className="text-muted-foreground mt-2">
-            {embedded
-              ? 'Übertrage die KI-Tutor-Aufgaben dieser Einheit per Kopieren & Einfügen nach Brian.study und verknüpfe sie über die Brian-ID.'
-              : 'Generiere Prompts für Brian.study und markiere Aufgaben als exportiert.'}
+            Die KI-Tutor-Gespräche legt das Moodle-Team beim Bauen des Kurses an. Ihre Adressen kommen
+            automatisch zurück in den Pool-Manager. Hier siehst du nur, welche Gespräche schon eine
+            Adresse haben und ob die vier Übergabefelder gefüllt sind.
           </p>
         </div>
-
-        {/* Schritt-für-Schritt-Anleitung (im Workspace-Tab) */}
-        {embedded && <BrianAnleitungPanel />}
 
         {/* Statistiken */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: 'Bereit für Brian', value: pending, color: 'text-blue-700 bg-blue-50 border-blue-200' },
-            { label: 'In Brian exportiert', value: synced, color: 'text-green-700 bg-green-50 border-green-200' },
-            { label: 'Gesamt freigegeben', value: pending + synced, color: 'text-slate-700 bg-slate-50 border-slate-200' },
+            { label: 'Adresse folgt noch', value: ohneAdresse, color: 'text-blue-700 bg-blue-50 border-blue-200' },
+            { label: 'Adresse vorhanden', value: mitAdresse, color: 'text-green-700 bg-green-50 border-green-200' },
+            { label: 'Gespräche insgesamt', value: ohneAdresse + mitAdresse, color: 'text-slate-700 bg-slate-50 border-slate-200' },
           ].map(({ label, value, color }) => (
             <div key={label} className={`rounded-xl border p-4 ${color}`}>
               <p className="text-2xl font-bold">{value}</p>
@@ -393,7 +337,7 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
               onClick={() => setFilterSynced(p => !p)}
               className="text-xs text-muted-foreground hover:text-foreground underline"
             >
-              {filterSynced ? 'Nur offene anzeigen' : 'Bereits exportierte auch anzeigen'}
+              {filterSynced ? 'Nur ohne Adresse anzeigen' : 'Alle Gespräche anzeigen'}
             </button>
           </div>
 
@@ -404,29 +348,16 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
           {dialoge.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm border border-dashed border-border rounded-xl">
               {filterSynced
-                ? 'Keine freigegebenen Brian-Dialoge vorhanden.'
-                : 'Alle Dialoge sind bereits in Brian angelegt.'}
+                ? 'Keine freigegebenen Brian-Gespräche vorhanden.'
+                : 'Alle Gespräche haben schon ihre Brian-Adresse.'}
             </div>
           ) : (
             dialoge.map(dialog => (
-              <DialogCard
-                key={dialog.key}
-                dialog={dialog}
-                onMarkAsSynced={setUebertragenDialog}
-              />
+              <DialogCard key={dialog.key} dialog={dialog} />
             ))
           )}
         </div>
       </div>
-
-      <BrianUebertragenDialog
-        open={!!uebertragenDialog}
-        onOpenChange={(open) => { if (!open) setUebertragenDialog(null); }}
-        aufgabe={uebertragenDialog?.aufgabe}
-        dialog={uebertragenDialog}
-        onConfirm={handleConfirmUebertragen}
-        isSaving={isSaving}
-      />
     </div>
   );
 }

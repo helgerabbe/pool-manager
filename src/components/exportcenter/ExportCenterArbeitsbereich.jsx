@@ -15,10 +15,9 @@ import SupabaseExportCard from '@/components/exportcenter/SupabaseExportCard';
 import AirGapPayloadDownloadCard from '@/components/exportcenter/AirGapPayloadDownloadCard';
 import GitHubExportCard from '@/components/exportcenter/GitHubExportCard';
 import PruefungWarnungCard from '@/components/exportcenter/PruefungWarnungCard';
-// Brian-Übertragung (2026-09-03): Die vier Übergabefelder werden hier von Hand
-// nach Brian.study kopiert; die zurückgetragene Brian-URL reist mit dem
-// MBK-Payload mit. Die Vollständigkeit der Felder prüft die Einheit selbst
-// (Reiter 8) — hier geht es um den Übertragungsstand.
+// Brian-Übersicht (2026-09-09): Der Kursbau legt die Brian-Gespräche selbst an
+// und meldet die Adressen über den Austauschordner zurück (pullBrianUrls). Hier
+// wird nur noch angezeigt, welche Gespräche schon eine Adresse haben.
 import BrianExportCockpitView from '@/components/export/BrianExportCockpitView';
 
 export default function ExportCenterArbeitsbereich({ einheitId }) {

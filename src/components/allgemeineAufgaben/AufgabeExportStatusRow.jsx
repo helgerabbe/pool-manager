@@ -119,8 +119,10 @@ function resolveMoodleStatus(aufgabe) {
 export default function AufgabeExportStatusRow({ aufgabe }) {
   if (!aufgabe) return null;
   const moodleStatus = resolveMoodleStatus(aufgabe);
-  const brianStatus = aufgabe.brian_sync_status || 'new';
 
+  // Brian wird nicht mehr getrennt angezeigt: Der Kursbau legt die Gespräche
+  // selbst an und meldet die Adressen automatisch zurück — es gibt keinen
+  // manuellen Übertragungsschritt mehr, den man hier abwarten müsste.
   return (
     <TooltipProvider>
       <div className="flex items-center gap-x-4 gap-y-1 flex-wrap px-3 py-1.5 rounded-lg bg-muted/30 border border-border">
@@ -128,8 +130,6 @@ export default function AufgabeExportStatusRow({ aufgabe }) {
           Export-Status
         </span>
         <StatusDot system="Moodle" status={moodleStatus} />
-        <span className="text-border">·</span>
-        <StatusDot system="Brian" status={brianStatus} />
       </div>
     </TooltipProvider>
   );
