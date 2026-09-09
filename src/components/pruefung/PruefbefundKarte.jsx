@@ -17,6 +17,7 @@ import { PRUEF_SCHWERE, getKategorieLabel, MBK_QUELLE } from '@/lib/pruefungKate
 import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 import InhaltGesichtetButton from './InhaltGesichtetButton';
 import MbkAbweichungBanner from './MbkAbweichungBanner';
+import VorschlagBlock from './VorschlagBlock';
 
 const BEWUSST_PLACEHOLDER =
   'Warum soll das so bleiben? Ein Satz reicht – das Moodle-Team liest ihn und meldet den Punkt dann nicht noch einmal.';
@@ -56,7 +57,10 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
       <MbkAbweichungBanner befund={befund} />
 
       <p className="text-sm text-foreground">{befund.befund}</p>
-      {befund.vorschlag && <p className="text-xs text-muted-foreground">→ {befund.vorschlag}</p>}
+      <VorschlagBlock
+        vorschlag={befund.vorschlag}
+        istEinfuegetext={befund.mbk_quelle === 'sichtung'}
+      />
       {befund.entscheidung === 'bewusst' && befund.kommentar && (
         <p className="text-xs text-violet-800">Begründung: {befund.kommentar}</p>
       )}
