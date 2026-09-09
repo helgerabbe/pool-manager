@@ -34,6 +34,10 @@
       "type": "string",
       "description": "Denormalisierter Anzeigetitel der Stelle f\u00fcr die Taskliste."
     },
+    "fundort": {
+      "type": "string",
+      "description": "Klartext-Pfad zur Stelle f\u00fcr die Taskliste, z. B. \u201eThemenfeld \u201eFl\u00e4chen\" \u00b7 Lernpaket \u201eQuadrate\" \u00b7 Phase \u00dcbung\" oder bei Systembausteinen \u201eArbeitsplan Ehrgeizig \u00b7 Abschluss\". Erg\u00e4nzt 2026-09-09: Bei MBK-Befunden zu Systembausteinen stand vorher nur ein Titel (\u201eAufgabenb\u00fcndel\") in der Liste \u2014 dadurch war unklar, in welchem Arbeitsplan und Abschnitt die Stelle steckt, und niemand f\u00fchlte sich zust\u00e4ndig. Rein anzeigend; die Verlinkung l\u00e4uft weiter \u00fcber ziel_typ/ziel_id."
+    },
     "lernpaket_id": {
       "type": "string",
       "description": "Denormalisiert: FK zum Lernpaket \u2013 f\u00fcr die Gruppierung in der Taskliste und f\u00fcr Deep-Links."

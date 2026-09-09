@@ -240,9 +240,92 @@ export function buildMbkFingerprint(mbkId) {
  * bezeichnen. Ohne diese Auflösung könnte die Taskliste nicht an die Stelle
  * verlinken, und genau daran entscheidet sich, ob die Liste benutzt wird.
  */
-export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivitaeten = [], themenfelder = [] }) {
+const LERNTYP_NAMEN = {
+  minimalist: 'Minimalist',
+  pragmatiker: 'Pragmatiker',
+  ehrgeizig: 'Ehrgeizig',
+  passioniert: 'Passioniert',
+};
+
+/**
+ * Sucht einen von der MBK gemeldeten SYSTEMBAUSTEIN in den Arbeitsplänen.
+ *
+ * Der Bau nennt bei solchen Punkten nur einen Titel („Aufgabenbündel",
+ * „Schriftliche Arbeit"). Ohne diese Suche landet der Befund als namenloses
+ * „Lernpaket" in der Liste — und niemand weiß, in welchem Arbeitsplan und
+ * Abschnitt die Stelle steckt, also fühlt sich auch niemand zuständig.
+ *
+ * @returns {{baustein_id, lerntyp, titel, fundort}|null}
+ */
+export function findeSystembaustein(befund, { einheit, systemBausteine = [] }) {
+  const norm = (s) => String(s || '').trim().toLowerCase();
+  const kandidat = norm(befund.ziel_id_kandidat);
+  const titel = norm(befund.ref_titel);
+  if (!kandidat && !titel) return null;
+
+  const baustein = (systemBausteine || []).find(
+    (b) => norm(b.baustein_id) === kandidat || norm(b.titel) === titel || norm(b.titel) === kandidat
+  );
+  const bausteinId = baustein?.baustein_id || (kandidat.startsWith('sys_') ? befund.ziel_id_kandidat : '');
+  if (!bausteinId) return null;
+
+  // Wo genau steht der Baustein? Jeder Arbeitsplan und Abschnitt, in dem er
+  // vorkommt — das ist die Angabe, die in der Liste bisher gefehlt hat.
+  const treffer = [];
+  const konfiguration = einheit?.lernpfade_konfiguration || {};
+  for (const lerntyp of Object.keys(LERNTYP_NAMEN)) {
+    for (const sektor of konfiguration[lerntyp] || []) {
+      const drin = (sektor?.items || []).some(
+        (item) => item?.item_type === 'system' && norm(item.ref_id) === norm(bausteinId)
+      );
+      if (drin) {
+        treffer.push({
+          lerntyp,
+          text: `${LERNTYP_NAMEN[lerntyp]} · ${sektor?.titel || sektor?.name || 'Abschnitt ohne Titel'}`,
+        });
+      }
+    }
+  }
+
+  return {
+    baustein_id: bausteinId,
+    lerntyp: treffer[0]?.lerntyp || '',
+    titel: baustein?.titel || befund.ref_titel || bausteinId,
+    fundort: treffer.length > 0
+      ? `Arbeitsplan ${treffer.map((t) => t.text).join(' | ')}`
+      : 'Steht in keinem Arbeitsplan mehr — vermutlich zwischenzeitlich entfernt.',
+  };
+}
+
+export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivitaeten = [], themenfelder = [], einheit = null, systemBausteine = [] }) {
   const norm = (s) => String(s || '').trim().toLowerCase();
   const id = befund.ziel_id_kandidat || '';
+
+  // Systembausteine zuerst: sie tragen keine Datensatz-ID, würden also unten
+  // als „Lernpaket ohne Link" durchfallen.
+  const sys = findeSystembaustein(befund, { einheit, systemBausteine });
+  if (sys) {
+    return {
+      mbk_id: befund.mbk_id,
+      kategorie: befund.kategorie,
+      schwere: befund.schwere,
+      befund: befund.befund,
+      vorschlag: befund.vorschlag,
+      gemeldet_am: befund.gemeldet_am,
+      mbk_status: befund.mbk_status || 'offen',
+      mbk_quelle: befund.mbk_quelle || 'bau',
+      kurs_umgehung: befund.kurs_umgehung || 'keine',
+      kurs_felder: Array.isArray(befund.kurs_felder) ? befund.kurs_felder : [],
+      ziel_typ: 'systembaustein',
+      ziel_id: sys.lerntyp ? `${sys.lerntyp}::${sys.baustein_id}` : sys.baustein_id,
+      ziel_titel: sys.titel,
+      fundort: sys.fundort,
+      lernpaket_id: '',
+      lernpaket_titel: '',
+      themenfeld_id: befund.themenfeld_id || '',
+      themenfeld_titel: befund.themenfeld_titel || '',
+    };
+  }
 
   const aufgabe = id ? aufgaben.find((a) => a.id === id) : null;
   const lernpaketDirekt = id ? lernpakete.find((p) => p.id === id) : null;
@@ -273,7 +356,20 @@ export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivita
 
   const themenfeldTitel = befund.themenfeld_titel || themenfeld?.titel || '';
 
+  // Klartext-Pfad zur Stelle. Ohne ihn steht in der Liste nur ein Titel, und
+  // die Fachgruppe muss raten, wo sie suchen soll.
+  const fundortTeile = [];
+  if (themenfeldTitel) fundortTeile.push(`Themenfeld „${themenfeldTitel}"`);
+  if (lernpaket?.titel_des_pakets || befund.lernpaket_titel) {
+    fundortTeile.push(`Lernpaket „${lernpaket?.titel_des_pakets || befund.lernpaket_titel}"`);
+  }
+  if (zielTyp === 'aktivitaet' && aktivitaet?.phase) fundortTeile.push(`Phase ${aktivitaet.phase}`);
+  if (zielTyp === 'allgemeine_aufgabe' && aufgabe?.anforderungsebene) {
+    fundortTeile.push(aufgabe.anforderungsebene === '3 - Projekt' ? 'Projektaufgaben' : 'Allgemeine Aufgaben');
+  }
+
   return {
+    fundort: fundortTeile.join(' · '),
     mbk_id: befund.mbk_id,
     kategorie: befund.kategorie,
     schwere: befund.schwere,

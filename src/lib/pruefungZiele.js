@@ -30,6 +30,15 @@ export function getBefundZiel(befund, { einheitId, aufgaben = [] }) {
         label: 'Zu den Arbeitsplänen',
       };
     }
+    // Von der MBK gemeldete Bausteine (Aufgabenbündel, Schriftliche Arbeit …):
+    // Sie werden im Reiter „Arbeitspläne" bearbeitet — der Fundort in der
+    // Kachel sagt, in welchem Plan und Abschnitt.
+    if (befund.quelle === 'mbk') {
+      return {
+        href: `/workspace?einheit=${einheitId}&tab=dashboards`,
+        label: 'Zu den Arbeitsplänen',
+      };
+    }
     return null;
   }
 

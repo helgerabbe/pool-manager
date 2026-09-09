@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRight, Check, RotateCcw, ShieldAlert, MessageSquareWarning } from 'lucide-react';
+import { ArrowRight, Check, RotateCcw, ShieldAlert, MessageSquareWarning, MapPin } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PRUEF_SCHWERE, getKategorieLabel, MBK_QUELLE } from '@/lib/pruefungKategorien';
 import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
@@ -58,6 +58,13 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
           </Badge>
         )}
       </div>
+
+      {befund.fundort && (
+        <p className="text-xs text-muted-foreground flex items-start gap-1">
+          <MapPin className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>{befund.fundort}</span>
+        </p>
+      )}
 
       <MbkAbweichungBanner befund={befund} />
 

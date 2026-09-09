@@ -58,7 +58,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   // Zuordnung im Pool-Manager: nur so kann die Taskliste später verlinken.
   // Die MBK nennt eine ID, ohne zu sagen, was sie bezeichnet — deshalb werden
   // Lernpakete, Aufgaben, Aktivitäten und Themenfelder zum Abgleich geladen.
-  const [lernpakete, aufgaben, themenfelder, vorhandene, vorhandeneTodos] = await Promise.all([
+  const [systemBausteine, lernpakete, aufgaben, themenfelder, vorhandene, vorhandeneTodos] = await Promise.all([
+    base44.asServiceRole.entities.SystemBausteine.list('', 200),
     base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheit.id }),
     base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheit.id }),
     base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheit.id }),
@@ -85,6 +86,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       aufgaben: aufgaben || [],
       aktivitaeten: aktivitaeten || [],
       themenfelder: themenfelder || [],
+      einheit,
+      systemBausteine: systemBausteine || [],
     });
     const fingerprint = buildMbkFingerprint(zugeordnet.mbk_id);
     const daten = {
@@ -93,6 +96,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       ziel_typ: zugeordnet.ziel_typ,
       ziel_id: zugeordnet.ziel_id,
       ziel_titel: zugeordnet.ziel_titel,
+      fundort: zugeordnet.fundort || '',
       lernpaket_id: zugeordnet.lernpaket_id,
       lernpaket_titel: zugeordnet.lernpaket_titel,
       themenfeld_id: zugeordnet.themenfeld_id || '',
