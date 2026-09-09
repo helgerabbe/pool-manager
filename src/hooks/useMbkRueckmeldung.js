@@ -37,6 +37,7 @@ export function useMbkRueckmeldungAktionen(einheitId) {
   const queryClient = useQueryClient();
   const [abholenLaeuft, setAbholenLaeuft] = useState(false);
   const [dublettenLaeuft, setDublettenLaeuft] = useState(false);
+  const [antwortLaeuft, setAntwortLaeuft] = useState(false);
 
   const neuLaden = useCallback(async () => {
     await Promise.all([
@@ -90,7 +91,32 @@ export function useMbkRueckmeldungAktionen(einheitId) {
     }
   }, [einheitId, dublettenLaeuft, neuLaden]);
 
-  return { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft };
+  /** Entscheidungen als Antwortdatei ins Repository schreiben (Rückweg). */
+  const antwortSenden = useCallback(
+    async (hinweis) => {
+      if (!einheitId || antwortLaeuft) return;
+      setAntwortLaeuft(true);
+      try {
+        const res = await invokeFunction('pushMbkAntwort', {
+          einheit_id: einheitId,
+          hinweis: hinweis || '',
+          neu_bauen: true,
+        });
+        const d = res.data || {};
+        await neuLaden();
+        toast.success(
+          `${d.gesendet || 0} Entscheidungen zurückgemeldet — das Moodle-Team weiß jetzt, dass gebaut werden kann.`
+        );
+      } catch (err) {
+        toast.error(err?.response?.data?.error || 'Die Antwort konnte nicht gesendet werden.');
+      } finally {
+        setAntwortLaeuft(false);
+      }
+    },
+    [einheitId, antwortLaeuft, neuLaden]
+  );
+
+  return { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft, antwortSenden, antwortLaeuft };
 }
 
 export function useMbkAdminTodoErledigen() {

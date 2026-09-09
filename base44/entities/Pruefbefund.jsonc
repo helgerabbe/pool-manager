@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.\n\nKURS-ABWEICHUNGEN (2026-09-09): Der Bau darf einen Kurs anders ausliefern, als der Payload es sagt \u2014 \u00fcber seine Korrektur- und Gestaltungsschicht. Damit die Fachgruppe nicht raten muss, meldet er den Grund im Feld `kurs_umgehung` mit; `mbk_quelle` sagt zus\u00e4tzlich, ob der Fund aus der Heuristik des Generators ('bau') oder aus dem didaktischen Blick ('sichtung', oft mit fertigem Einf\u00fcgetext im Vorschlag) stammt.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen / Widerspruch). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.\n\nKURS-ABWEICHUNGEN (2026-09-09): Der Bau darf einen Kurs anders ausliefern, als der Payload es sagt \u2014 \u00fcber seine Korrektur- und Gestaltungsschicht. Damit die Fachgruppe nicht raten muss, meldet er den Grund im Feld `kurs_umgehung` mit; `mbk_quelle` sagt zus\u00e4tzlich, ob der Fund aus der Heuristik des Generators ('bau') oder aus dem didaktischen Blick ('sichtung', oft mit fertigem Einf\u00fcgetext im Vorschlag) stammt.\n\nR\u00dcCKWEG (2026-09-09): Die Entscheidungen zu MBK-Befunden reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository \u2014 geschrieben von der Funktion pushMbkAntwort. Neben 'behoben' und 'bewusst' gibt es daf\u00fcr 'widerspruch': Die Fachgruppe h\u00e4lt den Fund f\u00fcr unzutreffend und erwartet eine Antwort des Baus, statt etwas zu \u00e4ndern.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -118,14 +118,15 @@
       "enum": [
         "offen",
         "behoben",
-        "bewusst"
+        "bewusst",
+        "widerspruch"
       ],
       "default": "offen",
-      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert. 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 reist im Payload mit. Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
+      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert. 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 reist im Payload mit. 'widerspruch' (2026-09-09, nur sinnvoll bei quelle='mbk') = die Fachgruppe h\u00e4lt den Fund f\u00fcr unzutreffend und erwartet eine Antwort des Baus; reist mit Pflichtkommentar in der Antwortdatei zur\u00fcck. Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
     },
     "kommentar": {
       "type": "string",
-      "description": "Pflichtkommentar bei entscheidung='bewusst'. Wird an die MBK durchgereicht."
+      "description": "Pflichtkommentar bei entscheidung='bewusst' und entscheidung='widerspruch'. Wird an die MBK durchgereicht."
     },
     "entschieden_von": {
       "type": "string",
@@ -135,6 +136,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Zeitpunkt der Entscheidung."
+    },
+    "antwort_gesendet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Nur bei quelle='mbk': Zeitpunkt, zu dem diese Entscheidung als Teil einer Antwortdatei ins Repository geschrieben wurde (pushMbkAntwort). Leer = die Entscheidung ist beim Bau noch nicht angekommen; die Anzeige unterscheidet dadurch \u201eentschieden\" von \u201ezur\u00fcckgemeldet\"."
     },
     "erneut_gefunden": {
       "type": "boolean",

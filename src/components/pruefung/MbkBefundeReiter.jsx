@@ -24,6 +24,7 @@ import {
 } from '@/hooks/useMbkRueckmeldung';
 import PruefbefundKarte from './PruefbefundKarte';
 import MbkAdminPunkteListe from './MbkAdminPunkteListe';
+import MbkAntwortSenden from './MbkAntwortSenden';
 
 export default function MbkBefundeReiter({
   einheitId,
@@ -34,7 +35,7 @@ export default function MbkBefundeReiter({
 }) {
   const { data: befunde = [], isLoading } = useMbkBefunde(einheitId);
   const { data: adminPunkte = [] } = useMbkAdminTodos(einheitId);
-  const { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft } =
+  const { abholen, abholenLaeuft, dublettenPruefen, dublettenLaeuft, antwortSenden, antwortLaeuft } =
     useMbkRueckmeldungAktionen(einheitId);
   const erledigen = useMbkAdminTodoErledigen();
   const [zeigeDubletten, setZeigeDubletten] = useState(false);
@@ -105,6 +106,16 @@ export default function MbkBefundeReiter({
           </Button>
         )}
       </div>
+
+      {/* Rückweg: Entscheidungen zurückmelden und den Bau anstoßen. */}
+      {befunde.length > 0 && (
+        <MbkAntwortSenden
+          anzahlEntschieden={befunde.length - offene.length}
+          anzahlOffen={offene.length}
+          laeuft={antwortLaeuft}
+          onSenden={antwortSenden}
+        />
+      )}
 
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Hinweise werden geladen …</p>

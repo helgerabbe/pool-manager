@@ -11,7 +11,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowRight, Check, RotateCcw, ShieldAlert } from 'lucide-react';
+import { ArrowRight, Check, RotateCcw, ShieldAlert, MessageSquareWarning } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PRUEF_SCHWERE, getKategorieLabel, MBK_QUELLE } from '@/lib/pruefungKategorien';
 import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
@@ -21,9 +21,13 @@ import VorschlagBlock from './VorschlagBlock';
 
 const BEWUSST_PLACEHOLDER =
   'Warum soll das so bleiben? Ein Satz reicht – das Moodle-Team liest ihn und meldet den Punkt dann nicht noch einmal.';
+const WIDERSPRUCH_PLACEHOLDER =
+  'Warum trifft der Hinweis nicht zu? Deine Begründung geht an das Moodle-Team, das darauf antwortet.';
 
 export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstSetzen, onEntscheiden }) {
-  const [kommentarOffen, setKommentarOffen] = useState(false);
+  // null | 'bewusst' | 'widerspruch' — welche begründete Entscheidung gerade
+  // geschrieben wird. Beide nutzen dasselbe Textfeld.
+  const [kommentarModus, setKommentarModus] = useState(null);
   const [kommentar, setKommentar] = useState(befund.kommentar || '');
   const schwere = PRUEF_SCHWERE[befund.schwere] || PRUEF_SCHWERE.hinweis;
   const erledigt = befund.entscheidung !== 'offen';
@@ -46,6 +50,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         <span className="text-sm font-semibold flex-1 min-w-0">{befund.ziel_titel || 'Unbenannte Stelle'}</span>
         {befund.entscheidung === 'behoben' && <Badge className="bg-green-100 text-green-800 border-green-300" variant="outline">Erledigt</Badge>}
         {befund.entscheidung === 'bewusst' && <Badge className="bg-violet-100 text-violet-800 border-violet-300" variant="outline">Bleibt so</Badge>}
+        {befund.entscheidung === 'widerspruch' && <Badge className="bg-orange-100 text-orange-800 border-orange-300" variant="outline">Widerspruch</Badge>}
         {befund.erneut_gefunden && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Wieder aufgetaucht</Badge>}
         {befund.mbk_quelle === 'sichtung' && (
           <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
@@ -61,8 +66,15 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         vorschlag={befund.vorschlag}
         istEinfuegetext={befund.mbk_quelle === 'sichtung'}
       />
-      {befund.entscheidung === 'bewusst' && befund.kommentar && (
+      {(befund.entscheidung === 'bewusst' || befund.entscheidung === 'widerspruch') && befund.kommentar && (
         <p className="text-xs text-violet-800">Begründung: {befund.kommentar}</p>
+      )}
+      {erledigt && befund.quelle === 'mbk' && (
+        <p className="text-xs text-muted-foreground">
+          {befund.antwort_gesendet_am
+            ? 'An das Moodle-Team zurückgemeldet.'
+            : 'Noch nicht zurückgemeldet – geht mit dem nächsten „Eingearbeitet, bitte neu bauen" raus.'}
+        </p>
       )}
 
       <div className="flex items-center gap-2 flex-wrap pt-1">
@@ -92,8 +104,13 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
               <Check className="w-3.5 h-3.5" /> Erledigt
             </Button>
             {kannBewusstSetzen && (
-              <Button size="sm" variant="outline" onClick={() => setKommentarOffen((v) => !v)}>
+              <Button size="sm" variant="outline" onClick={() => setKommentarModus((v) => (v === 'bewusst' ? null : 'bewusst'))}>
                 <ShieldAlert className="w-3.5 h-3.5" /> Soll so bleiben
+              </Button>
+            )}
+            {befund.quelle === 'mbk' && (
+              <Button size="sm" variant="outline" onClick={() => setKommentarModus((v) => (v === 'widerspruch' ? null : 'widerspruch'))}>
+                <MessageSquareWarning className="w-3.5 h-3.5" /> Sehe ich anders
               </Button>
             )}
           </>
@@ -104,20 +121,20 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         )}
       </div>
 
-      {kommentarOffen && befund.entscheidung === 'offen' && (
+      {kommentarModus && befund.entscheidung === 'offen' && (
         <div className="space-y-2 pt-1">
           <Textarea
             value={kommentar}
             onChange={(e) => setKommentar(e.target.value)}
-            placeholder={BEWUSST_PLACEHOLDER}
+            placeholder={kommentarModus === 'widerspruch' ? WIDERSPRUCH_PLACEHOLDER : BEWUSST_PLACEHOLDER}
             className="text-sm"
           />
           <Button
             size="sm"
             disabled={!kommentar.trim()}
             onClick={() => {
-              onEntscheiden({ befundId: befund.id, entscheidung: 'bewusst', kommentar: kommentar.trim() });
-              setKommentarOffen(false);
+              onEntscheiden({ befundId: befund.id, entscheidung: kommentarModus, kommentar: kommentar.trim() });
+              setKommentarModus(null);
             }}
           >
             Begründung speichern

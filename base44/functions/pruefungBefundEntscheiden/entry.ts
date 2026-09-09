@@ -22,7 +22,7 @@ export default async function (req) {
     const befundId = body?.befund_id;
     const entscheidung = body?.entscheidung;
     const kommentar = typeof body?.kommentar === 'string' ? body.kommentar.trim() : '';
-    if (!befundId || !['offen', 'behoben', 'bewusst'].includes(entscheidung)) {
+    if (!befundId || !['offen', 'behoben', 'bewusst', 'widerspruch'].includes(entscheidung)) {
       return Response.json({ error: 'befund_id und gültige entscheidung sind erforderlich' }, { status: 400 });
     }
 
@@ -41,13 +41,16 @@ export default async function (req) {
           { status: 403 }
         );
       }
+    } else if (entscheidung === 'widerspruch' && !kommentar) {
+      // Ein Widerspruch ohne Begründung hilft dem Bau nicht weiter.
+      return Response.json({ error: 'Für einen Widerspruch ist eine Begründung erforderlich.' }, { status: 400 });
     } else if (!(await hasPruefungBearbeitenAccess(base44, user, einheit))) {
       return Response.json({ error: 'Keine Berechtigung in dieser Einheit' }, { status: 403 });
     }
 
     const updated = await base44.asServiceRole.entities.Pruefbefund.update(befundId, {
       entscheidung,
-      kommentar: entscheidung === 'bewusst' ? kommentar : '',
+      kommentar: entscheidung === 'bewusst' || entscheidung === 'widerspruch' ? kommentar : '',
       entschieden_von: user.email,
       entschieden_am: new Date().toISOString(),
       // Der Hinweis „war behoben, kam wieder" gilt nach einer neuen
