@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Puzzle, Edit } from 'lucide-react';
 import StepEmptyState from '@/components/shared/EmptyState';
 import ActivityContentForm from '@/components/workspace/ActivityContentForm';
+import MbkAbweichungHinweis from '@/components/pruefung/MbkAbweichungHinweis';
 
 export default function AktivitaetEditPanel({
   paket,
@@ -49,6 +50,8 @@ export default function AktivitaetEditPanel({
           <p className="text-xs text-muted-foreground">{phaseLabel}</p>
           <h2 className="text-lg font-bold">{aktivitaet.name}</h2>
         </div>
+        {/* Weicht der gebaute Kurs an dieser Aktivität ab, steht der Grund hier. */}
+        <MbkAbweichungHinweis zielId={activityRecordId} />
         {kannBearbeiten && (
           <Button onClick={() => setContentFormOpen(true)} className="gap-2">
             <Edit className="w-4 h-4" /> Inhalt bearbeiten

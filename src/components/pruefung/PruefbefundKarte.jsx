@@ -13,9 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowRight, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PRUEF_SCHWERE, getKategorieLabel } from '@/lib/pruefungKategorien';
+import { PRUEF_SCHWERE, getKategorieLabel, MBK_QUELLE } from '@/lib/pruefungKategorien';
 import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 import InhaltGesichtetButton from './InhaltGesichtetButton';
+import MbkAbweichungBanner from './MbkAbweichungBanner';
 
 const BEWUSST_PLACEHOLDER =
   'Warum soll das so bleiben? Ein Satz reicht – das Moodle-Team liest ihn und meldet den Punkt dann nicht noch einmal.';
@@ -45,7 +46,14 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         {befund.entscheidung === 'behoben' && <Badge className="bg-green-100 text-green-800 border-green-300" variant="outline">Erledigt</Badge>}
         {befund.entscheidung === 'bewusst' && <Badge className="bg-violet-100 text-violet-800 border-violet-300" variant="outline">Bleibt so</Badge>}
         {befund.erneut_gefunden && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Wieder aufgetaucht</Badge>}
+        {befund.mbk_quelle === 'sichtung' && (
+          <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200">
+            {MBK_QUELLE.sichtung.label}
+          </Badge>
+        )}
       </div>
+
+      <MbkAbweichungBanner befund={befund} />
 
       <p className="text-sm text-foreground">{befund.befund}</p>
       {befund.vorschlag && <p className="text-xs text-muted-foreground">→ {befund.vorschlag}</p>}
