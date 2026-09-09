@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId, verfeinerung } = await req.json();
+    const { einheitId, verfeinerung, anzahl, bestehendeFragen } = await req.json();
     if (!einheitId) {
       return Response.json({ error: 'einheitId fehlt' }, { status: 400 });
     }
@@ -79,7 +79,7 @@ VORGEHEN: Leite aus dem Kontext der Einheit ab, welche VORAUSSETZUNGEN (Vorwisse
 
 REGELN:
 - Sehr schülergerechte, einfache, freundliche Sprache. Direkte Ansprache ("du").
-- Genau 5 bis 6 Fragen.
+- Liefere einen VORRAT an Fragen zur Auswahl – die Lehrkraft wählt daraus die besten aus. Decke dabei verschiedene Blickwinkel ab (Fach allgemein, Bereich, einzelne Vorwissens-Bausteine, Arbeitshaltung).
 - Jede Frage wird mit EINEM Schieberegler beantwortet.
 - WICHTIG zur Polung: Das linke Label ist immer der UNSICHERE Pol, das rechte Label ist immer der SICHERE Pol. Halte diese Reihenfolge bei JEDER Frage ein.
 - Halte die Pol-Labels kurz (max. ~4 Wörter).
@@ -99,15 +99,25 @@ REGELN:
       ? `\n\nZUSÄTZLICHER WUNSCH DER LEHRKRAFT (mit Vorrang berücksichtigen, aber die technische Ausgabe-Vorgabe bleibt zwingend):\n${verfeinerung.trim()}`
       : '';
 
+    // Nachschlag-Modus: Die Lehrkraft hat bereits Fragen ausgewählt und will
+    // weitere zur Auswahl. Die vorhandenen dürfen sich nicht wiederholen.
+    const bestehendeListe = Array.isArray(bestehendeFragen)
+      ? bestehendeFragen.filter((f) => typeof f === 'string' && f.trim()).slice(0, 40)
+      : [];
+    const vermeidenBlock = bestehendeListe.length
+      ? `\n\nDIESE FRAGEN EXISTIEREN SCHON – erzeuge inhaltlich ANDERE, keine Umformulierungen davon:\n- ${bestehendeListe.join('\n- ')}`
+      : '';
+    const anzahlFragen = Number.isFinite(anzahl) && anzahl > 0 ? Math.min(Math.round(anzahl), 15) : 10;
+
     const prompt = `${instruktion}
 
 KONTEXT DER EINHEIT (als JSON):
 ${JSON.stringify(kontext, null, 2)}
 
 TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT verhandelbar):
-- Genau 5 bis 6 Fragen.
+- Genau ${anzahlFragen} Fragen, alle inhaltlich verschieden.
 - Jede Frage hat ein 'links_label' (UNSICHERER Pol) und ein 'rechts_label' (SICHERER Pol) – diese Polung ist zwingend.
-- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.${verfeinerungBlock}`;
+- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.${vermeidenBlock}${verfeinerungBlock}`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

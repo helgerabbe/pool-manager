@@ -23,6 +23,8 @@ import {
   ChevronLeft, ChevronRight, RotateCw,
 } from 'lucide-react';
 import PreviewActionBar from './preview/PreviewActionBar';
+import FrageAuswahlLeiste from './preview/FrageAuswahlLeiste';
+import useFragenAuswahl from '@/hooks/useFragenAuswahl';
 
 // Einschätzungs-Bänder anhand des Schieberegler-Durchschnitts (0 = unsicher,
 // 100 = sicher). Reine Orientierung, keine Bewertung.
@@ -59,6 +61,8 @@ export default function EinstiegsdiagnosePreviewModal({
   const [diagnose, setDiagnose] = useState(null);
   const [werte, setWerte] = useState({});
   const [auswertung, setAuswertung] = useState(false);
+  const [nachladen, setNachladen] = useState(false);
+  const auswahl = useFragenAuswahl();
 
   const generate = useCallback(async (verfeinerung = null) => {
     if (!einheitId) return;
@@ -68,10 +72,11 @@ export default function EinstiegsdiagnosePreviewModal({
     setWerte({});
     setAuswertung(false);
     try {
-      const res = await base44.functions.invoke('generateEinstiegsdiagnose', { einheitId, verfeinerung });
+      const res = await base44.functions.invoke('generateEinstiegsdiagnose', { einheitId, verfeinerung, anzahl: 10 });
       if (res?.data?.error) throw new Error(res.data.error);
       const content = res?.data?.diagnose;
       setDiagnose(content);
+      auswahl.setzeFragen(content?.fragen || []);
       const init = {};
       (content?.fragen || []).forEach((_, i) => { init[i] = 50; });
       setWerte(init);
@@ -80,7 +85,28 @@ export default function EinstiegsdiagnosePreviewModal({
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einheitId]);
+
+  // Nachschlag: ausgewählte Fragen bleiben, es kommen 5 neue zur Auswahl dazu.
+  const nachgenerieren = useCallback(async () => {
+    if (!einheitId) return;
+    setNachladen(true);
+    setError(null);
+    setAuswertung(false);
+    try {
+      const res = await base44.functions.invoke('generateEinstiegsdiagnose', {
+        einheitId, anzahl: 5, bestehendeFragen: auswahl.fragenTexte,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      auswahl.ergaenze(res?.data?.diagnose?.fragen || []);
+    } catch (e) {
+      setError(e?.message || 'Generierung fehlgeschlagen.');
+    } finally {
+      setNachladen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einheitId, auswahl.fragenTexte]);
 
   // Gespeicherten Stand zeigen statt jedes Mal neu (und teuer) zu erzeugen.
   useEffect(() => {
@@ -89,6 +115,7 @@ export default function EinstiegsdiagnosePreviewModal({
     setAuswertung(false);
     if (initialSnapshot) {
       setDiagnose(initialSnapshot);
+      auswahl.setzeFragen(initialSnapshot.fragen || []);
       const init = {};
       (initialSnapshot.fragen || []).forEach((_, i) => { init[i] = 50; });
       setWerte(init);
@@ -98,7 +125,7 @@ export default function EinstiegsdiagnosePreviewModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const fragen = diagnose?.fragen || [];
+  const fragen = auswahl.fragen;
   const avg = useMemo(() => {
     if (fragen.length === 0) return 0;
     const sum = fragen.reduce((acc, _, i) => acc + (werte[i] ?? 50), 0);
@@ -112,7 +139,7 @@ export default function EinstiegsdiagnosePreviewModal({
     onUebernehmen?.({
       titel: diagnose.titel,
       intro: diagnose.intro,
-      fragen: diagnose.fragen || [],
+      fragen: auswahl.gewaehlteFragen,
       hinweis: diagnose.hinweis || '',
     });
     onOpenChange(false);
@@ -180,7 +207,15 @@ export default function EinstiegsdiagnosePreviewModal({
                   </div>
 
                   {fragen.map((f, i) => (
-                    <div key={i} className="rounded-xl border border-slate-200 bg-white p-4">
+                    <div
+                      key={i}
+                      className={`rounded-xl border bg-white p-4 ${f._gewaehlt ? 'border-slate-200' : 'border-slate-200 opacity-50'}`}
+                    >
+                      <FrageAuswahlLeiste
+                        gewaehlt={f._gewaehlt}
+                        onToggle={() => auswahl.toggle(i)}
+                        onLoeschen={() => auswahl.loesche(i)}
+                      />
                       <p className="text-sm font-medium text-slate-800">
                         <span className="text-violet-500 font-bold mr-1.5">{i + 1}.</span>
                         {f.frage}
@@ -229,8 +264,21 @@ export default function EinstiegsdiagnosePreviewModal({
           </div>
         </div>
 
-        {/* Modalspezifische Vorschau-Hilfe: Einschätzung simulieren */}
-        <div className="mt-3 flex items-center justify-center">
+        {/* Modalspezifische Vorschau-Hilfe: Fragen nachladen + Einschätzung */}
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={nachgenerieren}
+            disabled={loading || nachladen || fragen.length === 0}
+            className="gap-1.5 bg-white"
+          >
+            <RefreshCw className={`w-4 h-4 ${nachladen ? 'animate-spin' : ''}`} />
+            5 weitere Fragen vorschlagen
+          </Button>
+          <span className="text-[11px] text-white/80">
+            {auswahl.gewaehlteFragen.length} von {fragen.length} ausgewählt
+          </span>
           <Button
             variant="ghost"
             size="sm"
@@ -246,8 +294,8 @@ export default function EinstiegsdiagnosePreviewModal({
         {/* Aktionsleiste unterhalb des iPads (Premium-Standard) */}
         <PreviewActionBar
           className="mt-2"
-          loading={loading}
-          canUebernehmen={!!diagnose}
+          loading={loading || nachladen}
+          canUebernehmen={!!diagnose && auswahl.gewaehlteFragen.length > 0}
           onRegenerate={(v) => generate(v)}
           onUebernehmen={handleUebernehmen}
           onCancel={() => onOpenChange(false)}

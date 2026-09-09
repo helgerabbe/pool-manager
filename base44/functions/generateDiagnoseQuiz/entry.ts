@@ -26,7 +26,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { einheitId } = await req.json();
+    const { einheitId, anzahl, bestehendeFragen } = await req.json();
     if (!einheitId) {
       return Response.json({ error: 'einheitId fehlt' }, { status: 400 });
     }
@@ -96,7 +96,7 @@ WAS ABGEFRAGT WIRD:
 - Beispiel: Bei einer Einheit über Zylinder-Volumen gehören Fragen zu Kreisfläche, Umfang und Formel-Einsetzen dazu – NICHT Fragen zur Zylinder-Volumenformel selbst.
 - VERBOTEN sind Fragen, die man nur beantworten kann, wenn man die neue Einheit schon bearbeitet hat.
 
-ANZAHL DER FRAGEN: Entscheide SELBST je nach Umfang der Einheit zwischen 3 und 8 Fragen. Kleine Einheit (wenige Themenfelder/Lernpakete) → eher 3-4 Fragen. Umfangreiche Einheit → eher 6-8 Fragen.
+ANZAHL DER FRAGEN: Du lieferst einen VORRAT zur Auswahl – die Lehrkraft wählt daraus die besten Fragen aus. Halte dich an die vorgegebene Anzahl und decke verschiedene Vorwissens-Bausteine ab, statt eine Sache mehrfach zu fragen.
 
 STRIKTE REGELN ZU DEN FRAGEN:
 - AUSSCHLIESSLICH Multiple-Choice-Fragen. Keine offenen Fragen.
@@ -123,14 +123,24 @@ ABSCHLUSS-RÜCKMELDUNGEN: Liefere drei ermutigende Rückmeldungstexte (schülerg
       // Fallback bleibt aktiv.
     }
 
+    // Nachschlag-Modus: bereits ausgewählte Fragen dürfen sich nicht wiederholen.
+    const bestehendeListe = Array.isArray(bestehendeFragen)
+      ? bestehendeFragen.filter((f) => typeof f === 'string' && f.trim()).slice(0, 40)
+      : [];
+    const vermeidenBlock = bestehendeListe.length
+      ? `\n\nDIESE FRAGEN EXISTIEREN SCHON – erzeuge inhaltlich ANDERE, keine Umformulierungen davon:\n- ${bestehendeListe.join('\n- ')}`
+      : '';
+    const anzahlFragen = Number.isFinite(anzahl) && anzahl > 0 ? Math.min(Math.round(anzahl), 15) : 10;
+
     const prompt = `${instruktion}
 
 KONTEXT DER EINHEIT (als JSON):
 ${JSON.stringify(kontext, null, 2)}
 
 TECHNISCHE AUSGABE-VORGABE (von der Vorschau-/Export-Komponente erzwungen, NICHT verhandelbar):
+- Genau ${anzahlFragen} Fragen, alle inhaltlich verschieden.
 - Gib 'richtige_antwort_index' als 0-basierten Index der genau einen richtigen Option an.
-- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.`;
+- Schreibe in einer Sprache, die für Klasse ${einheit.jahrgangsstufe || ''} angemessen ist.${vermeidenBlock}`;
 
     const result = await base44.integrations.Core.InvokeLLM({
       prompt,

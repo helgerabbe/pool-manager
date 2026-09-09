@@ -22,6 +22,8 @@ import {
   ClipboardCheck, RefreshCw, Loader2, AlertTriangle, Check, X,
   ChevronLeft, ChevronRight, RotateCw, Info, Trophy,
 } from 'lucide-react';
+import FrageAuswahlLeiste from './preview/FrageAuswahlLeiste';
+import useFragenAuswahl from '@/hooks/useFragenAuswahl';
 
 // Ermutigende Gesamt-Rückmeldung anhand der Trefferquote (0-1).
 function getBand(quote) {
@@ -39,6 +41,8 @@ export default function DiagnoseQuizPreviewModal({
   // Pro Frage gewählter Options-Index (oder undefined).
   const [antworten, setAntworten] = useState({});
   const [auswertung, setAuswertung] = useState(false);
+  const [nachladen, setNachladen] = useState(false);
+  const auswahl = useFragenAuswahl();
 
   const generate = useCallback(async () => {
     if (!einheitId) return;
@@ -48,15 +52,38 @@ export default function DiagnoseQuizPreviewModal({
     setAntworten({});
     setAuswertung(false);
     try {
-      const res = await base44.functions.invoke('generateDiagnoseQuiz', { einheitId });
+      const res = await base44.functions.invoke('generateDiagnoseQuiz', { einheitId, anzahl: 10 });
       if (res?.data?.error) throw new Error(res.data.error);
-      setDiagnose(res?.data?.diagnose || null);
+      const content = res?.data?.diagnose || null;
+      setDiagnose(content);
+      auswahl.setzeFragen(content?.fragen || []);
     } catch (e) {
       setError(e?.message || 'Generierung fehlgeschlagen.');
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [einheitId]);
+
+  // Nachschlag: ausgewählte Fragen bleiben, es kommen 5 neue zur Auswahl dazu.
+  const nachgenerieren = useCallback(async () => {
+    if (!einheitId) return;
+    setNachladen(true);
+    setError(null);
+    setAuswertung(false);
+    try {
+      const res = await base44.functions.invoke('generateDiagnoseQuiz', {
+        einheitId, anzahl: 5, bestehendeFragen: auswahl.fragenTexte,
+      });
+      if (res?.data?.error) throw new Error(res.data.error);
+      auswahl.ergaenze(res?.data?.diagnose?.fragen || []);
+    } catch (e) {
+      setError(e?.message || 'Generierung fehlgeschlagen.');
+    } finally {
+      setNachladen(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [einheitId, auswahl.fragenTexte]);
 
   // Beim Öffnen: bereits übernommenen Snapshot zeigen, sonst NICHT automatisch
   // generieren (spart Credits) – der Nutzer startet bewusst per Button.
@@ -66,10 +93,11 @@ export default function DiagnoseQuizPreviewModal({
     setAntworten({});
     setAuswertung(false);
     setDiagnose(initialSnapshot || null);
+    auswahl.setzeFragen(initialSnapshot?.fragen || []);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const fragen = diagnose?.fragen || [];
+  const fragen = auswahl.fragen;
 
   const { korrekt, quote } = useMemo(() => {
     if (fragen.length === 0) return { korrekt: 0, quote: 0 };
@@ -88,7 +116,7 @@ export default function DiagnoseQuizPreviewModal({
     onUebernehmen?.({
       titel: diagnose.titel,
       intro: diagnose.intro || '',
-      fragen: diagnose.fragen || [],
+      fragen: auswahl.gewaehlteFragen,
       feedback: diagnose.feedback || {},
     });
     onOpenChange(false);
@@ -176,7 +204,16 @@ export default function DiagnoseQuizPreviewModal({
                   {fragen.map((f, i) => {
                     const gewaehlt = antworten[i];
                     return (
-                      <div key={i} className="rounded-xl border border-slate-200 bg-white p-4">
+                      <div
+                        key={i}
+                        className={`rounded-xl border bg-white p-4 ${f._gewaehlt ? 'border-slate-200' : 'border-slate-200 opacity-50'}`}
+                      >
+                        <FrageAuswahlLeiste
+                          farbe="rose"
+                          gewaehlt={f._gewaehlt}
+                          onToggle={() => auswahl.toggle(i)}
+                          onLoeschen={() => auswahl.loesche(i)}
+                        />
                         <p className="text-sm font-medium text-slate-800">
                           <span className="text-rose-500 font-bold mr-1.5">{i + 1}.</span>
                           {f.frage}
@@ -256,6 +293,18 @@ export default function DiagnoseQuizPreviewModal({
             </Button>
             <Button
               variant="outline"
+              onClick={nachgenerieren}
+              disabled={loading || nachladen || fragen.length === 0}
+              className="gap-1.5 bg-white"
+            >
+              <RefreshCw className={`w-4 h-4 ${nachladen ? 'animate-spin' : ''}`} />
+              5 weitere Fragen vorschlagen
+            </Button>
+            <span className="text-[11px] text-white/80">
+              {auswahl.gewaehlteFragen.length} von {fragen.length} ausgewählt
+            </span>
+            <Button
+              variant="outline"
               onClick={() => setAuswertung(true)}
               disabled={loading || fragen.length === 0}
               className="gap-1.5 bg-white"
@@ -265,7 +314,7 @@ export default function DiagnoseQuizPreviewModal({
             </Button>
             <Button
               onClick={handleUebernehmen}
-              disabled={loading || !diagnose}
+              disabled={loading || nachladen || !diagnose || auswahl.gewaehlteFragen.length === 0}
               className="gap-1.5 bg-rose-600 hover:bg-rose-700"
             >
               <Check className="w-4 h-4" />
