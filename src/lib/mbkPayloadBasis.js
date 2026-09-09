@@ -15,9 +15,14 @@
  * **Wichtig:** Bei jeder strukturellen Änderung an den Payload-Schemas MUSS
  * `MBK_AIRGAP_VERSION` hochgezählt werden — der Out-of-Sync-Check
  * (lib/exportPromptSync.js) markiert daran alle Payloads als veraltet.
+ * Zusätzlich MUSS die Stichpunktliste in `lib/airGapAenderungen.js` erneuert
+ * werden: Sie reist als `meta.aenderungen` mit und ist die Ankündigung an den
+ * Kursbau (airgap-1.22.0, Bitte der MBK vom 2026-09-09).
  */
 
-export const MBK_AIRGAP_VERSION = 'airgap-1.21.0';
+import { AIRGAP_AENDERUNGEN } from '@/lib/airGapAenderungen';
+
+export const MBK_AIRGAP_VERSION = 'airgap-1.22.0';
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
@@ -62,6 +67,10 @@ export function makeMeta({
     schema_version: MBK_AIRGAP_VERSION,
     payload_type: payloadType,
     exported_at: exportedAt,
+    // Ankündigung der Schema-Änderungen dieser Version (airgap-1.22.0):
+    // Der Bau soll beim ersten Export mit neuer Version selbst sagen können,
+    // WAS sich geändert hat, statt nur „Version unbekannt" zu melden.
+    aenderungen: AIRGAP_AENDERUNGEN,
   };
   if (einheitId !== null) meta.einheit_id = einheitId;
   if (systemContextHash !== null) meta.system_context_hash = systemContextHash;

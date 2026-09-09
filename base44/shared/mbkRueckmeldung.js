@@ -170,6 +170,13 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       mbk_status: mbkStatus === 'erledigt' ? 'erledigt' : mbkStatus === 'zurueckgestellt' ? 'zurueckgestellt' : 'offen',
       mbk_quelle: normalisiereQuelle(b?.quelle),
       kurs_umgehung: normalisiereUmgehung(b?.kurs_umgehung),
+      // 2026-09-09: Payload-Pfade, die die Korrekturschicht des Baus an dieser
+      // Stelle überschreibt. Damit sieht die Lehrkraft, WELCHE ihrer Angaben im
+      // Kurs nicht ankommt (bei 'korrektur ausgesetzt' genau das eine Feld,
+      // das ihre Fassung gewinnen lässt).
+      kurs_felder: Array.isArray(b?.kurs_felder)
+        ? b.kurs_felder.map((f) => text(f, 120)).filter(Boolean).slice(0, 40)
+        : [],
     });
   });
 
@@ -276,6 +283,7 @@ export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivita
     mbk_status: befund.mbk_status || 'offen',
     mbk_quelle: befund.mbk_quelle || 'bau',
     kurs_umgehung: befund.kurs_umgehung || 'keine',
+    kurs_felder: Array.isArray(befund.kurs_felder) ? befund.kurs_felder : [],
     ziel_typ: zielTyp,
     // Ohne auflösbare Stelle steht die MBK-Kennung im Feld: kein Link, aber
     // auch keine falsche Zuordnung.

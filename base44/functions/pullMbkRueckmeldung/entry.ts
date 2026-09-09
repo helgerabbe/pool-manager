@@ -106,6 +106,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       // Kurs an dieser Stelle vom Pool-Manager abweicht.
       mbk_quelle: zugeordnet.mbk_quelle,
       kurs_umgehung: zugeordnet.kurs_umgehung,
+      kurs_felder: zugeordnet.kurs_felder || [],
       mbk_meldung_id: zugeordnet.mbk_id,
       mbk_quelldatei: datei.path,
       mbk_gemeldet_am: zugeordnet.gemeldet_am || jetzt,

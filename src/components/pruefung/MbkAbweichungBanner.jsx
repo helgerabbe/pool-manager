@@ -22,6 +22,14 @@ export default function MbkAbweichungBanner({ befund, className }) {
         So weicht der Kurs hier ab: {info.label}
       </p>
       <p className="opacity-90">{info.erklaerung}</p>
+      {Array.isArray(befund?.kurs_felder) && befund.kurs_felder.length > 0 && (
+        <p className="opacity-90">
+          {befund.kurs_umgehung === 'korrektur ausgesetzt'
+            ? 'Deine Fassung gewinnt hier bei: '
+            : 'Der Kurs überschreibt hier: '}
+          <span className="font-semibold">{befund.kurs_felder.join(', ')}</span>
+        </p>
+      )}
       {befund?.befund && <p className="opacity-80">{befund.befund}</p>}
     </div>
   );

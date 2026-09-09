@@ -90,7 +90,7 @@ export const ONBOARDING_CONTRACT = {
         + 'completion_rule). Dieses Element ist eine BRIAN-AUFGABE: baue hier '
         + 'den Einstieg in den Brian-Dialog und verwende die vier '
         + 'Übergabefelder unverändert — erfinde keine eigenen. Steht in '
-        + '`brian_url` eine Adresse, ist das Gespräch in Brian.study bereits '
+        + '`url` (bzw. dem gleichlautenden Altfeld `brian_url`) eine Adresse, ist das Gespräch in Brian.study bereits '
         + 'angelegt: verlinke genau diese URL statt einen neuen Dialog anzunehmen.',
     },
   ],
@@ -131,9 +131,12 @@ export function buildOnboardingForStructure(konfig, inhaltSnapshots = []) {
     einfuehrung: pick('einfuehrung'),
     fragenblock: pick('fragenblock'),
     einstiegsdiagnose: pick('einstiegsdiagnose'),
+    // airgap-1.22.0: Die Adresse steht jetzt als `url` (so liest der Bau alle
+    // anderen Brian-Stellen auch); `brian_url` bleibt zusätzlich stehen, damit
+    // vorhandene Leser nicht brechen.
     lerntyp_diagnose: diagnoseInhalt
-      ? { ...diagnoseInhalt, brian_url: diagnoseUrl || null }
-      : (diagnoseUrl ? { brian_url: diagnoseUrl } : null),
+      ? { ...diagnoseInhalt, url: diagnoseUrl || null, brian_url: diagnoseUrl || null }
+      : (diagnoseUrl ? { url: diagnoseUrl, brian_url: diagnoseUrl } : null),
     generiert_am: letzterSnapshot || k.generiert_am || null,
   };
 }

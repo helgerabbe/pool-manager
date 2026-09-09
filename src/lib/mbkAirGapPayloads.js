@@ -946,9 +946,14 @@ function summarizePhaseAktivitaet(pa, katalogById) {
 /**
  * Reduziert ein Lernpaket auf einen Struktur-Eintrag (ohne Inhalts-Details).
  */
-function summarizeLernpaket(lp, phasenDesPakets, katalogById) {
+function summarizeLernpaket(lp, phasenDesPakets, katalogById, zugangJeLerntyp = null) {
   return {
     lernpaket_id: lp.id,
+    // airgap-1.22.0: Zugang je Intensitätsstufe direkt am Lernpaket. Der Wert
+    // entsteht im Pfad (Vorgabe der Stufe, am Item überschreibbar) — der Bau
+    // suchte ihn aber am Lernpaket. null = das Lernpaket kommt im Pfad dieser
+    // Stufe nicht vor.
+    zugang_je_lerntyp: zugangJeLerntyp || null,
     titel: nullable(lp.titel_des_pakets),
     themenfeld_id: lp.themenfeld_id || null,
     reihenfolge_nummer: lp.reihenfolge_nummer ?? null,
@@ -1151,8 +1156,29 @@ export function buildStructurePayload({
     phasenByPaket.get(pa.lernpaket_id).push(pa);
   }
 
+  // airgap-1.22.0: Zugang je Intensitätsstufe pro Lernpaket aus den Pfaden
+  // einsammeln, damit er auch am Lernpaket selbst steht.
+  const lernpaketIdSet = new Set((lernpakete || []).map((lp) => lp.id));
+  const zugangByLernpaket = new Map();
+  for (const lt of LERNTYP_KEYS) {
+    for (const sektor of einheit?.lernpfade_konfiguration?.[lt] || []) {
+      for (const item of sektor?.items || []) {
+        if (!item?.ref_id || !lernpaketIdSet.has(item.ref_id)) continue;
+        if (!zugangByLernpaket.has(item.ref_id)) zugangByLernpaket.set(item.ref_id, {});
+        zugangByLernpaket.get(item.ref_id)[lt] = resolveLernpaketZugang(item, lt);
+      }
+    }
+  }
+  const zugangFuer = (lpId) => {
+    const gefunden = zugangByLernpaket.get(lpId);
+    if (!gefunden) return null;
+    const out = {};
+    for (const lt of LERNTYP_KEYS) out[lt] = gefunden[lt] || null;
+    return out;
+  };
+
   const renderLernpaketEntry = (lp) => {
-    const sum = summarizeLernpaket(lp, phasenByPaket.get(lp.id) || [], katalogById);
+    const sum = summarizeLernpaket(lp, phasenByPaket.get(lp.id) || [], katalogById, zugangFuer(lp.id));
     sum.lernziele = (zieleByPaket.get(lp.id) || []).map((lz) => ({
       lernziel_id: lz.id || null,
       formulierung_fachsprache: nullable(lz.formulierung_fachsprache),
