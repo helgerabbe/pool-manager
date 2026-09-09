@@ -18,6 +18,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { pushFiles } from '../../shared/githubPush.js';
+import { kursStatusFile } from '../../shared/kursStatusDatei.js';
 
 const OWNER = 'IGS-Seevetal';
 const REPO = 'Poolzeit';
@@ -102,6 +103,15 @@ export default async function (req) {
         )}\n`
       ),
     });
+
+    // Kurs-Status mitschreiben (Format 'kurs-status-1'): sagt dem Bau, ob der
+    // Kurs für Schüler sichtbar sein soll oder ausgesetzt ist.
+    const einheitRecord = await base44.asServiceRole.entities.Einheiten
+      .get(einheitId)
+      .catch(() => null);
+    if (einheitRecord) {
+      files.push(kursStatusFile({ ...einheitRecord, id: einheitId }, slug));
+    }
 
     const ergebnis = await pushFiles({
       token,

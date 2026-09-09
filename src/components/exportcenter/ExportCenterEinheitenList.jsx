@@ -21,7 +21,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, CheckCircle2, Sparkles, RefreshCw, Archive } from 'lucide-react';
+import { Search, CheckCircle2, Sparkles, RefreshCw, Archive, EyeOff } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -195,6 +195,15 @@ export default function ExportCenterEinheitenList({ selectedEinheitId, onSelect 
                           </Badge>
                         );
                       })()}
+                      {e.export_aktiv === false && (
+                        <Badge
+                          className="text-[10px] gap-1 border bg-slate-200 text-slate-800 border-slate-300"
+                          title="Diese Einheit ist vom Export ausgesetzt – der Kurs ist für Schüler unsichtbar."
+                        >
+                          <EyeOff className="w-3 h-3" />
+                          Ausgesetzt
+                        </Badge>
+                      )}
                       {lastExport && (
                         <span className="text-[10px] text-muted-foreground">
                           zuletzt: {lastExport}
