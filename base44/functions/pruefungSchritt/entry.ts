@@ -20,7 +20,6 @@ import {
 import {
   findeFehlendeInterneInhalte,
   findeFehlendeOnboardingInhalte,
-  findeUngesichteteInterneInhalte,
 } from '../../shared/pruefungInterneInhalte.js';
 import { findeVerwaisteZuordnungen } from '../../shared/pruefungZuordnung.js';
 import { getAnthropicConfig } from '../../shared/anthropicClient.js';
@@ -145,13 +144,11 @@ export default async function (req) {
           themenfelder: themenfelder || [],
         }),
         ...findeFehlendeOnboardingInhalte({ einheit, snapshots: snapshots || [] }),
-        // Vorhanden, aber von keiner Lehrkraft gelesen — der Kern der
-        // MBK-Meldung vom 2026-09-01.
-        ...findeUngesichteteInterneInhalte({
-          snapshots: snapshots || [],
-          systemBausteine: bausteine || [],
-          themenfelder: themenfelder || [],
-        }),
+        // KEINE Sichtungs-Befunde mehr (Entscheidung 2026-09-09): Die
+        // KI-Texte sind praktisch immer brauchbar, und die Meldung „noch nicht
+        // angesehen" stand bei jedem Baustein in der Liste, ohne dass ihr
+        // jemand nachgegangen wäre. Fehler fallen im Betrieb auf und werden
+        // dann behoben. Die Sichtung selbst (markInhaltGesichtet) bleibt.
       ];
       for (const f of fehlende) {
         await merken(
