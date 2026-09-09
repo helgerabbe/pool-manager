@@ -1,0 +1,46 @@
+{
+  "name": "MBK-R\u00fcckmeldungen abholen",
+  "description": "Holt einmal t\u00e4glich die R\u00fcckmeldungen des Kursbaus (MBK) aus dem GitHub-Repository f\u00fcr alle bereits exportierten Einheiten und legt sie in die Taskliste (Reiter 8) bzw. in die Admin-Aktionen.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "30 3 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "mbk_r_ckmeldungen_abholen",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "pullMbkRueckmeldung",
+            "args": {
+              "alle": true
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "pullMbkRueckmeldung"
+  }
+}

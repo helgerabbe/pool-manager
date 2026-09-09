@@ -1,0 +1,39 @@
+{
+  "name": "MasterAufgabe \u2192 Activity Touch (Aggregat-Trigger)",
+  "description": "Schlie\u00dft die \u00a717-Aggregat-L\u00fccke: Bei create/delete wird die Parent-Activity getoucht. Bei update wird zus\u00e4tzlich is_complete der MasterAufgabe inhaltlich gepr\u00fcft und gesetzt.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "MasterAufgabe"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "masteraufgabe_activity_touch_aggregat_trigger",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "masterAufgabeTouchActivity",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "masterAufgabeTouchActivity"
+  }
+}
