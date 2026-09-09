@@ -28,6 +28,24 @@ export const RUECKMELDUNG_FORMAT_VERSION = 1;
 
 const SCHWEREN = ['blockiert', 'stoert', 'hinweis'];
 
+/** Die sieben Werte, mit denen der Bau eine Abweichung im Kurs begründet. */
+const UMGEHUNGEN = [
+  'keine', 'entfernt', 'baustelle', 'ausgeblendet',
+  'korrektur', 'korrektur ausgesetzt', 'gestaltung',
+];
+
+/** 'korrektur_ausgesetzt' und 'korrektur ausgesetzt' meinen dasselbe. */
+function normalisiereUmgehung(wert) {
+  const s = String(wert || '').toLowerCase().trim().replace(/_/g, ' ');
+  return UMGEHUNGEN.includes(s) ? s : 'keine';
+}
+
+/** Woher der Fund kommt: Heuristik des Generators oder didaktischer Blick. */
+function normalisiereQuelle(wert) {
+  const s = String(wert || '').toLowerCase().trim();
+  return s === 'sichtung' ? 'sichtung' : 'bau';
+}
+
 /** Dateinamens-Slug — identisch zu src/lib/airGapClipboard.js slugify(). */
 function slugify(input, fallback = 'einheit') {
   const s = (input || '').toString().toLowerCase().trim();
@@ -116,13 +134,17 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       warnungen.push(`Befund ${index + 1} ohne Text — übersprungen.`);
       return;
     }
-    // Punkte, die der Bau selbst als geklärt kennzeichnet, gehören nicht in die
-    // Taskliste: 'bewusst_exportiert' stammt aus unserer eigenen Begründung, die
-    // im Payload mitgereist ist, 'erledigt' ist ohnehin vom Tisch.
-    if (b?.bewusst_exportiert === true || String(b?.status || '').toLowerCase() === 'erledigt') {
+    // 'bewusst_exportiert' stammt aus unserer eigenen Begründung, die im Payload
+    // mitgereist ist — der Punkt ist hier längst entschieden.
+    if (b?.bewusst_exportiert === true) {
       uebersprungen += 1;
       return;
     }
+    // 'erledigt' wird NICHT verworfen: Der Bau sagt damit, dass ein früher
+    // gemeldeter Punkt vom Tisch ist. Kennt der Pool-Manager den Punkt, wird er
+    // dort geschlossen (einmal als erledigt sichtbar, danach nicht mehr in der
+    // offenen Liste). Kennt er ihn nicht, gibt es nichts zu schließen.
+    const mbkStatus = String(b?.status || '').toLowerCase().trim();
 
     // Die MBK nennt die Stelle flach (aktivitaet_id/aktivitaet); die
     // Spezifikation erlaubt zusätzlich ein verschachteltes `stelle`-Objekt.
@@ -145,6 +167,9 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       befund: befundText,
       vorschlag: text(b?.vorschlag, 600),
       gemeldet_am: gemeldetAm,
+      mbk_status: mbkStatus === 'erledigt' ? 'erledigt' : mbkStatus === 'zurueckgestellt' ? 'zurueckgestellt' : 'offen',
+      mbk_quelle: normalisiereQuelle(b?.quelle),
+      kurs_umgehung: normalisiereUmgehung(b?.kurs_umgehung),
     });
   });
 
@@ -248,6 +273,9 @@ export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivita
     befund: befund.befund,
     vorschlag: befund.vorschlag,
     gemeldet_am: befund.gemeldet_am,
+    mbk_status: befund.mbk_status || 'offen',
+    mbk_quelle: befund.mbk_quelle || 'bau',
+    kurs_umgehung: befund.kurs_umgehung || 'keine',
     ziel_typ: zielTyp,
     // Ohne auflösbare Stelle steht die MBK-Kennung im Feld: kein Link, aber
     // auch keine falsche Zuordnung.

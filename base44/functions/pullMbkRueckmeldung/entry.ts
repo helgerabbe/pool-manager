@@ -76,6 +76,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   const bekannt = new Map((vorhandene || []).map((b) => [b.fingerprint, b]));
   const neueBefunde = [];
   const befundUpdates = [];
+  // Vom Bau als erledigt gemeldete Punkte, die der Pool-Manager nicht kennt.
+  let erledigtGemeldet = 0;
 
   for (const rohBefund of befunde) {
     const zugeordnet = ordneBefundZu(rohBefund, {
@@ -100,6 +102,10 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       befund: zugeordnet.befund,
       vorschlag: zugeordnet.vorschlag,
       quelle: 'mbk',
+      // Neu seit 2026-09-09: Herkunft des Funds und die Art, wie der gebaute
+      // Kurs an dieser Stelle vom Pool-Manager abweicht.
+      mbk_quelle: zugeordnet.mbk_quelle,
+      kurs_umgehung: zugeordnet.kurs_umgehung,
       mbk_meldung_id: zugeordnet.mbk_id,
       mbk_quelldatei: datei.path,
       mbk_gemeldet_am: zugeordnet.gemeldet_am || jetzt,
@@ -107,6 +113,24 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     };
 
     const alt = bekannt.get(fingerprint);
+
+    // Vom Bau als erledigt gemeldet: einen bekannten Punkt schließen (er ist
+    // damit einmal als „Erledigt" sichtbar und danach aus der offenen Liste),
+    // einen unbekannten gar nicht erst anlegen.
+    if (zugeordnet.mbk_status === 'erledigt') {
+      if (alt) {
+        befundUpdates.push({
+          ...daten,
+          id: alt.id,
+          entscheidung: 'behoben',
+          mbk_erledigt_gemeldet_am: jetzt,
+        });
+      } else {
+        erledigtGemeldet += 1;
+      }
+      continue;
+    }
+
     if (!alt) {
       neueBefunde.push({ ...daten, entscheidung: 'offen', dublette_status: 'offen' });
       continue;
@@ -163,6 +187,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     gemeldet_am: meta.erzeugt_am,
     // Vom Bau selbst als geklärt markierte Punkte (bewusst exportiert/erledigt).
     uebersprungen,
+    erledigt_gemeldet: erledigtGemeldet,
     befunde_neu: neueBefunde.length,
     befunde_aktualisiert: befundUpdates.length,
     admin_punkte_neu: neueTodos.length,

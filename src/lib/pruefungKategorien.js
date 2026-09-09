@@ -40,6 +40,56 @@ export const PRUEF_ENTSCHEIDUNG = Object.freeze({
   bewusst: { label: 'Bleibt so' },
 });
 
+/**
+ * Wie der gebaute Kurs an einer Stelle vom Pool-Manager abweicht (Feld
+ * `kurs_umgehung` der MBK-Rückmeldung, sieben Werte, seit 2026-09-09).
+ * Der Satz in `erklaerung` ist das, was die Fachgruppe liest — sie soll nicht
+ * raten müssen, warum der Kurs anders aussieht als ihre Fassung.
+ */
+export const KURS_UMGEHUNG = Object.freeze({
+  keine: null,
+  entfernt: {
+    label: 'Im Kurs entfernt',
+    erklaerung: 'Diese Stelle ist im gebauten Kurs nicht enthalten, bis der Punkt geklärt ist.',
+    cls: 'bg-red-50 text-red-800 border-red-200',
+  },
+  baustelle: {
+    label: 'Im Kurs Platzhalter',
+    erklaerung: 'Der Kurs zeigt hier vorläufig einen Platzhalter statt des Inhalts.',
+    cls: 'bg-amber-50 text-amber-800 border-amber-200',
+  },
+  ausgeblendet: {
+    label: 'Im Kurs ausgeblendet',
+    erklaerung: 'Die Stelle ist im Kurs vorhanden, für die Schüler aber verborgen.',
+    cls: 'bg-amber-50 text-amber-800 border-amber-200',
+  },
+  korrektur: {
+    label: 'Kurs weicht ab (Korrektur)',
+    erklaerung: 'Das Moodle-Team überschreibt diese Stelle im Kurs vorläufig selbst. Übernimmst du den Vorschlag hier, fällt die Krücke weg.',
+    cls: 'bg-blue-50 text-blue-800 border-blue-200',
+  },
+  'korrektur ausgesetzt': {
+    label: 'Korrektur ruht',
+    erklaerung: 'Du hast dieses Feld geändert — deine Fassung gewinnt, die Krücke des Moodle-Teams ruht und wird dort noch geprüft.',
+    cls: 'bg-violet-50 text-violet-800 border-violet-200',
+  },
+  gestaltung: {
+    label: 'Kurs weicht ab (Gestaltung)',
+    erklaerung: 'Diese Aktivität hat im Kurs eine eigene Darstellung. Der Inhalt kommt weiter aus dem Pool-Manager.',
+    cls: 'bg-teal-50 text-teal-800 border-teal-200',
+  },
+});
+
+/** Wer den Punkt gefunden hat. */
+export const MBK_QUELLE = Object.freeze({
+  bau: { label: 'Beim Bauen aufgefallen' },
+  sichtung: { label: 'Didaktischer Blick' },
+});
+
+export function getUmgehung(wert) {
+  return KURS_UMGEHUNG[wert] || null;
+}
+
 export function getKategorieLabel(nr) {
   return PRUEF_KATEGORIEN[nr]?.label || `Kategorie ${nr}`;
 }

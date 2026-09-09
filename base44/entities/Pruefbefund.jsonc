@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.\n\nKURS-ABWEICHUNGEN (2026-09-09): Der Bau darf einen Kurs anders ausliefern, als der Payload es sagt \u2014 \u00fcber seine Korrektur- und Gestaltungsschicht. Damit die Fachgruppe nicht raten muss, meldet er den Grund im Feld `kurs_umgehung` mit; `mbk_quelle` sagt zus\u00e4tzlich, ob der Fund aus der Heuristik des Generators ('bau') oder aus dem didaktischen Blick ('sichtung', oft mit fertigem Einf\u00fcgetext im Vorschlag) stammt.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -79,7 +79,7 @@
     },
     "vorschlag": {
       "type": "string",
-      "description": "Ein Satz: Was die Lehrkraft konkret tun kann."
+      "description": "Ein Satz: Was die Lehrkraft konkret tun kann. Bei mbk_quelle='sichtung' steht hier oft ein FERTIGER EINF\u00dcGETEXT, den die Lehrkraft direkt \u00fcbernehmen kann."
     },
     "quelle": {
       "type": "string",
@@ -90,6 +90,28 @@
       ],
       "default": "regel",
       "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau (eigener Reiter in Tab 8). Nur 'regel' und 'ki' werden beim Abschluss eines Pr\u00fcflaufs aufger\u00e4umt \u2013 MBK-Befunde bleiben stehen, bis sie entschieden werden."
+    },
+    "mbk_quelle": {
+      "type": "string",
+      "enum": [
+        "bau",
+        "sichtung"
+      ],
+      "description": "Nur bei quelle='mbk': Wer den Punkt gefunden hat. 'bau' = Heuristik des Generators beim Bauen des Kurses. 'sichtung' = didaktischer Blick eines Menschen; solche Befunde tragen im Vorschlag h\u00e4ufig einen fertigen Einf\u00fcgetext. Die Unterscheidung \u00e4ndert, wie ernst und wie w\u00f6rtlich die Lehrkraft den Vorschlag nehmen kann."
+    },
+    "kurs_umgehung": {
+      "type": "string",
+      "enum": [
+        "keine",
+        "entfernt",
+        "baustelle",
+        "ausgeblendet",
+        "korrektur",
+        "korrektur ausgesetzt",
+        "gestaltung"
+      ],
+      "default": "keine",
+      "description": "Nur bei quelle='mbk': Was der Bau vorerst getan hat, damit der Kurs trotz des Befunds l\u00e4uft \u2014 also WIE der ausgelieferte Kurs an dieser Stelle vom Pool-Manager abweicht. 'keine' = keine Abweichung. 'entfernt' = die Stelle ist im Kurs nicht enthalten. 'baustelle' = die Stelle zeigt einen Platzhalter. 'ausgeblendet' = im Kurs verborgen. 'korrektur' = die Korrekturschicht des Baus \u00fcberschreibt hier einen Wert. 'korrektur ausgesetzt' = die Fachgruppe hat genau dieses Feld ge\u00e4ndert, ihre Fassung gewinnt, die Korrektur ruht und der Bau pr\u00fcft nach. 'gestaltung' = die Aktivit\u00e4t hat im Kurs eine eigene Darstellung, der Inhalt kommt weiter aus dem Pool-Manager. Klartext-Erkl\u00e4rungen: src/lib/pruefungKategorien.js."
     },
     "entscheidung": {
       "type": "string",
@@ -141,6 +163,11 @@
       "type": "string",
       "format": "date-time",
       "description": "Nur bei quelle='mbk': Zeitstempel, den die MBK in der Datei angegeben hat (`erzeugt_am`)."
+    },
+    "mbk_erledigt_gemeldet_am": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Nur bei quelle='mbk': Zeitpunkt, zu dem der Bau diesen Punkt als `status: \"erledigt\"` gemeldet hat. Der Befund wird dann automatisch auf entscheidung='behoben' gesetzt \u2014 er erscheint einmal als erledigt und danach nicht mehr in der offenen Liste."
     },
     "dublette_status": {
       "type": "string",
