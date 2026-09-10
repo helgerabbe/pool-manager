@@ -11,6 +11,7 @@
  * bewusster Schritt im MBK-Reiter, keine stille Automatik.
  */
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Badge } from '@/components/ui/badge';
@@ -27,6 +28,17 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
 
   const { data: me } = useQuery({ queryKey: ['aktuellerNutzer'], queryFn: () => base44.auth.me() });
   const istAdmin = me?.role === 'admin';
+
+  // Gewählter Reiter steht in der Adresse (?reiter=mbk), damit er ein Neuladen
+  // überlebt — vorher sprang die Ansicht jedes Mal auf „Selbst prüfen" zurück.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const reiter = searchParams.get('reiter') === 'mbk' ? 'mbk' : 'intern';
+  const reiterWechseln = (wert) => {
+    const next = new URLSearchParams(searchParams);
+    if (wert === 'mbk') next.set('reiter', 'mbk');
+    else next.delete('reiter');
+    setSearchParams(next, { replace: true });
+  };
 
   const interneBefunde = alleBefunde.filter((b) => (b.quelle || 'regel') !== 'mbk');
   const mbkOffen = alleBefunde.filter(
@@ -45,7 +57,7 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
         </p>
       </div>
 
-      <Tabs defaultValue="intern">
+      <Tabs value={reiter} onValueChange={reiterWechseln}>
         <TabsList>
           <TabsTrigger value="intern">Selbst prüfen</TabsTrigger>
           <TabsTrigger value="mbk" className="gap-2">

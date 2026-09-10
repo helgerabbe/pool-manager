@@ -64,7 +64,14 @@ export function usePruefungLauf(einheitId) {
           entscheidung,
           kommentar: kommentar || '',
         });
-        await queryClient.invalidateQueries({ queryKey: ['pruefbefunde', einheitId] });
+        // Beide Listen nachziehen: Der MBK-Reiter liest aus einer eigenen
+        // Abfrage ('mbkBefunde'). Vorher blieb dort der Punkt stehen und der
+        // Zähler stand still, bis die Seite neu geladen wurde (MBK-Nachtrag
+        // 2026-09-10).
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ['pruefbefunde', einheitId] }),
+          queryClient.invalidateQueries({ queryKey: ['mbkBefunde', einheitId] }),
+        ]);
       } catch (err) {
         toast.error(err?.response?.data?.error || 'Die Entscheidung konnte nicht gespeichert werden.');
       }
