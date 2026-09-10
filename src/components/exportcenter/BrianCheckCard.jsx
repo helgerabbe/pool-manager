@@ -29,10 +29,21 @@ export default function BrianCheckCard({ einheitId }) {
   const brianAufgaben = aufgaben.filter(
     (a) => a && a.sync_status !== 'to_delete' && istBrianAufgabe(a)
   );
+  // Zwei Stufen (2026-09-10): Dialogname und Anweisung für Lernende halten den
+  // Dialog auf; interne Anweisung und Abbruchbedingung ergänzt der Bau notfalls
+  // selbst und stehen deshalb nur als Hinweis dabei.
   const unvollstaendig = brianAufgaben
-    .map((a) => ({ aufgabe: a, fehlend: fehlendeBrianFelder(a) }))
-    .filter((x) => x.fehlend.length > 0);
-  const allesOk = unvollstaendig.length === 0;
+    .map((a) => {
+      const fehlend = fehlendeBrianFelder(a);
+      return {
+        aufgabe: a,
+        blockierend: fehlend.filter((f) => f.blockiert === true),
+        hinweise: fehlend.filter((f) => f.blockiert !== true),
+      };
+    })
+    .filter((x) => x.blockierend.length + x.hinweise.length > 0);
+  const blockierendeAufgaben = unvollstaendig.filter((x) => x.blockierend.length > 0);
+  const allesOk = blockierendeAufgaben.length === 0;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -51,14 +62,16 @@ export default function BrianCheckCard({ einheitId }) {
             ) : (
               <Badge className="bg-amber-100 text-amber-900 border border-amber-300 gap-1 text-[11px]">
                 <AlertTriangle className="w-3 h-3" />
-                {unvollstaendig.length} Aufgabe{unvollstaendig.length !== 1 ? 'n' : ''} offen
+                {blockierendeAufgaben.length} Aufgabe
+                {blockierendeAufgaben.length !== 1 ? 'n' : ''} offen
               </Badge>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
             Für Brian.study gibt es keine Schnittstelle — das MBK-Team legt jeden
-            Dialog händisch anhand der vier Übergabefelder an. Sie gehen mit dem
-            Export mit; fehlt eines, kann der Dialog nicht gebaut werden.
+            Dialog händisch anhand der vier Übergabefelder an. Ohne Dialogname und
+            Anweisung für Lernende geht es nicht; interne Anweisung und
+            Abbruchbedingung ergänzt das Team notfalls selbst.
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {brianAufgaben.length} Aufgabe{brianAufgaben.length !== 1 ? 'n' : ''} mit
@@ -67,25 +80,36 @@ export default function BrianCheckCard({ einheitId }) {
         </div>
       </div>
 
-      {!allesOk && (
+      {unvollstaendig.length > 0 && (
         <ul className="space-y-1.5">
-          {unvollstaendig.map(({ aufgabe, fehlend }) => (
+          {unvollstaendig.map(({ aufgabe, blockierend, hinweise }) => (
             <li
               key={aufgabe.id}
-              className="rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2"
+              className={
+                blockierend.length > 0
+                  ? 'rounded-lg border border-amber-200 bg-amber-50/60 px-3 py-2'
+                  : 'rounded-lg border border-border bg-muted/40 px-3 py-2'
+              }
             >
               <Link
                 to={`/einheiten/${einheitId}?tab=${aufgabe.anforderungsebene === '3 - Projekt' ? 'ebene3' : 'ebene2'}`}
-                className="text-xs font-semibold text-amber-900 hover:underline"
+                className="text-xs font-semibold hover:underline"
               >
                 {aufgabe.titel || 'Ohne Titel'}
               </Link>
-              <span className="text-[11px] text-amber-800/80 ml-2">
+              <span className="text-[11px] text-muted-foreground ml-2">
                 {aufgabe.anforderungsebene || 'Ebene unbekannt'}
               </span>
-              <p className="text-[11px] text-amber-800 mt-0.5">
-                Fehlt: {fehlend.map((f) => f.label).join(', ')}
-              </p>
+              {blockierend.length > 0 && (
+                <p className="text-[11px] text-amber-800 mt-0.5">
+                  Fehlt: {blockierend.map((f) => f.label).join(', ')}
+                </p>
+              )}
+              {hinweise.length > 0 && (
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Ergänzt das Moodle-Team notfalls selbst: {hinweise.map((f) => f.label).join(', ')}
+                </p>
+              )}
             </li>
           ))}
         </ul>

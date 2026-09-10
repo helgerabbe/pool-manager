@@ -344,10 +344,13 @@ export function validateAllgemeineAufgabe(aufgabe) {
   // Brian-Übergabefelder (2026-08-22): Für Brian.study gibt es keine API —
   // die vier Felder müssen von der Lehrkraft/KI erzeugt sein, sonst kann das
   // MBK-Team den Dialog nicht anlegen. Gilt in BEIDEN Erstellungs-Modi.
+  // Abstufung (2026-09-10): Nur Dialogname und Anweisung für Lernende halten
+  // die Aufgabe auf — interne Anweisung und Abbruchbedingung ergänzt der Bau
+  // notfalls selbst und erscheinen nur noch als Hinweis im Brian-Cockpit.
   const brianMissing = istBrianAufgabe(aufgabe)
-    ? fehlendeBrianFelder(aufgabe).map((f) =>
-      miss(f.key, `Brian: ${f.label}`, 'KI-Tutor-Feld noch nicht erzeugt')
-    )
+    ? fehlendeBrianFelder(aufgabe)
+      .filter((f) => f.blockiert === true)
+      .map((f) => miss(f.key, `Brian: ${f.label}`, 'KI-Tutor-Feld noch nicht erzeugt'))
     : [];
 
   // KI-Modus: Briefing prüfen, nicht Aufgabenstellung.

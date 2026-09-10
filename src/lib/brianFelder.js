@@ -13,11 +13,18 @@
  * Reine Funktionen, keine I/O.
  */
 
+/**
+ * Abstufung (2026-09-10, MBK-Rückmeldung): Nur zwei der vier Felder halten die
+ * Aufgabe auf. Dialogname und Anweisung für Lernende kann niemand außer der
+ * Lehrkraft schreiben — ohne sie steht der Dialog nicht. Interne Anweisung und
+ * Abbruchbedingung ergänzt der Bau notfalls selbst, deshalb sind sie nur noch
+ * ein Hinweis und blockieren die Vollständigkeit nicht mehr.
+ */
 export const BRIAN_FELDER = [
-  { key: 'brian_dialog_name', schritt_key: 'dialog_name', label: 'Dialogname' },
-  { key: 'brian_learner_instruction', schritt_key: 'learner_instruction', label: 'Anweisung für Lernende' },
-  { key: 'brian_system_instruction', schritt_key: 'system_instruction', label: 'Interne Anweisung für den Chatbot' },
-  { key: 'brian_completion_rule', schritt_key: 'completion_rule', label: 'Abbruchbedingung' },
+  { key: 'brian_dialog_name', schritt_key: 'dialog_name', label: 'Dialogname', blockiert: true },
+  { key: 'brian_learner_instruction', schritt_key: 'learner_instruction', label: 'Anweisung für Lernende', blockiert: true },
+  { key: 'brian_system_instruction', schritt_key: 'system_instruction', label: 'Interne Anweisung für den Chatbot', blockiert: false },
+  { key: 'brian_completion_rule', schritt_key: 'completion_rule', label: 'Abbruchbedingung', blockiert: false },
 ];
 
 /**
@@ -69,7 +76,10 @@ export function istBrianAufgabe(aufgabe) {
     || String(aufgabe.brian_url || '').trim() !== '';
 }
 
-/** Liste der noch leeren Brian-Felder (jeweils { key, label }). */
+/**
+ * Liste der noch leeren Brian-Felder (jeweils { key, label, blockiert }).
+ * `blockiert: true` = hält die Aufgabe auf, `false` = reiner Hinweis.
+ */
 export function fehlendeBrianFelder(aufgabe) {
   const schritte = brianSchritte(aufgabe);
   if (schritte.length > 0) {
@@ -80,7 +90,11 @@ export function fehlendeBrianFelder(aufgabe) {
       const name = schritt.titel || `Gespräch ${index + 1}`;
       BRIAN_FELDER.forEach((f) => {
         if (String(schritt.brian?.[f.schritt_key] || '').trim() === '') {
-          fehlend.push({ key: `${schritt.id || index}:${f.schritt_key}`, label: `${name}: ${f.label}` });
+          fehlend.push({
+            key: `${schritt.id || index}:${f.schritt_key}`,
+            label: `${name}: ${f.label}`,
+            blockiert: f.blockiert,
+          });
         }
       });
     });
@@ -90,8 +104,8 @@ export function fehlendeBrianFelder(aufgabe) {
   return BRIAN_FELDER.filter((f) => String(aufgabe?.[f.key] || '').trim() === '');
 }
 
-/** True, wenn keine Brian-Felder fehlen (bzw. die Aufgabe keine braucht). */
+/** True, wenn kein BLOCKIERENDES Brian-Feld fehlt (bzw. keins gebraucht wird). */
 export function hatVollstaendigeBrianFelder(aufgabe) {
   if (!istBrianAufgabe(aufgabe)) return true;
-  return fehlendeBrianFelder(aufgabe).length === 0;
+  return fehlendeBrianFelder(aufgabe).every((f) => f.blockiert !== true);
 }
