@@ -17,10 +17,6 @@ import {
   pruefeMasterMechanisch,
   pruefeAllgemeineAufgabeMechanisch,
 } from '../../shared/pruefungRegeln.js';
-import {
-  findeFehlendeInterneInhalte,
-  findeFehlendeOnboardingInhalte,
-} from '../../shared/pruefungInterneInhalte.js';
 import { findeVerwaisteZuordnungen } from '../../shared/pruefungZuordnung.js';
 import { getAnthropicConfig } from '../../shared/anthropicClient.js';
 import { pruefeStellenMitKI, beschreibeFeldwerte } from '../../shared/pruefungKI.js';
@@ -131,37 +127,16 @@ export default async function (req) {
         }
       }
     } else if (schritt.typ === 'interne_inhalte') {
-      const [snapshots, bausteine, themenfelder] = await Promise.all([
-        base44.asServiceRole.entities.SchuelerInhaltSnapshot.filter({ einheit_id: lauf.einheit_id }),
-        base44.asServiceRole.entities.SystemBausteine.list(),
-        base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: lauf.einheit_id }),
-      ]);
-      const fehlende = [
-        ...findeFehlendeInterneInhalte({
-          einheit,
-          snapshots: snapshots || [],
-          systemBausteine: bausteine || [],
-          themenfelder: themenfelder || [],
-        }),
-        ...findeFehlendeOnboardingInhalte({ einheit, snapshots: snapshots || [] }),
-        // KEINE Sichtungs-Befunde mehr (Entscheidung 2026-09-09): Die
-        // KI-Texte sind praktisch immer brauchbar, und die Meldung „noch nicht
-        // angesehen" stand bei jedem Baustein in der Liste, ohne dass ihr
-        // jemand nachgegangen wäre. Fehler fallen im Betrieb auf und werden
-        // dann behoben. Die Sichtung selbst (markInhaltGesichtet) bleibt.
-      ];
-      for (const f of fehlende) {
-        await merken(
-          {
-            ziel_typ: 'systembaustein',
-            ziel_id: f.ziel_id,
-            ziel_titel: f.ziel_titel,
-            themenfeld_id: f.themenfeld_id,
-            themenfeld_titel: f.themenfeld_titel,
-          },
-          [f.kandidat]
-        );
-      }
+      const themenfelder = await base44.asServiceRole.entities.Themenfeld.filter({
+        einheit_id: lauf.einheit_id,
+      });
+      // KEINE Systembaustein-Befunde mehr (MBK-Nachtrag 2026-09-10): Fehlende
+      // interne Inhalte (Einführung in den Sektor, Onboarding, Diagnose) sind
+      // keine Arbeit der Lehrkraft — sie werden im Export-Center per Knopf
+      // erzeugt bzw. entstehen beim Bau. In der Taskliste standen sie in jeder
+      // Einheit dutzendfach und haben die echten Fundstellen verdeckt. Die
+      // Erzeugung selbst (InterneInhalteCard im Export-Center) bleibt
+      // unverändert; die früheren Befunde verschwinden beim nächsten Prüflauf.
 
       // Kategorie 6: verwaiste Lernpakete/Aufgaben (Themenfeld gelöscht).
       const [alleLernpakete, alleAufgaben] = await Promise.all([

@@ -26,6 +26,7 @@ import PruefbefundKarte from './PruefbefundKarte';
 import MbkAdminPunkteListe from './MbkAdminPunkteListe';
 import MbkAntwortSenden from './MbkAntwortSenden';
 import BrianAdressenInfoCard from './BrianAdressenInfoCard';
+import MbkGelostePunkte from './MbkGelostePunkte';
 
 export default function MbkBefundeReiter({
   einheitId,
@@ -64,6 +65,13 @@ export default function MbkBefundeReiter({
     );
   }, [offene, zeigeDubletten]);
 
+  // Zweite Zahl: alles, was schon entschieden ist (behoben, bewusst gelassen,
+  // Widerspruch) — steht eingeklappt unter der Liste.
+  const geloest = useMemo(
+    () => befunde.filter((b) => (b.entscheidung || 'offen') !== 'offen'),
+    [befunde]
+  );
+
   const ungeprueft = offene.filter((b) => (b.dublette_status || 'offen') === 'offen').length;
   const offeneAdminPunkte = adminPunkte.filter((p) => p.status !== 'erledigt');
 
@@ -101,9 +109,14 @@ export default function MbkBefundeReiter({
         <Badge variant="outline" className="bg-red-50 text-red-800 border-red-200">
           {offene.length - dubletten.length} zu klären
         </Badge>
-        <Badge variant="outline" className="bg-slate-50">
-          {dubletten.length} doppelt (stehen schon unter „Selbst prüfen")
+        <Badge variant="outline" className="bg-emerald-50 text-emerald-800 border-emerald-200">
+          {geloest.length} schon gelöst
         </Badge>
+        {dubletten.length > 0 && (
+          <Badge variant="outline" className="bg-slate-50">
+            {dubletten.length} doppelt (stehen schon unter „Selbst prüfen")
+          </Badge>
+        )}
         {ungeprueft > 0 && (
           <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
             {ungeprueft} noch nicht auf Doppelte geprüft
@@ -164,6 +177,8 @@ export default function MbkBefundeReiter({
           ))}
         </div>
       )}
+
+      <MbkGelostePunkte befunde={geloest} />
 
       {offeneAdminPunkte.length > 0 && (
         <div className="space-y-2 pt-2">
