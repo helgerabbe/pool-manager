@@ -47,14 +47,26 @@ const CONTAINER_TYPEN = new Set([
   'handlung',
 ]);
 
-/** True, wenn diese AllgemeineAufgabe (Ebene 2 oder 3) einen Brian-Dialog braucht. */
+/**
+ * True, wenn diese AllgemeineAufgabe (Ebene 2 oder 3) einen Brian-Dialog braucht.
+ *
+ * Regel (2026-09-10, nach MBK-Rückmeldung „Prüfliste schrumpfen"): Brian ist
+ * nur dort vorgesehen, wo er tatsächlich angelegt ist — bei Sequenzen ein
+ * Brian-Schritt, bei Einzelaufgaben mindestens ein gefülltes Brian-Feld.
+ * Vorher galt jede Einzelaufgabe vom Typ 'inhalt' pauschal als Brian-Aufgabe
+ * und meldete vier fehlende Felder, obwohl nie ein Dialog geplant war (84
+ * Fehlmeldungen über alle Kurse). Einzelaufgaben sind Altbestand — Neues
+ * entsteht nur noch als Sequenz. Dieselbe Regel gilt im Export-Payload
+ * (`brian_dialog` in src/lib/mbkAirGapPayloads.js), damit Prüfung und
+ * Kursbau dieselben Aufgaben als Brian-Aufgaben sehen.
+ */
 export function istBrianAufgabe(aufgabe) {
   if (!aufgabe) return false;
   if (CONTAINER_TYPEN.has(aufgabe.aufgaben_typ || 'inhalt')) return false;
-  // Sequenzen: nur wenn wirklich ein Brian-Gespräch darin vorkommt. Eine
-  // Sequenz aus Material- und Freitext-Schritten braucht keinen Dialog.
   if (aufgabe.aufgaben_modus === 'sequenz') return brianSchritte(aufgabe).length > 0;
-  return true;
+  return BRIAN_FELDER.some((f) => String(aufgabe[f.key] || '').trim() !== '')
+    || String(aufgabe.brian_dialog_id || '').trim() !== ''
+    || String(aufgabe.brian_url || '').trim() !== '';
 }
 
 /** Liste der noch leeren Brian-Felder (jeweils { key, label }). */
