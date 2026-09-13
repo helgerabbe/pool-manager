@@ -143,6 +143,27 @@ const SCHRITT_FELD = {
 const feld = (typ, label, extra = {}) => ({ type: typ, label, ...extra });
 
 /**
+ * AUFGABEN-VARIANTEN (2026-09-13): Die häufigsten Übungsformate des
+ * Pool-Managers — Lückentext, Begriffe zuordnen, Reihenfolge, Miniquiz, Test —
+ * tragen ihren Inhalt NICHT in den field_values der Aktivität, sondern in
+ * MasterAufgabe-Datensätzen; genau die lesen die Schüler-Seiten. Ohne dieses
+ * Feld könnte das Import-Center diese Formate zwar anlegen, aber nie mit
+ * Inhalt füllen — die Schüler sähen eine leere Seite.
+ *
+ * Das Format je Aufgabenart liegt in base44/shared/aktivitaetInhaltSpecs.js
+ * (MASTER_TYP_SPEZIFIKATIONEN) — eine Wahrheit für Erzeugung UND Prüfung.
+ */
+const MASTER_VARIANTE_FELD = {
+  type: 'object',
+  label: 'Aufgaben-Variante',
+  hinweis:
+    'Eine Variante derselben Aufgabe (gleiches Lernziel, andere Beispiele). Felder je Aufgabenart: Lückentext → { instruction, lueckentext (Lücken als [Wort]), distraktoren[] }; Begriffe zuordnen → { instruction, pairs[{left,right}] }; Reihenfolge/Sortierung → { instruction, orderedItems[] }; Miniquiz → { instruction, questions[{question, answers[{text,isCorrect}]}] }; Test → { instruction, passFeedback, failFeedback, questions[{type,question,points,…}] }.',
+};
+
+const MASTER_VARIANTE_HINWEIS =
+  'Nur bei Aufgabenarten, die mit Varianten arbeiten (supports_master). Sind Varianten angegeben, werden die json-Pflichtfelder der Aufgabenart nicht mehr verlangt — der Inhalt steckt dann in den Varianten.';
+
+/**
  * Die Verträge. `ziel_typ` sagt, worauf sich der Auftrag bezieht;
  * `position_erlaubt` steuert, ob eine Einfüge-Position sinnvoll ist;
  * `parameter` ist das JSON Schema der Nutzdaten.
@@ -218,6 +239,10 @@ export const ART_SCHEMATA = {
         field_values: feld('object', 'Inhalte der Aktivität', {
           hinweis: 'Formatgleich zu den Feldwerten der Aktivität; Pflichtfelder aus dem form_schema der Aufgabenart.',
         }),
+        master_varianten: feld('array', 'Aufgaben-Varianten', {
+          items: MASTER_VARIANTE_FELD,
+          hinweis: MASTER_VARIANTE_HINWEIS,
+        }),
       },
     },
   },
@@ -232,6 +257,10 @@ export const ART_SCHEMATA = {
       required: ['field_values'],
       properties: {
         field_values: feld('object', 'Neue Inhalte der Aktivität'),
+        master_varianten: feld('array', 'Aufgaben-Varianten', {
+          items: MASTER_VARIANTE_FELD,
+          hinweis: `${MASTER_VARIANTE_HINWEIS} Mitgelieferte Varianten ERSETZEN die bestehenden Varianten der Aktivität.`,
+        }),
       },
     },
   },

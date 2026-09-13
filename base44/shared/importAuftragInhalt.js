@@ -14,6 +14,8 @@
  * Reine Funktionen, keine I/O.
  */
 
+import { MASTER_TYP_SPEZIFIKATIONEN } from './aktivitaetInhaltSpecs.js';
+
 function leer(v) {
   if (v === null || v === undefined) return true;
   if (typeof v === 'string') return v.trim() === '';
@@ -74,15 +76,69 @@ function pruefeJsonFeld(fieldName, data) {
 const PLATZHALTER = /(lorem ipsum|todo|tbd|xxx+|platzhalter|hier text|beispieltext)/i;
 
 /**
+ * Prüft mitgelieferte AUFGABEN-VARIANTEN (MasterAufgaben) einer Aufgabenart.
+ *
+ * Gemessen wird mit derselben Elle, die auch der Pool-Manager selbst anlegt:
+ * die `build`-Funktion der Format-Spezifikation. Sie liefert null, wenn der
+ * Inhalt zu dünn ist (zu wenige Paare, keine Lücken, keine richtige Antwort) —
+ * genau das wäre für Schüler eine unbrauchbare Aufgabe.
+ *
+ * @returns {{ missingFields: Array, gebaut: Array }} gebaut = normalisierte Varianten
+ */
+export function pruefeMasterVarianten(katalog, varianten, pfad = 'parameter.master_varianten') {
+  const missingFields = [];
+  const gebaut = [];
+  const spez = katalog ? MASTER_TYP_SPEZIFIKATIONEN[katalog.name] : null;
+
+  if (!spez) {
+    missingFields.push({
+      fieldName: pfad,
+      label: 'Aufgaben-Varianten',
+      reason: `Die Aufgabenart „${katalog?.name || '—'}" arbeitet nicht mit Varianten`,
+    });
+    return { missingFields, gebaut };
+  }
+
+  const liste = Array.isArray(varianten) ? varianten : [];
+  liste.forEach((variante, idx) => {
+    const fertig = spez.build(variante);
+    if (!fertig) {
+      missingFields.push({
+        fieldName: `${pfad}.${idx}`,
+        label: `Variante ${idx + 1}`,
+        reason: 'Inhalt unvollständig für diese Aufgabenart',
+      });
+      return;
+    }
+    gebaut.push(fertig);
+  });
+
+  if (gebaut.length === 0 && missingFields.length === 0) {
+    missingFields.push({ fieldName: pfad, label: 'Aufgaben-Varianten', reason: 'Mindestens eine Variante' });
+  }
+
+  return { missingFields, gebaut };
+}
+
+/**
  * Prüft die field_values einer Aktivität gegen das form_schema ihrer
  * Aufgabenart (Katalog-Eintrag).
  *
+ * `masterVarianten`: Sind Varianten mitgeliefert, steckt der Inhalt dort — die
+ * json-Pflichtfelder der Aufgabenart werden dann nicht mehr verlangt. Ohne
+ * diese Ausnahme wäre keines der Varianten-Formate über das Tor anlegbar.
+ *
  * @returns {{ isComplete: boolean, missingFields: Array<{fieldName,label,reason}> }}
  */
-export function pruefeAktivitaetInhalt(katalog, fieldValues = {}) {
+export function pruefeAktivitaetInhalt(katalog, fieldValues = {}, masterVarianten = null) {
   const missingFields = [];
   if (!katalog || !Array.isArray(katalog.form_schema)) {
     return { isComplete: true, missingFields };
+  }
+
+  const mitVarianten = Array.isArray(masterVarianten) && masterVarianten.length > 0;
+  if (mitVarianten) {
+    missingFields.push(...pruefeMasterVarianten(katalog, masterVarianten).missingFields);
   }
 
   // Sonderfall Bildbeschriftung: Der Editor speichert unter eigenen Keys.
@@ -111,6 +167,8 @@ export function pruefeAktivitaetInhalt(katalog, fieldValues = {}) {
     const wert = fieldValues[field.field_name];
 
     if (field.type === 'json') {
+      // Varianten-Weg: der Inhalt liegt in den MasterAufgaben, nicht hier.
+      if (mitVarianten && leer(wert)) continue;
       if (!field.required && leer(wert)) continue;
       const grund = pruefeJsonFeld(field.field_name, wert);
       if (grund) missingFields.push({ fieldName: field.field_name, label: field.label, reason: grund });

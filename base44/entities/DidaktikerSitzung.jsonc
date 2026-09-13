@@ -1,0 +1,146 @@
+{
+  "name": "DidaktikerSitzung",
+  "type": "object",
+  "description": "Didaktiker (2026-09-13): EIN Durchlauf des fachdidaktischen Assistenten \u2014 von der Themen-Eingabe \u00fcber die Recherche und die Einheitsstruktur bis zu den fertig gebauten Lernpaketen.\n\nWARUM PERSISTENT: Ein Basispaket entsteht nicht in f\u00fcnf Minuten. Die Lehrkraft baut ein Lernpaket, wird unterbrochen und macht am n\u00e4chsten Tag weiter \u2014 ohne gespeicherten Stand w\u00e4re jede Unterbrechung ein Neuanfang (inklusive der teuren Recherche). Deshalb h\u00e4lt dieser Datensatz alles, was der Assistent sp\u00e4ter wieder braucht: das Recherchefundament, den best\u00e4tigten Strukturentwurf, die angelegte Einheit und pro Lernpaket den Baustand.\n\nDER ASSISTENT SCHREIBT NICHT SELBST: Alle \u00c4nderungen am Datenbestand laufen \u00fcber das Freigabe-Tor des Import-Centers (pruefeImportAuftrag + fuehreImportAuftragAus). Diese Entity ist reines Ged\u00e4chtnis des Gespr\u00e4chs, kein zweiter Datenpfad.",
+  "properties": {
+    "besitzer_email": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft, die diesen Durchlauf begonnen hat. Sitzungen sind pers\u00f6nlich."
+    },
+    "titel": {
+      "type": "string",
+      "description": "Anzeigename des Durchlaufs f\u00fcr die Sitzungsliste (in der Regel das Thema)."
+    },
+    "fach": {
+      "type": "string",
+      "description": "Fach (Wert aus LookupFaecher.name)."
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "enum": [
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13"
+      ]
+    },
+    "thema": {
+      "type": "string",
+      "description": "Das Thema in den Worten der Lehrkraft, z. B. 'Dezimalzahlen addieren und subtrahieren'."
+    },
+    "vorgaben": {
+      "type": "string",
+      "description": "Optionale zus\u00e4tzliche W\u00fcnsche der Lehrkraft (Schwerpunkte, Klassensituation, Zeitrahmen)."
+    },
+    "buch_dateien": {
+      "type": "array",
+      "default": [],
+      "description": "Hochgeladene Buchseiten/Materialien des Lehrwerks. Sie gehen als Dateien in die Recherche ein, damit sich der Entwurf am tats\u00e4chlich benutzten Lehrwerk orientiert.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fundament": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Ergebnis der EINEN gro\u00dfen Recherche zu Beginn: didaktische Leitidee, Reihenfolge der Zug\u00e4nge, Stolpersteine, Begriffe, gefundene Quellen. Wird pro Lernpaket nur noch nachgesch\u00e4rft, nicht neu erhoben \u2014 eine Vollrecherche je Lernpaket w\u00e4re langsam und teuer."
+    },
+    "struktur_vorschlag": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Der (von der Lehrkraft bearbeitbare) Strukturentwurf: { titel, themenfelder: [{ titel, leitfrage, lernpakete: [{ titel, lernziele[], kernbegriffe[] }] }] }. Bleibt nach dem Anlegen als Nachweis stehen."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "FK zur angelegten Einheit. Leer, solange die Struktur noch nicht best\u00e4tigt wurde."
+    },
+    "schritt": {
+      "type": "string",
+      "enum": [
+        "einstieg",
+        "struktur",
+        "lernpakete",
+        "fertig"
+      ],
+      "default": "einstieg",
+      "description": "Wo der Durchlauf stehengeblieben ist \u2014 Grundlage f\u00fcr 'Fortsetzen'."
+    },
+    "aktuelles_lernpaket_id": {
+      "type": "string",
+      "description": "Lernpaket, das gerade bef\u00fcllt wird."
+    },
+    "lernpaket_stand": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Pro Lernpaket-ID der Baustand: { plan: {...}, gebaut: [ { katalog_id, phase, aktivitaet_instanz_id } ], fertig: boolean }. So wei\u00df der Assistent nach einer Pause, welche Aktivit\u00e4t als n\u00e4chste ansteht."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "offen",
+        "abgeschlossen"
+      ],
+      "default": "offen"
+    }
+  },
+  "required": [
+    "besitzer_email",
+    "thema"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -20,7 +20,11 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { pruefeAktivitaetInhalt, pruefeSequenzInhalt } from '../../shared/importAuftragInhalt.js';
+import {
+  pruefeAktivitaetInhalt,
+  pruefeSequenzInhalt,
+  pruefeMasterVarianten,
+} from '../../shared/importAuftragInhalt.js';
 import {
   normalisiereSchritte,
   fuegeSchrittEin,
@@ -230,7 +234,9 @@ export default async function (req) {
             ? Number(auftrag.position)
             : inPhase.length;
 
-        const inhalt = pruefeAktivitaetInhalt(katalog, p.field_values || {});
+        const varianten = pruefeMasterVarianten(katalog, p.master_varianten || []).gebaut;
+        const hatVarianten = Array.isArray(p.master_varianten) && p.master_varianten.length > 0;
+        const inhalt = pruefeAktivitaetInhalt(katalog, p.field_values || {}, p.master_varianten || null);
         const aktivitaet = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.create({
           lernpaket_id: auftrag.ziel_id,
           aktivitaet_id: p.aktivitaet_id,
@@ -248,12 +254,34 @@ export default async function (req) {
             nachrueckend.map((a) => ({ id: a.id, reihenfolge: (a.reihenfolge || 0) + 1 }))
           );
         }
+        // Varianten-Formate: Der Inhalt lebt in MasterAufgaben — genau die
+        // lesen die Schüler-Seiten.
+        if (hatVarianten && varianten.length > 0) {
+          await base44.asServiceRole.entities.MasterAufgabe.bulkCreate(
+            varianten.map((fv, idx) => ({
+              activity_id: aktivitaet.id,
+              lernpaket_id: auftrag.ziel_id,
+              titel: `Variante ${idx + 1}`,
+              field_values: fv,
+              reihenfolge: idx,
+              is_complete: true,
+              content_status: 'draft',
+              sync_status: 'new',
+            }))
+          );
+          await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(aktivitaet.id, {
+            is_complete: true,
+          });
+        }
+
         einheitId = paket.einheit_id;
         protokoll.push({
           schritt: 'Aktivität eingefügt',
           entity: 'LernpaketPhaseAktivitaet',
           record_id: aktivitaet.id,
-          hinweis: `${katalog.name} · Phase ${p.phase} · Position ${reihenfolge + 1}`,
+          hinweis: `${katalog.name} · Phase ${p.phase} · Position ${reihenfolge + 1}${
+            varianten.length > 0 ? ` · ${varianten.length} Variante(n)` : ''
+          }`,
         });
         break;
       }
@@ -264,12 +292,41 @@ export default async function (req) {
         const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog
           .get(aktivitaet.aktivitaet_id)
           .catch(() => null);
-        const inhalt = pruefeAktivitaetInhalt(katalog, p.field_values || {});
+        const hatVarianten = Array.isArray(p.master_varianten) && p.master_varianten.length > 0;
+        const varianten = hatVarianten ? pruefeMasterVarianten(katalog, p.master_varianten).gebaut : [];
+        const inhalt = pruefeAktivitaetInhalt(katalog, p.field_values || {}, p.master_varianten || null);
+
+        // Neue Varianten ERSETZEN die bestehenden: Sonst stünden zwei
+        // Fassungen derselben Aufgabe im Kurs nebeneinander.
+        if (hatVarianten) {
+          const bestand = await base44.asServiceRole.entities.MasterAufgabe
+            .filter({ activity_id: auftrag.ziel_id })
+            .catch(() => []);
+          const lebend = (bestand || []).filter((m) => m.sync_status !== 'to_delete');
+          if (lebend.length > 0) {
+            await base44.asServiceRole.entities.MasterAufgabe.bulkUpdate(
+              lebend.map((m) => ({ id: m.id, sync_status: 'to_delete' }))
+            );
+          }
+          await base44.asServiceRole.entities.MasterAufgabe.bulkCreate(
+            varianten.map((fv, idx) => ({
+              activity_id: auftrag.ziel_id,
+              lernpaket_id: aktivitaet.lernpaket_id,
+              titel: `Variante ${idx + 1}`,
+              field_values: fv,
+              reihenfolge: idx,
+              is_complete: true,
+              content_status: 'draft',
+              sync_status: 'new',
+            }))
+          );
+        }
+
         await base44.asServiceRole.entities.LernpaketPhaseAktivitaet.update(auftrag.ziel_id, {
           field_values: p.field_values || {},
           erstellungs_modus: 'manuell',
           ki_briefing: null,
-          is_complete: inhalt.isComplete,
+          is_complete: hatVarianten ? varianten.length > 0 : inhalt.isComplete,
           export_error: false,
           sync_status: aktivitaet.sync_status === 'synced' ? 'modified' : aktivitaet.sync_status || 'new',
         });

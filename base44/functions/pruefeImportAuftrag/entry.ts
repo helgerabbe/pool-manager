@@ -147,7 +147,11 @@ export default async function (req) {
             reason: `Diese Aufgabenart gehört zur Phase "${katalog.phase}"`,
           });
         }
-        const inhalt = pruefeAktivitaetInhalt(katalog, entwurf.parameter.field_values || {});
+        const inhalt = pruefeAktivitaetInhalt(
+          katalog,
+          entwurf.parameter.field_values || {},
+          entwurf.parameter.master_varianten || null
+        );
         befunde.push(...inhalt.missingFields);
       }
     }
