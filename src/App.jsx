@@ -27,6 +27,7 @@ const EinheitenCoach = lazyWithRetry(() => import('@/pages/EinheitenCoach'));
 const ExportCenter = lazyWithRetry(() => import('@/pages/ExportCenter'));
 const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
 const ImportCenter = lazyWithRetry(() => import('@/pages/ImportCenter'));
+const Didaktiker = lazyWithRetry(() => import('@/pages/Didaktiker'));
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const UnterrichtsstundeDetail = lazyWithRetry(() => import('@/pages/UnterrichtsstundeDetail'));
@@ -237,6 +238,21 @@ const AuthenticatedApp = () => {
               <ErrorBoundary fallback="Import-Center konnte nicht geladen werden.">
                 <ProtectedRoute
                   component={ImportCenter}
+                  requiredPermission="kannExportBedienen"
+                  redirectTo="/"
+                />
+              </ErrorBoundary>
+            }
+          />
+
+          {/* Didaktiker: geführter Aufbau eines Basispakets (schreibt über das
+              Freigabe-Tor des Import-Centers). */}
+          <Route
+            path="/didaktiker"
+            element={
+              <ErrorBoundary fallback="Der Didaktiker konnte nicht geladen werden.">
+                <ProtectedRoute
+                  component={Didaktiker}
                   requiredPermission="kannExportBedienen"
                   redirectTo="/"
                 />

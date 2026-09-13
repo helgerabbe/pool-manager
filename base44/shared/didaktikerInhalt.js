@@ -259,7 +259,7 @@ Finde ein passendes Lernvideo — BEVORZUGT auf studyflix.de (Format https://stu
 
 WICHTIG: Gib bis zu 5 Kandidaten zurück, den besten zuerst. Ausschließlich echte, existierende Adressen — erfinde nichts, im Zweifel weglassen.`,
     add_context_from_internet: true,
-    model: 'gemini_3_8_flash',
+    model: 'gemini_3_flash',
     response_json_schema: {
       type: 'object',
       properties: {

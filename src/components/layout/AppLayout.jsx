@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -200,6 +200,11 @@ export default function AppLayout() {
               {/* Import-Center: Auftrags-Posteingang für Änderungen von außen. */}
               {permissions.kannExportBedienen && (
                 <NavIconLink to="/import-center" icon={Inbox} label="Import-Center" isActive={isActive('/import-center')} />
+              )}
+
+              {/* Didaktiker: geführter Aufbau eines Basispakets. */}
+              {permissions.kannExportBedienen && (
+                <NavIconLink to="/didaktiker" icon={Sparkles} label="Didaktiker – Basispaket aufbauen" isActive={isActive('/didaktiker')} />
               )}
 
               {/* Interne MBK-Konsole (paralleler Pfad zum Export-Center). */}
