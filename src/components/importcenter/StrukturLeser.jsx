@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Layers, FileSearch } from 'lucide-react';
 import { useEinheitStruktur } from '@/hooks/useImportCenter';
+import AllgemeineAufgabenLeser from '@/components/importcenter/AllgemeineAufgabenLeser';
 
 function IdChip({ id }) {
   return (
@@ -29,13 +30,14 @@ function IdChip({ id }) {
 export default function StrukturLeser() {
   const [einheitId, setEinheitId] = useState('');
   const [detailId, setDetailId] = useState(null);
+  const [schrittDetailId, setSchrittDetailId] = useState(null);
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['importCenterEinheiten'],
     queryFn: () => base44.entities.Einheiten.list('-updated_date', 300),
   });
 
-  const { data, isLoading } = useEinheitStruktur(einheitId, detailId);
+  const { data, isLoading } = useEinheitStruktur(einheitId, detailId, schrittDetailId);
 
   return (
     <div className="space-y-6">
@@ -56,6 +58,7 @@ export default function StrukturLeser() {
             onValueChange={(v) => {
               setEinheitId(v);
               setDetailId(null);
+              setSchrittDetailId(null);
             }}
           >
             <SelectTrigger className="max-w-xl">
@@ -145,7 +148,10 @@ export default function StrukturLeser() {
                                       variant="ghost"
                                       size="sm"
                                       className="h-6 gap-1 px-2 text-xs"
-                                      onClick={() => setDetailId(a.aktivitaet_instanz_id)}
+                                      onClick={() => {
+                                        setSchrittDetailId(null);
+                                        setDetailId(a.aktivitaet_instanz_id);
+                                      }}
                                     >
                                       <FileSearch className="h-3 w-3" /> Inhalte holen
                                     </Button>
@@ -161,6 +167,32 @@ export default function StrukturLeser() {
                 </div>
               </div>
             ))}
+
+            <div className="border-t border-border pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase text-muted-foreground">
+                Allgemeine Aufgaben
+              </p>
+              <AllgemeineAufgabenLeser
+                aufgaben={data.allgemeine_aufgaben || []}
+                IdChip={IdChip}
+                onSchrittDetail={(id) => {
+                  setDetailId(null);
+                  setSchrittDetailId(id);
+                }}
+              />
+            </div>
+
+            {data.schritt_detail && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+                <p className="mb-2 text-sm font-semibold text-foreground">
+                  Schritt aus „{data.schritt_detail.aufgabe_titel}"
+                  {data.schritt_detail.aufgabenart ? ` · ${data.schritt_detail.aufgabenart}` : ''}
+                </p>
+                <pre className="max-h-80 overflow-auto rounded bg-card p-3 text-[11px] leading-relaxed">
+                  {JSON.stringify(data.schritt_detail.schritt, null, 2)}
+                </pre>
+              </div>
+            )}
 
             {data.aktivitaet_detail && (
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">

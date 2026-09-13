@@ -31,14 +31,15 @@ export function useImportAuftraege() {
   });
 }
 
-export function useEinheitStruktur(einheitId, detailId = null) {
+export function useEinheitStruktur(einheitId, detailId = null, schrittDetailId = null) {
   return useQuery({
-    queryKey: ['einheitStrukturLesend', einheitId, detailId],
+    queryKey: ['einheitStrukturLesend', einheitId, detailId, schrittDetailId],
     enabled: !!einheitId,
     queryFn: async () => {
       const res = await base44.functions.invoke('getEinheitStrukturLesend', {
         einheit_id: einheitId,
         aktivitaet_detail_id: detailId || undefined,
+        schritt_detail_id: schrittDetailId || undefined,
       });
       return res.data;
     },

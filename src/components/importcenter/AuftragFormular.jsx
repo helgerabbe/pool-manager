@@ -8,12 +8,14 @@ import { Send, Loader2 } from 'lucide-react';
 import ParameterFelder from '@/components/importcenter/ParameterFelder';
 import PruefergebnisListe from '@/components/importcenter/PruefergebnisListe';
 import { useAuftragsSchemata, useImportAuftragAktionen } from '@/hooks/useImportCenter';
+import { normalisiereSchritt, normalisiereSchrittfolge } from '@/lib/importSchritte';
 
 const ZIEL_LABEL = {
   einheit: 'Einheit',
   themenfeld: 'Themenfeld',
   lernpaket: 'Lernpaket',
   aktivitaet: 'Aktivität',
+  allgemeine_aufgabe: 'Allgemeine Aufgabe',
 };
 
 /**
@@ -52,9 +54,27 @@ export default function AuftragFormular() {
     const pSchema = artDef?.parameter?.properties || {};
     const nutzdaten = {};
 
+    const schrittTypen = schemata?.schritt_typen || [];
+
     for (const [key, def] of Object.entries(pSchema)) {
       const wert = parameter[key];
       if (wert === undefined || wert === '' || wert === null) continue;
+
+      // Schritte tragen ihre Nutzdaten in Unterobjekten — die Umwandlung
+      // (JSON-Texte, Komma-Listen) liegt zentral in lib/importSchritte.
+      if (key === 'sequenz_schritte' || key === 'schritt') {
+        try {
+          nutzdaten[key] =
+            key === 'schritt'
+              ? normalisiereSchritt(wert, schrittTypen)
+              : normalisiereSchrittfolge(wert, schrittTypen);
+        } catch {
+          setFormatFehler('Ein Schritt enthält ungültiges JSON in den Inhalten der Aufgabenart.');
+          return;
+        }
+        continue;
+      }
+
       if (def.type === 'object') {
         try {
           nutzdaten[key] = typeof wert === 'string' ? JSON.parse(wert) : wert;
@@ -164,6 +184,7 @@ export default function AuftragFormular() {
                 onChange={setParameter}
                 faecher={schemata?.faecher || []}
                 aufgabenarten={schemata?.aufgabenarten || []}
+                schrittTypen={schemata?.schritt_typen || []}
               />
 
               {formatFehler && (

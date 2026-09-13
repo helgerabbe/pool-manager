@@ -3,13 +3,21 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import SchritteFeld from '@/components/importcenter/SchritteFeld';
 
 /**
  * Rendert die Parameter-Felder eines Auftrags DIREKT aus dem JSON-Schema-Vertrag
  * seiner Auftragsart. Dadurch kann das Formular nie andere Felder anbieten, als
  * die Empfangsprüfung akzeptiert — ein Vertrag, zwei Verbraucher.
  */
-export default function ParameterFelder({ schema, werte, onChange, faecher = [], aufgabenarten = [] }) {
+export default function ParameterFelder({
+  schema,
+  werte,
+  onChange,
+  faecher = [],
+  aufgabenarten = [],
+  schrittTypen = [],
+}) {
   const properties = schema?.properties || {};
   const pflicht = schema?.required || [];
 
@@ -21,6 +29,22 @@ export default function ParameterFelder({ schema, werte, onChange, faecher = [],
         const label = def.label || key;
         const istPflicht = pflicht.includes(key);
         const wert = werte?.[key];
+
+        // Schritte einer Aufgabensequenz sind keine Textfelder, sondern eine
+        // eigene Blockliste — ein JSON-Kasten wäre hier unbedienbar.
+        if (key === 'sequenz_schritte' || key === 'schritt') {
+          return (
+            <SchritteFeld
+              key={key}
+              label={label}
+              werte={wert}
+              onChange={(v) => setzen(key, v)}
+              typen={schrittTypen}
+              aufgabenarten={aufgabenarten}
+              einzeln={key === 'schritt'}
+            />
+          );
+        }
 
         // Fach und Aufgabenart bekommen echte Auswahllisten aus dem Bestand.
         const optionen =

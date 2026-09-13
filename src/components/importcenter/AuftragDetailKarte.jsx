@@ -7,9 +7,12 @@ import { CheckCircle2, XCircle, RotateCcw, Loader2 } from 'lucide-react';
 import PruefergebnisListe from '@/components/importcenter/PruefergebnisListe';
 import AuftragStatusBadge from '@/components/importcenter/AuftragStatusBadge';
 import AuftragVorschauButton from '@/components/importcenter/AuftragVorschauButton';
+import SchrittVorschauButton from '@/components/importcenter/SchrittVorschauButton';
 import { useImportAuftragAktionen } from '@/hooks/useImportCenter';
 
 const VORSCHAU_ARTEN = ['aktivitaet_einfuegen', 'aktivitaet_aendern'];
+const SCHRITT_ARTEN = ['schritt_einfuegen', 'schritt_aendern'];
+const SEQUENZ_ARTEN = ['allgemeine_aufgabe_anlegen', 'allgemeine_aufgabe_aendern'];
 
 /**
  * Ein Auftrag in aufbereiteter Form: Was, Wohin, Womit, Prüfergebnis, Absender —
@@ -26,6 +29,12 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
   const aufgabenartName =
     aufgabenarten.find((a) => a.id === p.aktivitaet_id)?.name || 'Aufgabe';
   const zeigtVorschau = VORSCHAU_ARTEN.includes(auftrag.auftrags_art) && !!p.field_values;
+  const einzelSchritt = SCHRITT_ARTEN.includes(auftrag.auftrags_art) ? p.schritt : null;
+  const schrittfolge = SEQUENZ_ARTEN.includes(auftrag.auftrags_art)
+    ? Array.isArray(p.sequenz_schritte)
+      ? p.sequenz_schritte
+      : []
+    : [];
   const offen = auftrag.status === 'eingegangen' || auftrag.status === 'geprueft';
 
   return (
@@ -105,6 +114,19 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
           {zeigtVorschau && (
             <AuftragVorschauButton aufgabenartName={aufgabenartName} fieldValues={p.field_values} />
           )}
+
+          {einzelSchritt && (
+            <SchrittVorschauButton schritt={einzelSchritt} aufgabenarten={aufgabenarten} />
+          )}
+
+          {schrittfolge.map((s, idx) => (
+            <SchrittVorschauButton
+              key={s?.id || idx}
+              schritt={s}
+              aufgabenarten={aufgabenarten}
+              label={`Schritt ${idx + 1}`}
+            />
+          ))}
 
           {offen && (
             <>

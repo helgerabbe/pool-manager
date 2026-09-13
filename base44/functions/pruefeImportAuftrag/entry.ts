@@ -22,7 +22,11 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { validiereAuftragStruktur, getSchemaFuerArt, ART_LABELS } from '../../shared/importAuftragSchemata.js';
-import { pruefeAktivitaetInhalt } from '../../shared/importAuftragInhalt.js';
+import {
+  pruefeAktivitaetInhalt,
+  pruefeSchrittInhalt,
+  pruefeSequenzInhalt,
+} from '../../shared/importAuftragInhalt.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
 /** Lädt das Ziel und liefert die zugehörige Einheit — oder einen Fehlereintrag. */
@@ -42,6 +46,20 @@ async function loeseZielAuf(base44, auftrag) {
     const lp = await base44.asServiceRole.entities.Lernpakete.get(auftrag.ziel_id).catch(() => null);
     if (!lp) fehler.push({ fieldName: 'ziel_id', label: 'Lernpaket', reason: 'Lernpaket nicht gefunden' });
     else einheitId = lp.einheit_id || '';
+  } else if (auftrag.ziel_typ === 'allgemeine_aufgabe') {
+    const aufg = await base44.asServiceRole.entities.AllgemeineAufgabe.get(auftrag.ziel_id).catch(() => null);
+    if (!aufg) {
+      fehler.push({ fieldName: 'ziel_id', label: 'Allgemeine Aufgabe', reason: 'Aufgabe nicht gefunden' });
+    } else if (aufg.aufgaben_modus !== 'sequenz') {
+      fehler.push({
+        fieldName: 'ziel_id',
+        label: 'Allgemeine Aufgabe',
+        reason: 'Das Import-Center bearbeitet in v1 nur Aufgaben im Modus „Sequenz"',
+      });
+      einheitId = aufg.einheit_id || '';
+    } else {
+      einheitId = aufg.einheit_id || '';
+    }
   } else if (auftrag.ziel_typ === 'aktivitaet') {
     const akt = await base44.asServiceRole.entities.LernpaketPhaseAktivitaet
       .get(auftrag.ziel_id)
@@ -131,6 +149,67 @@ export default async function (req) {
         }
         const inhalt = pruefeAktivitaetInhalt(katalog, entwurf.parameter.field_values || {});
         befunde.push(...inhalt.missingFields);
+      }
+    }
+
+    // ── Ebene der allgemeinen Aufgaben (Sequenzaufgaben) ────────────────
+    const SEQUENZ_ARTEN = [
+      'allgemeine_aufgabe_anlegen',
+      'allgemeine_aufgabe_aendern',
+      'schritt_einfuegen',
+      'schritt_aendern',
+    ];
+    const SCHRITT_ARTEN = ['schritt_einfuegen', 'schritt_verschieben', 'schritt_aendern', 'schritt_entfernen'];
+
+    if (SEQUENZ_ARTEN.includes(art)) {
+      // Der Katalog wird nur geholt, wenn wirklich Schritte daraus vorkommen.
+      const katalogListe = await base44.asServiceRole.entities.AktivitaetenKatalog.list();
+      const katalogById = new Map((katalogListe || []).map((k) => [k.id, k]));
+
+      if (art === 'allgemeine_aufgabe_anlegen' || art === 'allgemeine_aufgabe_aendern') {
+        const res = pruefeSequenzInhalt(entwurf.parameter.sequenz_schritte, katalogById);
+        befunde.push(...res.missingFields);
+      } else {
+        const res = pruefeSchrittInhalt(entwurf.parameter.schritt, katalogById, 'parameter.schritt');
+        befunde.push(...res.missingFields);
+      }
+    }
+
+    // Bei schrittgenauen Aufträgen muss der benannte Schritt existieren —
+    // sonst würde die Ausführung ins Leere greifen.
+    if (SCHRITT_ARTEN.includes(art) && entwurf.ziel_id) {
+      const aufg = await base44.asServiceRole.entities.AllgemeineAufgabe.get(entwurf.ziel_id).catch(() => null);
+      const schritte = Array.isArray(aufg?.sequenz_schritte) ? aufg.sequenz_schritte : [];
+      if (aufg && art !== 'schritt_einfuegen') {
+        const gefunden = schritte.some((s) => s?.id === entwurf.parameter.schritt_id);
+        if (!gefunden) {
+          befunde.push({
+            fieldName: 'parameter.schritt_id',
+            label: 'Schritt',
+            reason: 'In dieser Aufgabe gibt es keinen Schritt mit dieser ID',
+          });
+        }
+      }
+      if (art === 'schritt_verschieben' && (entwurf.position === undefined || entwurf.position === null)) {
+        befunde.push({
+          fieldName: 'position',
+          label: 'Position',
+          reason: 'Beim Verschieben ist die Zielposition Pflicht',
+        });
+      }
+    }
+
+    // Ein Themenfeld muss zur Einheit gehören, in der die Aufgabe entsteht.
+    if (art === 'allgemeine_aufgabe_anlegen' && entwurf.parameter.themenfeld_id) {
+      const tf = await base44.asServiceRole.entities.Themenfeld
+        .get(entwurf.parameter.themenfeld_id)
+        .catch(() => null);
+      if (!tf || tf.einheit_id !== entwurf.ziel_id) {
+        befunde.push({
+          fieldName: 'parameter.themenfeld_id',
+          label: 'Themenfeld',
+          reason: 'Themenfeld gehört nicht zu dieser Einheit',
+        });
       }
     }
 

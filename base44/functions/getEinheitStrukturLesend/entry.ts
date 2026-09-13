@@ -12,7 +12,12 @@
  * fordert sie gezielt an (aktivitaet_detail_id). So bekommt niemand den ganzen
  * Inhaltsbestand ausgeliefert, nur weil er die Struktur wissen wollte.
  *
- * Payload: { einheit_id, aktivitaet_detail_id? }
+ * Erweitert (2026-09-13): Zusätzlich die ALLGEMEINEN AUFGABEN der Einheit —
+ * bei Sequenzaufgaben mit ihrer Schrittfolge (id, Art, Titel, Position). Genau
+ * das braucht ein Absender für schrittgenaue Aufträge; die Nutzdaten eines
+ * einzelnen Schritts werden wieder gezielt angefordert (schritt_detail_id).
+ *
+ * Payload: { einheit_id, aktivitaet_detail_id?, schritt_detail_id? }
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
@@ -32,15 +37,17 @@ export default async function (req) {
     const body = await req.json().catch(() => ({}));
     const einheitId = body?.einheit_id;
     const detailId = body?.aktivitaet_detail_id || null;
+    const schrittDetailId = body?.schritt_detail_id || null;
     if (!einheitId) return Response.json({ error: 'einheit_id fehlt' }, { status: 400 });
 
     const einheit = await base44.asServiceRole.entities.Einheiten.get(einheitId);
     if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
 
-    const [themenfelder, lernpakete, katalog] = await Promise.all([
+    const [themenfelder, lernpakete, katalog, aufgaben] = await Promise.all([
       base44.asServiceRole.entities.Themenfeld.filter({ einheit_id: einheitId }),
       base44.asServiceRole.entities.Lernpakete.filter({ einheit_id: einheitId }),
       base44.asServiceRole.entities.AktivitaetenKatalog.list(),
+      base44.asServiceRole.entities.AllgemeineAufgabe.filter({ einheit_id: einheitId }),
     ]);
 
     const aktivePakete = (lernpakete || []).filter((lp) => lp.sync_status !== 'to_delete');
@@ -131,9 +138,69 @@ export default async function (req) {
       };
     }
 
+    // ── Allgemeine Aufgaben (getrimmt: Metadaten + Schrittfolge ohne Inhalte) ──
+    const aktiveAufgaben = (aufgaben || []).filter((a) => a.sync_status !== 'to_delete');
+    const themenfeldTitel = new Map((themenfelder || []).map((tf) => [tf.id, tf.titel]));
+
+    const allgemeine_aufgaben = aktiveAufgaben.map((a) => ({
+      aufgabe_id: a.id,
+      titel: a.titel || '(ohne Titel)',
+      modus: a.aufgaben_modus || 'einzeln',
+      aufgaben_typ: a.aufgaben_typ || 'inhalt',
+      anforderungsebene: a.anforderungsebene || '',
+      mission_type: a.mission_type || '',
+      themenfeld_id: a.themenfeld_id || '',
+      themenfeld: a.themenfeld_id ? themenfeldTitel.get(a.themenfeld_id) || '' : '',
+      vollstaendig: a.is_complete === true,
+      freigabe: a.content_status === 'approved' && !!a.released_at ? 'freigegeben' : 'entwurf',
+      sync_status: a.sync_status || 'new',
+      schritte:
+        a.aufgaben_modus === 'sequenz'
+          ? (Array.isArray(a.sequenz_schritte) ? a.sequenz_schritte : [])
+              .slice()
+              .sort((x, y) => (x?.reihenfolge || 0) - (y?.reihenfolge || 0))
+              .map((s, pos) => ({
+                schritt_id: s?.id || '',
+                position: pos,
+                typ: s?.typ || '',
+                titel: s?.titel || '',
+                aufgabenart: s?.typ === 'katalog' ? katalogById.get(s.aktivitaet_id)?.name || '' : '',
+                status: s?.status || 'uebernommen',
+              }))
+          : [],
+    }));
+
+    // Stufe 2: die Nutzdaten EINES angeforderten Schritts.
+    let schritt_detail = null;
+    if (schrittDetailId) {
+      for (const a of aktiveAufgaben) {
+        const treffer = (Array.isArray(a.sequenz_schritte) ? a.sequenz_schritte : []).find(
+          (s) => s?.id === schrittDetailId
+        );
+        if (treffer) {
+          schritt_detail = {
+            aufgabe_id: a.id,
+            aufgabe_titel: a.titel || '',
+            schritt: treffer,
+            aufgabenart:
+              treffer.typ === 'katalog' ? katalogById.get(treffer.aktivitaet_id)?.name || '' : '',
+            form_schema:
+              treffer.typ === 'katalog' ? katalogById.get(treffer.aktivitaet_id)?.form_schema || [] : [],
+          };
+          break;
+        }
+      }
+      if (!schritt_detail) {
+        return Response.json(
+          { error: 'Der angeforderte Schritt gehört nicht zu dieser Einheit' },
+          { status: 404 }
+        );
+      }
+    }
+
     return Response.json({
-      vertrag_version: 'einheit-struktur-1',
-      detailstufe: detailId ? 'getrimmt+detail' : 'getrimmt',
+      vertrag_version: 'einheit-struktur-2',
+      detailstufe: detailId || schrittDetailId ? 'getrimmt+detail' : 'getrimmt',
       einheit: {
         einheit_id: einheit.id,
         titel: einheit.titel_der_einheit,
@@ -145,7 +212,9 @@ export default async function (req) {
       },
       themenfelder: struktur,
       lernpakete_ohne_themenfeld: ohneThemenfeld,
+      allgemeine_aufgaben,
       aktivitaet_detail,
+      schritt_detail,
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

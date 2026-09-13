@@ -13,7 +13,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { listArten } from '../../shared/importAuftragSchemata.js';
+import { listArten, listSchrittTypen } from '../../shared/importAuftragSchemata.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
 export default async function (req) {
@@ -44,6 +44,7 @@ export default async function (req) {
     return Response.json({
       vertrag_version: 'import-auftrag-1',
       auftragsarten: listArten(),
+      schritt_typen: listSchrittTypen(),
       aufgabenarten,
       faecher: (faecher || []).map((f) => f.name).filter(Boolean).sort(),
     });

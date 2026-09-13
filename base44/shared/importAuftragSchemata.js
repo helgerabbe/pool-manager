@@ -26,6 +26,118 @@ export const ART_LABELS = {
   aktivitaet_aendern: 'Aktivität ändern',
   aktivitaet_loeschen: 'Aktivität löschen',
   status_setzen: 'Freigabe-Status setzen',
+  allgemeine_aufgabe_anlegen: 'Sequenzaufgabe anlegen',
+  allgemeine_aufgabe_aendern: 'Sequenzaufgabe ändern',
+  allgemeine_aufgabe_loeschen: 'Sequenzaufgabe löschen',
+  schritt_einfuegen: 'Schritt einfügen',
+  schritt_verschieben: 'Schritt verschieben',
+  schritt_aendern: 'Schritt ändern',
+  schritt_entfernen: 'Schritt entfernen',
+};
+
+/**
+ * DIE SCHRITT-ARTEN einer Aufgabensequenz — Spiegel des `sequenz_schritte`-
+ * Schemas der AllgemeineAufgabe-Entity. `block` sagt, in welchem Unterobjekt
+ * die Nutzdaten des Schritts liegen (bei 'katalog' liegen sie direkt am Schritt:
+ * aktivitaet_id + field_values).
+ *
+ * Der Typ 'brian' ist in v1 BEWUSST nicht dabei: Ein Brian-Gespräch bringt einen
+ * eigenen vollständigen Durchlauf (Lernzielanalyse, Erwartungshorizont, vier
+ * Übergabefelder) mit — das ist eine eigene Etappe, kein Nebeneffekt hier.
+ */
+export const SCHRITT_TYPEN = {
+  material: {
+    label: 'Material (nur Inhalt, keine Aufgabe)',
+    block: 'material',
+    felder: [
+      {
+        name: 'material_typ',
+        label: 'Art des Materials',
+        typ: 'select',
+        optionen: ['text', 'video', 'audio', 'bild', 'pdf', 'link'],
+        pflicht: true,
+      },
+      { name: 'inhalt', label: 'Text / Inhalt', typ: 'textarea' },
+      { name: 'url', label: 'Link (Video, Seite)', typ: 'text' },
+      { name: 'datei_url', label: 'Datei-URL', typ: 'text' },
+      { name: 'beschreibung', label: 'Hinweis für Schüler', typ: 'textarea' },
+      { name: 'transkript', label: 'Transkript', typ: 'textarea' },
+    ],
+  },
+  aufgabe: {
+    label: 'Freitext-Aufgabe mit Musterlösung',
+    block: 'aufgabe',
+    felder: [
+      { name: 'aufgabenstellung', label: 'Aufgabenstellung', typ: 'textarea', pflicht: true },
+      { name: 'musterloesung', label: 'Musterlösung', typ: 'textarea' },
+      {
+        name: 'feedback_modus',
+        label: 'Rückmeldeweg',
+        typ: 'select',
+        optionen: ['musterloesung', 'ki'],
+      },
+    ],
+  },
+  katalog: {
+    label: 'Aufgabe aus dem Aktivitätenkatalog',
+    block: null,
+    felder: [
+      { name: 'aktivitaet_id', label: 'Aufgabenart (Katalog-ID)', typ: 'aufgabenart', pflicht: true },
+      { name: 'field_values', label: 'Inhalte der Aufgabenart', typ: 'json', pflicht: true },
+    ],
+  },
+  offen: {
+    label: 'Offene Aufgabe (HTML-Fragment)',
+    block: 'offen',
+    felder: [{ name: 'fragment', label: 'HTML-Fragment (div.aufgabe)', typ: 'textarea', pflicht: true }],
+  },
+  handlung: {
+    label: 'Handlungsaufgabe (reales Material)',
+    block: 'handlung',
+    felder: [
+      { name: 'arbeitsauftrag', label: 'Arbeitsauftrag', typ: 'textarea', pflicht: true },
+      { name: 'material_hinweis', label: 'Materialhinweis', typ: 'textarea' },
+      { name: 'datei_url', label: 'Datei-URL', typ: 'text' },
+      { name: 'bestaetigungstext', label: 'Text des Bestätigen-Knopfes', typ: 'text' },
+    ],
+  },
+  extern: {
+    label: 'Externe Seite (z. B. GeoGebra)',
+    block: 'extern',
+    felder: [
+      { name: 'url', label: 'Adresse der Seite', typ: 'text', pflicht: true },
+      { name: 'titel', label: 'Titel', typ: 'text' },
+      { name: 'hinweis', label: 'Hinweis für Schüler', typ: 'textarea' },
+      { name: 'hoehe', label: 'Höhe (Pixel)', typ: 'number' },
+    ],
+  },
+  abgabe: {
+    label: 'Abgabe (was abgegeben werden soll)',
+    block: 'abgabe',
+    felder: [
+      { name: 'formate', label: 'Abgabeformate', typ: 'array', pflicht: true },
+      { name: 'custom_format', label: 'Eigenes Format', typ: 'text' },
+      { name: 'dateiformat', label: 'Dateiformat (z. B. PDF)', typ: 'text' },
+      { name: 'hinweis', label: 'Hinweis für Schüler', typ: 'textarea' },
+    ],
+  },
+};
+
+/** Die Schritt-Arten als Liste — für Formular und Schema-Bibliothek. */
+export function listSchrittTypen() {
+  return Object.entries(SCHRITT_TYPEN).map(([typ, def]) => ({
+    typ,
+    label: def.label,
+    block: def.block,
+    felder: def.felder,
+  }));
+}
+
+const SCHRITT_FELD = {
+  type: 'object',
+  label: 'Schritt',
+  hinweis:
+    'Ein Schritt der Sequenz: { id?, typ, titel?, <Nutzdaten-Block> }. Erlaubte Typen und ihre Felder liefert getAuftragsSchemata unter schritt_typen.',
 };
 
 const feld = (typ, label, extra = {}) => ({ type: typ, label, ...extra });
@@ -150,6 +262,129 @@ export const ART_SCHEMATA = {
       required: ['content_status'],
       properties: {
         content_status: feld('string', 'Freigabe-Status', { enum: ['draft', 'approved'] }),
+      },
+    },
+  },
+
+  allgemeine_aufgabe_anlegen: {
+    beschreibung:
+      'Legt in einer Einheit eine allgemeine Aufgabe als AUFGABENSEQUENZ an — mit ihren Schritten in Reihenfolge. Die Aufgabe entsteht als Entwurf.',
+    ziel_typ: 'einheit',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['titel', 'sequenz_schritte'],
+      properties: {
+        titel: feld('string', 'Titel der Aufgabe', { minLength: 3, maxLength: 200 }),
+        aufgabenstellung: feld('string', 'Übergreifende Aufgabenstellung'),
+        themenfeld_id: feld('string', 'Themenfeld (optional)', {
+          hinweis: 'Leer = die Aufgabe hängt an der Einheit, ohne Themenfeld.',
+        }),
+        anforderungsebene: feld('string', 'Anforderungsebene', {
+          enum: ['1 - Basis', '2 - Transfer'],
+          hinweis: 'Ebene 3 (Projekt) ist eine spätere Etappe des Import-Centers.',
+        }),
+        mission_type: feld('string', 'Aufgabenkategorie', {
+          enum: ['erstbegegnung', 'erarbeitung', 'sicherung', 'anwendung'],
+        }),
+        schwierigkeitsgrad: feld('number', 'Schwierigkeitsgrad', { enum: [1, 2, 3] }),
+        sequenz_schritte: feld('array', 'Schritte der Sequenz', { items: SCHRITT_FELD }),
+      },
+    },
+  },
+
+  allgemeine_aufgabe_aendern: {
+    beschreibung:
+      'Ersetzt Angaben und die GESAMTE Schrittfolge einer bestehenden Sequenzaufgabe. Für einzelne Schritte gibt es die schrittgenauen Auftragsarten.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['sequenz_schritte'],
+      properties: {
+        titel: feld('string', 'Titel der Aufgabe', { maxLength: 200 }),
+        aufgabenstellung: feld('string', 'Übergreifende Aufgabenstellung'),
+        mission_type: feld('string', 'Aufgabenkategorie', {
+          enum: ['erstbegegnung', 'erarbeitung', 'sicherung', 'anwendung'],
+        }),
+        schwierigkeitsgrad: feld('number', 'Schwierigkeitsgrad', { enum: [1, 2, 3] }),
+        sequenz_schritte: feld('array', 'Schritte der Sequenz', { items: SCHRITT_FELD }),
+      },
+    },
+  },
+
+  allgemeine_aufgabe_loeschen: {
+    beschreibung:
+      'Nimmt eine allgemeine Aufgabe aus der Einheit. Gelöscht wird mit Grabstein (sync_status="to_delete"), damit der Kursbau die Entfernung mitbekommt.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['grund'],
+      properties: {
+        grund: feld('string', 'Grund der Entfernung', { minLength: 3 }),
+      },
+    },
+  },
+
+  schritt_einfuegen: {
+    beschreibung:
+      'Fügt in eine bestehende Sequenzaufgabe einen Schritt an einer Position ein. Nachrückende Schritte verschieben sich.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: true,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['schritt'],
+      properties: { schritt: SCHRITT_FELD },
+    },
+  },
+
+  schritt_verschieben: {
+    beschreibung: 'Verschiebt einen Schritt innerhalb der Sequenz an eine andere Position.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: true,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['schritt_id'],
+      properties: {
+        schritt_id: feld('string', 'ID des Schritts', {
+          hinweis: 'Die stabile id des Schritts — abrufbar über getEinheitStrukturLesend.',
+        }),
+      },
+    },
+  },
+
+  schritt_aendern: {
+    beschreibung: 'Ersetzt genau einen Schritt der Sequenz durch die mitgelieferte Fassung.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['schritt_id', 'schritt'],
+      properties: {
+        schritt_id: feld('string', 'ID des Schritts'),
+        schritt: SCHRITT_FELD,
+      },
+    },
+  },
+
+  schritt_entfernen: {
+    beschreibung: 'Entfernt einen Schritt aus der Sequenz; die Reihenfolge der übrigen Schritte wird korrigiert.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['schritt_id', 'grund'],
+      properties: {
+        schritt_id: feld('string', 'ID des Schritts'),
+        grund: feld('string', 'Grund der Entfernung', { minLength: 3 }),
       },
     },
   },
@@ -289,7 +524,14 @@ export function validiereAuftragStruktur(auftrag) {
   return { valide: fehler.length === 0, fehler };
 }
 
-/** True, wenn diese Auftragsart eine Schüler-Vorschau erlaubt (Aktivitäts-Inhalte). */
+/** True, wenn diese Auftragsart eine Schüler-Vorschau erlaubt (Inhalte im Auftrag). */
 export function hatVorschau(art) {
-  return art === 'aktivitaet_einfuegen' || art === 'aktivitaet_aendern';
+  return (
+    art === 'aktivitaet_einfuegen' ||
+    art === 'aktivitaet_aendern' ||
+    art === 'schritt_einfuegen' ||
+    art === 'schritt_aendern' ||
+    art === 'allgemeine_aufgabe_anlegen' ||
+    art === 'allgemeine_aufgabe_aendern'
+  );
 }

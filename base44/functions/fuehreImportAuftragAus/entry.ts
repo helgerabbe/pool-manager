@@ -20,7 +20,15 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { pruefeAktivitaetInhalt } from '../../shared/importAuftragInhalt.js';
+import { pruefeAktivitaetInhalt, pruefeSequenzInhalt } from '../../shared/importAuftragInhalt.js';
+import {
+  normalisiereSchritte,
+  fuegeSchrittEin,
+  verschiebeSchritt,
+  ersetzeSchritt,
+  entferneSchritt,
+  beschreibeSchritt,
+} from '../../shared/importAuftragSequenz.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
 async function logAudit(base44, event) {
@@ -37,6 +45,45 @@ async function logAudit(base44, event) {
   } catch (err) {
     console.error('[fuehreImportAuftragAus][AUDIT_ERROR]', err.message);
   }
+}
+
+const SCHRITT_PROTOKOLL = {
+  schritt_einfuegen: 'Schritt eingefügt',
+  schritt_verschieben: 'Schritt verschoben',
+  schritt_aendern: 'Schritt ersetzt',
+  schritt_entfernen: 'Schritt entfernt',
+};
+
+/** Lädt eine allgemeine Aufgabe und stellt sicher, dass es eine Sequenz ist. */
+async function ladeSequenzAufgabe(base44, id) {
+  const datensatz = await base44.asServiceRole.entities.AllgemeineAufgabe.get(id).catch(() => null);
+  if (!datensatz) {
+    return { ok: false, antwort: Response.json({ error: 'Allgemeine Aufgabe nicht gefunden' }, { status: 404 }) };
+  }
+  if (datensatz.aufgaben_modus !== 'sequenz') {
+    return {
+      ok: false,
+      antwort: Response.json(
+        { error: 'Das Import-Center bearbeitet in v1 nur Aufgaben im Modus „Sequenz".' },
+        { status: 400 }
+      ),
+    };
+  }
+  return { ok: true, datensatz };
+}
+
+/**
+ * Ehrliches `is_complete` nach jedem Schreibvorgang: gerechnet aus dem
+ * TATSÄCHLICHEN Stand der Schrittfolge, nicht aus dem Auftrag — sonst würde
+ * eine Aufgabe grün, weil der Auftrag vollständig war, obwohl noch alte
+ * unvollständige Schritte darin stehen.
+ */
+async function istSequenzVollstaendig(base44, schritte) {
+  const brauchtKatalog = (schritte || []).some((s) => s?.typ === 'katalog');
+  const katalogById = brauchtKatalog
+    ? new Map(((await base44.asServiceRole.entities.AktivitaetenKatalog.list()) || []).map((k) => [k.id, k]))
+    : new Map();
+  return pruefeSequenzInhalt(schritte, katalogById).isComplete;
 }
 
 export default async function (req) {
@@ -266,6 +313,131 @@ export default async function (req) {
           entity: 'Lernpakete',
           record_id: auftrag.ziel_id,
           hinweis: paket.titel_des_pakets || '',
+        });
+        break;
+      }
+
+      case 'allgemeine_aufgabe_anlegen': {
+        const einheit = await base44.asServiceRole.entities.Einheiten.get(auftrag.ziel_id).catch(() => null);
+        if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+
+        const schritte = normalisiereSchritte(p.sequenz_schritte);
+        const vollstaendig = await istSequenzVollstaendig(base44, schritte);
+        const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.create({
+          einheit_id: auftrag.ziel_id,
+          themenfeld_id: p.themenfeld_id || undefined,
+          titel: p.titel,
+          aufgabenstellung: p.aufgabenstellung || '',
+          anforderungsebene: p.anforderungsebene || '1 - Basis',
+          aufgaben_typ: 'inhalt',
+          aufgaben_modus: 'sequenz',
+          mission_type: p.mission_type || undefined,
+          schwierigkeitsgrad: p.schwierigkeitsgrad || undefined,
+          sequenz_schritte: schritte,
+          erstellungs_modus: 'manuell',
+          is_complete: vollstaendig,
+          content_status: 'draft',
+          sync_status: 'new',
+        });
+        einheitId = auftrag.ziel_id;
+        protokoll.push({
+          schritt: 'Sequenzaufgabe angelegt',
+          entity: 'AllgemeineAufgabe',
+          record_id: aufgabe.id,
+          hinweis: `${p.titel} · ${schritte.length} Schritt(e)`,
+        });
+        break;
+      }
+
+      case 'allgemeine_aufgabe_aendern': {
+        const aufgabe = await ladeSequenzAufgabe(base44, auftrag.ziel_id);
+        if (!aufgabe.ok) return aufgabe.antwort;
+        const alt = aufgabe.datensatz;
+
+        const schritte = normalisiereSchritte(p.sequenz_schritte);
+        const vollstaendig = await istSequenzVollstaendig(base44, schritte);
+        await base44.asServiceRole.entities.AllgemeineAufgabe.update(auftrag.ziel_id, {
+          titel: p.titel !== undefined ? p.titel : alt.titel,
+          aufgabenstellung: p.aufgabenstellung !== undefined ? p.aufgabenstellung : alt.aufgabenstellung,
+          mission_type: p.mission_type || alt.mission_type || undefined,
+          schwierigkeitsgrad: p.schwierigkeitsgrad || alt.schwierigkeitsgrad || undefined,
+          sequenz_schritte: schritte,
+          is_complete: vollstaendig,
+          export_error: false,
+          sync_status: alt.sync_status === 'synced' ? 'modified' : alt.sync_status || 'new',
+        });
+        einheitId = alt.einheit_id || einheitId;
+        protokoll.push({
+          schritt: 'Sequenzaufgabe geändert',
+          entity: 'AllgemeineAufgabe',
+          record_id: auftrag.ziel_id,
+          hinweis: `${schritte.length} Schritt(e) übernommen`,
+        });
+        break;
+      }
+
+      case 'allgemeine_aufgabe_loeschen': {
+        const aufgabe = await ladeSequenzAufgabe(base44, auftrag.ziel_id);
+        if (!aufgabe.ok) return aufgabe.antwort;
+        // Grabstein statt Hartlöschung — der Kursbau muss die Entfernung sehen.
+        await base44.asServiceRole.entities.AllgemeineAufgabe.update(auftrag.ziel_id, {
+          sync_status: 'to_delete',
+        });
+        einheitId = aufgabe.datensatz.einheit_id || einheitId;
+        protokoll.push({
+          schritt: 'Sequenzaufgabe zur Entfernung markiert',
+          entity: 'AllgemeineAufgabe',
+          record_id: auftrag.ziel_id,
+          hinweis: p.grund || '',
+        });
+        break;
+      }
+
+      case 'schritt_einfuegen':
+      case 'schritt_verschieben':
+      case 'schritt_aendern':
+      case 'schritt_entfernen': {
+        const aufgabe = await ladeSequenzAufgabe(base44, auftrag.ziel_id);
+        if (!aufgabe.ok) return aufgabe.antwort;
+        const alt = aufgabe.datensatz;
+        const bestand = Array.isArray(alt.sequenz_schritte) ? alt.sequenz_schritte : [];
+
+        let ergebnis = null;
+        let text = '';
+        if (auftrag.auftrags_art === 'schritt_einfuegen') {
+          ergebnis = fuegeSchrittEin(bestand, p.schritt || {}, auftrag.position);
+          text = `${beschreibeSchritt(p.schritt || {})} an Position ${ergebnis.position + 1}`;
+        } else if (auftrag.auftrags_art === 'schritt_verschieben') {
+          ergebnis = verschiebeSchritt(bestand, p.schritt_id, auftrag.position);
+          if (ergebnis) text = `von Position ${ergebnis.von + 1} auf ${ergebnis.nach + 1}`;
+        } else if (auftrag.auftrags_art === 'schritt_aendern') {
+          ergebnis = ersetzeSchritt(bestand, p.schritt_id, p.schritt || {});
+          if (ergebnis) text = `${beschreibeSchritt(p.schritt || {})} (Position ${ergebnis.position + 1})`;
+        } else {
+          ergebnis = entferneSchritt(bestand, p.schritt_id);
+          if (ergebnis) text = `${beschreibeSchritt(ergebnis.entfernt)} · ${p.grund || ''}`;
+        }
+
+        if (!ergebnis) {
+          return Response.json(
+            { error: 'In dieser Aufgabe gibt es keinen Schritt mit dieser ID.' },
+            { status: 404 }
+          );
+        }
+
+        const vollstaendig = await istSequenzVollstaendig(base44, ergebnis.schritte);
+        await base44.asServiceRole.entities.AllgemeineAufgabe.update(auftrag.ziel_id, {
+          sequenz_schritte: ergebnis.schritte,
+          is_complete: vollstaendig,
+          export_error: false,
+          sync_status: alt.sync_status === 'synced' ? 'modified' : alt.sync_status || 'new',
+        });
+        einheitId = alt.einheit_id || einheitId;
+        protokoll.push({
+          schritt: SCHRITT_PROTOKOLL[auftrag.auftrags_art],
+          entity: 'AllgemeineAufgabe',
+          record_id: auftrag.ziel_id,
+          hinweis: text,
         });
         break;
       }

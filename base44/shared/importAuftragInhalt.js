@@ -135,3 +135,145 @@ export function pruefeAktivitaetInhalt(katalog, fieldValues = {}) {
 
   return { isComplete: missingFields.length === 0, missingFields };
 }
+
+/**
+ * Die inhaltliche Prüfung EINES Schritts einer Aufgabensequenz.
+ *
+ * Geprüft wird gegen die Pflichtfelder seiner Schritt-Art (SCHRITT_TYPEN im
+ * Vertrag) — bei Schritten aus dem Aktivitätenkatalog zusätzlich gegen das
+ * form_schema der Aufgabenart, also mit genau derselben Messlatte wie eine
+ * Aktivität in einem Lernpaket.
+ *
+ * @param {object} schritt      Der Schritt aus sequenz_schritte
+ * @param {Map}    katalogById  id → Katalog-Eintrag (für typ='katalog')
+ * @param {string} pfad         Feld-Präfix für die Meldungen (z. B. 'parameter.schritt')
+ */
+export function pruefeSchrittInhalt(schritt, katalogById = new Map(), pfad = 'schritt') {
+  const missingFields = [];
+  const typ = schritt?.typ;
+
+  if (!schritt || typeof schritt !== 'object') {
+    return { missingFields: [{ fieldName: pfad, label: 'Schritt', reason: 'Schritt fehlt' }] };
+  }
+  if (!SCHRITT_REGELN[typ]) {
+    missingFields.push({
+      fieldName: `${pfad}.typ`,
+      label: 'Schritt-Art',
+      reason: `Unbekannte oder in v1 nicht unterstützte Schritt-Art "${typ || '—'}"`,
+    });
+    return { missingFields };
+  }
+
+  if (typ === 'katalog') {
+    const katalog = katalogById.get(schritt.aktivitaet_id);
+    if (!katalog) {
+      missingFields.push({
+        fieldName: `${pfad}.aktivitaet_id`,
+        label: 'Aufgabenart',
+        reason: 'Aufgabenart nicht im Katalog gefunden',
+      });
+      return { missingFields };
+    }
+    const inhalt = pruefeAktivitaetInhalt(katalog, schritt.field_values || {});
+    missingFields.push(
+      ...inhalt.missingFields.map((m) => ({ ...m, fieldName: `${pfad}.field_values.${m.fieldName}` }))
+    );
+    return { missingFields };
+  }
+
+  const regel = SCHRITT_REGELN[typ];
+  const block = schritt[regel.block] || {};
+
+  for (const feldName of regel.pflicht || []) {
+    if (leer(block[feldName])) {
+      missingFields.push({
+        fieldName: `${pfad}.${regel.block}.${feldName}`,
+        label: regel.labels?.[feldName] || feldName,
+        reason: 'Pflichtfeld leer',
+      });
+    }
+  }
+
+  // Material braucht mindestens EINE Quelle — ein Materialschritt ohne Inhalt
+  // ist für Schüler eine leere Seite.
+  if (typ === 'material' && leer(block.inhalt) && leer(block.url) && leer(block.datei_url)) {
+    missingFields.push({
+      fieldName: `${pfad}.material.inhalt`,
+      label: 'Inhalt des Materials',
+      reason: 'Text, Link oder Datei angeben',
+    });
+  }
+
+  for (const [feldName, wert] of Object.entries(block)) {
+    if (typeof wert === 'string' && PLATZHALTER.test(wert)) {
+      missingFields.push({
+        fieldName: `${pfad}.${regel.block}.${feldName}`,
+        label: regel.labels?.[feldName] || feldName,
+        reason: 'Enthält einen Platzhalter-Text',
+      });
+    }
+  }
+
+  return { missingFields };
+}
+
+/**
+ * Die Prüfung einer GANZEN Schrittfolge. Eine Sequenz ohne Schritt ist keine
+ * Aufgabe; doppelte Schritt-IDs wären fatal, weil schrittgenaue Aufträge den
+ * Schritt über seine id finden.
+ *
+ * @returns {{ isComplete: boolean, missingFields: Array }}
+ */
+export function pruefeSequenzInhalt(schritte, katalogById = new Map(), pfad = 'parameter.sequenz_schritte') {
+  const missingFields = [];
+  const liste = Array.isArray(schritte) ? schritte : [];
+
+  if (liste.length === 0) {
+    missingFields.push({ fieldName: pfad, label: 'Schritte der Sequenz', reason: 'Mindestens ein Schritt' });
+    return { isComplete: false, missingFields };
+  }
+
+  const gesehen = new Set();
+  liste.forEach((schritt, idx) => {
+    const id = schritt?.id;
+    if (id) {
+      if (gesehen.has(id)) {
+        missingFields.push({
+          fieldName: `${pfad}.${idx}.id`,
+          label: `Schritt ${idx + 1}`,
+          reason: 'Diese Schritt-ID kommt mehrfach vor',
+        });
+      }
+      gesehen.add(id);
+    }
+    const res = pruefeSchrittInhalt(schritt, katalogById, `${pfad}.${idx}`);
+    missingFields.push(
+      ...res.missingFields.map((m) => ({ ...m, label: `Schritt ${idx + 1}: ${m.label}` }))
+    );
+  });
+
+  return { isComplete: missingFields.length === 0, missingFields };
+}
+
+/** Pflichtfelder je Schritt-Art — Spiegel von SCHRITT_TYPEN im Vertrag. */
+const SCHRITT_REGELN = {
+  material: {
+    block: 'material',
+    pflicht: ['material_typ'],
+    labels: { material_typ: 'Art des Materials', inhalt: 'Text / Inhalt', url: 'Link' },
+  },
+  aufgabe: {
+    block: 'aufgabe',
+    pflicht: ['aufgabenstellung'],
+    labels: { aufgabenstellung: 'Aufgabenstellung', musterloesung: 'Musterlösung' },
+  },
+  katalog: { block: null, pflicht: [], labels: {} },
+  offen: { block: 'offen', pflicht: ['fragment'], labels: { fragment: 'HTML-Fragment' } },
+  handlung: {
+    block: 'handlung',
+    pflicht: ['arbeitsauftrag'],
+    labels: { arbeitsauftrag: 'Arbeitsauftrag', material_hinweis: 'Materialhinweis' },
+  },
+  extern: { block: 'extern', pflicht: ['url'], labels: { url: 'Adresse der Seite' } },
+  abgabe: { block: 'abgabe', pflicht: ['formate'], labels: { formate: 'Abgabeformate' } },
+};
