@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Wand2, Check, CheckCircle2 } from 'lucide-react';
 import AuftragVorschauButton from '@/components/importcenter/AuftragVorschauButton';
 import OffeneAufgabeVorschauButton from '@/components/didaktiker/OffeneAufgabeVorschauButton';
+import UebungsPlanBlock from '@/components/didaktiker/UebungsPlanBlock';
 import { useAktivitaetBauen, useAktivitaetUebernehmen } from '@/hooks/useDidaktiker';
 
 /**
@@ -23,6 +24,10 @@ export default function AktivitaetZeile({ sitzungId, lernpaketId, zeile, erledig
   const varianten = vorschlag?.master_varianten || [];
   const vorschauWerte = varianten.length > 0 ? varianten[0] : vorschlag?.field_values || {};
   const snapshotHtml = vorschlag?.field_values?.approved_snapshot_html || '';
+  const istOffen =
+    zeile.form === 'offen' ||
+    zeile.aufgabenart === 'Offene Aufgabe' ||
+    vorschlag?.aufgabenart === 'Offene Aufgabe';
 
   return (
     <div className="rounded-lg border border-border p-3">
@@ -69,7 +74,11 @@ export default function AktivitaetZeile({ sitzungId, lernpaketId, zeile, erledig
 
           {vorschlag && !fertig && (
             <>
-              <AuftragVorschauButton aufgabenartName={vorschlag.aufgabenart} fieldValues={vorschauWerte} />
+              {istOffen && snapshotHtml ? (
+                <OffeneAufgabeVorschauButton snapshotHtml={snapshotHtml} titel={zeile.label} />
+              ) : (
+                <AuftragVorschauButton aufgabenartName={vorschlag.aufgabenart} fieldValues={vorschauWerte} />
+              )}
               <Button
                 size="sm"
                 className="gap-2"
@@ -99,6 +108,14 @@ export default function AktivitaetZeile({ sitzungId, lernpaketId, zeile, erledig
       </div>
 
       <p className="mt-1 text-xs text-muted-foreground">{zeile.absicht || zeile.zweck}</p>
+
+      {!fertig && (
+        <UebungsPlanBlock
+          operation={zeile.operation}
+          aufgabenIdee={zeile.aufgaben_idee}
+          begruendung={zeile.form === 'katalog' ? zeile.begruendung : ''}
+        />
+      )}
 
       {varianten.length > 1 && !fertig && (
         <p className="mt-1 text-xs text-muted-foreground">{varianten.length} Varianten erzeugt.</p>
