@@ -1,0 +1,40 @@
+/**
+ * hooks/useAustausch.js
+ *
+ * Posteingang des gemeinsamen Briefkastens `austausch/` im Repository.
+ * Gelesen wird live aus dem Repository (die Dateien sind die Wahrheit),
+ * geantwortet wird ausschließlich über die geprüfte Backend-Funktion.
+ */
+
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
+
+const KEY = ['austauschNachrichten'];
+
+export function useAustauschNachrichten() {
+  return useQuery({
+    queryKey: KEY,
+    queryFn: async () => {
+      const res = await base44.functions.invoke('listAustauschNachrichten', {});
+      return res.data;
+    },
+    staleTime: 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+  });
+}
+
+export function useAustauschAntworten() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payload) => {
+      const res = await base44.functions.invoke('pushAustauschAntwort', payload);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: KEY });
+      toast.success(`Nachricht abgelegt: ${data?.datei}`);
+    },
+    onError: (err) => toast.error(err?.response?.data?.error || err.message),
+  });
+}

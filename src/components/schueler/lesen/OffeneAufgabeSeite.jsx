@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import AufgabenstellungBox from './AufgabenstellungBox';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 
@@ -25,6 +27,7 @@ export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBac
   const { html: dateiHtml } = useSnapshotHtml(snapshotUrl);
   const snapshotHtml = fv.approved_snapshot_html || dateiHtml || '';
   const hatSnapshot = !!snapshotHtml.trim() || !!snapshotUrl.trim();
+  const [antwort, setAntwort] = useState('');
 
   return (
     <div className="h-full flex flex-col max-w-3xl mx-auto w-full px-5 py-4">
@@ -49,14 +52,29 @@ export default function OffeneAufgabeSeite({ aktivitaet, busy, onErledigt, onBac
           />
         </div>
       ) : (
-        /* Fallback: Aufgabenbeschreibung schülergerecht formatiert. */
-        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+        /* Fallback ohne gebaute Aufgabe: genau das, was auch der Kurs daraus
+           macht — Beschreibung plus ein Textfeld OHNE Musterlösung und OHNE
+           Rückmeldung. Das steht hier ausdrücklich dabei, damit die Lehrkraft
+           in der Vorschau sieht, was die Schüler bekommen (MBK-Hinweis 13.09.). */
+        <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-3">
           {fv.description ? (
-            <div className="rounded-xl border border-border bg-card px-5 py-4">
-              <ReactMarkdown className="prose prose-sm prose-slate max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 leading-relaxed">
-                {fv.description}
-              </ReactMarkdown>
-            </div>
+            <>
+              <div className="rounded-xl border border-border bg-card px-5 py-4">
+                <ReactMarkdown className="prose prose-sm prose-slate max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 leading-relaxed">
+                  {fv.description}
+                </ReactMarkdown>
+              </div>
+              <Textarea
+                value={antwort}
+                onChange={(e) => setAntwort(e.target.value)}
+                placeholder="Deine Antwort …"
+                className="min-h-[100px]"
+                disabled={busy}
+              />
+              <p className="text-xs text-muted-foreground italic">
+                Zu dieser Aufgabe gibt es keine Musterlösung und keine Rückmeldung.
+              </p>
+            </>
           ) : (
             <p className="text-sm text-muted-foreground italic text-center py-10">
               Für diese Aufgabe sind noch keine Inhalte hinterlegt.
