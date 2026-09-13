@@ -1,0 +1,173 @@
+{
+  "name": "ImportAuftrag",
+  "type": "object",
+  "description": "Import-Center (2026-09-13): EIN Auftrag, der von au\u00dfen (v1: \u00fcber das interne Formular des Import-Centers) an den Pool-Manager gestellt wird \u2014 'lege eine Einheit an', 'f\u00fcge in Lernpaket X an 2. Stelle eine Zuordnungsaufgabe ein', '\u00e4ndere die Inhalte dieser Aktivit\u00e4t'.\n\nWARUM EIGENST\u00c4NDIG (und NICHT auf Pruefbefund aufgesetzt): Nicht jeder Auftrag entsteht aus einem Fund (jemand kann einfach eine Einheit anlegen wollen), und nicht jeder Fund wird ein Auftrag (Funde d\u00fcrfen bewusst stehen bleiben). Der mit der MBK ausgehandelte R\u00fcckmelde-Vertrag (Pruefbefund + Austauschordner) bleibt davon vollst\u00e4ndig unber\u00fchrt; das Feld `verlinkter_pruefbefund_id` ist die vorbereitete Br\u00fccke und bleibt in v1 leer.\n\nDER VERTRAG: Wie ein g\u00fcltiger Auftrag je `auftrags_art` aussehen muss, steht als JSON-Schema in base44/shared/importAuftragSchemata.js \u2014 dieselbe Datei speist das interne Formular UND die Empfangspr\u00fcfung. Gepr\u00fcft wird zweistufig: strukturell gegen das Schema, inhaltlich gegen die Vollst\u00e4ndigkeitsregeln der Aktivit\u00e4ten (base44/shared/importAuftragInhalt.js).\n\nDAS FREIGABE-TOR: Ein Auftrag ver\u00e4ndert NIE von selbst Daten. Erst wenn eine berechtigte Person ihn im Posteingang gesehen (bei Aktivit\u00e4ten inklusive Sch\u00fcler-Vorschau) und 'Durchf\u00fchren' gedr\u00fcckt hat, \u00fcbersetzt fuehreImportAuftragAus ihn in echte Schreibvorg\u00e4nge.",
+  "properties": {
+    "auftrags_art": {
+      "type": "string",
+      "enum": [
+        "einheit_anlegen",
+        "themenfeld_anlegen",
+        "lernpaket_anlegen",
+        "aktivitaet_einfuegen",
+        "aktivitaet_aendern",
+        "aktivitaet_loeschen",
+        "status_setzen"
+      ],
+      "description": "Was der Auftrag bewirken soll. Je Art gilt ein eigenes JSON-Schema (siehe base44/shared/importAuftragSchemata.js)."
+    },
+    "titel": {
+      "type": "string",
+      "description": "Kurze, menschenlesbare Bezeichnung des Auftrags f\u00fcr den Posteingang (z. B. 'Zuordnungsaufgabe in Quadrate/\u00dcben')."
+    },
+    "ziel_typ": {
+      "type": "string",
+      "enum": [
+        "keines",
+        "einheit",
+        "themenfeld",
+        "lernpaket",
+        "aktivitaet"
+      ],
+      "default": "keines",
+      "description": "Art der Stelle, auf die sich der Auftrag bezieht. 'keines' bei Auftr\u00e4gen, die etwas Neues ohne Elternteil anlegen (einheit_anlegen)."
+    },
+    "ziel_id": {
+      "type": "string",
+      "description": "ID der Stelle, auf die sich der Auftrag bezieht (Einheit / Themenfeld / Lernpaket / Aktivit\u00e4t). Leer bei ziel_typ='keines'."
+    },
+    "einheit_id": {
+      "type": "string",
+      "description": "Denormalisiert: Einheit, in der der Auftrag wirkt \u2014 f\u00fcr Filter und Gruppierung im Posteingang. Bei 'einheit_anlegen' erst nach der Ausf\u00fchrung gesetzt."
+    },
+    "position": {
+      "type": "number",
+      "description": "Einf\u00fcge-Position im Baum (0-basiert): Reihenfolge des Themenfelds, des Lernpakets bzw. der Aktivit\u00e4t innerhalb ihrer Phase. Fehlt der Wert, wird hinten angeh\u00e4ngt."
+    },
+    "parameter": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Die Nutzdaten des Auftrags \u2014 je Art unterschiedlich: Metadaten (Titel, Fach, Jahrgang), Phase, aktivitaet_id (Katalog-Typ) und field_values der Aktivit\u00e4t. Formatgleich zu LernpaketPhaseAktivitaet.field_values, damit dieselben Vorschau-Ansichten und Validatoren greifen."
+    },
+    "quelle": {
+      "type": "string",
+      "enum": [
+        "intern",
+        "extern",
+        "mbk"
+      ],
+      "default": "intern",
+      "description": "Woher der Auftrag kam. v1 kennt nur 'intern' (Formular im Import-Center). 'extern' (Skript/KI \u00fcber die Eingangsfunktion) und 'mbk' (sp\u00e4tere Br\u00fccke) sind vorbereitet, aber nicht freigeschaltet."
+    },
+    "absender": {
+      "type": "string",
+      "description": "E-Mail bzw. Bezeichnung des Absenders (bei quelle='intern' die einreichende Person)."
+    },
+    "pruefstatus": {
+      "type": "string",
+      "enum": [
+        "ungeprueft",
+        "geprueft",
+        "ausfuehrbar"
+      ],
+      "default": "ungeprueft",
+      "description": "Ergebnis der Pr\u00fcfung. 'geprueft' = gepr\u00fcft, aber es fehlt noch etwas (siehe pruefergebnis). 'ausfuehrbar' = strukturell und inhaltlich vollst\u00e4ndig, das Freigabe-Tor kann ge\u00f6ffnet werden."
+    },
+    "pruefergebnis": {
+      "type": "array",
+      "default": [],
+      "description": "Die L\u00fccken der letzten Pr\u00fcfung \u2014 dieselbe Form wie die missingFields der Vollst\u00e4ndigkeitspr\u00fcfung, damit das Formular sie pro Feld anzeigen kann.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "fieldName": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "geprueft_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "eingegangen",
+        "geprueft",
+        "ausgefuehrt",
+        "abgelehnt"
+      ],
+      "default": "eingegangen",
+      "description": "Bearbeitungsstand im Posteingang. 'ausgefuehrt' und 'abgelehnt' sind Endzust\u00e4nde; ein abgelehnter Auftrag kann bewusst wieder auf 'eingegangen' ge\u00f6ffnet werden."
+    },
+    "entscheid_von": {
+      "type": "string",
+      "description": "E-Mail der Person, die durchgef\u00fchrt oder abgelehnt hat."
+    },
+    "entscheid_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "begruendung": {
+      "type": "string",
+      "description": "Pflichtbegr\u00fcndung bei Ablehnung; optionaler Kommentar bei Durchf\u00fchrung."
+    },
+    "ausfuehrung_protokoll": {
+      "type": "array",
+      "default": [],
+      "description": "Was die Ausf\u00fchrung tats\u00e4chlich getan hat (ein Eintrag je Schreibvorgang) \u2014 der Nachvollzug im Posteingang.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "schritt": {
+            "type": "string"
+          },
+          "entity": {
+            "type": "string"
+          },
+          "record_id": {
+            "type": "string"
+          },
+          "hinweis": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "verlinkter_pruefbefund_id": {
+      "type": "string",
+      "description": "Optionale Br\u00fccke zum MBK-R\u00fcckmeldesystem: der Pruefbefund, aus dem dieser Auftrag hervorgegangen ist. Bleibt in v1 leer \u2014 der bestehende MBK-Vertrag wird nicht angetastet."
+    }
+  },
+  "required": [
+    "auftrags_art"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
