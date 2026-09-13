@@ -50,18 +50,18 @@ export const VORLAGE = [
     schluessel: 'uebung_1',
     uebung: true,
     phase: 'Übung',
-    label: 'Übung 1 — Grundlagen sichern',
-    zweck: 'Erste Übung: das neue Wissen unmittelbar anwenden.',
-    absicht: 'Die Grundlagen des Lernpakets unmittelbar nach dem Input einüben.',
+    label: 'Übung 1 — Operation ausführen',
+    zweck: 'Die Schülerin führt die zentrale gedankliche Operation des Lernziels selbst aus.',
+    absicht: 'Die zentrale Denkoperation des Lernziels handelnd am Bildschirm ausführen.',
     standard_an: true,
   },
   {
     schluessel: 'uebung_2',
     uebung: true,
     phase: 'Übung',
-    label: 'Übung 2 — Verstehen vertiefen',
-    zweck: 'Zweite Übung: derselbe Inhalt aus einer anderen Richtung.',
-    absicht: 'Denselben Inhalt aus einer anderen Richtung durchdringen, Zusammenhänge sichern.',
+    label: 'Übung 2 — Übertragen und sichern',
+    zweck: 'Dieselbe Operation in einem anderen Zusammenhang, mit Blick auf den Stolperstein.',
+    absicht: 'Die Operation auf einen anderen Fall übertragen und den typischen Stolperstein aufdecken.',
     standard_an: true,
   },
   {
@@ -74,13 +74,24 @@ export const VORLAGE = [
   },
 ];
 
-/** Aufgabenarten, die der Didaktiker als ÜBUNG vorschlagen darf. */
+/**
+ * Der REGELFALL für Übungen: die eigens gebaute offene Aufgabe.
+ * Begründung siehe shared/didaktikerOffeneAufgabe.js.
+ */
+export const OFFENE_AUFGABE_NAME = 'Offene Aufgabe';
+
+/**
+ * AUSNAHME-Formate (Entscheidung 2026-09-13): Standardformate sind nur zulässig,
+ * wenn das Format die gedankliche Operation SELBST ist — Sortieren, wenn die
+ * Reihenfolge die Denkleistung ist; Zuordnen, wenn das Herstellen der Beziehung
+ * die Denkleistung ist. Lückentext und Miniquiz stehen bewusst NICHT hier: Sie
+ * fragen den Inhalt auf einer Meta-Ebene ab, statt ihn bearbeiten zu lassen.
+ */
 export const UEBUNGS_ARTEN = [
-  'Lückentext',
   'Begriffe zuordnen',
   'Reihenfolge / Sortierung',
-  'Miniquiz',
   'Zuordnungstraining',
+  'Bildbeschriftung',
 ];
 
 /**
@@ -107,9 +118,14 @@ export function baueVorlagenZeilen(katalog) {
   }).filter(Boolean);
 }
 
-/** Die für Übungen erlaubten Katalog-Einträge (Phase „Übung"). */
+/** Die als AUSNAHME erlaubten Standardformate (Phase „Übung"). */
 export function verfuegbareUebungsArten(katalog) {
   return UEBUNGS_ARTEN.map((name) => findeKatalog(katalog, name, 'Übung'))
     .filter(Boolean)
     .map((k) => ({ katalog_id: k.id, name: k.name, beschreibung: k.beschreibung || '' }));
+}
+
+/** Der Katalog-Eintrag der offenen Aufgabe in der Übungsphase (Regelfall). */
+export function findeOffeneAufgabe(katalog) {
+  return findeKatalog(katalog, OFFENE_AUFGABE_NAME, 'Übung');
 }

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Wand2, Check, CheckCircle2 } from 'lucide-react';
 import AuftragVorschauButton from '@/components/importcenter/AuftragVorschauButton';
+import OffeneAufgabeVorschauButton from '@/components/didaktiker/OffeneAufgabeVorschauButton';
 import { useAktivitaetBauen, useAktivitaetUebernehmen } from '@/hooks/useDidaktiker';
 
 /**
@@ -21,6 +22,7 @@ export default function AktivitaetZeile({ sitzungId, lernpaketId, zeile, erledig
   const fertig = erledigt || uebernehmen.isSuccess;
   const varianten = vorschlag?.master_varianten || [];
   const vorschauWerte = varianten.length > 0 ? varianten[0] : vorschlag?.field_values || {};
+  const snapshotHtml = vorschlag?.field_values?.approved_snapshot_html || '';
 
   return (
     <div className="rounded-lg border border-border p-3">
@@ -49,6 +51,8 @@ export default function AktivitaetZeile({ sitzungId, lernpaketId, zeile, erledig
                     lernpaket_id: lernpaketId,
                     katalog_id: zeile.katalog_id,
                     absicht: zeile.absicht || zeile.zweck || '',
+                    operation: zeile.operation || '',
+                    aufgaben_idee: zeile.aufgaben_idee || '',
                   },
                   { onSuccess: setVorschlag }
                 )

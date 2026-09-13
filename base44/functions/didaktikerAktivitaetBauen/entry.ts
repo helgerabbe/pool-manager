@@ -27,6 +27,7 @@ import {
   SYSTEM_PROMPT,
   BASIS_REGELN,
 } from '../../shared/didaktikerInhalt.js';
+import { baueOffeneAufgabe, fragmentZuDokument } from '../../shared/didaktikerOffeneAufgabe.js';
 import {
   ladeSitzung,
   baueKontext,
@@ -71,6 +72,36 @@ export default async function (req) {
       aufgabenart: katalog.name,
       absicht_dieser_aufgabe: String(body?.absicht || ''),
     });
+
+    // ── Weg C: offene Aufgabe — der Regelfall für Übungen ──────────────
+    // Hier wird eine eigens entworfene interaktive Aufgabe gebaut, weil nur
+    // sie die gedankliche Operation des Lernziels abbilden kann.
+    if (katalog.name === 'Offene Aufgabe') {
+      const gebaut = await baueOffeneAufgabe(base44, {
+        kontext,
+        operation: String(body?.operation || ''),
+        idee: String(body?.aufgaben_idee || body?.absicht || ''),
+      });
+      if (!gebaut) {
+        return Response.json(
+          { error: 'Die Aufgabe wurde nicht vollständig gebaut. Bitte erneut versuchen.' },
+          { status: 502 }
+        );
+      }
+
+      return Response.json({
+        aufgabenart: katalog.name,
+        phase: katalog.phase,
+        katalog_id: katalogId,
+        field_values: {
+          aufgabentext: gebaut.aufgabentext,
+          description: String(body?.aufgaben_idee || body?.absicht || gebaut.aufgabentext),
+          approved_snapshot_html: fragmentZuDokument(gebaut.fragment),
+        },
+        master_varianten: [],
+        fragment: gebaut.fragment,
+      });
+    }
 
     // ── Weg A: Varianten-Formate ───────────────────────────────────────
     if (istMasterArt(katalog)) {
