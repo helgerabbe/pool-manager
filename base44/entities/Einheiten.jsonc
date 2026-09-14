@@ -10,6 +10,10 @@
       "type": "string",
       "description": "Titel der Unterrichtseinheit"
     },
+    "eltern_einheit_id": {
+      "type": "string",
+      "description": "Zugeh\u00f6rigkeit innerhalb eines Fachs (2026-09-14): FK auf die EINHEIT, in der dieser Datensatz liegt. Gesetzt bei \u00dcBUNGSBL\u00d6CKEN (format='uebungsblock'), die als kleines Format innerhalb einer Einheit entstehen \u2014 genau wie Unterrichtsstunden \u00fcber ihr Feld `einheit_id` zu einer Einheit geh\u00f6ren.\n\nWARUM: Lehrkr\u00e4fte arbeiten in Einheiten ('Deutsch 9, Rechtschreibung') und legen darin Stunden und \u00dcbungsbl\u00f6cke an. Ohne diese Zuordnung standen \u00dcbungsbl\u00f6cke lose neben den Einheiten, obwohl sie inhaltlich dazugeh\u00f6ren. Ein \u00dcbungsblock bleibt technisch eine (private) Einheit \u2014 nur seine Einordnung kommt hinzu; damit bleiben Arbeitsplan, Moodle-Code und Rechte unver\u00e4ndert.\n\nLeer = eigenst\u00e4ndig (alle regul\u00e4ren Einheiten und Altbestand)."
+    },
     "cover_image_url": {
       "type": "string",
       "description": "URL des Titelbilds der Einheit. Wird als Hintergrundbild auf der Einheit-Kachel im Sch\u00fclerbereich angezeigt. Empfohlenes Format: 16:9, mindestens 800\u00d7450 px."
@@ -331,7 +335,7 @@
         "uebungsblock"
       ],
       "default": "einheit",
-      "description": "Format dieses Datensatzes (2026-09-01). 'einheit' = das vollstaendige Lernszenario wie bisher. 'uebungsblock' = kleines, schnell gebautes Format fuer die Poolzeit: EIN Themenfeld, ein bis drei Lernpakete, allgemeine Aufgaben, keine Projektaufgaben, kein Grundgeruest, kein Wizard, kein Onboarding, standardmaessig nur EIN Lernplan.\nBEWUSST KEIN eigener Datentyp: Ein Uebungsblock ist eine reduzierte private Einheit. Dadurch erbt er Arbeitsplan, Buendel, Moodle-Anbindung ueber den Einheiten-Code und die Rechte - nichts davon existiert doppelt. Ausserdem kann ein spaeterer KI-Agent aus mehreren Uebungsbloecken eine Einheit aggregieren, ohne vorher umzuwandeln.\nUebungsbloecke sind IMMER sichtbarkeit='privat': Damit entfallen Sperrlogik, Bearbeitungsmodus und Freigabe-Abschnitte automatisch - die sind fuer private Einheiten ohnehin schon ausgeblendet."
+      "description": "Format dieses Datensatzes (2026-09-01). 'einheit' = das vollstaendige Lernszenario wie bisher. 'uebungsblock' = kleines, schnell gebautes Format fuer die Poolzeit: EIN Themenfeld, ein bis drei Lernpakete, allgemeine Aufgaben, keine Projektaufgaben, kein Grundgeruest, kein Wizard, kein Onboarding, standardmaessig nur EIN Lernplan.\nBEWUSST KEIN eigener Datentyp: Ein Uebungsblock ist eine reduzierte private Einheit. Dadurch erbt er Arbeitsplan, Buendel, Moodle-Anbindung ueber den Einheiten-Code und die Rechte - nichts davon existiert doppelt. Ausserdem kann ein spaeterer KI-Agent aus mehreren Uebungsbloecken eine Einheit aggregieren, ohne vorher umzuwandeln.\nUebungsbloecke sind IMMER sichtbarkeit='privat': Damit entfallen Sperrlogik, Bearbeitungsmodus und Freigabe-Abschnitte automatisch - die sind fuer private Einheiten ohnehin schon ausgeblendet.\nZUGEHOERIGKEIT (2026-09-14): Ein Uebungsblock liegt IN einer Einheit - siehe `eltern_einheit_id`."
     }
   },
   "required": [
