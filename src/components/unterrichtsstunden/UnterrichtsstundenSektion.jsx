@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import StundeErstellenModal from './StundeErstellenModal';
 import StundenMoodleWegInfoBox from './StundenMoodleWegInfoBox';
 import StundeLoeschenButton from './StundeLoeschenButton';
+import AnleitungDialogButton from '@/components/shared/AnleitungDialogButton';
 
 /**
  * Moodle-Unterrichts-Generator, Paket 1: Der Bereich "Meine Unterrichtsstunden"
@@ -69,10 +70,15 @@ export default function UnterrichtsstundenSektion({
             Moodle-Unterrichts-Generator: Stunde für Stunde planen — daraus entsteht Schritt für Schritt deine Einheit.
           </p>
         </div>
-        <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          Neue Stunde planen
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <AnleitungDialogButton titel="Wie kommt meine Unterrichtsstunde zu den Schülern nach Moodle?">
+            <StundenMoodleWegInfoBox />
+          </AnleitungDialogButton>
+          <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Neue Stunde planen
+          </Button>
+        </div>
       </div>
 
       {sichtbareStunden.length === 0 ? (
@@ -126,8 +132,6 @@ export default function UnterrichtsstundenSektion({
           ))}
         </div>
       )}
-
-      <StundenMoodleWegInfoBox />
 
       <StundeErstellenModal
         open={erstellenOffen}

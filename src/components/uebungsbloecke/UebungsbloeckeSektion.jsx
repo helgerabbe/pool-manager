@@ -14,6 +14,7 @@ import UebungsblockErstellenModal from './UebungsblockErstellenModal';
 import UebungsblockMoodleWegInfoBox from './UebungsblockMoodleWegInfoBox';
 import MoodleParameterButton from '@/components/einheiten/MoodleParameterButton';
 import { istUebungsblock } from '@/lib/einheitFormat';
+import AnleitungDialogButton from '@/components/shared/AnleitungDialogButton';
 
 /**
  * UebungsbloeckeSektion
@@ -78,13 +79,16 @@ export default function UebungsbloeckeSektion({ einheiten = [], besitzerEmail })
             gebaut und direkt für die Schüler:innen freischaltbar.
           </p>
         </div>
-        <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2 shrink-0">
-          <Plus className="w-4 h-4" />
-          Neuer Übungsblock
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <AnleitungDialogButton titel="Wie kommt mein Übungsblock zu den Schülern nach Moodle?">
+            <UebungsblockMoodleWegInfoBox />
+          </AnleitungDialogButton>
+          <Button size="sm" onClick={() => setErstellenOffen(true)} className="gap-2">
+            <Plus className="w-4 h-4" />
+            Neuer Übungsblock
+          </Button>
+        </div>
       </div>
-
-      <UebungsblockMoodleWegInfoBox />
 
       {bloecke.length === 0 ? (
         <p className="text-sm text-muted-foreground italic px-1 py-3">
