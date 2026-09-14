@@ -136,15 +136,15 @@ export default function MeinUnterrichtBereich({ einheiten = [], besitzerEmail, f
           onClick={() => { setBearbeiten(null); setDialogOffen(true); }}
         >
           <Plus className="h-4 w-4" />
-          Fach hinzufügen
+          Lerngruppe hinzufügen
         </Button>
       </div>
 
       {kacheln.length === 0 ? (
         <EmptyState
           icon={LayoutGrid}
-          title="Noch kein Fach angelegt"
-          description="Füge dein erstes Fach hinzu — z. B. Mathematik Jg. 6. Danach planst du dort Stunden und Übungsblöcke."
+          title="Noch keine Lerngruppe angelegt"
+          description="Füge deine erste Lerngruppe hinzu — z. B. Mathematik Jg. 6. Danach planst du dort Stunden und Übungsblöcke."
         />
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
