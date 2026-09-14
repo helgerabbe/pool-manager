@@ -529,7 +529,10 @@ function AllgemeineAngabenPanel({ aufgabe, themenfelder, kannBearbeiten, kannFre
                 {mat.type === 'image' && mat.url && (
                   <img src={mat.url} alt={mat.label || 'Bild'} className="max-h-40 rounded border border-border object-contain mb-2" />
                 )}
-                {mat.type === 'pdf' && mat.url && (
+                {/* Nur ECHTE PDFs einbetten. Word-Dateien liegen ebenfalls unter
+                    type='pdf' (gemeinsamer Upload-Reiter) — der Browser kann sie
+                    nicht anzeigen und lädt sie bei jedem Rendern still herunter. */}
+                {mat.type === 'pdf' && mat.url && /\.pdf($|\?)/i.test(mat.url) && (
                   <iframe src={mat.url} className="w-full h-48 rounded border border-border mb-2" title={mat.label || 'PDF'} />
                 )}
                 <p className="font-medium mb-0.5 flex items-center gap-1.5 flex-wrap">

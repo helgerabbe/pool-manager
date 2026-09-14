@@ -16,6 +16,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
 import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
+import ZurueckZurUebersichtTab from '@/components/workspace/ZurueckZurUebersichtTab';
 import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
 import LernzieleUebersichtTab from '@/components/workspace/lernziele/LernzieleUebersichtTab';
@@ -831,6 +832,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                 Der Strukturlock-„Bearbeiten starten"-Button (Tab 2) wird kompakt
                 rechts neben der Tab-Leiste eingeblendet, wenn er aktivierbar ist. */}
             <div className="px-4 sm:px-6 lg:px-8 py-1.5 border-b border-border bg-card shrink-0 flex items-center gap-3">
+              <ZurueckZurUebersichtTab einheit={einheit} />
               <div className="flex-1 min-w-0">
                 <WorkspaceTabs
                   activeTab={activeTab}

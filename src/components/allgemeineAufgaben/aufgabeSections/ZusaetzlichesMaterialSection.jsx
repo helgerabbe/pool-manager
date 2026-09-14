@@ -147,7 +147,9 @@ export default function ZusaetzlichesMaterialSection({
                     className="max-h-32 rounded border border-border object-contain mb-1"
                   />
                 )}
-                {mat.type === 'pdf' && mat.url && (
+                {/* Nur echte PDFs einbetten — andere Dateien (z. B. .docx) würde
+                    der Browser bei jedem Rendern herunterladen. */}
+                {mat.type === 'pdf' && mat.url && /\.pdf($|\?)/i.test(mat.url) && (
                   <iframe
                     src={mat.url}
                     className="w-full h-40 rounded border border-border mb-1"
