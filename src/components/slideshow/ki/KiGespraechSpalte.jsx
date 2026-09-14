@@ -12,12 +12,7 @@ import KiBilderSammlung from '@/components/slideshow/ki/KiBilderSammlung';
 import BauFortschritt from '@/components/werkstatt/BauFortschritt';
 import { cn } from '@/lib/utils';
 
-const STARTHILFEN = [
-  'Erkläre den Schülern, wie man Brüche gleichnamig macht — mit einem durchgerechneten Beispiel.',
-  'Baue Erklärfolien zum Thema Fotosynthese für Jahrgang 7, verständlich und mit Alltagsbezug.',
-];
-
-export default function KiGespraechSpalte({ gen, startvorschlaege = STARTHILFEN }) {
+export default function KiGespraechSpalte({ gen }) {
   const [text, setText] = useState('');
   const endeRef = useRef(null);
 
@@ -44,18 +39,6 @@ export default function KiGespraechSpalte({ gen, startvorschlaege = STARTHILFEN 
               Beschreibe Thema, Jahrgang und was die Schüler:innen danach verstanden haben sollen.
               Es entstehen <span className="font-medium">Erklärfolien</span> mit ausformulierten Texten – keine Stichpunkt-Präsentation.
             </p>
-            <div className="space-y-1.5 pt-1">
-              {startvorschlaege.map((v) => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => gen.senden(v)}
-                  className="w-full text-left text-xs rounded-md border border-border bg-background px-2 py-1.5 hover:bg-muted"
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
           </div>
         )}
 
@@ -101,7 +84,7 @@ export default function KiGespraechSpalte({ gen, startvorschlaege = STARTHILFEN 
         <div ref={endeRef} />
       </div>
 
-      <div className="shrink-0 border-t border-border p-3 space-y-3">
+      <div className="shrink-0 border-t border-border p-3 space-y-3 bg-muted/20">
         <KiBilderSammlung
           bilder={gen.bilder}
           onAdd={gen.bildHinzufuegen}
@@ -114,8 +97,8 @@ export default function KiGespraechSpalte({ gen, startvorschlaege = STARTHILFEN 
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); senden(); } }}
             placeholder={gen.folien.length ? 'Was soll geändert werden?' : 'Beschreibe, was die Folien erklären sollen …'}
-            rows={2}
-            className="text-sm resize-none"
+            rows={7}
+            className="text-sm resize-y min-h-[150px] bg-background"
             disabled={gen.busy}
           />
           {gen.busy ? (

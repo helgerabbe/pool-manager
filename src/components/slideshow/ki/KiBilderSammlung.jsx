@@ -4,8 +4,8 @@
  * Bilder, die die KI in den Foliensatz einbauen darf. Ohne Bezeichnung nützt
  * ein Bild nichts — die KI sieht es nicht, sie liest nur, was draufsteht.
  */
-import React, { useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import React, { useEffect, useRef, useState } from 'react';
+import { storageService } from '@/services/storageService';
 import { ImagePlus, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -21,12 +21,32 @@ export default function KiBilderSammlung({ bilder, onAdd, onRemove, disabled }) 
     }
     setLaedt(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      onAdd({ url: file_url, label: file.name.replace(/\.[^.]+$/, '') });
+      const antwort = await storageService.upload(file);
+      const url = typeof antwort === 'string' ? antwort : antwort?.file_url;
+      if (!url) throw new Error('Das Bild konnte nicht gespeichert werden.');
+      onAdd({ url, label: (file.name || 'Bild').replace(/\.[^.]+$/, '') });
+    } catch (err) {
+      toast.error(err?.message || 'Das Bild konnte nicht hochgeladen werden.');
     } finally {
       setLaedt(false);
     }
   };
+
+  // Screenshots aus der Zwischenablage: Strg+V irgendwo im Assistenten legt
+  // das Bild direkt ab — kein Zwischenspeichern als Datei nötig.
+  useEffect(() => {
+    if (disabled) return;
+    const onPaste = (e) => {
+      for (const item of e.clipboardData?.items || []) {
+        if (item.type?.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) { e.preventDefault(); hochladen(file); return; }
+        }
+      }
+    };
+    window.addEventListener('paste', onPaste);
+    return () => window.removeEventListener('paste', onPaste);
+  });
 
   return (
     <div className="space-y-2">
@@ -54,7 +74,8 @@ export default function KiBilderSammlung({ bilder, onAdd, onRemove, disabled }) 
       />
       {bilder.length === 0 ? (
         <p className="text-[11px] text-muted-foreground">
-          Ohne Bilder baut die KI reine Textfolien. Lade Bilder hoch und beschreibe im Gespräch, wo sie hingehören.
+          Ohne Bilder baut die KI reine Textfolien. Bilder hochladen oder mit Strg&nbsp;+&nbsp;V aus der
+          Zwischenablage einfügen und im Gespräch beschreiben, wo sie hingehören.
         </p>
       ) : (
         <div className="flex flex-wrap gap-2">
