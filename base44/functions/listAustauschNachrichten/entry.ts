@@ -47,6 +47,7 @@ export default async function (req) {
       abgerufen_am: new Date().toISOString(),
       offen_fuer_pm: offenFuerPm,
       offen_fuer_mbk: offenFuerMbk,
+      zu_sichten: nachrichten.filter((n) => n.an === 'pm' && n.status === 'sichtung').length,
       nachrichten,
     });
   } catch (error) {

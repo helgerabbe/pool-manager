@@ -6,7 +6,12 @@ import { ChevronDown, ChevronUp, Reply, AlertTriangle, ArrowDownLeft, ArrowUpRig
 import { cn } from '@/lib/utils';
 import AustauschAntwortDialog from '@/components/austausch/AustauschAntwortDialog';
 
-const STATUS_LABEL = { offen: 'Offen', beantwortet: 'Beantwortet', erledigt: 'Erledigt' };
+const STATUS_LABEL = {
+  offen: 'Offen',
+  beantwortet: 'Beantwortet',
+  erledigt: 'Erledigt',
+  sichtung: 'Zu sichten',
+};
 
 /** EINE Nachricht des Briefkastens: Kopf, aufklappbarer Text, Antworten. */
 export default function AustauschNachrichtKarte({ nachricht }) {
@@ -42,6 +47,12 @@ export default function AustauschNachrichtKarte({ nachricht }) {
           {offen ? 'Zuklappen' : 'Lesen'}
         </Button>
       </div>
+
+      {nachricht.status === 'sichtung' && nachricht.sichtung_grund && (
+        <p className="mt-2 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
+          Muss entschieden werden: {nachricht.sichtung_grund}
+        </p>
+      )}
 
       {offen && (
         <div className="mt-3 space-y-3">

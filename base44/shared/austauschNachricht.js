@@ -25,7 +25,15 @@
 
 export const AUSTAUSCH_ORDNER = 'austausch';
 
-const STATUS = new Set(['offen', 'beantwortet', 'erledigt']);
+/**
+ * 'sichtung' (2026-09-14) ist ein Status des Pool-Managers: Der Briefkasten
+ * wurde gelesen, aber DIESE Nachricht braucht einen Menschen — weil sie einen
+ * tiefen Eingriff verlangt oder unklar ist. Sie bleibt damit aus der Liste
+ * „wartet auf Antwort" heraus, ohne als beantwortet zu gelten. Der Kursbau
+ * kennt den Wert nicht; nach den Spielregeln des Ordners gilt ein unbekannter
+ * Status dort als 'offen', was hier genau richtig ist.
+ */
+const STATUS = new Set(['offen', 'beantwortet', 'erledigt', 'sichtung']);
 
 export function parseNachricht(text = '', dateiname = '') {
   const s = String(text || '');
@@ -49,8 +57,21 @@ export function parseNachricht(text = '', dateiname = '') {
     antwortet_auf: kopf.antwortet_auf && kopf.antwortet_auf !== 'null' ? kopf.antwortet_auf : null,
     status,
     braucht_malte: kopf.braucht_malte === 'true',
+    sichtung_grund: kopf.sichtung_grund || '',
     text: body.trim(),
   };
+}
+
+/**
+ * Setzt ein einzelnes Kopf-Feld (fügt es an, wenn es fehlt). Der Fließtext
+ * bleibt unangetastet — eine abgelegte Nachricht wird nicht umgeschrieben.
+ */
+export function setzeKopfFeld(text = '', feld, wert) {
+  const s = String(text || '');
+  const zeile = `${feld}: ${String(wert || '').replace(/\r?\n/g, ' ').trim()}`;
+  const re = new RegExp(`^${feld}:\\s*.*$`, 'm');
+  if (re.test(s)) return s.replace(re, zeile);
+  return s.replace(/^---\r?\n/, `---\n${zeile}\n`);
 }
 
 /** Setzt ausschließlich die Status-Zeile im Kopf um (Text bleibt unangetastet). */

@@ -24,6 +24,31 @@ export function useAustauschNachrichten() {
   });
 }
 
+/**
+ * „Einmal lesen": Der Pool-Manager arbeitet die offenen Nachrichten des
+ * Kursbaus selbst durch — beantwortet, hakt ab oder legt sie zur Sichtung.
+ */
+export function useAustauschDurcharbeiten() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const res = await base44.functions.invoke('austauschDurcharbeiten', {});
+      return res.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: KEY });
+      if (!data?.gelesen) {
+        toast.success('Keine offene Nachricht — nichts zu tun.');
+      } else {
+        toast.success(
+          `${data.gelesen} gelesen: ${data.beantwortet} beantwortet, ${data.erledigt} abgehakt, ${data.sichtung} zur Sichtung.`,
+        );
+      }
+    },
+    onError: (err) => toast.error(err?.response?.data?.error || err.message),
+  });
+}
+
 export function useAustauschAntworten() {
   const queryClient = useQueryClient();
   return useMutation({
