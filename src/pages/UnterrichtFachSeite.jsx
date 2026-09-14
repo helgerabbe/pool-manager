@@ -97,11 +97,11 @@ export default function UnterrichtFachSeite() {
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <AnleitungDialogButton titel="Wie kommt meine Unterrichtsstunde zu den Schülern nach Moodle?">
-            <StundenMoodleWegInfoBox />
-          </AnleitungDialogButton>
-          <AnleitungDialogButton titel="Wie kommt mein Übungsblock zu den Schülern nach Moodle?">
-            <UebungsblockMoodleWegInfoBox />
+          <AnleitungDialogButton titel="Wie kommen Stunden und Übungsblöcke zu den Schülern nach Moodle?">
+            <div className="space-y-4">
+              <StundenMoodleWegInfoBox />
+              <UebungsblockMoodleWegInfoBox />
+            </div>
           </AnleitungDialogButton>
           <Button size="sm" onClick={() => setNeuOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Einheit

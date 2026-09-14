@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import SchnellAnlegenDialog from './SchnellAnlegenDialog';
 import FachStundenListe from './FachStundenListe';
 import FachBloeckeListe from './FachBloeckeListe';
+import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
 import {
   useStundeAnlegen, useUebungsblockAnlegen, useEinheitUmbenennen,
 } from '@/hooks/useFachEinheitInhalte';
@@ -41,6 +42,9 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
+            {stunden.length === 0 && bloecke.length === 0 && (
+              <FachEinheitLoeschenButton einheit={einheit} />
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {stunden.length} Stunde{stunden.length !== 1 ? 'n' : ''} ·{' '}
