@@ -164,6 +164,11 @@ export const PLUGIN_STATIC_MEDIA_JS = `
   // <video> bliebe schwarz.
   function mbkVideoQuelle(url) {
     if (!url) return null;
+    // Eingefügter Einbett-Code (z. B. von Studyflix) → nur die Adresse nehmen.
+    var code = url.match(/<iframe[^>]*\\ssrc=["']([^"']+)["']/i);
+    if (code) url = code[1].replace(/&amp;/g, '&');
+    // Studyflix-Einbettung (Vertrag: id + embed_key) ist iframe-fähig.
+    if (/studyflix\\.de\\/embed\\?/i.test(url)) return { art: 'iframe', src: url };
     var m = url.match(/youtube\\.com\\/(?:watch\\?v=|embed\\/|shorts\\/)([\\w-]{11})/);
     if (m) return { art: 'iframe', src: 'https://www.youtube.com/embed/' + m[1] };
     m = url.match(/youtu\\.be\\/([\\w-]{11})/);

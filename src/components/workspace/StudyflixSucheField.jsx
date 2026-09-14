@@ -92,6 +92,12 @@ Finde bis zu 6 passende Studyflix-Videoseiten. WICHTIG:
         </a>
       </div>
 
+      <p className="text-[11px] text-violet-800 leading-snug">
+        Tipp: Damit das Video direkt im Kurs abspielbar ist, kopiere bei Studyflix den
+        Einbett-Code (&lt;iframe src="https://studyflix.de/embed?id=…&amp;embed_key=…"&gt;) und füge ihn
+        unten ins Video-Feld ein. Ein normaler Studyflix-Link wird nur als „Video ansehen"-Knopf angezeigt.
+      </p>
+
       <div className="flex flex-col sm:flex-row gap-2">
         <Button
           type="button"

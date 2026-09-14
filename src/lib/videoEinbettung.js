@@ -15,9 +15,23 @@
 
 const DATEI_ENDUNGEN = /\.(mp4|webm|ogg|ogv|mov|m4v)(\?.*)?$/i;
 
+/**
+ * Studyflix stellt Schulen mit Vertrag einen Einbett-Code zur Verfügung:
+ *   <iframe src="https://studyflix.de/embed?id=3760&embed_key=…" …></iframe>
+ * Solche Codes dürfen Lehrkräfte direkt einfügen — hier wird die Adresse
+ * daraus gezogen. Eine normale Studyflix-Seite (ohne embed_key) lässt sich
+ * dagegen nicht einbetten und wird als Link angeboten.
+ */
+function srcAusEinbettCode(text) {
+  const m = text.match(/<iframe[^>]*\ssrc=["']([^"']+)["']/i);
+  return m ? m[1].replace(/&amp;/g, '&') : null;
+}
+
 export function videoEinbettung(url = '') {
-  const u = String(url).trim();
+  const u = (srcAusEinbettCode(String(url)) || String(url)).trim();
   if (!u) return null;
+
+  if (/studyflix\.de\/embed\?/i.test(u)) return { art: 'iframe', src: u, anbieter: 'Studyflix' };
 
   const yt = u.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
   if (yt) return { art: 'iframe', src: `https://www.youtube.com/embed/${yt[1]}`, anbieter: 'YouTube' };
