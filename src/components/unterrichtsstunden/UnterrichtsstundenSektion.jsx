@@ -19,7 +19,6 @@ import AnleitungDialogButton from '@/components/shared/AnleitungDialogButton';
  * daraus eine Einheit) sichtbar wird.
  */
 export default function UnterrichtsstundenSektion({
-  einheiten = [],
   besitzerEmail,
   // Optional: nur die Stunden EINES Fachs/Jahrgangs zeigen (Fach-Seite).
   nurFach,
@@ -34,27 +33,32 @@ export default function UnterrichtsstundenSektion({
     enabled: !!besitzerEmail,
   });
 
-  const einheitById = new Map(einheiten.map((e) => [e.id, e]));
+  // Mappen laden: Gruppierung ist Fach -> UNTERRICHTSEINHEIT -> Stunden.
+  const { data: mappen = [] } = useQuery({
+    queryKey: ['unterrichtseinheiten', besitzerEmail],
+    queryFn: () => base44.entities.Unterrichtseinheit.filter({ besitzer_email: besitzerEmail }, 'fach', 200),
+    enabled: !!besitzerEmail,
+  });
+  const mappeById = new Map(mappen.map((m) => [m.id, m]));
 
-  // Gruppierung: Fach -> Einheit -> Stunden
   const faecher = {};
   const sichtbareStunden = stunden.filter((s) => {
     if (!nurFach && !nurJahrgang) return true;
-    const einheit = einheitById.get(s.einheit_id);
-    const fach = s.fach || einheit?.fach;
-    const jg = s.jahrgangsstufe || einheit?.jahrgangsstufe;
+    const mappe = mappeById.get(s.unterrichtseinheit_id);
+    const fach = s.fach || mappe?.fach;
+    const jg = s.jahrgangsstufe || mappe?.jahrgangsstufe;
     return (!nurFach || fach === nurFach) && (!nurJahrgang || String(jg) === String(nurJahrgang));
   });
   sichtbareStunden.forEach((s) => {
-    const einheit = einheitById.get(s.einheit_id);
-    const fach = s.fach || einheit?.fach || 'Ohne Fach';
-    const einheitKey = s.einheit_id || 'ohne';
+    const mappe = mappeById.get(s.unterrichtseinheit_id);
+    const fach = s.fach || mappe?.fach || 'Ohne Fach';
+    const mappeKey = s.unterrichtseinheit_id || 'ohne';
     faecher[fach] = faecher[fach] || {};
-    faecher[fach][einheitKey] = faecher[fach][einheitKey] || {
-      titel: einheit?.titel_der_einheit || 'Einheit nicht gefunden',
+    faecher[fach][mappeKey] = faecher[fach][mappeKey] || {
+      titel: mappe?.titel || 'Ohne Unterrichtseinheit',
       items: [],
     };
-    faecher[fach][einheitKey].items.push(s);
+    faecher[fach][mappeKey].items.push(s);
   });
   const fachNamen = Object.keys(faecher).sort((a, b) => a.localeCompare(b, 'de'));
 
@@ -136,7 +140,6 @@ export default function UnterrichtsstundenSektion({
       <StundeErstellenModal
         open={erstellenOffen}
         onOpenChange={setErstellenOffen}
-        einheiten={einheiten}
         besitzerEmail={besitzerEmail}
         onCreated={(stunde) => navigate(`/unterrichtsstunde/${stunde.id}`)}
       />
