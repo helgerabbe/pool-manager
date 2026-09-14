@@ -22,6 +22,7 @@ import {
   parseBrianUrls,
   findeAufgabe,
   baueAufgabenUpdate,
+  baueOnboardingUpdate,
 } from '../../shared/brianUrlRueckmeldung.js';
 
 async function verarbeiteEinheit(base44, token, einheit, jetzt) {
@@ -44,7 +45,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     return { einheit_id: einheit.id, slug, gefunden: false, hinweis: `${datei.path} ist leer.` };
   }
 
-  const { eintraege, warnungen } = parseBrianUrls(roh, datei.path);
+  const { eintraege, onboarding, warnungen } = parseBrianUrls(roh, datei.path);
   const aufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({
     einheit_id: einheit.id,
   });
@@ -85,6 +86,12 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     await base44.asServiceRole.entities.AllgemeineAufgabe.bulkUpdate(updates);
   }
 
+  // Adresse des Onboarding-Gesprächs (hängt an keiner Aufgabe, sondern an der Einheit).
+  const onboardingUpdate = baueOnboardingUpdate(onboarding, einheit, jetzt);
+  if (onboardingUpdate) {
+    await base44.asServiceRole.entities.Einheiten.update(einheit.id, onboardingUpdate);
+  }
+
   return {
     einheit_id: einheit.id,
     einheit_titel: einheit.titel_der_einheit || '',
@@ -96,6 +103,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     unveraendert,
     ohne_zuordnung: ohneZuordnung,
     adressen: uebernommen,
+    onboarding_url: onboarding?.url || '',
+    onboarding_uebernommen: !!onboardingUpdate,
     warnungen,
   };
 }

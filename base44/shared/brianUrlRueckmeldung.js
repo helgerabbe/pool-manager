@@ -68,6 +68,21 @@ export function parseBrianUrls(rohText, quelldatei = '') {
     });
   });
 
+  // Onboarding-Dialog (2026-09-14): Das Brian-Gespräch der
+  // Intensitätsstufen-Diagnose hängt an KEINER Aufgabe, sondern an der Einheit
+  // selbst. Die MBK meldet es deshalb in einem zusätzlichen, optionalen Feld
+  // `onboarding` derselben Datei — wer es nicht kennt, ignoriert es.
+  const onboardingUrl = text(daten?.onboarding?.url, 600) || text(daten?.onboarding?.brian_url, 600);
+  const onboardingPfad = text(daten?.onboarding?.pfad, 120) || 'lerntyp_diagnose.brian_url';
+  let onboarding = null;
+  if (onboardingUrl) {
+    if (onboardingPfad === 'lerntyp_diagnose.brian_url') {
+      onboarding = { pfad: onboardingPfad, url: onboardingUrl };
+    } else {
+      warnungen.push(`Unbekannter Onboarding-Pfad „${onboardingPfad}" — Adresse nicht übernommen.`);
+    }
+  }
+
   return {
     meta: {
       format: format || null,
@@ -76,7 +91,26 @@ export function parseBrianUrls(rohText, quelldatei = '') {
       quelldatei,
     },
     eintraege,
+    onboarding,
     warnungen,
+  };
+}
+
+/**
+ * Trägt die Adresse des Onboarding-Gesprächs in die Einheit ein
+ * (`onboarding_konfiguration.lerntyp_diagnose.brian_url`) und gibt das
+ * Update-Objekt zurück — null, wenn die Adresse schon stimmt.
+ */
+export function baueOnboardingUpdate(onboarding, einheit, jetzt) {
+  if (!onboarding?.url) return null;
+  const konfig = einheit.onboarding_konfiguration || {};
+  const diagnose = konfig.lerntyp_diagnose || {};
+  if (diagnose.brian_url === onboarding.url) return null;
+  return {
+    onboarding_konfiguration: {
+      ...konfig,
+      lerntyp_diagnose: { ...diagnose, brian_url: onboarding.url, brian_synced_at: jetzt },
+    },
   };
 }
 

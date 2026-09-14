@@ -37,9 +37,29 @@ gefahrlos: gleiche Adresse = keine Änderung.
       "dialog_id": "brian-4712",
       "url": "https://brian.study/d/4712"
     }
-  ]
+  ],
+  "onboarding": {
+    "pfad": "lerntyp_diagnose.brian_url",
+    "url": "https://student.brian.study/#/courses/14981/dialogue/29954/61378"
+  }
 }
 ```
+
+### Das Onboarding-Gespräch (optional, seit 2026-09-14)
+
+Die KI-Intensitätsstufen-Diagnose der Orientierungsphase hängt an **keiner
+Aufgabe** — sie steckt in der Einheit selbst. Ihre Adresse reist deshalb nicht in
+`dialoge`, sondern im eigenen Feld `onboarding` derselben Datei:
+
+| Feld | Pflicht | Bedeutung |
+|------|---------|-----------|
+| `url` | ja | Adresse des Onboarding-Dialogs in Brian.study. |
+| `pfad` | nein | Stelle im Onboarding. Derzeit ist nur `lerntyp_diagnose.brian_url` vorgesehen; ein anderer Pfad wird als Warnung gemeldet und nicht eingetragen. |
+
+Der Pool-Manager schreibt die Adresse nach
+`onboarding_konfiguration.lerntyp_diagnose.brian_url` — genau dorthin, wo die
+Lehrkraft sie im Export-Center auch selbst pflegt. Damit übersteht sie jeden
+weiteren Export und die Korrektur-Krücke im Kursbau kann entfallen.
 
 ### Felder
 
