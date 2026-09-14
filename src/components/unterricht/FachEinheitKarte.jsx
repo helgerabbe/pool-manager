@@ -99,23 +99,23 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
         })}
       />
 
-      <AnlegenMitWizardDialog
+      {/* Übungsblock: bewusst OHNE KI-Assistenten. Die Lehrkraft weiß beim
+          Anlegen meist schon, welche Übung sie will — die Assistenten
+          (Lernpaket bzw. Aufgabe) folgen erst im Workspace, gezielt. */}
+      <SchnellAnlegenDialog
         open={blockOffen}
         onOpenChange={setBlockOffen}
         titel={`Neuer Übungsblock in „${unterrichtseinheit.titel}"`}
         label="Titel des Übungsblocks *"
         platzhalter="z. B. Wortstämme erkennen"
         hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
-        wizardText="Mit Wizard aufbauen"
-        selbstText="Direkt selbst aufbauen"
+        aktionText="Übungsblock anlegen"
         laeuft={blockAnlegen.isPending}
-        onSubmit={(name, weg, reset) => blockAnlegen.mutate(name, {
+        onSubmit={(name, reset) => blockAnlegen.mutate(name, {
           onSuccess: (block) => {
             reset();
             setBlockOffen(false);
-            navigate(weg === 'wizard'
-              ? `/einheit/create?draftId=${block.id}&step=2`
-              : `/workspace?einheit=${block.id}`);
+            navigate(`/workspace?einheit=${block.id}`);
           },
         })}
       />
