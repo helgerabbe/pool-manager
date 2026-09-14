@@ -336,6 +336,11 @@ Deno.serve(async (req) => {
         // Bloecke landen still bei den Einheiten (bzw. werden dort ausgefiltert
         // und sind nirgends zu sehen).
         format: einheit.format || 'einheit',
+        // Zugehoerigkeit im Bereich "Mein Unterricht" (2026-09-14): Uebungsbloecke
+        // liegen in einer UNTERRICHTSEINHEIT. Diese Funktion baut jeden Datensatz
+        // Feld fuer Feld neu auf — ohne diese Zeile kommt die Zuordnung nicht im
+        // Frontend an und die Bloecke verschwinden aus ihrer Unterrichtseinheit.
+        eltern_einheit_id: einheit.eltern_einheit_id,
         besitzer_email: einheit.besitzer_email,
         erhalten_von: einheit.erhalten_von,
         // ✅ Austausch-Bibliothek: Freigabe-Status für Badge + Toggle-Button.
