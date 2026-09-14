@@ -1,18 +1,8 @@
 import { CheckCircle2, Loader2, ArrowLeft, Film, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import AufgabenstellungBox from './AufgabenstellungBox';
-
-/** Erkennt YouTube-Video-IDs aus den gängigen URL-Formen. */
-function youtubeEmbed(url) {
-  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/);
-  return m ? `https://www.youtube.com/embed/${m[1]}` : null;
-}
-
-/** Erkennt Vimeo-IDs. */
-function vimeoEmbed(url) {
-  const m = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  return m ? `https://player.vimeo.com/video/${m[1]}` : null;
-}
+import VideoLinkKarte from './VideoLinkKarte';
+import { videoEinbettung } from '@/lib/videoEinbettung';
 
 /**
  * Schüler-Aktivität „Video / Audio".
@@ -30,9 +20,7 @@ export default function VideoAudioSeite({ aktivitaet, busy, onErledigt, onBack }
   const url = fv.url || fv.video_url || '';
   const istAudio = fv.medientyp === 'audio' || fv.medientyp === 'audio_upload';
 
-  const ytEmbed = !istAudio ? youtubeEmbed(url) : null;
-  const vmEmbed = !istAudio ? vimeoEmbed(url) : null;
-  const istEmbed = Boolean(ytEmbed || vmEmbed);
+  const medium = !istAudio ? videoEinbettung(url) : null;
 
   const standardAufgabe = istAudio
     ? 'Höre dir die folgende Tondatei aufmerksam an und versuche, den Inhalt vollständig zu erfassen.'
@@ -62,10 +50,12 @@ export default function VideoAudioSeite({ aktivitaet, busy, onErledigt, onBack }
                 Dein Browser kann diese Audiodatei nicht abspielen.
               </audio>
             </div>
-          ) : istEmbed ? (
+          ) : medium?.art === 'link' ? (
+            <VideoLinkKarte url={medium.src} anbieter={medium.anbieter} />
+          ) : medium?.art === 'iframe' ? (
             <div className="rounded-2xl overflow-hidden border border-border bg-black aspect-video">
               <iframe
-                src={ytEmbed || vmEmbed}
+                src={medium.src}
                 title="Video"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

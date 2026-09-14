@@ -157,18 +157,21 @@ export const PLUGIN_STATIC_MEDIA_JS = `
     if (text) host.appendChild(el('p', { className: 'mbk-sm__instruction', text: text }));
   }
 
-  function mbkVideoEmbedUrl(url) {
+  // Entscheidet, WIE ein Video gezeigt werden kann:
+  //   { art: 'iframe' | 'datei' | 'link', src: '…', anbieter: '…' }
+  // Studyflix & Co. erlauben kein Fremd-Einbetten (X-Frame-Options) und sind
+  // auch keine Videodateien — dort führt nur ein Link zum Ziel; ein iframe oder
+  // <video> bliebe schwarz.
+  function mbkVideoQuelle(url) {
     if (!url) return null;
-    // YouTube → embed
-    var m = url.match(/youtube\\.com\\/watch\\?v=([\\w-]+)/);
-    if (m) return 'https://www.youtube.com/embed/' + m[1];
-    m = url.match(/youtu\\.be\\/([\\w-]+)/);
-    if (m) return 'https://www.youtube.com/embed/' + m[1];
-    // Vimeo → embed
-    m = url.match(/vimeo\\.com\\/(\\d+)/);
-    if (m) return 'https://player.vimeo.com/video/' + m[1];
-    // alles andere: 1:1 als iframe-Src übernehmen (z.B. studyflix-Embed).
-    return url;
+    var m = url.match(/youtube\\.com\\/(?:watch\\?v=|embed\\/|shorts\\/)([\\w-]{11})/);
+    if (m) return { art: 'iframe', src: 'https://www.youtube.com/embed/' + m[1] };
+    m = url.match(/youtu\\.be\\/([\\w-]{11})/);
+    if (m) return { art: 'iframe', src: 'https://www.youtube.com/embed/' + m[1] };
+    m = url.match(/vimeo\\.com\\/(?:video\\/)?(\\d+)/);
+    if (m) return { art: 'iframe', src: 'https://player.vimeo.com/video/' + m[1] };
+    if (/\\.(mp4|webm|ogg|ogv|mov|m4v)(\\?.*)?$/i.test(url)) return { art: 'datei', src: url };
+    return { art: 'link', src: url, anbieter: /studyflix\\.de/i.test(url) ? 'Studyflix' : '' };
   }
 
   // ── Plugin: Link / URL ───────────────────────────────────
@@ -203,11 +206,31 @@ export const PLUGIN_STATIC_MEDIA_JS = `
     mbkRenderInstruction(host, config.instruction);
     var body = el('div', { className: 'mbk-sm__body' });
     if (config.title) body.appendChild(el('h3', { className: 'mbk-sm__title', text: config.title }));
-    var embed = mbkVideoEmbedUrl(config.url);
-    if (embed) {
+    var quelle = mbkVideoQuelle(config.url);
+    if (quelle && quelle.art === 'link') {
+      body.appendChild(el('div', {
+        className: 'mbk-sm__text',
+        text: quelle.anbieter
+          ? 'Das Video liegt bei ' + quelle.anbieter + '. \\u00d6ffne es \\u00fcber den Knopf in einem neuen Tab.'
+          : 'Das Video liegt auf einer externen Seite. \\u00d6ffne es \\u00fcber den Knopf in einem neuen Tab.',
+      }));
+      var vlink = el('a', {
+        className: 'mbk-sm__link',
+        href: quelle.src,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      });
+      vlink.appendChild(document.createTextNode('\\u25b6 Video ansehen'));
+      body.appendChild(vlink);
+    } else if (quelle && quelle.art === 'datei') {
+      var vwrap = el('div', { className: 'mbk-sm__media-wrap' });
+      var vid = el('video', { src: quelle.src, controls: 'controls', playsinline: 'true' });
+      vwrap.appendChild(vid);
+      body.appendChild(vwrap);
+    } else if (quelle) {
       var wrap = el('div', { className: 'mbk-sm__media-wrap' });
       var ifr = el('iframe', {
-        src: embed,
+        src: quelle.src,
         allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
         allowfullscreen: 'true',
         title: config.title || 'Video',
