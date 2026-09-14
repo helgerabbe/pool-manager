@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { storageService } from '@/services/storageService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,6 +30,7 @@ import {
 const TYP_ICONS = {
   image: ImageIcon,
   pdf: FileIcon,
+  dokument: FileText,
   link: Link2,
   free_text: Type,
   book_ref: FileText,
@@ -43,6 +44,7 @@ const TYP_ICONS = {
 const TYP_FARBEN = {
   image:     { rahmen: 'border-sky-200 bg-sky-50',       icon: 'bg-sky-100 text-sky-700' },
   pdf:       { rahmen: 'border-rose-200 bg-rose-50',     icon: 'bg-rose-100 text-rose-700' },
+  dokument:  { rahmen: 'border-indigo-200 bg-indigo-50', icon: 'bg-indigo-100 text-indigo-700' },
   link:      { rahmen: 'border-emerald-200 bg-emerald-50', icon: 'bg-emerald-100 text-emerald-700' },
   free_text: { rahmen: 'border-amber-200 bg-amber-50',   icon: 'bg-amber-100 text-amber-700' },
   book_ref:  { rahmen: 'border-violet-200 bg-violet-50', icon: 'bg-violet-100 text-violet-700' },
@@ -52,16 +54,23 @@ const TYP_FARBE_FALLBACK = { rahmen: 'border-slate-200 bg-slate-50', icon: 'bg-s
 const TYP_LABELS = {
   image: 'Bild',
   pdf: 'PDF',
+  dokument: 'Dokument',
   link: 'Link',
   free_text: 'Text',
   book_ref: 'Buchverweis',
 };
 
-/** Rät den Materialtyp aus dem Dateinamen. */
+/**
+ * Rät den Materialtyp aus der Datei. Word-, RTF- und Textdateien bekommen
+ * bewusst den eigenen Typ 'dokument': Als 'pdf' ausgewiesen wurden sie an
+ * anderen Stellen als PDF eingebettet, was im Browser einen Download auslöste
+ * statt eine Anzeige.
+ */
 function typAusDatei(file) {
+  const name = (file?.name || '').toLowerCase();
   if (file?.type?.startsWith('image/')) return 'image';
-  if (file?.type === 'application/pdf') return 'pdf';
-  return 'pdf'; // Doc/Docx/Txt laufen als Dokument mit; url trägt die Datei.
+  if (file?.type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+  return 'dokument';
 }
 
 export default function MaterialSammlung({ materialien = [], onChange, disabled = false }) {
@@ -78,7 +87,9 @@ export default function MaterialSammlung({ materialien = [], onChange, disabled 
     if (!file || disabled) return;
     setUploading(true);
     try {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const antwort = await storageService.upload(file);
+      const file_url = typeof antwort === 'string' ? antwort : antwort?.file_url;
+      if (!file_url) throw new Error('Die Datei konnte nicht gespeichert werden.');
       hinzufuegen({
         type: typAusDatei(file),
         label: file.name || 'Material',
