@@ -6,6 +6,8 @@ import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
 import { Loader2, Info } from 'lucide-react';
 import AktivitaetInhaltEditor from '@/components/schritte/AktivitaetInhaltEditor';
 import { hatEigenenEditor } from '@/lib/aktivitaetEditorMap';
+import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
+import { standardAufgabentext } from '@/lib/aufgabentextStandard';
 
 /**
  * KatalogSchrittEditor
@@ -32,7 +34,7 @@ import { hatEigenenEditor } from '@/lib/aktivitaetEditorMap';
  * Formate ohne eigenen Editor zeigen ihre form_schema-Felder direkt: Für drei
  * Textfelder wie bei Lehrwerk/Quelle wäre ein eigenes Fenster nur im Weg.
  */
-export default function KatalogSchrittEditor({ schritt, onChange }) {
+export default function KatalogSchrittEditor({ schritt, onChange, einheit = null }) {
   const { katalogMap, auswahlListe, isLoading } = useAktivitaetenKatalog();
 
   const aktivitaet = schritt.aktivitaet_id ? katalogMap[schritt.aktivitaet_id] : null;
@@ -122,16 +124,37 @@ export default function KatalogSchrittEditor({ schritt, onChange }) {
           );
         }
 
+        // Der Aufgabentext zeigt genau den Standardsatz, den die Schüler
+        // sehen — vorher stand hier ein anderer, allgemeiner Satz.
+        const feld = field.field_name === 'aufgabentext'
+          ? { ...field, default_text: standardAufgabentext(aktivitaet.name, werte) }
+          : field;
+
+        // Video/Audio: Videosuche direkt über dem Link-Feld — Treffer lassen
+        // sich ansehen oder mit einem Klick übernehmen.
+        const zeigeStudyflix = field.field_name === 'url'
+          && /video|audio/i.test(aktivitaet.name || '')
+          && werte.medientyp !== 'audio_upload'
+          && werte.medientyp !== 'video_upload';
+
         return (
           <div key={field.field_name} className="space-y-2">
-            {field.field_name !== 'aufgabentext' && (
+            {zeigeStudyflix && (
+              <StudyflixSucheField
+                fach={einheit?.fach}
+                jahrgangsstufe={einheit?.jahrgangsstufe}
+                thema={schritt?.titel || schritt?.plan?.kurzbeschreibung || ''}
+                onSelectUrl={(url) => setWert('url', url)}
+              />
+            )}
+            {feld.field_name !== 'aufgabentext' && (
               <Label className="flex items-center gap-1">
                 {field.label}
                 {field.required && <span className="text-destructive">*</span>}
               </Label>
             )}
             <StandardInput
-              field={field}
+              field={feld}
               value={werte[field.field_name] || ''}
               onChange={(wert) => setWert(field.field_name, wert)}
             />

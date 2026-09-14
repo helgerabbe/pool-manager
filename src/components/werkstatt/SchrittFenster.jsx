@@ -141,7 +141,7 @@ export default function SchrittFenster({
               </div>
             ) : (
             <div className={`${istOffen ? 'shrink-0 max-h-[38vh]' : 'flex-1'} min-h-0 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4`}>
-              <SchrittEditor schritt={entwurf} onChange={setEntwurf} />
+              <SchrittEditor schritt={entwurf} onChange={setEntwurf} einheit={einheit} />
             </div>
             )}
 

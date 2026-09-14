@@ -28,7 +28,7 @@ import { HinweisText } from '@/components/schritte/SchrittHinweis';
  * gewöhnliches Bearbeiten funktioniert also auch, wenn der Assistent
  * gerade nicht erreichbar ist.
  */
-export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen }) {
+export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen, einheit = null }) {
   if (!schritt) {
     return (
       <p className="text-sm text-muted-foreground italic py-8 text-center">
@@ -48,7 +48,7 @@ export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen })
       case SCHRITT_TYPEN.AUFGABE:
         return <FreitextSchrittEditor schritt={schritt} onChange={onChange} />;
       case SCHRITT_TYPEN.KATALOG:
-        return <KatalogSchrittEditor schritt={schritt} onChange={onChange} />;
+        return <KatalogSchrittEditor schritt={schritt} onChange={onChange} einheit={einheit} />;
       case SCHRITT_TYPEN.OFFEN:
         return <OffenSchrittEditor schritt={schritt} onGespraechOeffnen={onGespraechOeffnen} />;
       case SCHRITT_TYPEN.BRIAN:
