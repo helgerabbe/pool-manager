@@ -121,9 +121,9 @@ Regeln für <edit>:
 // ═══════════════════════════════════════════════════════════════════════
 
 /** Die Schritttypen. Muss zu src/lib/schrittTypen.js passen. */
-const SCHRITT_TYPEN_BESCHREIBUNG = `- "katalog": ein fertiges, deterministisches Aufgabenformat aus dem Aktivitätenkatalog (Lückentext, Zuordnung, Miniquiz, Lehrwerk/Quelle …). ERSTE WAHL, wann immer ein Format passt — es ist erprobt, sofort fertig und die Lehrkraft muss nur wenige Felder ausfüllen.
+const SCHRITT_TYPEN_BESCHREIBUNG = `- "offen": eine interaktive Aufgabe, die eigens für dieses Lernziel gebaut wird — die Schüler:innen führen die gedankliche Operation des Lernziels handelnd am Bildschirm aus (verschieben, einordnen, berichtigen, markieren, zusammensetzen …). DIE REGEL für jede Übung.
+- "katalog": ein fertiges Format aus dem Aktivitätenkatalog. Für den INPUT die Regel (Video / Audio, Slideshow, Kompaktwissen); für Übungen nur die begründete Ausnahme.
 - "material": reiner Inhalt ohne Aufgabenstellung (Text, Bild, PDF, Video, Audio, Link).
-- "offen": eine interaktive Aufgabe, die eigens gebaut werden muss. Nur wenn KEIN Katalogformat passt — das Bauen kostet Zeit.
 - "brian": ein Gespräch mit dem KI-Tutor. Für offene, diskursive Aufgaben ohne eindeutige Lösung.
 - "handlung": Arbeit an echtem Material außerhalb des Bildschirms (messen, bauen, befragen). Schülerseitig nur ein Bestätigen-Knopf.
 - "extern": eine eingebettete fremde Seite, typischerweise GeoGebra.
@@ -140,7 +140,7 @@ function baueStrukturPrompt(katalogNamen, galerieEintraege = []) {
   // die fertige Aktivitaet zusammen.
   const galerie = galerieEintraege.length
     ? `\n# FERTIGE VORLAGEN AUS DER AKTIVITÄTEN-GALERIE
-Diese Vorlagen sind bereits gebaut und müssen nur mit Inhalten gefüllt werden. Passt eine davon, ist sie fast immer die besere Wahl als eine neu gebaute offene Aufgabe.
+Diese Vorlagen sind bereits gebaut. Nimm eine NUR, wenn sie die gedankliche Operation der Übung tatsächlich abbildet — sonst bleibt es bei "offen".
 ${galerieEintraege.map((g) => {
       const teile = [`  - "${g.name}" (id: ${g.id})`];
       if (g.kurzbeschreibung) teile.push(`    ${String(g.kurzbeschreibung).slice(0, 300)}`);
@@ -160,12 +160,25 @@ Halte dich kurz. Eine gute Folge hat 2 bis 6 Schritte. Mehr als 8 sind fast imme
 # SCHRITTTYPEN
 ${SCHRITT_TYPEN_BESCHREIBUNG}
 
-# DIE REGEL FÜR DIE TYPWAHL — in dieser Reihenfolge
-1. Passt ein Format aus dem Aktivitätenkatalog? Dann nimm "katalog" und nenne das Format beim Namen.
-2. Sonst: Gibt es eine fertige Vorlage in der Aktivitäten-Galerie? Dann nimm sie (siehe unten) — sie ist gebaut und getestet.
-3. Braucht es echtes Material, eine fremde Seite oder ein Gespräch? Dann "handlung", "extern" oder "brian".
-4. Erst wenn nichts davon trägt: "offen".
-Greife NICHT reflexhaft zu "offen". Eine Aufgabe, die zu drei Vierteln aus Katalogformaten besteht, ist der Lehrkraft mehr wert als eine, die komplett neu gebaut werden muss.
+# DER STANDARDABLAUF — so ist jeder Vorschlag gebaut
+Jeder Vorschlag besteht aus einem festen INPUT-Block und danach ein bis drei ÜBUNGEN.
+
+INPUT (immer diese drei Schritte, in dieser Reihenfolge, alle typ "katalog"):
+1. aktivitaet_name "Video / Audio" — ein Erklärvideo von StudiFlix. Du hast keinen Internetzugang und kannst nicht prüfen, ob es ein Video gibt. Schreibe deshalb in die kurzbeschreibung, wonach die Lehrkraft bei StudiFlix suchen soll: zwei bis vier konkrete Suchbegriffe bzw. wahrscheinliche Videotitel zum Thema. Die Lehrkraft prüft mit der StudiFlix-Suche im Schritt, ob es das Video gibt, und entfernt den Schritt sonst.
+2. aktivitaet_name "Slideshow" — die Folien zum Thema. kurzbeschreibung: in Stichworten, welche vier bis sieben Folien es geben soll und was auf ihnen steht.
+3. aktivitaet_name "Kompaktwissen" — die Zusammenfassung zum Nachschlagen. kurzbeschreibung: die drei bis fünf Kernaussagen, die hineingehören.
+
+ÜBUNGEN (ein bis drei Schritte, IMMER typ "offen"):
+Jede Übung ist eine eigens gebaute offene Aufgabe. Ihre kurzbeschreibung ist der BAUAUFTRAG, den die Lehrkraft später wörtlich an den Aufgaben-Baumeister weitergibt. Deshalb muss sie das Bauprinzip vollständig tragen, in drei bis sechs Sätzen:
+  a) die gedankliche Operation, die die Schüler:innen ausführen (z. B. „Wörter danach sortieren, ob das Dehnungs-h hörbar ist");
+  b) was sie konkret auf dem Bildschirm sehen und tun (Kartenpool, Zielspalten, antippen, eintragen, verschieben …) — mit drei bis fünf Beispielinhalten aus dem Thema;
+  c) welche Rückmeldung sie bekommen (richtig/falsch mit kurzem Hinweis) und woran sie merken, dass sie fertig sind.
+Leite die Übung IMMER aus der gedanklichen Operation des Lernziels her, nie aus einem Format. Standardformate wie Lückentext, Miniquiz oder Zuordnung sind keine Übungen in diesem Sinn — sie prüfen ab, statt die Operation handelnd auszuführen. Nur wenn die Operation selbst genau ein solches Format IST (z. B. das Lernziel heißt „Reihenfolge der Arbeitsschritte kennen"), darfst du ausnahmsweise "katalog" nehmen und musst das in der kurzbeschreibung begründen.
+Die Anzahl der Übungen folgt dem Lernziel: eine, wenn es eine Operation ist; zwei oder drei, wenn es Teilschritte oder eine Steigerung (erkennen → anwenden → korrigieren) gibt.
+
+WEITERE TYPEN nur, wenn die Lehrkraft es ausdrücklich verlangt oder die Aufgabe es zwingend braucht: "material" für mitgegebenes Material, "brian" für ein Gespräch ohne eindeutige Lösung, "handlung", "extern", "abgabe".
+
+NIE das Katalogformat "Offene Aufgabe" vorschlagen — es steht nicht in der Liste und funktioniert in dieser Werkstatt nicht. Eine offene Aufgabe ist immer typ "offen".
 
 # VERFÜGBARE KATALOGFORMATE
 ${katalog}
@@ -178,7 +191,10 @@ Antworte IMMER in diesem Format, ohne Markdown-Codefences:
 
 <schritte>
 [
-  { "titel": "…", "typ": "katalog", "aktivitaet_name": "Lückentext", "kurzbeschreibung": "…", "dauer_minuten": 10 }
+  { "titel": "…", "typ": "katalog", "aktivitaet_name": "Video / Audio", "kurzbeschreibung": "StudiFlix-Suche: …", "dauer_minuten": 8 },
+  { "titel": "…", "typ": "katalog", "aktivitaet_name": "Slideshow", "kurzbeschreibung": "…", "dauer_minuten": 10 },
+  { "titel": "…", "typ": "katalog", "aktivitaet_name": "Kompaktwissen", "kurzbeschreibung": "…", "dauer_minuten": 5 },
+  { "titel": "…", "typ": "offen", "kurzbeschreibung": "Bauauftrag: …", "dauer_minuten": 10 }
 ]
 </schritte>
 
@@ -188,7 +204,7 @@ Regeln für <schritte>:
 - "typ": genau einer der oben genannten Werte.
 - "aktivitaet_name": NUR bei typ "katalog", und NUR ein Name aus der Liste oben, zeichengenau.
 - "galerie_id"/"galerie_name": NUR bei aktivitaet_name "Aktivitätengalerie", und NUR eine id aus der Galerie-Liste, zeichengenau.
-- "kurzbeschreibung": ein Satz für die Lehrkraft, was in diesem Schritt passiert. Nicht schülersichtbar.
+- "kurzbeschreibung": für die Lehrkraft, nicht schülersichtbar. Bei Input-Schritten ein bis zwei Sätze; bei typ "offen" der vollständige Bauauftrag (siehe oben).
 - "dauer_minuten": grobe Schätzung als Zahl, oder weglassen.
 - "id": Schritte der AKTUELLEN FOLGE tragen eine id. Behältst du einen Schritt (auch umsortiert, umbenannt oder mit anderer Kurzbeschreibung), übernimm seine id UNVERÄNDERT — daran hängt bereits ausgearbeiteter Inhalt der Lehrkraft. Neue Schritte bekommen keine id. Ändert sich der Typ eines Schritts, lass die id weg.
 - Ändert die Lehrkraft den Vorschlag, gib die VOLLSTÄNDIGE neue Folge aus, nicht nur die Änderung.
@@ -380,6 +396,8 @@ async function ladeMaterialAnhaenge(materialien: any[]) {
 }
 
 const ERLAUBTE_TYPEN = new Set(['katalog', 'material', 'offen', 'brian', 'handlung', 'extern', 'abgabe']);
+/** Katalogeintrag, der in der Werkstatt nie vorgeschlagen werden darf (dort gilt typ "offen"). */
+const KATALOG_OFFENE_AUFGABE = 'Offene Aufgabe';
 
 /**
  * Liest den <schritte>-Block als geprüfte Liste.
@@ -435,6 +453,13 @@ function leseSchritte(text, katalogNamen, galerieEintraege = []) {
 
     if (typ === 'katalog') {
       const name = String(s?.aktivitaet_name || '').trim();
+      // Die Katalog-„Offene Aufgabe" funktioniert in der Werkstatt nicht —
+      // eine offene Aufgabe ist hier immer der Schritt-Typ "offen".
+      if (name === KATALOG_OFFENE_AUFGABE) {
+        eintrag.typ = 'offen';
+        schritte.push(eintrag);
+        return;
+      }
       // Ein erfundener Formatname wäre eine tote Referenz. Dann lieber den
       // Schritt als "offen" durchreichen — die Lehrkraft sieht die Absicht
       // und kann selbst ein Format wählen.
@@ -512,7 +537,7 @@ Deno.serve(async (req) => {
         .list()
         .catch(() => []);
       const namen: string[] = (katalog || [])
-        .filter((k: any) => k?.is_active !== false && k?.name)
+        .filter((k: any) => k?.is_active !== false && k?.name && k.name !== KATALOG_OFFENE_AUFGABE)
         .map((k: any) => String(k.name));
       katalogNamen = [...new Set(namen)].sort((a, b) => a.localeCompare(b, 'de'));
       // Faellt aus, wenn der GitHub-Connector nicht greift — dann bleibt der

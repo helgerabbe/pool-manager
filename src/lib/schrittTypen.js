@@ -389,7 +389,11 @@ export function vorschlagZuSchritten(vorschlag = [], katalogListe = []) {
     let typ = v?.typ;
     let aktivitaet = null;
 
-    if (typ === SCHRITT_TYPEN.KATALOG) {
+    if (typ === SCHRITT_TYPEN.KATALOG && v?.aktivitaet_name === 'Offene Aufgabe') {
+      // Die Katalog-„Offene Aufgabe" funktioniert in der Werkstatt nicht —
+      // eine offene Aufgabe ist hier immer der Schritt-Typ "offen".
+      typ = SCHRITT_TYPEN.OFFEN;
+    } else if (typ === SCHRITT_TYPEN.KATALOG) {
       aktivitaet = nachName[v?.aktivitaet_name];
       if (!aktivitaet) {
         hinweise.push(`Für „${v?.titel || `Schritt ${i + 1}`}“ gibt es das Format „${v?.aktivitaet_name || '—'}“ nicht. Der Schritt steht jetzt als offene Aufgabe da.`);
