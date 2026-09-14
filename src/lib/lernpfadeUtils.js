@@ -984,6 +984,49 @@ export function bulkAddItemsToBundle(konfig, lernTyp, sektorId, bundleInstanceId
 }
 
 /**
+ * Ordnet in JEDEM Bündel eines Lerntyps die Lernpaket-Kinder nach
+ * `reihenfolge_nummer` — an Ort und Stelle, andere Kinder bleiben unberührt.
+ *
+ * MBK-Meldung 2026-09-14: Die Arbeitspläne aller Exporte trugen die
+ * Lernpakete rückwärts zur Nummerierung. Ursache war die frühere
+ * Auto-Befüllung in Ladereihenfolge; nachgezogene Pakete landeten außerdem
+ * immer hinten. Die Nummer im Themenfeld IST die gemeinte Reihenfolge — sie
+ * gilt deshalb nach jeder automatischen Befüllung und für den Bestand.
+ *
+ * @param {object} konfig
+ * @param {string} lernTyp
+ * @param {Array}  lernpakete  Lernpakete-Records der Einheit
+ * @returns {object} neue Konfiguration (immutable)
+ */
+export function sortLernpaketeInBundles(konfig, lernTyp, lernpakete = []) {
+  const nummer = new Map((lernpakete || []).map((lp) => [lp.id, lp.reihenfolge_nummer ?? 9999]));
+  const next = getSektoren(konfig, lernTyp).map((s) => {
+    const items = Array.isArray(s.items) ? s.items : [];
+    // Positionen der Lernpaket-Kinder je Elternteil einsammeln.
+    const posByParent = new Map();
+    items.forEach((it, idx) => {
+      if (it?.type !== ITEM_TYPE.AUFGABE || !it.parent_instance_id || !nummer.has(it.ref_id)) return;
+      if (!posByParent.has(it.parent_instance_id)) posByParent.set(it.parent_instance_id, []);
+      posByParent.get(it.parent_instance_id).push(idx);
+    });
+    let changed = false;
+    const out = [...items];
+    for (const positionen of posByParent.values()) {
+      if (positionen.length < 2) continue;
+      const sortiert = positionen
+        .map((i) => items[i])
+        .sort((a, b) => nummer.get(a.ref_id) - nummer.get(b.ref_id));
+      positionen.forEach((i, k) => {
+        if (out[i] !== sortiert[k]) changed = true;
+        out[i] = sortiert[k];
+      });
+    }
+    return changed ? { ...s, items: out } : s;
+  });
+  return setSektoren(konfig, lernTyp, next);
+}
+
+/**
  * Phase 3.4: Item an absoluter Position einfügen. Setzt parent_instance_id
  * konsistent (null für Sektor-Root, bundleInstanceId für Bündel-Children).
  *

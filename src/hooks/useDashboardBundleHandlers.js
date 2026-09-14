@@ -26,6 +26,7 @@ import {
   getBundleChildren,
   getAutoFillCandidates,
   bulkAddItemsToBundle,
+  sortLernpaketeInBundles,
 } from '@/lib/lernpfadeUtils';
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 
@@ -177,7 +178,9 @@ export function useDashboardBundleHandlers({
         );
         added = result.addedCount;
         skipped = result.skippedCount;
-        return result.konfig;
+        return bundleKind === 'lernpakete'
+          ? sortLernpaketeInBundles(result.konfig, activeLernTyp, lernpakete)
+          : result.konfig;
       });
 
       if (added > 0 && skipped === 0) {

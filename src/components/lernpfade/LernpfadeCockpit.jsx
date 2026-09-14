@@ -919,6 +919,7 @@ export default function LernpfadeCockpit({
     activeLernTyp,
     updateKonfiguration,
     dashboardBestaetigt,
+    lernpakete,
     toast,
   });
 

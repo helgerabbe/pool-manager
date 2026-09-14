@@ -26,6 +26,7 @@ import {
   getUsedAufgabenIds,
   getAutoFillCandidates,
   bulkAddItemsToBundle,
+  sortLernpaketeInBundles,
 } from '@/lib/lernpfadeUtils';
 import { getBundleKindByAcceptedTypes } from '@/lib/sektorTypen';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
@@ -86,7 +87,8 @@ export function fillAllBundles(konfig, lerntyp, ctx) {
       next = result.konfig;
     }
   }
-  return next;
+  // Lernpakete in den Bündeln folgen immer ihrer Nummer im Themenfeld.
+  return sortLernpaketeInBundles(next, lerntyp, lernpakete);
 }
 
 /**

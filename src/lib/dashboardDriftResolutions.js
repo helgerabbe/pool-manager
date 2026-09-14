@@ -39,6 +39,7 @@ import {
   addSektor,
   removeSektor,
   bulkAddItemsToBundle,
+  sortLernpaketeInBundles,
 } from '@/lib/lernpfadeUtils';
 import { getArbeitsphaseDefaultItems } from '@/lib/dashboardTemplates';
 
@@ -127,7 +128,10 @@ export function addMissingItemToBundle(konfig, lernTyp, entry, options = {}) {
     [entry.ref_id],
     { inaktiv: options.inaktiv === true }
   );
-  return next;
+  // Nachgezogene Lernpakete an ihre Nummer im Themenfeld setzen, nicht hinten.
+  return Array.isArray(options.lernpakete)
+    ? sortLernpaketeInBundles(next, lernTyp, options.lernpakete)
+    : next;
 }
 
 // Re-Export für Aufrufer, die Item-Type-Prüfungen machen wollen.

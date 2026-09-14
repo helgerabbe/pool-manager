@@ -26,6 +26,8 @@ export function useDashboardDriftHandlers({
   // true = Dashboard ist bestätigt → nachgezogene Inhalte starten inaktiv,
   // damit sich ein geprüfter Pfad für Schüler nicht unbemerkt ändert.
   dashboardBestaetigt,
+  // Lernpakete der Einheit — damit nachgezogene Pakete an ihre Nummer rücken.
+  lernpakete = [],
   toast,
 }) {
   const handleDriftAddSektor = useCallback(
@@ -72,7 +74,7 @@ export function useDashboardDriftHandlers({
     (entry) => {
       if (readOnly || !entry?.ref_id) return;
       updateKonfiguration((prev) =>
-        addMissingItemToBundle(prev, activeLernTyp, entry, { inaktiv: dashboardBestaetigt })
+        addMissingItemToBundle(prev, activeLernTyp, entry, { inaktiv: dashboardBestaetigt, lernpakete })
       );
       toast({
         title: dashboardBestaetigt ? 'Einsortiert (inaktiv)' : 'Einsortiert',
@@ -81,7 +83,7 @@ export function useDashboardDriftHandlers({
           : `„${entry.titel}" wurde in „${entry.sektor_titel}" eingefügt.`,
       });
     },
-    [readOnly, activeLernTyp, updateKonfiguration, toast, dashboardBestaetigt]
+    [readOnly, activeLernTyp, updateKonfiguration, toast, dashboardBestaetigt, lernpakete]
   );
 
   return {
