@@ -7,6 +7,7 @@ import AustauschPosteingang from '@/components/austausch/AustauschPosteingang';
 import { useAustauschNachrichten } from '@/hooks/useAustausch';
 import AuftragFormular from '@/components/importcenter/AuftragFormular';
 import SchemaBibliothek from '@/components/importcenter/SchemaBibliothek';
+import BausteinKatalogCard from '@/components/importcenter/BausteinKatalogCard';
 import StrukturLeser from '@/components/importcenter/StrukturLeser';
 
 /**
@@ -66,7 +67,8 @@ export default function ImportCenter() {
         <TabsContent value="nachschlagen" className="mt-5">
           <StrukturLeser />
         </TabsContent>
-        <TabsContent value="bibliothek" className="mt-5">
+        <TabsContent value="bibliothek" className="mt-5 space-y-5">
+          <BausteinKatalogCard />
           <SchemaBibliothek />
         </TabsContent>
       </Tabs>
