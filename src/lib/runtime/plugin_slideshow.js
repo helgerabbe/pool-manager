@@ -35,7 +35,7 @@ export const PLUGIN_SLIDESHOW_CSS = `/* ── Slideshow ───────�
 .mbk-ss__el { position: absolute; transition: opacity 0.6s ease; }
 .mbk-ss__el.is-hidden { opacity: 0; }
 .mbk-ss__el img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.mbk-ss__text { width: 100%; height: 100%; overflow: hidden; line-height: 1.35; word-break: break-word; white-space: pre-wrap; }
+.mbk-ss__text { width: 100%; height: 100%; overflow: visible; line-height: 1.35; word-break: break-word; white-space: pre-wrap; }
 .mbk-ss__nav {
   margin-top: 0.75rem;
   display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
@@ -114,7 +114,10 @@ export const PLUGIN_SLIDESHOW_JS = `
         var e = slide.elemente[slot.key];
         var box = el('div', { className: 'mbk-ss__el' + ((nacheinander && i >= shown) ? ' is-hidden' : '') });
         box.style.left = slot.box.left + 'px'; box.style.top = slot.box.top + 'px';
-        box.style.width = slot.box.width + 'px'; box.style.height = slot.box.height + 'px';
+        box.style.width = slot.box.width + 'px';
+        if (slot.art === 'bild') { box.style.height = slot.box.height + 'px'; }
+        else if (e.hoehe) { box.style.height = e.hoehe + 'px'; }
+        else { box.style.height = 'auto'; box.style.minHeight = slot.box.height + 'px'; }
         if (slot.art === 'bild') {
           box.appendChild(el('img', { src: e.url, alt: '' }));
         } else {

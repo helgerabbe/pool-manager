@@ -33,11 +33,20 @@ export default function SlideCanvas({
         if (!bearbeitbar && !slotHatInhalt(folie, slot)) return null;
         const sichtbar = !sichtbareSlots || sichtbareSlots.has(slot.key);
         const element = folie?.elemente?.[slot.key] || {};
+        // Textfelder wachsen mit dem Inhalt (Vorlagen-Höhe = Mindesthöhe),
+        // sofern die Lehrkraft keine eigene Höhe gezogen hat.
+        const box = slot.art === 'bild'
+          ? slot.box
+          : {
+              left: slot.box.left, top: slot.box.top, width: slot.box.width,
+              height: element.hoehe || 'auto',
+              minHeight: element.hoehe ? undefined : slot.box.height,
+            };
         return (
           <div
             key={slot.key}
             style={{
-              position: 'absolute', ...slot.box,
+              position: 'absolute', ...box,
               opacity: sichtbar ? 1 : 0,
               transition: 'opacity 600ms ease',
               pointerEvents: sichtbar ? 'auto' : 'none',
@@ -59,6 +68,7 @@ export default function SlideCanvas({
                 aktiv={aktiverSlotKey === slot.key}
                 onFokus={(el) => onSlotFokus?.(slot.key, el)}
                 onChange={(html) => onElementChange?.(slot.key, { html })}
+                onHoeheChange={(hoehe) => onElementChange?.(slot.key, { hoehe: hoehe || undefined })}
               />
             )}
           </div>
