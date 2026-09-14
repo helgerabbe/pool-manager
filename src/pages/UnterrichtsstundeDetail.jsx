@@ -80,7 +80,12 @@ export default function UnterrichtsstundeDetail() {
         </div>
       )}
 
-      <Tabs defaultValue={phasen.length > 0 ? 'regieblatt' : 'coach'}>
+      <Tabs
+        defaultValue={
+          new URLSearchParams(window.location.search).get('tab')
+          || (phasen.length > 0 ? 'regieblatt' : 'coach')
+        }
+      >
         <TabsList>
           <TabsTrigger value="coach">1. KI-Generator</TabsTrigger>
           <TabsTrigger value="regieblatt" className="gap-2">

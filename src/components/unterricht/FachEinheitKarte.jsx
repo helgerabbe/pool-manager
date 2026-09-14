@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Pencil, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SchnellAnlegenDialog from './SchnellAnlegenDialog';
+import AnlegenMitWizardDialog from './AnlegenMitWizardDialog';
 import FachStundenListe from './FachStundenListe';
 import FachBloeckeListe from './FachBloeckeListe';
 import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
@@ -22,6 +24,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
   const [stundeOffen, setStundeOffen] = useState(false);
   const [blockOffen, setBlockOffen] = useState(false);
   const [umbenennenOffen, setUmbenennenOffen] = useState(false);
+  const navigate = useNavigate();
 
   const stundeAnlegen = useStundeAnlegen(unterrichtseinheit, besitzerEmail);
   const blockAnlegen = useUebungsblockAnlegen(unterrichtseinheit, besitzerEmail);
@@ -77,31 +80,43 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
         <FachBloeckeListe bloecke={bloecke} />
       </div>
 
-      <SchnellAnlegenDialog
+      <AnlegenMitWizardDialog
         open={stundeOffen}
         onOpenChange={setStundeOffen}
         titel={`Neue Stunde in „${unterrichtseinheit.titel}"`}
         label="Arbeitstitel der Stunde *"
         platzhalter="z. B. Einstieg Groß- und Kleinschreibung"
         hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
-        aktionText="Stunde anlegen"
+        wizardText="Mit KI-Generator planen"
+        selbstText="Phasen selbst anlegen"
         laeuft={stundeAnlegen.isPending}
-        onSubmit={(name, reset) => stundeAnlegen.mutate(name, {
-          onSuccess: () => { reset(); setStundeOffen(false); },
+        onSubmit={(name, weg, reset) => stundeAnlegen.mutate(name, {
+          onSuccess: (stunde) => {
+            reset();
+            setStundeOffen(false);
+            navigate(`/unterrichtsstunde/${stunde.id}${weg === 'selbst' ? '?tab=regieblatt' : ''}`);
+          },
         })}
       />
 
-      <SchnellAnlegenDialog
+      <AnlegenMitWizardDialog
         open={blockOffen}
         onOpenChange={setBlockOffen}
         titel={`Neuer Übungsblock in „${unterrichtseinheit.titel}"`}
         label="Titel des Übungsblocks *"
         platzhalter="z. B. Wortstämme erkennen"
         hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
-        aktionText="Übungsblock anlegen"
+        wizardText="Mit Wizard aufbauen"
+        selbstText="Direkt selbst aufbauen"
         laeuft={blockAnlegen.isPending}
-        onSubmit={(name, reset) => blockAnlegen.mutate(name, {
-          onSuccess: () => { reset(); setBlockOffen(false); },
+        onSubmit={(name, weg, reset) => blockAnlegen.mutate(name, {
+          onSuccess: (block) => {
+            reset();
+            setBlockOffen(false);
+            navigate(weg === 'wizard'
+              ? `/einheit/create?draftId=${block.id}&step=2`
+              : `/workspace?einheit=${block.id}`);
+          },
         })}
       />
 
