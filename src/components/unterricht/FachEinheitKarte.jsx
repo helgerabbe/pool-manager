@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Pencil, Layers, ExternalLink } from 'lucide-react';
+import { Plus, Pencil, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SchnellAnlegenDialog from './SchnellAnlegenDialog';
 import FachStundenListe from './FachStundenListe';
 import FachBloeckeListe from './FachBloeckeListe';
 import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
 import {
-  useStundeAnlegen, useUebungsblockAnlegen, useEinheitUmbenennen,
+  useStundeAnlegen, useUebungsblockAnlegen, useUnterrichtseinheitUmbenennen,
 } from '@/hooks/useFachEinheitInhalte';
 
 /**
- * EINE Einheit als Container: darin liegen ihre Unterrichtsstunden und ihre
- * Übungsblöcke. Lehrkräfte arbeiten thematisch — „Deutsch 9, Rechtschreibung" —
- * und legen von hier aus alles Weitere an, ohne Fach, Jahrgang oder Einheit
- * noch einmal auswählen zu müssen.
+ * EINE Unterrichtseinheit als Mappe: darin liegen ihre Unterrichtsstunden und
+ * ihre Übungsblöcke. Lehrkräfte arbeiten thematisch — „Deutsch 9,
+ * Rechtschreibung" — und legen von hier aus alles Weitere an, ohne Fach,
+ * Jahrgang oder Mappe noch einmal auswählen zu müssen.
+ *
+ * Eine Unterrichtseinheit ist NICHT eine „Einheit" im Sinne des vollständigen
+ * Lernszenarios (Dashboards, Freigabe, Moodle-Kurs) — sie ist reine Ordnung.
  */
-export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], besitzerEmail }) {
+export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], bloecke = [], besitzerEmail }) {
   const [stundeOffen, setStundeOffen] = useState(false);
   const [blockOffen, setBlockOffen] = useState(false);
   const [umbenennenOffen, setUmbenennenOffen] = useState(false);
 
-  const stundeAnlegen = useStundeAnlegen(einheit, besitzerEmail);
-  const blockAnlegen = useUebungsblockAnlegen(einheit, besitzerEmail);
-  const umbenennen = useEinheitUmbenennen();
+  const stundeAnlegen = useStundeAnlegen(unterrichtseinheit, besitzerEmail);
+  const blockAnlegen = useUebungsblockAnlegen(unterrichtseinheit, besitzerEmail);
+  const umbenennen = useUnterrichtseinheitUmbenennen();
 
   return (
     <div className="rounded-xl border bg-card p-4 space-y-4">
@@ -32,18 +34,18 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
           <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-primary shrink-0" />
             <h2 className="text-base font-bold text-foreground truncate">
-              {einheit.titel_der_einheit || 'Ohne Titel'}
+              {unterrichtseinheit.titel || 'Ohne Titel'}
             </h2>
             <button
               type="button"
               onClick={() => setUmbenennenOffen(true)}
-              title="Einheit umbenennen"
+              title="Unterrichtseinheit umbenennen"
               className="p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground"
             >
               <Pencil className="w-3.5 h-3.5" />
             </button>
             {stunden.length === 0 && bloecke.length === 0 && (
-              <FachEinheitLoeschenButton einheit={einheit} />
+              <FachEinheitLoeschenButton unterrichtseinheit={unterrichtseinheit} />
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -52,11 +54,6 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="ghost" size="sm" asChild className="gap-2">
-            <Link to={`/workspace?einheit=${einheit.id}`}>
-              <ExternalLink className="w-4 h-4" /> Einheit öffnen
-            </Link>
-          </Button>
           <Button variant="outline" size="sm" onClick={() => setStundeOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Stunde
           </Button>
@@ -83,10 +80,10 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
       <SchnellAnlegenDialog
         open={stundeOffen}
         onOpenChange={setStundeOffen}
-        titel={`Neue Stunde in „${einheit.titel_der_einheit}"`}
+        titel={`Neue Stunde in „${unterrichtseinheit.titel}"`}
         label="Arbeitstitel der Stunde *"
         platzhalter="z. B. Einstieg Groß- und Kleinschreibung"
-        hinweis="Fach, Jahrgang und Einheit stehen schon fest."
+        hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
         aktionText="Stunde anlegen"
         laeuft={stundeAnlegen.isPending}
         onSubmit={(name, reset) => stundeAnlegen.mutate(name, {
@@ -97,10 +94,10 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
       <SchnellAnlegenDialog
         open={blockOffen}
         onOpenChange={setBlockOffen}
-        titel={`Neuer Übungsblock in „${einheit.titel_der_einheit}"`}
+        titel={`Neuer Übungsblock in „${unterrichtseinheit.titel}"`}
         label="Titel des Übungsblocks *"
         platzhalter="z. B. Wortstämme erkennen"
-        hinweis="Fach, Jahrgang und Einheit stehen schon fest."
+        hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
         aktionText="Übungsblock anlegen"
         laeuft={blockAnlegen.isPending}
         onSubmit={(name, reset) => blockAnlegen.mutate(name, {
@@ -111,12 +108,12 @@ export default function FachEinheitKarte({ einheit, stunden = [], bloecke = [], 
       <SchnellAnlegenDialog
         open={umbenennenOffen}
         onOpenChange={setUmbenennenOffen}
-        titel="Einheit umbenennen"
-        label="Neuer Name der Einheit *"
-        platzhalter={einheit.titel_der_einheit}
+        titel="Unterrichtseinheit umbenennen"
+        label="Neuer Name *"
+        platzhalter={unterrichtseinheit.titel}
         aktionText="Speichern"
         laeuft={umbenennen.isPending}
-        onSubmit={(name, reset) => umbenennen.mutate({ id: einheit.id, titel: name }, {
+        onSubmit={(name, reset) => umbenennen.mutate({ id: unterrichtseinheit.id, titel: name }, {
           onSuccess: () => { reset(); setUmbenennenOffen(false); },
         })}
       />

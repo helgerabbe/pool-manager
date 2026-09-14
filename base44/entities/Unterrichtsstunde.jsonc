@@ -1,19 +1,23 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie gehoert immer zu einer Einheit (einheit_id) und wird in der Privaten Bibliothek nach Fach > Einheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id) und wird in der Privaten Bibliothek nach Fach > Unterrichtseinheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity.\n\nBEGRIFFSTRENNUNG (2026-09-14): Eine UNTERRICHTSEINHEIT ist die thematische Mappe im Bereich 'Mein Unterricht'. Sie ist etwas anderes als eine EINHEIT (Entity 'Einheiten') - das vollstaendige Lernszenario mit Lernpfaden, Dashboards und Moodle-Kurs. Beide Begriffe existieren nebeneinander und sind bewusst getrennte Datensaetze.",
   "properties": {
+    "unterrichtseinheit_id": {
+      "type": "string",
+      "description": "FK zur UNTERRICHTSEINHEIT (Entity 'Unterrichtseinheit'), in der diese Stunde liegt."
+    },
     "einheit_id": {
       "type": "string",
-      "description": "FK zur Einheit, zu der diese Stunde gehoert (Gruppierung in der Bibliothek)."
+      "description": "@legacy: Frueher die Gruppierung ueber eine 'Einheit' (Entity 'Einheiten'). Ersetzt durch unterrichtseinheit_id; wird nicht mehr geschrieben."
     },
     "fach": {
       "type": "string",
-      "description": "Denormalisiert aus der Einheit - fuer die Gruppierung nach Fach."
+      "description": "Denormalisiert aus der Unterrichtseinheit - fuer die Gruppierung nach Fach."
     },
     "jahrgangsstufe": {
       "type": "string",
-      "description": "Denormalisiert aus der Einheit."
+      "description": "Denormalisiert aus der Unterrichtseinheit."
     },
     "arbeitstitel": {
       "type": "string",
@@ -167,7 +171,6 @@
     }
   },
   "required": [
-    "einheit_id",
     "arbeitstitel"
   ]
 }
