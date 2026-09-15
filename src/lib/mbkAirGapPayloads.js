@@ -41,6 +41,10 @@ import {
 } from '@/lib/mbkDashboardContracts';
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import { mitBrianFeldNamen } from '@/lib/brianKatalogFelder';
+import { GRAFIK_VARIANTE_CONTRACT } from '@/lib/mbkGrafikContract';
+import {
+  aktivesFragment, grafikAktiv, VARIANTE_FUNKTIONAL, VARIANTE_GRAFISCH,
+} from '@/lib/grafikVariante';
 import {
   MBK_AIRGAP_VERSION,
   LERNTYP_KEYS,
@@ -921,6 +925,9 @@ export function buildSystemContextPayload({
     // konkreten Werte stehen pro Item in Payload 2.
     lernpaket_zugang_contract: LERNPAKET_ZUGANG_CONTRACT,
     item_arbeitsauftrag_contract: ITEM_ARBEITSAUFTRAG_CONTRACT,
+    // airgap-1.24.0: Grafisch aufbereitete Variante einer fertigen Aufgabe.
+    // Welche Fassung gilt, entscheidet die Lehrkraft (`design_variante`).
+    grafik_variante_contract: GRAFIK_VARIANTE_CONTRACT,
   };
 }
 
@@ -1704,7 +1711,16 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false, katalog
             field_values: s?.field_values || {},
           };
         case 'offen':
-          return { ...basis, fragment: nullable(s?.offen?.fragment) };
+          // airgap-1.24.0: Es geht GENAU die Fassung hinaus, die die Lehrkraft
+          // übernommen hat — grafisch aufbereitet, sonst das funktionale
+          // Original. Vorher reiste immer nur `fragment`, sodass eine
+          // übernommene grafische Variante im Kurs nie ankam.
+          return {
+            ...basis,
+            fragment: nullable(aktivesFragment(s?.offen)),
+            design_variante: grafikAktiv(s?.offen) ? VARIANTE_GRAFISCH : VARIANTE_FUNKTIONAL,
+            design_meta: grafikAktiv(s?.offen) ? (s?.offen?.design_meta || null) : null,
+          };
         case 'brian':
           return {
             ...basis,

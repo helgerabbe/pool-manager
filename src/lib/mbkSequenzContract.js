@@ -43,10 +43,11 @@ export const SEQUENZ_CONTRACT = {
       + 'Rückmeldelogik sind damit verbindlich: übernimm sie unverändert. '
       + 'Angepasst werden darf ausschließlich das Aussehen (Kurs-CSS, Typografie, '
       + 'Abstände) — keine Felder weglassen, keine Interaktion vereinfachen, '
-      + 'keine eigene Aufgabe daraus machen. Grafik-Variante (2026-09-15): Ist '
-      + '`design_variante` = "grafisch" und `fragment_polished` gefüllt, hat DIESE '
-      + 'Fassung Vorrang — sie ist inhaltlich und funktional identisch, aber von '
-      + 'der Fachgruppe grafisch aufbereitet und freigegeben. Sonst gilt `fragment`.',
+      + 'keine eigene Aufgabe daraus machen. Grafische Variante (airgap-1.24.0): '
+      + '`fragment` enthält immer schon die von der Lehrkraft ÜBERNOMMENE '
+      + 'Fassung — funktional oder grafisch aufbereitet. Du musst nichts '
+      + 'auswählen; `design_variante` sagt nur, welche der beiden es ist. '
+      + 'Einzelheiten: grafik_variante_contract in Payload 1.',
     brian:
       'Ein Gespräch mit dem KI-Tutor Brian. Der Schritt verlinkt auf `url` bzw. '
       + '`dialog_id` in Brian.study. Erledigt wird er NICHT per Knopf, sondern '

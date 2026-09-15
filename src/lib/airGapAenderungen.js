@@ -25,17 +25,22 @@
 /* Bewusst OHNE Import von MBK_AIRGAP_VERSION: mbkPayloadBasis liest diese
    Liste, ein Rückimport wäre ein Ringschluss. Version hier mitpflegen. */
 export const AIRGAP_AENDERUNGEN = Object.freeze({
-  version: 'airgap-1.23.0',
-  vorherige_version: 'airgap-1.22.0',
+  version: 'airgap-1.24.0',
+  vorherige_version: 'airgap-1.23.0',
   stichpunkte: Object.freeze([
-    'Die interne Anweisung des KI-Tutors reist an der Katalog-Aktivität '
-    + '„KI-Tutor Aufgabe (Brian)" jetzt unter BEIDEN Namen: neu zusätzlich als '
-    + 'system_instruction (so heißt sie an Aufgabe und Schritt schon immer), '
-    + 'unverändert weiter als system_prompt. Lies bevorzugt '
-    + 'system_instruction; system_prompt bleibt vorerst erhalten.',
-    'meta.aenderungen enthält neu das Feld beispiele: Bei jedem neuen Baustein '
-    + 'steht hier ein Beispiel-Payload, damit die Form nicht aus dem Export '
-    + 'erraten werden muss.',
+    'Neu: grafik_variante_contract in Payload 1. Eine fertige Aufgabe kann '
+    + 'neben ihrer funktionalen Fassung eine rein grafisch aufbereitete tragen. '
+    + 'Welche gilt, entscheidet die Lehrkraft mit „Diese Variante jetzt '
+    + 'übernehmen" — Inhalt und Bedienung sind in beiden identisch.',
+    'Sequenz-Schritt typ="offen": `fragment` enthält jetzt GENAU die '
+    + 'übernommene Fassung (vorher immer das funktionale Original, sodass eine '
+    + 'übernommene grafische Variante im Kurs nie ankam). Zusätzlich reisen '
+    + '`design_variante` ("funktional"|"grafisch") und `design_meta` mit. '
+    + 'Baue weiterhin einfach `fragment` — nichts umschalten.',
+    'Katalog-Aktivität „Slideshow": `field_values` kann neu '
+    + '`design_variante` und `design_polished` enthalten. Bei "grafisch" '
+    + 'wende das Design-Objekt auf alle Folien an, bei "funktional" ignoriere '
+    + 'es. Die Folieninhalte in `slides` bleiben unverändert.',
   ]),
   /**
    * Beispiel-Payloads zu den Änderungen dieser Version. Leeres Array = diese
@@ -43,14 +48,37 @@ export const AIRGAP_AENDERUNGEN = Object.freeze({
    */
   beispiele: Object.freeze([
     Object.freeze({
-      was: 'field_values der Katalog-Aktivität „KI-Tutor Aufgabe (Brian)"',
+      was: 'Sequenz-Schritt mit typ="offen" und übernommener grafischer Fassung',
+      wo: 'Payload 3 (mbk_task_content_payload) → items[].sequenz_schritte[]',
+      beispiel: Object.freeze({
+        schritt_id: 'a1b2c3',
+        reihenfolge: 2,
+        typ: 'offen',
+        titel: 'Satzglieder bestimmen',
+        fragment: '<div class="aufgabe"><style>…</style>…<script>…</script></div>',
+        design_variante: 'grafisch',
+        design_meta: Object.freeze({
+          richtung: 'light',
+          erzeugt_am: '2026-09-15T16:40:00.000Z',
+          bilder: Object.freeze([]),
+        }),
+      }),
+    }),
+    Object.freeze({
+      was: 'field_values der Katalog-Aktivität „Slideshow" mit grafischer Fassung',
       wo: 'Payload 3 (mbk_task_content_payload) → items[].aktivitaeten[].field_values',
       beispiel: Object.freeze({
-        instruction: 'Diskutiere mit Brian, ob Nathanael selbst schuld ist.',
-        system_instruction: 'Du bist ein sokratischer Gesprächspartner …',
-        system_prompt: 'Du bist ein sokratischer Gesprächspartner …',
-        dialog_name: 'Der Sandmann – Schuldfrage',
-        completion_rule: 'Fertig, wenn drei Argumente belegt wurden.',
+        aufgabentext: 'Schau dir die Folien an und mache dir Notizen.',
+        slides: Object.freeze([]),
+        design_variante: 'grafisch',
+        design_polished: Object.freeze({
+          name: 'Ruhiges Tageslicht',
+          begruendung: 'Klare Flächen, wenig Ablenkung — passend zum Lesetext.',
+          hintergrund: '#f8fafc',
+          textfarbe: '#0f172a',
+          akzentfarbe: '#2563eb',
+          schrift: 'Inter, sans-serif',
+        }),
       }),
     }),
   ]),

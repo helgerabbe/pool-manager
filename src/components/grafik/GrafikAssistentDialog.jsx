@@ -114,7 +114,7 @@ export default function GrafikAssistentDialog({
                 <RotateCcw className="w-4 h-4" /> Anderen Entwurf
               </Button>
               <Button className="gap-2" onClick={uebernehmen}>
-                <Check className="w-4 h-4" /> Als Variante übernehmen
+                <Check className="w-4 h-4" /> Diese Variante jetzt übernehmen
               </Button>
             </>
           ) : (
