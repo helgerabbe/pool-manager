@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import GrafikAssistentDialog from '@/components/grafik/GrafikAssistentDialog';
 import GrafikVarianteToggle from '@/components/grafik/GrafikVarianteToggle';
 import { hatGrafikVariante, VARIANTE_FUNKTIONAL, VARIANTE_GRAFISCH } from '@/lib/grafikVariante';
-import { HinweisText } from '@/components/schritte/SchrittHinweis';
 
 /**
  * Der zweite, grafische Blick auf einen fertigen offenen Schritt.
@@ -41,7 +40,7 @@ export default function OffenGrafikSektion({ schritt, onChange, einheit = null }
   };
 
   return (
-    <div className="space-y-2 pt-3 border-t border-border">
+    <div className="space-y-2 pt-2 border-t border-border">
       {hatVariante ? (
         <GrafikVarianteToggle
           variante={offen.design_variante || VARIANTE_FUNKTIONAL}
@@ -50,20 +49,15 @@ export default function OffenGrafikSektion({ schritt, onChange, einheit = null }
           onVerwerfen={verwerfen}
         />
       ) : (
-        <>
-          <Button
-            variant="outline"
-            className="w-full gap-2 border-violet-300 text-violet-700 hover:bg-violet-50"
-            onClick={() => setOffen2(true)}
-          >
-            <Palette className="w-4 h-4" />
-            Grafisch aufbereiten
-          </Button>
-          <HinweisText>
-            Die Aufgabe funktioniert — jetzt darf ein Grafiker darüber schauen. Inhalt und Funktion
-            bleiben unverändert, die schöne Fassung liegt als Variante daneben.
-          </HinweisText>
-        </>
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full gap-2 border-violet-300 text-violet-700 hover:bg-violet-50"
+          onClick={() => setOffen2(true)}
+        >
+          <Palette className="w-3.5 h-3.5" />
+          Grafisch aufbereiten
+        </Button>
       )}
 
       <GrafikAssistentDialog

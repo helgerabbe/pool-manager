@@ -119,11 +119,6 @@ export default function SchrittFenster({
               <span className="text-xs font-normal text-slate-500">· {entwurf.titel}</span>
             )}
           </DialogTitle>
-          <p className="text-xs text-slate-500 mt-1">
-            {istOffen
-              ? 'Beschreiben Sie im Gespräch, was die Aufgabe können soll. Rechts sehen Sie sofort, wie sie bei den Schülern aussieht.'
-              : 'Füllen Sie die Felder aus — rechts sehen Sie sofort, wie der Schritt bei den Schülern aussieht.'}
-          </p>
         </DialogHeader>
 
         <div className={`grid grid-cols-1 ${eingabeOffen ? 'lg:grid-cols-2' : ''} gap-4 pt-4 flex-1 min-h-0`}>

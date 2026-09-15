@@ -80,30 +80,32 @@ export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen, e
   })();
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <Label>Titel des Schritts</Label>
+    <div className="space-y-3">
+      {/* Titel einzeilig: Beschriftung neben dem Feld statt darüber — die
+          Spalte ist schmal, jede eingesparte Zeile geht an den Inhalt. */}
+      <div className="flex items-center gap-2">
+        <Label className="shrink-0 text-xs text-muted-foreground">Titel</Label>
         <Input
           value={schritt.titel || ''}
           onChange={(e) => onChange({ ...schritt, titel: e.target.value })}
           placeholder={typInfo?.label || 'Titel'}
+          className="h-8 text-sm"
         />
-        <HinweisText>Sehen die Schüler über dem Inhalt. Leer lassen für den Standardtext.</HinweisText>
       </div>
 
-      {/* Ergebnis der Struktur-Phase: bleibt sichtbar, auch wenn der Schritt
-          längst gebaut ist — sonst geht die ursprüngliche Absicht verloren. */}
-      <div className="space-y-2">
-        <Label>Was hier passieren soll <span className="font-normal text-muted-foreground">(nur für Sie)</span></Label>
+      {/* Ergebnis der Struktur-Phase: bleibt erhalten, aber zugeklappt — die
+          Notiz ist beim Bauen selten im Weg und wird nur gelegentlich gelesen. */}
+      <details className="rounded-lg border border-border bg-muted/30 px-3 py-2">
+        <summary className="cursor-pointer text-xs font-medium text-muted-foreground">
+          Was hier passieren soll (nur für Sie)
+        </summary>
         <Textarea
           value={plan.kurzbeschreibung || ''}
           onChange={(e) => setPlan('kurzbeschreibung', e.target.value)}
           placeholder="Kurz notiert: Was ist der Zweck dieses Schritts?"
-          className="min-h-[70px]"
+          className="mt-2 min-h-[70px] bg-card"
         />
-      </div>
-
-      <div className="pt-1 border-t border-border" />
+      </details>
 
       {spezifisch}
     </div>

@@ -31,23 +31,14 @@ export default function OffenSchrittEditor({ schritt, onChange, onGespraechOeffn
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {hatInhalt ? (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
-          <p className="flex items-center gap-2 text-sm font-medium text-emerald-900">
-            <CheckCircle2 className="w-4 h-4 shrink-0" />
-            Für diesen Schritt ist eine Aufgabe gebaut.
-          </p>
-          <p className="mt-1 text-xs text-emerald-800">
-            In der Mitte sehen Sie sie so, wie die Schüler sie sehen.
-          </p>
-        </div>
+        <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+          <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+          Aufgabe gebaut
+        </p>
       ) : (
-        <div className="rounded-lg border border-border bg-muted/40 px-4 py-3">
-          <p className="text-sm text-muted-foreground">
-            Für diesen Schritt ist noch keine Aufgabe gebaut.
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground">Noch keine Aufgabe gebaut.</p>
       )}
 
       {warnungen.length > 0 && (

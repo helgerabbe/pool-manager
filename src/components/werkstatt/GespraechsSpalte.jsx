@@ -41,7 +41,7 @@ export default function GespraechsSpalte({
   return (
     <div className={`flex flex-col min-h-0 rounded-xl border border-slate-200 bg-white ${className}`}>
       <div ref={verlaufRef} className="flex-1 min-h-0 overflow-y-auto p-3 space-y-3">
-        {gen.verlauf.length === 0 && !gen.busy && (
+        {gen.verlauf.length === 0 && !gen.busy && !!leerText && (
           <p className="text-sm text-slate-500 py-8 px-2 text-center leading-relaxed">
             {leerText}
           </p>
@@ -122,7 +122,7 @@ export default function GespraechsSpalte({
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) onAbschicken();
           }}
           placeholder={platzhalter}
-          className="min-h-[80px] resize-none text-sm"
+          className="min-h-[120px] resize-none text-sm bg-card border-2 border-violet-200 focus-visible:ring-violet-400"
           disabled={disabled}
         />
         <div className="flex items-center gap-2">

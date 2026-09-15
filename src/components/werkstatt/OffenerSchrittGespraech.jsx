@@ -140,7 +140,7 @@ ${vorhaben}`;
         disabled={isReleased}
         className="flex-1 min-h-[220px]"
         platzhalter="Was soll dieser Schritt können?"
-        leerText="Beschreiben Sie, was die Schüler in diesem Schritt tun sollen — ich baue daraus eine erste Fassung."
+        leerText=""
       />
 
       <div className="shrink-0 space-y-2">
