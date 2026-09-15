@@ -8,6 +8,7 @@ import React from 'react';
 import { Presentation } from 'lucide-react';
 import SlideScaler from '@/components/slideshow/SlideScaler';
 import SlideCanvas from '@/components/slideshow/SlideCanvas';
+import { aktivesSlideDesign } from '@/lib/grafikVariante';
 
 export default function SlideshowReadOnly({ fieldValues = {} }) {
   const folien = Array.isArray(fieldValues.slides) ? fieldValues.slides : [];
@@ -29,7 +30,7 @@ export default function SlideshowReadOnly({ fieldValues = {} }) {
           {folien.map((f, i) => (
             <div key={f.id || i} className="relative">
               <SlideScaler className="rounded-lg border border-border shadow-sm">
-                <SlideCanvas folie={f} modus="view" />
+                <SlideCanvas folie={f} modus="view" design={aktivesSlideDesign(fieldValues)} />
               </SlideScaler>
               <span className="absolute top-1.5 left-1.5 w-5 h-5 rounded-full bg-slate-800/80 text-white text-[10px] font-bold flex items-center justify-center">
                 {i + 1}

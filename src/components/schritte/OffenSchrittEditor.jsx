@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Sparkles, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { pruefeFragment } from '@/lib/aufgabeFragment';
 import { HinweisText } from '@/components/schritte/SchrittHinweis';
+import OffenGrafikSektion from '@/components/schritte/OffenGrafikSektion';
 
 /**
  * OffenSchrittEditor
@@ -20,7 +21,7 @@ import { HinweisText } from '@/components/schritte/SchrittHinweis';
  * Schritt trotzdem lesbar — das Bauen ist dann nur nicht von hier aus
  * erreichbar.
  */
-export default function OffenSchrittEditor({ schritt, onGespraechOeffnen }) {
+export default function OffenSchrittEditor({ schritt, onChange, onGespraechOeffnen, einheit = null }) {
   const offen = schritt.offen || {};
   const hatInhalt = !!(offen.fragment?.trim() || offen.snapshot_html?.trim() || offen.snapshot_url?.trim());
 
@@ -74,6 +75,11 @@ export default function OffenSchrittEditor({ schritt, onGespraechOeffnen }) {
             bleiben erhalten, Sie können jederzeit zurückspringen.
           </HinweisText>
         </div>
+      )}
+
+      {/* Zweiter, grafischer Blick — erst sinnvoll, wenn die Aufgabe steht. */}
+      {onChange && !!offen.fragment?.trim() && (
+        <OffenGrafikSektion schritt={schritt} onChange={onChange} einheit={einheit} />
       )}
     </div>
   );

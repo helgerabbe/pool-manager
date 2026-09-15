@@ -50,7 +50,14 @@ export default function SchrittEditor({ schritt, onChange, onGespraechOeffnen, e
       case SCHRITT_TYPEN.KATALOG:
         return <KatalogSchrittEditor schritt={schritt} onChange={onChange} einheit={einheit} />;
       case SCHRITT_TYPEN.OFFEN:
-        return <OffenSchrittEditor schritt={schritt} onGespraechOeffnen={onGespraechOeffnen} />;
+        return (
+          <OffenSchrittEditor
+            schritt={schritt}
+            onChange={onChange}
+            onGespraechOeffnen={onGespraechOeffnen}
+            einheit={einheit}
+          />
+        );
       case SCHRITT_TYPEN.BRIAN:
         return <BrianSchrittEditor schritt={schritt} onChange={onChange} />;
       case SCHRITT_TYPEN.HANDLUNG:

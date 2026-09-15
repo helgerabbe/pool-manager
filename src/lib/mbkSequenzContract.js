@@ -43,7 +43,10 @@ export const SEQUENZ_CONTRACT = {
       + 'Rückmeldelogik sind damit verbindlich: übernimm sie unverändert. '
       + 'Angepasst werden darf ausschließlich das Aussehen (Kurs-CSS, Typografie, '
       + 'Abstände) — keine Felder weglassen, keine Interaktion vereinfachen, '
-      + 'keine eigene Aufgabe daraus machen.',
+      + 'keine eigene Aufgabe daraus machen. Grafik-Variante (2026-09-15): Ist '
+      + '`design_variante` = "grafisch" und `fragment_polished` gefüllt, hat DIESE '
+      + 'Fassung Vorrang — sie ist inhaltlich und funktional identisch, aber von '
+      + 'der Fachgruppe grafisch aufbereitet und freigegeben. Sonst gilt `fragment`.',
     brian:
       'Ein Gespräch mit dem KI-Tutor Brian. Der Schritt verlinkt auf `url` bzw. '
       + '`dialog_id` in Brian.study. Erledigt wird er NICHT per Knopf, sondern '

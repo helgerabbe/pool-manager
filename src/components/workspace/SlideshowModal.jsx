@@ -13,7 +13,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Save, Presentation, Sparkles } from 'lucide-react';
+import { Loader2, Save, Presentation, Sparkles, Palette } from 'lucide-react';
+import { toast } from 'sonner';
+import GrafikAssistentDialog from '@/components/grafik/GrafikAssistentDialog';
+import GrafikVarianteToggle from '@/components/grafik/GrafikVarianteToggle';
+import {
+  hatSlideDesign, aktivesSlideDesign, VARIANTE_FUNKTIONAL, VARIANTE_GRAFISCH,
+} from '@/lib/grafikVariante';
 import SlideshowKIDialog from '@/components/slideshow/ki/SlideshowKIDialog';
 import ActivityResetButton from '@/components/workspace/ActivityResetButton';
 import FolienListe from '@/components/slideshow/FolienListe';
@@ -43,6 +49,8 @@ export default function SlideshowModal({
   const [vorlageWahlOffen, setVorlageWahlOffen] = useState(false);
   // KI-Assistent: baut Erklärfolien im Gespräch, Ergebnis wird hier übernommen.
   const [kiOffen, setKiOffen] = useState(false);
+  // Grafik-Assistent: rein optische Variante neben dem funktionalen Foliensatz.
+  const [grafikOffen, setGrafikOffen] = useState(false);
   const prevOpenRef = useRef(false);
 
   useEffect(() => {
@@ -55,6 +63,7 @@ export default function SlideshowModal({
       setAktiverSlot(null);
       setVorlageWahlOffen(false);
       setKiOffen(false);
+      setGrafikOffen(false);
     }
     prevOpenRef.current = open;
   }, [open]);
@@ -120,6 +129,17 @@ export default function SlideshowModal({
     setAktiverSlot(null);
   };
 
+  /** Übernahme aus dem Grafik-Assistenten: Design zusätzlich speichern. */
+  const grafikUebernehmen = ({ design }) => {
+    setFieldValues((prev) => ({ ...prev, design_polished: design, design_variante: VARIANTE_GRAFISCH }));
+    toast.success('Grafische Fassung übernommen — sie ist jetzt aktiv.');
+  };
+
+  const grafikVerwerfen = () => {
+    setFieldValues((prev) => ({ ...prev, design_polished: null, design_variante: VARIANTE_FUNKTIONAL }));
+    toast.success('Grafische Fassung verworfen. Der Original-Look ist wieder aktiv.');
+  };
+
   const handleSave = () => {
     const payload = { ...fieldValues, slides: folien };
     if ((initialFieldValues || initialData)?.moodle_sync_status === 'synced') {
@@ -152,6 +172,16 @@ export default function SlideshowModal({
             onClick={() => setKiOffen(true)}
           >
             <Sparkles className="w-3.5 h-3.5" /> Mit KI erstellen
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 gap-1.5 text-xs shrink-0 border-violet-300 text-violet-700 hover:bg-violet-50"
+            onClick={() => setGrafikOffen(true)}
+            disabled={folien.every((f) => Object.keys(f.elemente || {}).length === 0)}
+            title="Den fertigen Foliensatz grafisch aufbereiten — Inhalte bleiben unverändert."
+          >
+            <Palette className="w-3.5 h-3.5" /> Grafisch aufbereiten
           </Button>
           <span className="text-xs font-medium text-muted-foreground shrink-0">Aufgabenstellung (optional)</span>
           <Input
@@ -193,6 +223,7 @@ export default function SlideshowModal({
                       aktiverSlotKey={aktiverSlot?.key || null}
                       onSlotFokus={(key, el) => setAktiverSlot({ key, el })}
                       onElementChange={onElementChange}
+                      design={aktivesSlideDesign(fieldValues)}
                     />
                   </SlideScaler>
                 )}
@@ -203,7 +234,17 @@ export default function SlideshowModal({
             )}
           </div>
 
-          <div className="w-64 shrink-0 border-l border-border bg-muted/20 min-h-0">
+          <div className="w-64 shrink-0 border-l border-border bg-muted/20 min-h-0 overflow-y-auto">
+            {hatSlideDesign(fieldValues) && (
+              <div className="p-3 border-b border-border">
+                <GrafikVarianteToggle
+                  variante={fieldValues.design_variante || VARIANTE_FUNKTIONAL}
+                  onVariante={(v) => setFieldValues((prev) => ({ ...prev, design_variante: v }))}
+                  onNeu={() => setGrafikOffen(true)}
+                  onVerwerfen={grafikVerwerfen}
+                />
+              </div>
+            )}
             <FolieEinstellungen folie={folie} onChange={patchFolie} />
           </div>
         </div>
@@ -224,6 +265,15 @@ export default function SlideshowModal({
           kontext={{ ...kiKontext, lernpaket: parentLernpaketName || undefined, aufgabentext: fieldValues.aufgabentext || undefined }}
           vorhandeneFolien={folien.filter((f) => Object.keys(f.elemente || {}).length > 0)}
           onUebernehmen={kiUebernehmen}
+        />
+
+        <GrafikAssistentDialog
+          open={grafikOffen}
+          onOpenChange={setGrafikOffen}
+          art="slideshow"
+          slides={folien}
+          kontext={{ ...kiKontext, thema: parentLernpaketName || undefined, titel: fieldValues.aufgabentext || undefined }}
+          onUebernehmen={grafikUebernehmen}
         />
       </DialogContent>
     </Dialog>
