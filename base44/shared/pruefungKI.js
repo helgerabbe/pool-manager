@@ -25,6 +25,7 @@ Du meldest NUR echte Probleme in genau diesen vier Kategorien:
 Regeln:
 - Sei streng mit echten Hürden und großzügig mit Kleinigkeiten. Keine Stilkritik, keine Verbesserungswünsche.
 - Leere Felder meldest du NICHT (das prüft ein anderer Schritt).
+- Fehlendes Material ist KEIN Mangel: Zusatzmaterial ist bei Aufgaben optional, ein KI-Tutor-Gespräch braucht nur Aufgabenstellung, Erwartungshorizont und die Tutor-Anweisungen. Melde fehlendes Material nicht.
 - Pro Stelle höchstens zwei Befunde.
 - "befund": ein Satz, was nicht trägt, mit kurzem Zitat der Stelle.
 - "vorschlag": ein Satz, was die Lehrkraft konkret tun kann.

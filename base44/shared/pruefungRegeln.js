@@ -393,14 +393,16 @@ export function pruefeAllgemeineAufgabeMechanisch(aufgabe) {
     ));
   }
 
-  // Materialverweise ohne Datei.
+  // Materialverweise ohne Datei: Material ist bei allgemeinen Aufgaben KEINE
+  // Pflicht (ein KI-Tutor-Gespräch braucht nur die vier Brian-Felder). Ein
+  // leerer Eintrag ist deshalb nur ein Hinweis auf möglicherweise Vergessenes.
   const materialien = Array.isArray(aufgabe?.materialien) ? aufgabe.materialien : [];
   const ohneInhalt = materialien.filter((m) => m && leer(m.content) && leer(m.url)).length;
   if (ohneInhalt > 0) {
     treffer.push(befund(
-      1, 'blockiert',
-      `${ohneInhalt} Materialeintrag/-einträge ohne Inhalt und ohne Datei.`,
-      'Material hochladen, Text einfügen oder Eintrag löschen.'
+      5, 'hinweis',
+      `${ohneInhalt} Materialeintrag/-einträge ohne Inhalt und ohne Datei – möglicherweise wurde ein Upload vergessen.`,
+      'Material nachreichen, den leeren Eintrag löschen oder bewusst so lassen (Material ist optional).'
     ));
   }
   const fremde = materialien.filter((m) => m && istFremdeQuelle(m.url)).length;
