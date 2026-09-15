@@ -8,6 +8,7 @@ import HinweisBox from './HinweisBox';
 import KITutorSeite from './KITutorSeite';
 import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
 import { fragmentZuDokument, AUFGABE_ZIELFLAECHE } from '@/lib/aufgabeFragment';
+import { grafikAktiv, aktivesFragment } from '@/lib/grafikVariante';
 import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
 import { abgabeSatz } from '@/lib/abgabeFormate';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
@@ -138,11 +139,13 @@ function MaterialBlock({ material }) {
 function OffenerSchrittBlock({ offen }) {
   const { html: dateiHtml } = useSnapshotHtml(offen?.snapshot_url || '');
   const dokument = useMemo(() => {
+    // Grafik-Assistent: ist die aufbereitete Fassung aktiv, hat sie Vorrang.
+    if (grafikAktiv(offen)) return fragmentZuDokument(aktivesFragment(offen));
     if (offen?.snapshot_html) return offen.snapshot_html;
     if (dateiHtml) return dateiHtml;
     if (offen?.fragment) return fragmentZuDokument(offen.fragment);
     return '';
-  }, [offen?.snapshot_html, offen?.fragment, dateiHtml]);
+  }, [offen, dateiHtml]);
 
   if (!dokument) {
     return <p className="text-sm text-muted-foreground italic">Für diesen Schritt ist noch keine Aufgabe gebaut.</p>;

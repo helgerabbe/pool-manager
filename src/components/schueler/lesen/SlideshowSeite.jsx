@@ -5,6 +5,7 @@ import AufgabenstellungBox from './AufgabenstellungBox';
 import SlideScaler from '@/components/slideshow/SlideScaler';
 import SlideCanvas from '@/components/slideshow/SlideCanvas';
 import { folieHatInhalt, slotsInReihenfolge, slotHatInhalt } from '@/lib/slideshowVorlagen';
+import { aktivesSlideDesign } from '@/lib/grafikVariante';
 
 /**
  * Schüler-Aktivität „Slideshow": Folien werden Seite für Seite angezeigt.
@@ -17,6 +18,8 @@ export default function SlideshowSeite({ aktivitaet, busy, onErledigt, onBack, m
     () => (Array.isArray(fv.slides) ? fv.slides : []).filter(folieHatInhalt),
     [fv.slides]
   );
+  // Grafik-Assistent: ist die aufbereitete Fassung aktiv, gilt ihr Design.
+  const design = useMemo(() => aktivesSlideDesign(fv), [fv]);
   const [index, setIndex] = useState(0);
   const [gezeigt, setGezeigt] = useState(1);
 
@@ -52,7 +55,7 @@ export default function SlideshowSeite({ aktivitaet, busy, onErledigt, onBack, m
       <div className="flex-1 min-h-0 flex flex-col justify-center">
         {folie ? (
           <SlideScaler className="rounded-xl shadow-md ring-1 ring-border bg-white">
-            <SlideCanvas folie={folie} modus="view" sichtbareSlots={sichtbareSlots} />
+            <SlideCanvas folie={folie} modus="view" sichtbareSlots={sichtbareSlots} design={design} />
           </SlideScaler>
         ) : (
           <p className="text-sm text-muted-foreground italic text-center py-10">Für diese Slideshow sind noch keine Folien hinterlegt.</p>
