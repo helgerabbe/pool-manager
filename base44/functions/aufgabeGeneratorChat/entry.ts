@@ -91,6 +91,7 @@ Die Ausgabe wird live übertragen; jedes Zeichen kostet Zeit, und nach wenigen M
 - Die Aufgabe gibt unmittelbare Rückmeldung: richtig/falsch, und bei falsch einen kurzen Hinweis statt nur "leider falsch".
 - Wo es passt, sind die Aufgaben zufällig erzeugt und wiederholbar, damit Übung möglich ist.
 - Keine Endlosschleife ohne Abschluss: Es gibt einen erkennbaren Punkt, an dem die Schülerin fertig ist (z. B. eine kurze Bilanz nach n Durchgängen).
+- FERTIG-SIGNAL (Pflicht): Genau an der Stelle, an der die Aufgabe ihren Abschluss anzeigt (alles richtig zugeordnet, "Prüfen" gedrückt, Bilanz erscheint), rufe zusätzlich \`parent.postMessage({ mbkFertig: true }, "*");\` auf. Mehrfaches Senden ist unschädlich; die Plattform wertet nur "fertig oder nicht" und braucht keine Antwort. NICHT senden bei "Nochmal von vorne", "Neu mischen" oder "Zurücksetzen".
 
 # WIE DU ANTWORTEST
 Antworte IMMER in diesem Format, ohne Markdown-Codefences:

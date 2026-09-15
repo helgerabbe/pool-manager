@@ -51,6 +51,7 @@ Tablet im Querformat, etwa 960px breit und 560px hoch. Nutze die Breite (mehrere
 # DIDAKTIK — DARAUF KOMMT ES AN
 ${OPERATIONS_REGELN.map((r) => `- ${r}`).join('\n')}
 - Die Aufgabe gibt unmittelbare, inhaltliche Rückmeldung und hat einen erkennbaren Abschluss (z. B. eine kurze Bilanz nach n Durchgängen).
+- FERTIG-SIGNAL (Pflicht): Genau an der Stelle, an der die Aufgabe ihren Abschluss anzeigt (alles richtig zugeordnet, „Prüfen" gedrückt, Bilanz erscheint), rufe zusätzlich \`parent.postMessage({ mbkFertig: true }, "*");\` auf. Mehrfaches Senden ist unschädlich; die Plattform wertet nur „fertig oder nicht" und braucht keine Antwort. NICHT senden bei „Nochmal von vorne", „Neu mischen" oder „Zurücksetzen".
 - Wo es passt: zufällig erzeugte Aufgaben, damit wiederholt geübt werden kann.
 
 # SPRACHE
