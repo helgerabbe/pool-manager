@@ -132,7 +132,7 @@ export default function SlideshowModal({
   /** Übernahme aus dem Grafik-Assistenten: Design zusätzlich speichern. */
   const grafikUebernehmen = ({ design }) => {
     setFieldValues((prev) => ({ ...prev, design_polished: design, design_variante: VARIANTE_GRAFISCH }));
-    toast.success('Grafische Fassung übernommen — sie ist jetzt aktiv.');
+    toast.success('Grafische Fassung übernommen — jetzt unten auf „Speichern" klicken.', { duration: 6000 });
   };
 
   const grafikVerwerfen = () => {
@@ -151,7 +151,14 @@ export default function SlideshowModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onCancel?.(); }}>
-      <DialogContent className="sm:max-w-6xl w-[96vw] h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+      <DialogContent
+        className="sm:max-w-6xl w-[96vw] h-[92vh] flex flex-col p-0 gap-0 overflow-hidden"
+        // Nicht versehentlich schließbar: Ein Klick daneben oder Escape (auch
+        // aus einem der Assistenten heraus) verwarf den ganzen Foliensatz-Stand
+        // samt gerade übernommener grafischer Fassung — ohne Warnung.
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.preventDefault()}
+      >
         <DialogHeader className="px-6 pt-5 pb-3 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Presentation className="w-5 h-5 text-sky-600" />
