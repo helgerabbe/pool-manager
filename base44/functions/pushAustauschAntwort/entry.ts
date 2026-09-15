@@ -59,7 +59,10 @@ export default async function (req) {
         return Response.json({ error: `Die Nachricht ${antwortetAuf} gibt es nicht.` }, { status: 404 });
       }
       const kopf = parseNachricht(original, antwortetAuf);
-      if (kopf.an === 'pm' && kopf.status === 'offen') {
+      // Auch 'sichtung' zählt hier: Eine Nachricht, die zur Sichtung lag und
+      // jetzt beantwortet wurde, ist beantwortet — sonst blieb sie trotz
+      // abgeschickter Antwort im Bereich „Muss gesichtet werden" stehen.
+      if (kopf.an === 'pm' && (kopf.status === 'offen' || kopf.status === 'sichtung')) {
         files.push({ path: originalPfad, bytes: enc.encode(setzeStatus(original, 'beantwortet')) });
       }
     }

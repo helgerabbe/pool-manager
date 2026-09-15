@@ -49,6 +49,26 @@ export function useAustauschDurcharbeiten() {
   });
 }
 
+/**
+ * Status einer einzelnen Nachricht von Hand setzen — für Nachrichten, die
+ * bereits auf anderem Weg beantwortet wurden oder die die Fachgruppe bewusst
+ * nicht weiterverfolgt.
+ */
+export function useAustauschStatusSetzen() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ datei, status, notiz }) => {
+      const res = await base44.functions.invoke('austauschStatusSetzen', { datei, status, notiz });
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: KEY });
+      toast.success('Die Nachricht liegt jetzt im Verlauf.');
+    },
+    onError: (err) => toast.error(err?.response?.data?.error || err.message),
+  });
+}
+
 export function useAustauschAntworten() {
   const queryClient = useQueryClient();
   return useMutation({

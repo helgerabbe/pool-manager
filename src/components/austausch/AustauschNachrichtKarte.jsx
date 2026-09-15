@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Reply, AlertTriangle, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, Reply, AlertTriangle, ArrowDownLeft, ArrowUpRight, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import AustauschAntwortDialog from '@/components/austausch/AustauschAntwortDialog';
+import { useAustauschStatusSetzen } from '@/hooks/useAustausch';
 
 const STATUS_LABEL = {
   offen: 'Offen',
@@ -16,8 +17,12 @@ const STATUS_LABEL = {
 /** EINE Nachricht des Briefkastens: Kopf, aufklappbarer Text, Antworten. */
 export default function AustauschNachrichtKarte({ nachricht }) {
   const [offen, setOffen] = useState(false);
+  const statusSetzen = useAustauschStatusSetzen();
   const eingehend = nachricht.an === 'pm';
   const wartet = eingehend && nachricht.status === 'offen';
+  // Eine eingehende Nachricht darf jederzeit von Hand abgehakt werden: schon
+  // auf anderem Weg beantwortet, nicht wichtig oder bewusst nicht gewollt.
+  const abhakbar = eingehend && nachricht.status !== 'erledigt' && nachricht.status !== 'beantwortet';
 
   return (
     <div className={cn('rounded-lg border p-3', wartet ? 'border-accent/60 bg-accent/5' : 'border-border')}>
@@ -42,6 +47,19 @@ export default function AustauschNachrichtKarte({ nachricht }) {
         <Badge variant={wartet ? 'default' : 'outline'} className="text-[11px]">
           {STATUS_LABEL[nachricht.status] || nachricht.status}
         </Badge>
+        {abhakbar && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1 text-xs"
+            title="Diese Nachricht wurde schon beantwortet oder ist nicht weiter zu verfolgen — in den Verlauf legen."
+            disabled={statusSetzen.isPending}
+            onClick={() => statusSetzen.mutate({ datei: nachricht.datei, status: 'erledigt' })}
+          >
+            {statusSetzen.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Erledigt
+          </Button>
+        )}
         <Button variant="ghost" size="sm" onClick={() => setOffen((o) => !o)} className="gap-1">
           {offen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           {offen ? 'Zuklappen' : 'Lesen'}
