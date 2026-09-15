@@ -23,6 +23,9 @@ Deno.serve(async (req) => {
       'Authorization': `Bearer ${cfg.access_token}`,
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
+      // GitHub lehnt Anfragen OHNE User-Agent mit HTTP 403 ab — unabhaengig
+      // von den Token-Rechten. Fehlte hier und war die Ursache der 403-Meldungen.
+      'User-Agent': 'PoolManager-Ticketsystem',
     };
     const repoPath = `${cfg.owner}/${cfg.repo}`;
 

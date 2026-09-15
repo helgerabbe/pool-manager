@@ -101,6 +101,8 @@ Deno.serve(async (req) => {
         'Accept': 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
         'Content-Type': 'application/json',
+        // Ohne User-Agent antwortet GitHub grundsaetzlich mit HTTP 403.
+        'User-Agent': 'PoolManager-Ticketsystem',
       },
       body: JSON.stringify({ title, body, labels }),
     });
