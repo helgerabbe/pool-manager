@@ -22,7 +22,7 @@
 
 import { AIRGAP_AENDERUNGEN } from '@/lib/airGapAenderungen';
 
-export const MBK_AIRGAP_VERSION = 'airgap-1.22.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.23.0';
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 

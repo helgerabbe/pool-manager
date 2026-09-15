@@ -31,6 +31,8 @@ export default function SchemaAenderungAnkuendigenCard() {
         version: AIRGAP_AENDERUNGEN.version,
         vorherige_version: AIRGAP_AENDERUNGEN.vorherige_version,
         stichpunkte: [...AIRGAP_AENDERUNGEN.stichpunkte],
+        // Beispiel-Payload je neuem Baustein (Bitte des Kursbaus 2026-09-10).
+        beispiele: [...(AIRGAP_AENDERUNGEN.beispiele || [])],
       });
       setIssue(res?.data || null);
     } catch (e) {

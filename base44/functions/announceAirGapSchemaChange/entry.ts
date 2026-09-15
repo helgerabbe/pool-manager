@@ -24,7 +24,9 @@ export default async function (req) {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht angemeldet.' }, { status: 401 });
 
-    const { version, vorherige_version = '', stichpunkte = [] } = (await req.json()) || {};
+    const {
+      version, vorherige_version = '', stichpunkte = [], beispiele = [],
+    } = (await req.json()) || {};
     if (!version || !Array.isArray(stichpunkte) || stichpunkte.length === 0) {
       return Response.json(
         { error: 'version und mindestens ein Stichpunkt sind erforderlich.' },
@@ -61,6 +63,21 @@ export default async function (req) {
       '### Was sich ändert',
       ...stichpunkte.map((s) => `- ${s}`),
       '',
+      // Bitte des Kursbaus (2026-09-10): Eine Stichpunktliste sagt, DASS etwas
+      // neu ist — nicht, wie es aussieht. Deshalb reist ein Beispiel mit.
+      ...(Array.isArray(beispiele) && beispiele.length
+        ? [
+          '### Wie es aussieht',
+          ...beispiele.flatMap((b) => [
+            `**${b?.was || 'Neuer Baustein'}**${b?.wo ? ` — ${b.wo}` : ''}`,
+            '',
+            '```json',
+            JSON.stringify(b?.beispiel ?? {}, null, 2),
+            '```',
+            '',
+          ]),
+        ]
+        : []),
       '### Wann',
       'Der erste Export mit dieser Version geht frühestens morgen raus.',
       '',

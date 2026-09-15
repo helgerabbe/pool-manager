@@ -1,0 +1,40 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "baustein_katalog_veroeffentlichen",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "katalog_schreiben": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "pushBausteinKatalog",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Baustein-Liste ins Repository schreiben",
+            "description": "Schritt-Typen und Aktivit\u00e4tenkatalog"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Baustein-Katalog ver\u00f6ffentlichen",
+  "description": "Schreibt bausteine/katalog.json und bausteine/README.md neu, sobald sich der Aktivit\u00e4tenkatalog \u00e4ndert. Grund (MBK-Meldung 2026-09-10): Der Kursbau erfuhr von einem neuen Aktivit\u00e4tsnamen bisher erst daran, dass ein Kurs halb leer war. Die Liste muss aktuell sein, BEVOR ein Export sie nutzt \u2014 nicht erst, wenn jemand daran denkt.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "AktivitaetenKatalog"
+    }
+  }
+}

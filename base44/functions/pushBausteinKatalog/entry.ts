@@ -12,6 +12,15 @@
  *
  * Payload: {} — der Aufruf schreibt immer den aktuellen Stand (Delta-Push,
  * unveränderte Dateien werden übersprungen).
+ *
+ * ZWEI AUFRUFWEGE: Von Hand aus dem Import-Center (angemeldete Person mit
+ * Import-Center-Zugang) ODER automatisch aus dem Workflow „Baustein-Katalog
+ * veröffentlichen", sobald der Aktivitätenkatalog sich ändert. Der Workflow hat
+ * keine angemeldete Person und weist sich über den Kopf
+ * `Authorization: Bearer <AUTOMATION_SECRET>` aus — genau wie lockReaper und
+ * pullMbkRueckmeldung. Ohne diesen zweiten Weg wäre die Liste im Repository nur
+ * so aktuell, wie jemand daran denkt — und genau das war der Grund der
+ * MBK-Meldung vom 2026-09-10.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
@@ -28,10 +37,20 @@ import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftrag
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    if (!(await hatImportCenterZugang(base44, user))) {
-      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+
+    // Automation (Workflow) weist sich über den Bearer-Kopf aus; alle anderen
+    // brauchen einen angemeldeten Zugang zum Import-Center.
+    const erwartet = secrets.get('AUTOMATION_SECRET');
+    const kopf = req.headers.get('authorization') || '';
+    const mitgegeben = kopf.startsWith('Bearer ') ? kopf.slice(7) : '';
+    const istAutomation = !!erwartet && mitgegeben === erwartet;
+
+    if (!istAutomation) {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
+      if (!(await hatImportCenterZugang(base44, user))) {
+        return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+      }
     }
 
     const token = secrets.get('GITHUB_POOLSIDE_TOKEN');

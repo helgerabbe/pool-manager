@@ -83,6 +83,7 @@ Die Ausgabe wird live übertragen; jedes Zeichen kostet Zeit, und nach wenigen M
 # GESTALTUNG
 - Benutze für Farben, Abstände und Schrift bevorzugt CSS-Variablen (z. B. var(--color-primary, #2563eb)) IMMER mit sinnvollem Fallback. So fügt sich die Aufgabe später in das Layout des Kurses ein, sieht aber schon in der Vorschau gut aus.
 - Bedienbar mit Maus UND Finger: Klickflächen mindestens 44px, kein Hover als einzige Rückmeldung, kein Drag-and-drop ohne Klick-Alternative.
+- Hilfselemente, die (noch) nicht sichtbar sein sollen — Overlays, Kopier-Textfelder, Ergebnisboxen —, verbirg mit \`display: none\` und zeige sie durch Entfernen dieser Regel. NIEMALS mit \`position: absolute\` weit außerhalb des Bildschirms parken: Der Kurs misst die Höhe der Aufgabe an ihrem Inhalt und reserviert dann ein Vielfaches der wirklich gebrauchten Höhe.
 - ZIELFLÄCHE: Die Aufgabe läuft auf Tablets im QUERFORMAT und bekommt eine Fläche von etwa 960px Breite × 560px Höhe (iPad quer, abzüglich Rahmen). Baue für GENAU diese Fläche: Nutze die Breite aus (zwei oder drei Spalten nebeneinander sind erwünscht, z. B. Kartenpool links, Zielspalten rechts), und bring alles Wesentliche in die 560px Höhe, damit nicht gescrollt werden muss. Kein enges Handy-Layout mit einer schmalen Spalte. Bleibt die Aufgabe trotzdem nutzbar, wenn die Fläche etwas kleiner ist (ab 768px Breite), umso besser.
 - Sprache: Deutsch, Ansprache in der Du-Form, altersgerecht.
 - Einzelarbeit am Bildschirm. Keine Gruppenarbeit, kein Ausdrucken, kein Material aus dem Klassenraum.

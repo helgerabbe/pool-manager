@@ -40,6 +40,7 @@ import {
   ITEM_ARBEITSAUFTRAG_CONTRACT,
 } from '@/lib/mbkDashboardContracts';
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
+import { mitBrianFeldNamen } from '@/lib/brianKatalogFelder';
 import {
   MBK_AIRGAP_VERSION,
   LERNTYP_KEYS,
@@ -1569,7 +1570,11 @@ export function buildTaskContentItemForLernpaket({
     master_id: m.id,
     titel: nullable(m.titel),
     reihenfolge: m.reihenfolge ?? null,
-    field_values: m.field_values && typeof m.field_values === 'object' ? m.field_values : {},
+    // airgap-1.23.0: system_prompt reist zusätzlich als system_instruction —
+    // siehe lib/brianKatalogFelder.js.
+    field_values: m.field_values && typeof m.field_values === 'object'
+      ? mitBrianFeldNamen(m.field_values)
+      : {},
     content_status: nullable(m.content_status),
   });
 
@@ -1595,9 +1600,13 @@ export function buildTaskContentItemForLernpaket({
         : 'shuffle',
       // KI-Aktivitäten: Inhalte stehen im Briefing → hier nur Hinweis-Felder.
       // Manuelle Aktivitäten: vollständige field_values + MasterAufgaben.
+      // airgap-1.23.0: system_prompt reist zusätzlich als system_instruction —
+      // siehe lib/brianKatalogFelder.js.
       field_values: pa.erstellungs_modus === 'ki'
         ? null
-        : (pa.field_values && typeof pa.field_values === 'object' ? pa.field_values : {}),
+        : (pa.field_values && typeof pa.field_values === 'object'
+          ? mitBrianFeldNamen(pa.field_values)
+          : {}),
       master_aufgaben: pa.erstellungs_modus === 'ki' ? [] : masters,
       // AP2 §1.4: Transkript ist Top-Level — gehört zu Inhalten, nicht Briefing.
       transkript: nullable(pa.transkript),

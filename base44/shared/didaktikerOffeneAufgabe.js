@@ -47,6 +47,7 @@ Ein HTML-FRAGMENT — kein vollständiges Dokument.
 
 # ZIELFLÄCHE
 Tablet im Querformat, etwa 960px breit und 560px hoch. Nutze die Breite (mehrere Spalten nebeneinander sind erwünscht) und bring das Wesentliche ohne Scrollen unter. Klickflächen mindestens 44px, bedienbar mit Maus UND Finger, Drag-and-drop immer mit Klick-Alternative.
+Hilfselemente, die (noch) nicht sichtbar sein sollen — Overlays, Kopier-Textfelder, Ergebnisboxen —, verbirg mit \`display: none\` und zeige sie durch Entfernen dieser Regel. NIEMALS mit \`position: absolute\` weit außerhalb des Bildschirms parken: Der Kurs misst die Höhe der Aufgabe an ihrem Inhalt und reserviert dann ein Vielfaches der wirklich gebrauchten Höhe.
 
 # DIDAKTIK — DARAUF KOMMT ES AN
 ${OPERATIONS_REGELN.map((r) => `- ${r}`).join('\n')}
