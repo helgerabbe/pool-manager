@@ -9,6 +9,11 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import {
+  PERSONA_ZIEL,
+  COMPLETION_STANDARD,
+  completionMitFormaten,
+} from '../../shared/brianEntspannung.js';
 
 const RATE_LIMIT_MAX_REQUESTS = 10;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -167,7 +172,9 @@ Deno.serve(async (req) => {
       restriktiv: 'Restriktiver Tutor: gib keinerlei Hinweise – der Schüler muss die Aufgabe vollständig selbstständig lösen.',
     };
     const personaZusatz = (task.tutor_persona_zusatz || '').trim();
-    const personaStr = (PERSONA_BESCHREIBUNGEN[task.tutor_persona] || PERSONA_BESCHREIBUNGEN.standard)
+    // Standard ist seit 2026-09-15 'unterstuetzend' (locker/entspannt), nicht
+    // mehr 'standard' — damit neue Dialoge gleich entspannt entstehen.
+    const personaStr = (PERSONA_BESCHREIBUNGEN[task.tutor_persona] || PERSONA_BESCHREIBUNGEN[PERSONA_ZIEL])
       + (personaZusatz ? `\nErgänzende Hinweise der Lehrkraft zum Betreuungsstil: ${personaZusatz}` : '');
 
     // Aufgabensequenz: Schritte (Material ⇄ Aufgabe) in den Prompt einweben,
@@ -302,11 +309,13 @@ ${lernzieleMitLpStr}${sequenzBlock}${ablaufBlock}${ebene2Block}${abgabeBlock}${b
 
 WICHTIG für deine Begleitung: Wenn du merkst, dass der Schüler ein bestimmtes Lernziel noch nicht beherrscht, verweise ihn konkret auf das oben genannte zugehörige Lernpaket ("Schau dir dafür nochmal das Lernpaket … an"). Gibt es zu einem Lernziel KEIN zugeordnetes Lernpaket, sage dem Schüler freundlich, dass es dafür aktuell kein Lernpaket gibt, und ermutige ihn, mit seiner Lehrkraft zu besprechen, wie er dieses Ziel erreichen kann.
 
-Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe vollständig und nach den Lernzielen erarbeitet hat.`;
+Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe in den Grundzügen und nach den Lernzielen erarbeitet hat. Bleibe dabei locker und entspannt: Grundrichtigkeit genügt, eine Vertiefung bietest du an, statt sie zu verlangen.`;
 
+    // Entspannte Abschlussregel (2026-09-15): Das Gespräch darf schon bei
+    // erkennbarer Grundrichtigkeit enden, Vertiefung ist ein Angebot.
     const completionRuleAuto = outputFormatsStr !== 'keine spezifischen Formate'
-      ? `Beende das Gespräch erst, wenn der Schüler alle wesentlichen inhaltlichen Aspekte für die geforderten Formate (${outputFormatsStr}) erarbeitet und präsentiert hat und die Lernziele sichtbar erreicht wurden.`
-      : 'Beende das Gespräch erst, wenn der Schüler die Aufgabenstellung vollständig beantwortet hat, die wesentlichen Lernziele erreicht wurden und der Schüler keine weiteren Fragen hat.';
+      ? completionMitFormaten(outputFormatsStr)
+      : COMPLETION_STANDARD;
 
     const messages = [
       {
