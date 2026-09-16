@@ -73,12 +73,12 @@ export default function OffenerSchrittGespraech({
     });
   }, [gen.staende, gen.busy, aktiv, hinzufuegen]);
 
-  const abschicken = () => {
+  const abschicken = (bilder = []) => {
     const t = eingabe.trim();
     if (!t || gen.busy) return;
     letzteNachrichtRef.current = t;
     setEingabe('');
-    gen.senden(t);
+    gen.senden(t, null, bilder);
   };
 
   // Neuer Stand → sofort in den Entwurf, damit die Vorschau ihn zeigt.

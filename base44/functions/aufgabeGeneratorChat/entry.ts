@@ -69,7 +69,7 @@ Ein HTML-FRAGMENT — kein vollständiges Dokument.
 - Genau ein umschließendes <div class="aufgabe"> … </div>.
 - CSS in genau einem <style>-Block INNERHALB dieses divs. Alle Selektoren MÜSSEN mit .aufgabe beginnen, damit nichts in die umgebende Seite ausblutet.
 - JavaScript in genau einem <script>-Block am Ende des divs. Kein Zugriff auf document.body, document.head oder Elemente außerhalb des Fragments; arbeite ausschließlich innerhalb von .aufgabe.
-- KEINE externen Dateien, keine CDNs, keine Bilder von außen, keine Netzwerkaufrufe. Alles muss offline im iframe laufen. Grafik erzeugst du mit CSS oder inline-SVG.
+- KEINE externen Dateien, keine CDNs, keine Bilder von außen, keine Netzwerkaufrufe. Alles muss offline im iframe laufen. Grafik erzeugst du mit CSS oder inline-SVG. EINZIGE AUSNAHME: Bilder, die die Lehrkraft der Nachricht beilegt — deren Adresse wird dir genannt, und du darfst sie mit <img src="ADRESSE"> in die Aufgabe einbinden, wenn die Lehrkraft das möchte oder es der Aufgabe erkennbar dient.
 - KEINE Navigation, KEINE Kopf- oder Fußzeile, KEIN "Zurück"- oder "Erledigt"-Knopf. Die Plattform liefert das drumherum.
 
 # KNAPP BAUEN — DAS IST WICHTIG
@@ -615,9 +615,31 @@ Deno.serve(async (req) => {
 
       letzte = `${bisher}${materialBlock}WUNSCH DER LEHRKRAFT:\n${nachricht}`;
     } else {
+      // Bilder aus der Zwischenablage der Lehrkraft (2026-09-16): Sie liegen
+      // der Nachricht als Bildblöcke bei, damit das Modell sie sehen kann; ihre
+      // Adressen stehen zusätzlich im Text, damit es sie in die Aufgabe
+      // einbinden kann.
+      const bilder = Array.isArray(body.bilder) ? body.bilder.filter((b: any) => b?.url) : [];
+      let bildBlock = '';
+      if (bilder.length) {
+        const anhang = await ladeMaterialAnhaenge(
+          bilder.map((b: any, i: number) => ({ type: 'image', url: b.url, label: b.name || `Bild ${i + 1}` })),
+        );
+        anhaengeBloecke = anhang.bloecke;
+        bildBlock = `BEIGEFÜGTE BILDER DER LEHRKRAFT (${bilder.length}):\n`
+          + bilder.map((b: any, i: number) => `${i + 1}. ${b.name || `Bild ${i + 1}`} — Adresse: ${b.url}`).join('\n')
+          + (anhang.gelesen.length
+            ? `\nDiese Bilder liegen der Nachricht bei und du darfst sie ansehen und auswerten.`
+            : '')
+          + (anhang.uebersprungen.length
+            ? `\nNICHT gelesen werden konnten: ${anhang.uebersprungen.join(', ')} — von diesen kennst du nur die Adresse.`
+            : '')
+          + `\nSoll ein Bild in der Aufgabe erscheinen, binde es mit <img src="ADRESSE"> ein.\n\n---\n\n`;
+      }
+
       letzte = fragment
-        ? `BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`
-        : `AUFGABE DER LEHRKRAFT:\n${nachricht}`;
+        ? `${bildBlock}BISHERIGES FRAGMENT (Stand, auf den sich Änderungen beziehen):\n${fragment}\n\n---\n\nÄNDERUNGSWUNSCH DER LEHRKRAFT:\n${nachricht}`
+        : `${bildBlock}AUFGABE DER LEHRKRAFT:\n${nachricht}`;
     }
     // Mit Anhängen wird die letzte Nachricht zu einer Blockliste: erst die
     // Dateien, dann der Text — so bezieht sich der Auftrag auf das, was

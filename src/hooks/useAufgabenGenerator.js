@@ -70,17 +70,18 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
    * gesetzt und gleich der Auftrag geschickt; ohne diesen Weg würde der noch
    * alte (leere) Stand mitgehen und die Vorlage wäre wirkungslos.
    */
-  const senden = useCallback(async (nachricht, startFragmentUeberschreibung = null) => {
+  const senden = useCallback(async (nachricht, startFragmentUeberschreibung = null, bilder = []) => {
     const text = String(nachricht || '').trim();
     if (!text || busy) return;
     const basisFragment = startFragmentUeberschreibung ?? fragment;
+    const bildListe = Array.isArray(bilder) ? bilder.filter((b) => b?.url) : [];
 
     setFehler(null);
     setFehlgeschlagen(null);
     setWarnungen([]);
     setBusy(true);
     setTeilAntwort('');
-    setVerlauf((v) => [...v, { rolle: 'lehrkraft', text }]);
+    setVerlauf((v) => [...v, { rolle: 'lehrkraft', text, bilder: bildListe }]);
 
     // Verlauf im Protokoll-Format der Function (ohne die neue Nachricht).
     const verlaufFuerApi = verlauf.map((m) => ({
@@ -112,6 +113,7 @@ export default function useAufgabenGenerator({ kontext = {}, startFragment = '' 
           fragment: basisFragment,
           verlauf: verlaufFuerApi,
           kontext,
+          bilder: bildListe,
         }),
         onopen: async (res) => {
           if (res.ok && res.headers.get('content-type')?.includes('text/event-stream')) return;
