@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Send, AlertTriangle, RotateCcw, ImagePlus } from 'lucide-react';
-import { toast } from 'sonner';
-import { storageService } from '@/services/storageService';
+import useBildAnhaenge from '@/hooks/useBildAnhaenge';
 import BauFortschritt from '@/components/werkstatt/BauFortschritt';
 import GespraechsBildAnhaenge from '@/components/werkstatt/GespraechsBildAnhaenge';
 
@@ -42,41 +41,16 @@ export default function GespraechsSpalte({
   className = '',
 }) {
   const verlaufRef = useRef(null);
-  const [bilder, setBilder] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const { bilder, uploading, onPaste: handlePaste, entfernen, leeren } = useBildAnhaenge({ disabled });
 
   useEffect(() => {
     verlaufRef.current?.scrollTo({ top: verlaufRef.current.scrollHeight, behavior: 'smooth' });
   }, [gen.verlauf.length, gen.teilAntwort]);
 
-  const bildHochladen = async (file) => {
-    if (!file || disabled) return;
-    setUploading(true);
-    try {
-      const antwort = await storageService.upload(file);
-      const url = typeof antwort === 'string' ? antwort : antwort?.file_url;
-      if (!url) throw new Error('Das Bild konnte nicht gespeichert werden.');
-      setBilder((alt) => [...alt, { url, name: file.name || `Bild ${alt.length + 1}` }]);
-    } catch (err) {
-      toast.error(err?.message || 'Bild konnte nicht hochgeladen werden.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handlePaste = (e) => {
-    for (const item of e.clipboardData?.items || []) {
-      if (item.type?.startsWith('image/')) {
-        const file = item.getAsFile();
-        if (file) { e.preventDefault(); bildHochladen(file); return; }
-      }
-    }
-  };
-
   const abschicken = () => {
     if (!eingabe.trim() || gen.busy || disabled || uploading) return;
     onAbschicken(bilder);
-    setBilder([]);
+    leeren();
   };
 
   return (
@@ -164,7 +138,7 @@ export default function GespraechsSpalte({
         <GespraechsBildAnhaenge
           bilder={bilder}
           uploading={uploading}
-          onEntfernen={(i) => setBilder((alt) => alt.filter((_, idx) => idx !== i))}
+          onEntfernen={entfernen}
           disabled={disabled || gen.busy}
         />
         <Textarea

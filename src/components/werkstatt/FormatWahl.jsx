@@ -3,7 +3,9 @@ import { useMutation } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Wand2, AlertCircle } from 'lucide-react';
+import { Search, Wand2, AlertCircle, ImagePlus } from 'lucide-react';
+import useBildAnhaenge from '@/hooks/useBildAnhaenge';
+import GespraechsBildAnhaenge from '@/components/werkstatt/GespraechsBildAnhaenge';
 import FormatTrefferKarte from './FormatTrefferKarte';
 import FormatVorschauDialog from '@/components/formate/FormatVorschauDialog';
 
@@ -24,6 +26,9 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initial
   const [beschreibung, setBeschreibung] = useState(initialBeschreibung);
   const [treffer, setTreffer] = useState(null);   // null = noch nicht gesucht
   const [vorschau, setVorschau] = useState(null);
+  // Bilder aus der Zwischenablage gehen mit dem ersten Auftrag an den Baumeister.
+  const anhaenge = useBildAnhaenge({ disabled });
+  const bilder = anhaenge.bilder;
 
   const suche = useMutation({
     mutationFn: async (text) => {
@@ -44,9 +49,16 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initial
           Beschreiben Sie kurz, was die Schüler:innen tun sollen. Ich sehe zuerst nach, ob es dafür
           schon ein erprobtes Aufgabenformat gibt.
         </p>
+        <GespraechsBildAnhaenge
+          bilder={bilder}
+          uploading={anhaenge.uploading}
+          onEntfernen={anhaenge.entfernen}
+          disabled={disabled}
+        />
         <Textarea
           value={beschreibung}
           onChange={(e) => setBeschreibung(e.target.value)}
+          onPaste={anhaenge.onPaste}
           rows={4}
           disabled={disabled || suche.isPending}
           placeholder="z. B. Die Schüler sollen Aussagen zu einem Text danach einordnen, ob sie zutreffen, teilweise zutreffen oder nicht zutreffen."
@@ -65,11 +77,14 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initial
           <Button
             variant="ghost"
             className="gap-1.5 text-muted-foreground"
-            onClick={() => onOhneVorlage(text)}
-            disabled={disabled || !text || suche.isPending}
+            onClick={() => onOhneVorlage(text, bilder)}
+            disabled={disabled || !text || suche.isPending || anhaenge.uploading}
           >
             <Wand2 className="w-3.5 h-3.5" /> Direkt neu bauen
           </Button>
+          <span className="text-[11px] text-muted-foreground ml-auto inline-flex items-center gap-1.5">
+            <ImagePlus className="w-3 h-3" /> Bild mit Strg + V einfügen
+          </span>
         </div>
       </div>
 
@@ -88,7 +103,7 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initial
               <p className="text-xs text-muted-foreground mt-1">
                 Dann baue ich die Aufgabe neu — und sie steht danach als Vorschlag für die Galerie zur Verfügung.
               </p>
-              <Button className="gap-1.5 mt-3" onClick={() => onOhneVorlage(text)} disabled={disabled}>
+              <Button className="gap-1.5 mt-3" onClick={() => onOhneVorlage(text, bilder)} disabled={disabled || anhaenge.uploading}>
                 <Wand2 className="w-3.5 h-3.5" /> Neue Aufgabe bauen
               </Button>
             </div>
@@ -106,14 +121,14 @@ export default function FormatWahl({ onVorlage, onOhneVorlage, disabled, initial
                   treffer={t}
                   disabled={disabled}
                   onAnsehen={() => setVorschau(t)}
-                  onNehmen={() => onVorlage(t, text)}
+                  onNehmen={() => onVorlage(t, text, bilder)}
                 />
               ))}
               <Button
                 variant="ghost"
                 className="gap-1.5 text-muted-foreground"
-                onClick={() => onOhneVorlage(text)}
-                disabled={disabled}
+                onClick={() => onOhneVorlage(text, bilder)}
+                disabled={disabled || anhaenge.uploading}
               >
                 <Wand2 className="w-3.5 h-3.5" /> Keins davon — neu bauen
               </Button>

@@ -101,7 +101,7 @@ Behalte Aufbau, Bedienung, Gestaltung und die Rückmeldelogik unverändert. Erse
 Neue Inhalte gemäß diesem Vorhaben der Lehrkraft:
 ${vorhaben}`;
 
-  const starteMitVorlage = (treffer, vorhaben) => {
+  const starteMitVorlage = (treffer, vorhaben, bilder = []) => {
     setGestartet(true);
     letzteNachrichtRef.current = vorhaben;
     // Herkunft festhalten: Eine aus der Galerie gebaute Aufgabe darf nicht
@@ -109,13 +109,13 @@ ${vorhaben}`;
     // Verwendung ein Eintrag der Sammlung.
     onVorlageGewaehlt?.(treffer.id, schritt?.id);
     gen.setzeFragment(treffer.fragment, `Vorlage: ${treffer.name}`);
-    gen.senden(vorlageAuftrag(treffer, vorhaben), treffer.fragment);
+    gen.senden(vorlageAuftrag(treffer, vorhaben), treffer.fragment, bilder);
   };
 
-  const starteOhneVorlage = (vorhaben) => {
+  const starteOhneVorlage = (vorhaben, bilder = []) => {
     setGestartet(true);
     letzteNachrichtRef.current = vorhaben;
-    gen.senden(vorhaben);
+    gen.senden(vorhaben, null, bilder);
   };
 
   if (!gestartet) {
