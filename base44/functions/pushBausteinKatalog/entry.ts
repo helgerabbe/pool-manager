@@ -32,7 +32,13 @@ import {
   baueKatalogDatei,
   baueKatalogMarkdown,
 } from '../../shared/bausteinKatalog.js';
+import {
+  AUFTRAEGE_ORDNER,
+  baueSchemataDatei,
+  baueSchemataMarkdown,
+} from '../../shared/auftragsSchemataKatalog.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import { istAutomationAufruf } from '../../shared/automationAuth.js';
 
 export default async function (req) {
   try {
@@ -40,12 +46,7 @@ export default async function (req) {
 
     // Automation (Workflow) weist sich über den Bearer-Kopf aus; alle anderen
     // brauchen einen angemeldeten Zugang zum Import-Center.
-    const erwartet = secrets.get('AUTOMATION_SECRET');
-    const kopf = req.headers.get('authorization') || '';
-    const mitgegeben = kopf.startsWith('Bearer ') ? kopf.slice(7) : '';
-    const istAutomation = !!erwartet && mitgegeben === erwartet;
-
-    if (!istAutomation) {
+    if (!istAutomationAufruf(req)) {
       const user = await base44.auth.me();
       if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
       if (!(await hatImportCenterZugang(base44, user))) {
@@ -60,6 +61,9 @@ export default async function (req) {
 
     const aktivitaeten = await base44.asServiceRole.entities.AktivitaetenKatalog.list('name', 500);
     const datei = baueKatalogDatei(aktivitaeten);
+    // Auftragsschemata des Import-Centers reisen im selben Push mit — so kann
+    // der Kursbau den Vertrag lesen, ohne sich am Pool-Manager anzumelden.
+    const schemata = baueSchemataDatei(aktivitaeten, datei.erzeugt_am);
     const enc = new TextEncoder();
 
     const ergebnis = await pushFiles({
@@ -70,14 +74,17 @@ export default async function (req) {
       files: [
         { path: `${KATALOG_ORDNER}/katalog.json`, bytes: enc.encode(JSON.stringify(datei, null, 2) + '\n') },
         { path: `${KATALOG_ORDNER}/README.md`, bytes: enc.encode(baueKatalogMarkdown(datei)) },
+        { path: `${AUFTRAEGE_ORDNER}/schemata.json`, bytes: enc.encode(JSON.stringify(schemata, null, 2) + '\n') },
+        { path: `${AUFTRAEGE_ORDNER}/README.md`, bytes: enc.encode(baueSchemataMarkdown(schemata)) },
       ],
-      message: 'Bausteine: Schritt-Typen und Aktivitätenkatalog veröffentlicht',
+      message: 'Bausteine und Auftragsschemata des Import-Centers veröffentlicht',
     });
 
     return Response.json({
       ok: true,
       aktivitaeten: datei.aktivitaeten.length,
       schritt_typen: datei.schritt_typen.length,
+      auftragsarten: schemata.arten.length,
       geschrieben: ergebnis.geschrieben,
       unveraendert: ergebnis.unveraendert,
       commit_url: ergebnis.commit_url,

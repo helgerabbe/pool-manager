@@ -14,13 +14,18 @@
  * es pro Feld anzeigen kann. Der Auftrag wird trotzdem gespeichert (Status
  * 'eingegangen'/'geprueft') — so bleibt der Korrektur-Umlauf nachvollziehbar.
  *
- * v1 nimmt Aufträge aus dem internen Formular an (quelle='intern'). Ein
- * späterer externer Eingang benutzt DIESELBE Funktion und denselben Vertrag.
+ * ZWEI AUFRUFWEGE (2026-09-16): Aus dem internen Formular (angemeldete Person
+ * mit Import-Center-Zugang, quelle='intern') ODER von außen durch den Kursbau
+ * (MBK) mit `Authorization: Bearer <AUTOMATION_SECRET>`, quelle='mbk'. Beide
+ * Wege benutzen denselben Vertrag und landen im selben Posteingang — das
+ * Freigabe-Tor bleibt unangetastet. Den Vertrag liest die MBK im Repository
+ * unter `auftraege/` (pushBausteinKatalog).
  *
- * Payload: { auftrag_id?, auftrags_art, titel?, ziel_typ?, ziel_id?, position?, parameter? }
+ * Payload: { auftrag_id?, auftrags_art, titel?, ziel_typ?, ziel_id?, position?, parameter?, absender? }
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
+import { istAutomationAufruf } from '../../shared/automationAuth.js';
 import { validiereAuftragStruktur, getSchemaFuerArt, ART_LABELS } from '../../shared/importAuftragSchemata.js';
 import {
   pruefeAktivitaetInhalt,
@@ -78,13 +83,19 @@ async function loeseZielAuf(base44, auftrag) {
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    if (!(await hatImportCenterZugang(base44, user))) {
-      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
-    }
-
     const body = await req.json().catch(() => ({}));
+
+    let quelle = 'mbk';
+    let absender = String(body?.absender || '').trim() || 'mbk';
+    if (!istAutomationAufruf(req)) {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
+      if (!(await hatImportCenterZugang(base44, user))) {
+        return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+      }
+      quelle = 'intern';
+      absender = user.email;
+    }
     const art = body?.auftrags_art;
     const schema = getSchemaFuerArt(art);
     if (!schema) return Response.json({ error: 'Unbekannte Auftragsart' }, { status: 400 });
@@ -99,8 +110,8 @@ export default async function (req) {
           ? Number(body.position)
           : undefined,
       parameter: body?.parameter && typeof body.parameter === 'object' ? body.parameter : {},
-      quelle: 'intern',
-      absender: user.email,
+      quelle,
+      absender,
     };
 
     // ── Stufe 1: Vertrag ───────────────────────────────────────────────
