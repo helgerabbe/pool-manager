@@ -35,6 +35,7 @@ export default function SortingListModal({
   const [editorData, setEditorData] = useState({
     instruction: initialData?.instruction || '',
     orderedItems: initialData?.orderedItems || [],
+    instruction_bilder: initialData?.instruction_bilder || [],
   });
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -49,6 +50,7 @@ export default function SortingListModal({
       setEditorData({
         instruction: initialData?.instruction || '',
         orderedItems: initialData?.orderedItems || [],
+        instruction_bilder: initialData?.instruction_bilder || [],
       });
     }
     prevOpenRef.current = open;

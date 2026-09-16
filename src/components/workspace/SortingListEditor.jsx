@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Trash2, GripVertical, Sparkles, Loader2 } from 'lucide-react';
 import SortingListGeneratorModal from '@/components/workspace/SortingListGeneratorModal';
+import AufgabenstellungBilderFeld from '@/components/workspace/AufgabenstellungBilderFeld';
 import { toast } from 'sonner';
 
 export default function SortingListEditor({
@@ -28,13 +29,16 @@ export default function SortingListEditor({
 }) {
   const [instruction, setInstruction] = useState(initialData.instruction || '');
   const [orderedItems, setOrderedItems] = useState(initialData.orderedItems || []);
+  // Bilder zur Aufgabenstellung (2026-09-16): werden den Schülern über der
+  // Sortierliste mit angezeigt.
+  const [instructionBilder, setInstructionBilder] = useState(initialData.instruction_bilder || []);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Datenbrücke zum Modal
   useEffect(() => {
-    onChange?.({ instruction, orderedItems });
-  }, [instruction, orderedItems]);
+    onChange?.({ instruction, orderedItems, instruction_bilder: instructionBilder });
+  }, [instruction, orderedItems, instructionBilder]);
 
   const handleDragEnd = (result) => {
     if (!result.destination) return;
@@ -101,7 +105,7 @@ export default function SortingListEditor({
       toast.error('Alle Listenelemente müssen ausgefüllt sein.');
       return;
     }
-    onSave?.({ instruction, orderedItems });
+    onSave?.({ instruction, orderedItems, instruction_bilder: instructionBilder });
   };
 
   return (
@@ -118,6 +122,14 @@ export default function SortingListEditor({
           placeholder="z.B. Sortieren Sie die folgenden Schritte chronologisch..."
           rows={3}
           className="resize-none text-sm"
+          disabled={readOnly}
+        />
+        <p className="text-xs text-muted-foreground">
+          Bilder zur Aufgabenstellung (optional) — werden den Schüler:innen mit angezeigt.
+        </p>
+        <AufgabenstellungBilderFeld
+          value={instructionBilder}
+          onChange={setInstructionBilder}
           disabled={readOnly}
         />
       </div>

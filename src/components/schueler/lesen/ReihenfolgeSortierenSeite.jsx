@@ -71,6 +71,20 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
         {fv.instruction || 'Bringe die Elemente in die richtige Reihenfolge.'}
       </AufgabenstellungBox>
 
+      {/* Bilder zur Aufgabenstellung (optional, aus dem Editor eingefügt). */}
+      {Array.isArray(fv.instruction_bilder) && fv.instruction_bilder.length > 0 && (
+        <div className="mb-4 shrink-0 flex flex-wrap gap-3">
+          {fv.instruction_bilder.map((url, i) => (
+            <img
+              key={url}
+              src={url}
+              alt={`Bild zur Aufgabe ${i + 1}`}
+              className="max-h-56 w-auto rounded-xl border border-border bg-card object-contain"
+            />
+          ))}
+        </div>
+      )}
+
       <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
         <div className="space-y-4 pb-2">
           {karten.length === 0 ? (
