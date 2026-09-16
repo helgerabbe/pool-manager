@@ -4,6 +4,7 @@ import { CheckCircle2, Loader2, ArrowLeft, GripVertical, RotateCcw, XCircle } fr
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AufgabenstellungBox from './AufgabenstellungBox';
+import { elementText, elementBild } from '@/lib/sortierElemente';
 
 /** Fisher-Yates Shuffle, der sicherstellt, dass die Startreihenfolge nicht der Lösung entspricht. */
 function mischen(items) {
@@ -35,7 +36,7 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
   // Korrekte Reihenfolge als stabile Karten-Objekte (mit ursprünglichem Index).
   const loesung = useMemo(
     () => (Array.isArray(fv.orderedItems) ? fv.orderedItems : [])
-      .map((t, i) => ({ id: `karte-${i}`, text: t, korrekt: i })),
+      .map((el, i) => ({ id: `karte-${i}`, text: elementText(el), bild: elementBild(el), korrekt: i })),
     [fv.orderedItems]
   );
 
@@ -117,9 +118,20 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
                               <span className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
                                 {idx + 1}
                               </span>
-                              {/* Text – groß & gut lesbar */}
-                              <span className="flex-1 text-base font-medium text-foreground leading-snug">
-                                {karte.text}
+                              {/* Bild und/oder Text – groß & gut lesbar */}
+                              <span className="flex-1 min-w-0 space-y-2">
+                                {karte.bild && (
+                                  <img
+                                    src={karte.bild}
+                                    alt={karte.text || 'Sortier-Element'}
+                                    className="max-h-32 w-auto rounded-lg border border-border bg-card object-contain pointer-events-none"
+                                  />
+                                )}
+                                {karte.text && (
+                                  <span className="block text-base font-medium text-foreground leading-snug">
+                                    {karte.text}
+                                  </span>
+                                )}
                               </span>
                               {/* Status oder Drag-Griff */}
                               {geprueft ? (

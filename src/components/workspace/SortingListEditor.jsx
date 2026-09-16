@@ -12,9 +12,10 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Trash2, GripVertical, Sparkles, Loader2 } from 'lucide-react';
+import { Plus, GripVertical, Sparkles, Loader2 } from 'lucide-react';
+import SortierElementZeile from '@/components/workspace/sortierung/SortierElementZeile';
+import { elementBefuellt } from '@/lib/sortierElemente';
 import SortingListGeneratorModal from '@/components/workspace/SortingListGeneratorModal';
 import AufgabenstellungBilderFeld from '@/components/workspace/AufgabenstellungBilderFeld';
 import { toast } from 'sonner';
@@ -101,8 +102,8 @@ export default function SortingListEditor({
       toast.error(`Maximal ${MAX_ITEMS} Elemente erlaubt.`);
       return;
     }
-    if (orderedItems.some(item => !item.trim())) {
-      toast.error('Alle Listenelemente müssen ausgefüllt sein.');
+    if (orderedItems.some((item) => !elementBefuellt(item))) {
+      toast.error('Alle Listenelemente brauchen einen Text oder ein Bild.');
       return;
     }
     onSave?.({ instruction, orderedItems, instruction_bilder: instructionBilder });
@@ -169,34 +170,25 @@ export default function SortingListEditor({
                         <div
                           ref={provided.innerRef}
                           {...provided.draggableProps}
-                          className={`flex items-center gap-2 rounded-lg border transition-all ${
+                          className={`flex items-start gap-2 rounded-lg border transition-all ${
                             snapshot.isDragging ? 'bg-primary/10 border-primary shadow-lg' : 'bg-card border-border hover:border-primary/50'
                           } p-2`}
                         >
                           {!readOnly && (
-                            <div {...provided.dragHandleProps} className="flex-shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing">
+                            <div {...provided.dragHandleProps} className="flex-shrink-0 mt-1.5 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing">
                               <GripVertical className="w-4 h-4" />
                             </div>
                           )}
-                          <span className="w-6 text-xs font-semibold text-muted-foreground flex-shrink-0">
+                          <span className="w-6 mt-1.5 text-xs font-semibold text-muted-foreground flex-shrink-0">
                             {idx + 1}.
                           </span>
-                          <Input
-                            value={item}
-                            onChange={(e) => updateItem(idx, e.target.value)}
-                            placeholder={`Element ${idx + 1}`}
-                            className="h-8 flex-1 text-sm"
-                            disabled={readOnly}
+                          <SortierElementZeile
+                            element={item}
+                            index={idx}
+                            onChange={(neu) => updateItem(idx, neu)}
+                            onRemove={() => removeItem(idx)}
+                            readOnly={readOnly}
                           />
-                          {!readOnly && (
-                            <button
-                              onClick={() => removeItem(idx)}
-                              className="flex-shrink-0 p-1 text-muted-foreground hover:text-destructive rounded"
-                              title="Element löschen"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
                         </div>
                       )}
                     </Draggable>
