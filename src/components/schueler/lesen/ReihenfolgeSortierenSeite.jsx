@@ -59,34 +59,36 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
   };
 
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+    /* Die gesamte Seite scrollt — die Sortierkarten liegen bewusst NICHT in
+       einem eigenen Scrollfeld, sonst kann man beim Ziehen nicht mitscrollen. */
+    <div className="max-w-2xl mx-auto w-full px-5 py-6">
       {/* Hinweis bei sequenziellen Master-Aufgaben: „Aufgabe x von y". */}
       {masterHinweis && (
-        <div className="mb-3 shrink-0 inline-flex items-center self-start rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1">
+        <div className="mb-3 inline-flex items-center rounded-full bg-primary/10 text-primary text-xs font-semibold px-3 py-1">
           Aufgabe {masterHinweis.aktuell} von {masterHinweis.gesamt}
         </div>
       )}
 
       {/* Aufgabenstellung – einheitlicher blauer Anker mit Icon. */}
-      <AufgabenstellungBox className="mb-4 shrink-0">
+      <AufgabenstellungBox className="mb-4">
         {fv.instruction || 'Bringe die Elemente in die richtige Reihenfolge.'}
       </AufgabenstellungBox>
 
       {/* Bilder zur Aufgabenstellung (optional, aus dem Editor eingefügt). */}
       {Array.isArray(fv.instruction_bilder) && fv.instruction_bilder.length > 0 && (
-        <div className="mb-4 shrink-0 flex flex-wrap gap-3">
+        <div className="mb-4 flex flex-wrap gap-3">
           {fv.instruction_bilder.map((url, i) => (
             <img
               key={url}
               src={url}
               alt={`Bild zur Aufgabe ${i + 1}`}
-              className="max-h-56 w-auto rounded-xl border border-border bg-card object-contain"
+              className="max-h-40 max-w-full w-auto rounded-xl border border-border bg-card object-contain"
             />
           ))}
         </div>
       )}
 
-      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+      <div>
         <div className="space-y-4 pb-2">
           {karten.length === 0 ? (
             <p className="text-sm text-muted-foreground italic text-center py-10">
@@ -124,7 +126,7 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
                                   <img
                                     src={karte.bild}
                                     alt={karte.text || 'Sortier-Element'}
-                                    className="max-h-32 w-auto rounded-lg border border-border bg-card object-contain pointer-events-none"
+                                    className="max-h-24 max-w-full w-auto rounded-lg border border-border bg-card object-contain pointer-events-none"
                                   />
                                 )}
                                 {karte.text && (
@@ -174,7 +176,7 @@ export default function ReihenfolgeSortierenSeite({ aktivitaet, busy, onErledigt
       </div>
 
       {/* Aktionen: links zurück, rechts grün */}
-      <div className="pt-5 shrink-0 grid grid-cols-2 gap-3">
+      <div className="pt-5 grid grid-cols-2 gap-3">
         <Button variant="outline" className="gap-2" onClick={onBack} disabled={busy}>
           <ArrowLeft className="w-4 h-4" /> Zurück zum Lernpaket
         </Button>

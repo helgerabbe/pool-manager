@@ -423,7 +423,9 @@ export default function AufgabensequenzSeite({
     return (
       <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
         {indikator}
-        <div className="flex-1 min-h-0">
+        {/* Die delegierte Seite scrollt als GANZES mit (Sortierkarten dürfen
+            nicht in einem eigenen kleinen Scrollfeld liegen). */}
+        <div className="flex-1 min-h-0 overflow-y-auto">
           {Seite ? (
             <Seite
               aktivitaet={{ id: step.id, aktivitaet_id: step.aktivitaet_id, field_values: step.field_values || {} }}
