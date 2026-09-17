@@ -490,10 +490,20 @@ export default function AufgabensequenzSeite({
     : (isLast ? 'Erledigt' : 'Weiter');
   // Offene Aufgaben sind für die Tablet-Querformat-Fläche gebaut und brauchen
   // mehr Breite als die Lesespalte der übrigen Schritte.
-  const rahmenBreite = typ === SCHRITT_TYPEN.OFFEN ? 'max-w-5xl' : 'max-w-2xl';
+  const istOffen = typ === SCHRITT_TYPEN.OFFEN;
+  const rahmenBreite = istOffen ? 'max-w-5xl' : 'max-w-2xl';
+
+  // Offene Aufgaben liegen NIE in einem inneren Scrollkasten: Die Aufgabe hat
+  // ihre feste Höhe, und wenn der Bildschirm nicht reicht, scrollt die ganze
+  // Schrittseite (Aufgabenstellung, Aufgabe, Knöpfe) als Einheit. Ein kleines
+  // Fenster mit eigener Bildlaufleiste mitten in der Aufgabe war in Moodle
+  // schlicht unschön und schwer zu bedienen.
+  const inhaltKlasse = istOffen
+    ? '-mx-1 px-1'
+    : 'flex-1 min-h-0 overflow-y-auto -mx-1 px-1';
 
   return (
-    <div className={`h-full flex flex-col ${rahmenBreite} mx-auto w-full px-5 py-6`}>
+    <div className={`h-full flex flex-col ${istOffen ? 'overflow-y-auto' : ''} ${rahmenBreite} mx-auto w-full px-5 py-6`}>
       {/* Aufgabenstellung */}
       {zeigeAufgabenstellung && (
         <AufgabenstellungBox className="mb-4 shrink-0">
@@ -504,7 +514,7 @@ export default function AufgabensequenzSeite({
       {indikator}
 
       {/* Inhalt */}
-      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1">
+      <div className={inhaltKlasse}>
         <div className="pb-2">
           {istMaterial && (
             <div>

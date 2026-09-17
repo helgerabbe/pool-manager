@@ -48,12 +48,14 @@ export default function AufgabeInhaltSeite({ item, meta, aufgabe, busy, onErledi
   const html = aufgabe?.html_code ? fragmentZuDokument(aufgabe.html_code) : '';
 
   return (
-    <div className="h-full flex flex-col max-w-2xl mx-auto w-full px-5 py-6">
+    /* Die ganze Seite scrollt — eine eingebettete Aufgabe liegt nie in einem
+       eigenen inneren Scrollkasten. */
+    <div className="h-full flex flex-col overflow-y-auto max-w-2xl mx-auto w-full px-5 py-6">
       <h1 className="text-lg font-bold tracking-tight mb-3 shrink-0">
         {aufgabe?.titel || meta?.titel || 'Aufgabe'}
       </h1>
 
-      <div className="flex-1 min-h-0 overflow-y-auto -mx-1 px-1 space-y-4">
+      <div className="flex-1 -mx-1 px-1 space-y-4">
         {aufgabe?.aufgabenstellung && (
           <AufgabenstellungBox>{aufgabe.aufgabenstellung}</AufgabenstellungBox>
         )}
