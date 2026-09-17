@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { base44 } from '@/api/base44Client';
+import { getAktivitaetenKatalog } from '@/services/schueler/SchuelerDataService';
 
 /**
  * useAktivitaetenKatalog
@@ -21,11 +21,18 @@ import { base44 } from '@/api/base44Client';
  * der Phase „Übung", sonst die erste gefundene.
  *
  * Der Katalog ändert sich selten, deshalb großzügig gecacht.
+ *
+ * ZUGRIFFSWEG (2026-09-17): Der Katalog wird über den SchuelerDataService
+ * geladen, nicht direkt über die Entity. Grund: Schüler, die aus Moodle
+ * kommen (LTI-Sitzung, kein Base44-Konto), dürfen die Entity nicht lesen —
+ * der Aufruf lief leer, die Katalog-Schritte einer Aufgabensequenz fanden
+ * keinen Namen und zeigten „kein Aufgabenformat ausgewählt". Der Service
+ * wählt je Betrieb (Base44 / LTI / Supabase) den passenden Weg.
  */
 export default function useAktivitaetenKatalog({ enabled = true } = {}) {
   const { data, isLoading } = useQuery({
     queryKey: ['aktivitaetenKatalog'],
-    queryFn: () => base44.entities.AktivitaetenKatalog.list(),
+    queryFn: () => getAktivitaetenKatalog(),
     enabled,
     staleTime: 15 * 60 * 1000,
   });
