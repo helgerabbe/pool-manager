@@ -18,6 +18,40 @@ import { listArten, listSchrittTypen } from './importAuftragSchemata.js';
 export const AUFTRAEGE_ORDNER = 'auftraege';
 export const AUFTRAEGE_FORMAT = 'auftraege-1';
 export const EINGANG_URL = 'https://righteous-edu-flow-hub.base44.app/functions/pruefeImportAuftrag';
+export const STRUKTUR_URL = 'https://righteous-edu-flow-hub.base44.app/functions/getEinheitStrukturLesend';
+
+/**
+ * Die LESENDE Auskunft — Voraussetzung für zielgerichtete Aufträge.
+ *
+ * Warum sie live abgefragt wird und nicht im Repository liegt: Aktivitäts- und
+ * Schritt-IDs ändern sich bei jeder Bearbeitung. Eine Datei im Repository wäre
+ * schon veraltet, bevor der Auftrag gestellt ist — und ein Auftrag auf eine
+ * veraltete Schritt-ID greift ins Leere.
+ */
+export const STRUKTUR_LESEN = {
+  url: STRUKTUR_URL,
+  methode: 'POST',
+  ausweis: 'Authorization: Bearer <AUTOMATION_SECRET> — derselbe Schlüssel wie beim Eingang.',
+  body: {
+    einheit_id: 'Pflicht — die Einheit, deren Aufbau gelesen werden soll',
+    aktivitaet_detail_id: 'optional — liefert die field_values GENAU DIESER Aktivität mit',
+    schritt_detail_id: 'optional — liefert die Nutzdaten GENAU DIESES Sequenz-Schritts mit',
+  },
+  antwort: {
+    vertrag_version: 'einheit-struktur-2',
+    detailstufe: '"getrimmt" oder "getrimmt+detail"',
+    einheit: 'titel, fach, jahrgangsstufe, sichtbarkeit, format, export_lifecycle_status',
+    themenfelder:
+      '[{ themenfeld_id, titel, position, leitfrage, bearbeitungsmodus, lernpakete: [{ lernpaket_id, titel, position, freigabe, vollstaendig, phasen: [{ phase, deaktiviert, aktivitaeten: [{ aktivitaet_instanz_id, position, aufgabenart_id, aufgabenart, vollstaendig, sync_status }] }] }] }]',
+    lernpakete_ohne_themenfeld: 'gleiche Form wie lernpakete — verwaiste Pakete',
+    allgemeine_aufgaben:
+      '[{ aufgabe_id, titel, modus, aufgaben_typ, themenfeld_id, freigabe, schritte: [{ schritt_id, position, typ, titel, aufgabenart, status }] }]',
+    aktivitaet_detail: 'nur bei aktivitaet_detail_id — inkl. form_schema und field_values',
+    schritt_detail: 'nur bei schritt_detail_id — der vollständige Schritt inkl. form_schema',
+  },
+  hinweis:
+    'Standardmäßig GETRIMMT: Struktur und Metadaten, keine Inhalte. Feldwerte werden gezielt pro Aktivität bzw. Schritt angefordert — so wird nicht der ganze Inhaltsbestand ausgeliefert, nur weil die Struktur gebraucht wurde.',
+};
 
 export function baueSchemataDatei(aktivitaeten = [], jetzt = new Date().toISOString()) {
   const aktiv = (aktivitaeten || []).filter((a) => a?.is_active !== false);
@@ -45,6 +79,7 @@ export function baueSchemataDatei(aktivitaeten = [], jetzt = new Date().toISOStr
       hinweis:
         'Der Auftrag wird nur GEPRÜFT und abgelegt (quelle "mbk"). Ausgeführt wird er erst, wenn eine berechtigte Person ihn im Import-Center freigibt.',
     },
+    lesen: STRUKTUR_LESEN,
     arten: listArten(),
     schritt_typen: listSchrittTypen(),
     aufgabenarten: aktiv
@@ -97,6 +132,33 @@ export function baueSchemataMarkdown(datei) {
     'Antwort: `{ auftrag, ausfuehrbar, pruefergebnis }`. Ist `ausfuehrbar` false, sagt',
     '`pruefergebnis` pro Feld, was fehlt; mit `auftrag_id` kann derselbe Auftrag',
     'korrigiert erneut eingereicht werden.',
+    '',
+    'Ein ungültiger Schlüssel wird mit `401` und',
+    '`{"error":"Nicht angemeldet oder ungültiger Automation-Schlüssel."}` beantwortet —',
+    'nicht mit einem Serverfehler.',
+    '',
+    '## Struktur lesen (vor dem Auftrag)',
+    '',
+    `\`POST ${datei.lesen.url}\``,
+    '',
+    `Ausweis: \`${datei.lesen.ausweis}\``,
+    '',
+    'Diese Auskunft liefert die IDs, auf die sich ein Auftrag bezieht:',
+    '`themenfeld_id`, `lernpaket_id`, `aktivitaet_instanz_id`, `aufgabe_id` und',
+    '`schritt_id`. Sie steht bewusst NICHT als Datei im Repository — die IDs und',
+    'Positionen ändern sich bei jeder Bearbeitung, eine Datei wäre bereits veraltet.',
+    '',
+    '```json',
+    JSON.stringify({ einheit_id: '<einheit_id>', schritt_detail_id: '<schritt_id>' }, null, 2),
+    '```',
+    '',
+    `Antwort (\`${datei.lesen.antwort.vertrag_version}\`):`,
+    '',
+    '| Feld | Inhalt |',
+    '|---|---|',
+    ...Object.entries(datei.lesen.antwort).map(([k, v]) => `| \`${k}\` | ${v} |`),
+    '',
+    datei.lesen.hinweis,
     '',
     '## Auftragsarten',
     '',

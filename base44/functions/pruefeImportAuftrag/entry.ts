@@ -25,7 +25,11 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { istAutomationAufruf } from '../../shared/automationAuth.js';
+import {
+  istAutomationAufruf,
+  holeAngemeldetenNutzer,
+  ausweisFehler,
+} from '../../shared/automationAuth.js';
 import { validiereAuftragStruktur, getSchemaFuerArt, ART_LABELS } from '../../shared/importAuftragSchemata.js';
 import {
   pruefeAktivitaetInhalt,
@@ -88,8 +92,10 @@ export default async function (req) {
     let quelle = 'mbk';
     let absender = String(body?.absender || '').trim() || 'mbk';
     if (!istAutomationAufruf(req)) {
-      const user = await base44.auth.me();
-      if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
+      // Weder Sitzung noch passender Schlüssel = Ausweis-Fehler (401). Vorher
+      // warf `auth.me()` hier und die Antwort war ein HTTP 500.
+      const user = await holeAngemeldetenNutzer(base44);
+      if (!user) return ausweisFehler();
       if (!(await hatImportCenterZugang(base44, user))) {
         return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
       }

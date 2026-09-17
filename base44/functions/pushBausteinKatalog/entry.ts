@@ -38,7 +38,11 @@ import {
   baueSchemataMarkdown,
 } from '../../shared/auftragsSchemataKatalog.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
-import { istAutomationAufruf } from '../../shared/automationAuth.js';
+import {
+  istAutomationAufruf,
+  holeAngemeldetenNutzer,
+  ausweisFehler,
+} from '../../shared/automationAuth.js';
 
 export default async function (req) {
   try {
@@ -47,8 +51,8 @@ export default async function (req) {
     // Automation (Workflow) weist sich über den Bearer-Kopf aus; alle anderen
     // brauchen einen angemeldeten Zugang zum Import-Center.
     if (!istAutomationAufruf(req)) {
-      const user = await base44.auth.me();
-      if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
+      const user = await holeAngemeldetenNutzer(base44);
+      if (!user) return ausweisFehler();
       if (!(await hatImportCenterZugang(base44, user))) {
         return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
       }

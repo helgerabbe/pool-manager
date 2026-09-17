@@ -18,20 +18,36 @@
  * einzelnen Schritts werden wieder gezielt angefordert (schritt_detail_id).
  *
  * Payload: { einheit_id, aktivitaet_detail_id?, schritt_detail_id? }
+ *
+ * ZWEI AUFRUFWEGE (2026-09-17): Von innen die angemeldete Person mit
+ * Import-Center-Zugang; von außen die Automation über
+ * `Authorization: Bearer <AUTOMATION_SECRET>` — genau wie bei
+ * pruefeImportAuftrag. Ohne diesen zweiten Weg könnte der Kursbau die Struktur
+ * nicht lesen und damit auch keinen zielgerichteten Auftrag stellen: Er kennt
+ * die Schritt- und Aktivitäts-IDs nicht, und die stehen bewusst NICHT im
+ * Repository, weil sie sich bei jeder Bearbeitung ändern.
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import {
+  istAutomationAufruf,
+  holeAngemeldetenNutzer,
+  ausweisFehler,
+} from '../../shared/automationAuth.js';
 
 const PHASEN = ['Input', 'Übung', 'Abschluss'];
 
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    if (!(await hatImportCenterZugang(base44, user))) {
-      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+
+    if (!istAutomationAufruf(req)) {
+      const user = await holeAngemeldetenNutzer(base44);
+      if (!user) return ausweisFehler();
+      if (!(await hatImportCenterZugang(base44, user))) {
+        return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+      }
     }
 
     const body = await req.json().catch(() => ({}));
