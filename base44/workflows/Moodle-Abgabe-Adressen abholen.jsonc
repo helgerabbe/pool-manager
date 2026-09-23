@@ -1,0 +1,43 @@
+{
+  "name": "Moodle-Abgabe-Adressen abholen",
+  "description": "Holt regelm\u00e4\u00dfig die Moodle-Abgabe-Adressen (Format moodle-abgaben-1) aus dem GitHub-Austauschordner und tr\u00e4gt sie in die zugeh\u00f6rigen Aufgaben bzw. Abgabe-Schritte aller exportierten Einheiten ein.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "40 */3 * * *",
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "moodle_abgabe_adressen_abholen",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "pullMoodleAbgaben",
+            "args": {
+              "alle": true
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  }
+}
