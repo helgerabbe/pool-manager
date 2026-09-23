@@ -16,6 +16,7 @@ import AirGapPayloadDownloadCard from '@/components/exportcenter/AirGapPayloadDo
 import GitHubExportCard from '@/components/exportcenter/GitHubExportCard';
 import PruefungWarnungCard from '@/components/exportcenter/PruefungWarnungCard';
 import EinheitExportAktivCard from '@/components/exportcenter/EinheitExportAktivCard';
+import KursBauenCard from '@/components/exportcenter/KursBauenCard';
 import SchemaAenderungAnkuendigenCard from '@/components/exportcenter/SchemaAenderungAnkuendigenCard';
 // Brian-Übersicht (2026-09-09): Der Kursbau legt die Brian-Gespräche selbst an
 // und meldet die Adressen über den Austauschordner zurück (pullBrianUrls). Hier
@@ -56,6 +57,7 @@ export default function ExportCenterArbeitsbereich({ einheitId }) {
     <div className="p-6 max-w-5xl mx-auto space-y-4">
       <PruefungWarnungCard einheitId={einheitId} />
       <EinheitExportAktivCard einheit={einheit} />
+      <KursBauenCard einheit={einheit} />
       <SchemaAenderungAnkuendigenCard />
       <MBKPromptGeneratorPanel einheitId={einheitId} />
       <div className="rounded-xl border border-border bg-card">
