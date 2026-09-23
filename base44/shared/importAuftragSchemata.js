@@ -29,6 +29,8 @@ export const ART_LABELS = {
   allgemeine_aufgabe_anlegen: 'Sequenzaufgabe anlegen',
   allgemeine_aufgabe_aendern: 'Sequenzaufgabe ändern',
   allgemeine_aufgabe_loeschen: 'Sequenzaufgabe löschen',
+  offene_aufgabe_anlegen: 'Offene Aufgabe anlegen (HTML)',
+  offene_aufgabe_html_ersetzen: 'HTML einer offenen Aufgabe ersetzen',
   schritt_einfuegen: 'Schritt einfügen',
   schritt_verschieben: 'Schritt verschieben',
   schritt_aendern: 'Schritt ändern',
@@ -359,6 +361,80 @@ export const ART_SCHEMATA = {
     },
   },
 
+  /**
+   * DIE OFFENE AUFGABE, eigenständig (2026-09-23).
+   *
+   * Warum eine eigene Auftragsart und nicht allgemeine_aufgabe_anlegen mit einem
+   * Schritt: Eine offene Aufgabe besteht aus genau einem HTML-Fragment. Wer sie
+   * über die Sequenz-Art anlegen müsste, müsste die ganze Schritt-Mechanik
+   * mitschicken, obwohl es nur um ein Feld geht — und jeder Absender würde das
+   * anders verpacken. Angelegt wird intern trotzdem eine Sequenz mit einem
+   * Schritt vom Typ 'offen': So läuft die Aufgabe durch dieselbe Vorschau,
+   * dieselbe Prüfung und denselben Payload-Weg wie eine in der Werkstatt gebaute.
+   */
+  offene_aufgabe_anlegen: {
+    beschreibung:
+      'Legt in einer Einheit eine neue OFFENE Aufgabe an — eine interaktive Aufgabe, deren Inhalt als HTML-Fragment mitkommt. Intern entsteht eine Aufgabe mit genau einem Schritt vom Typ "offen"; weitere Schritte lassen sich danach über schritt_einfuegen ergänzen.',
+    ziel_typ: 'einheit',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['titel', 'fragment'],
+      properties: {
+        titel: feld('string', 'Titel der Aufgabe', { minLength: 3, maxLength: 200 }),
+        fragment: feld('string', 'HTML-Fragment der Aufgabe', {
+          hinweis:
+            'Ein <div class="aufgabe"> mit eigenem <style> und <script> — OHNE <html>, <head> oder <body>. Genau die Form, in der der Pool-Manager offene Aufgaben im Payload übergibt.',
+        }),
+        aufgabenstellung: feld('string', 'Aufgabenstellung (Begleittext, optional)'),
+        themenfeld_id: feld('string', 'Themenfeld (optional)', {
+          hinweis: 'Leer = die Aufgabe hängt an der Einheit, ohne Themenfeld.',
+        }),
+        anforderungsebene: feld('string', 'Anforderungsebene', {
+          enum: ['1 - Basis', '2 - Transfer'],
+        }),
+        mission_type: feld('string', 'Aufgabenkategorie', {
+          enum: ['erstbegegnung', 'erarbeitung', 'sicherung', 'anwendung'],
+        }),
+        schwierigkeitsgrad: feld('number', 'Schwierigkeitsgrad', { enum: [1, 2, 3] }),
+      },
+    },
+  },
+
+  /**
+   * Der häufigste Fall überhaupt: Der Kursbau hat das HTML einer bestehenden
+   * offenen Aufgabe verbessert und schickt die neue Fassung zurück.
+   *
+   * BEWUSST NICHT über schritt_aendern: Das ersetzt den GANZEN Schritt und würde
+   * Titel, Planung, Baustand und die grafische Variante mitnehmen — bei einer
+   * reinen HTML-Verbesserung wäre das ein stiller Datenverlust. Hier wandert
+   * ausschliesslich das Fragment.
+   */
+  offene_aufgabe_html_ersetzen: {
+    beschreibung:
+      'Ersetzt NUR das HTML-Fragment einer bestehenden offenen Aufgabe — für überarbeitete, korrigierte oder gestalterisch verbesserte Fassungen. Titel, Planung und Einordnung der Aufgabe bleiben unberührt. Der veraltete Vorschau-Schnappschuss wird verworfen.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['fragment'],
+      properties: {
+        fragment: feld('string', 'Neues HTML-Fragment', {
+          hinweis: 'Ein <div class="aufgabe"> ohne Dokumentgerüst — ersetzt das bisherige Fragment vollständig.',
+        }),
+        schritt_id: feld('string', 'ID des Schritts (optional)', {
+          hinweis:
+            'Nur nötig, wenn die Aufgabe MEHRERE offene Schritte hat. Bei genau einem offenen Schritt wird dieser genommen. IDs liefert getEinheitStrukturLesend.',
+        }),
+        begruendung: feld('string', 'Was wurde verbessert?', {
+          hinweis: 'Erscheint im Posteingang, damit die Fachgruppe die Änderung einordnen kann.',
+        }),
+      },
+    },
+  },
+
   schritt_einfuegen: {
     beschreibung:
       'Fügt in eine bestehende Sequenzaufgabe einen Schritt an einer Position ein. Nachrückende Schritte verschieben sich.',
@@ -561,6 +637,8 @@ export function hatVorschau(art) {
     art === 'schritt_einfuegen' ||
     art === 'schritt_aendern' ||
     art === 'allgemeine_aufgabe_anlegen' ||
-    art === 'allgemeine_aufgabe_aendern'
+    art === 'allgemeine_aufgabe_aendern' ||
+    art === 'offene_aufgabe_anlegen' ||
+    art === 'offene_aufgabe_html_ersetzen'
   );
 }

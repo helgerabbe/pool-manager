@@ -46,6 +46,28 @@ export default function ParameterFelder({
           );
         }
 
+        // Das HTML einer offenen Aufgabe ist lang und strukturiert — ein
+        // einzeiliges Feld wäre hier unbedienbar.
+        if (key === 'fragment') {
+          return (
+            <div key={key} className="space-y-1.5">
+              <Label className="text-sm">
+                {label}
+                {istPflicht && <span className="ml-1 text-destructive">*</span>}
+                <span className="ml-2 font-mono text-[11px] font-normal text-muted-foreground">{key}</span>
+              </Label>
+              <Textarea
+                rows={14}
+                className="font-mono text-xs"
+                placeholder={'<div class="aufgabe">\n  <style>…</style>\n  …\n</div>'}
+                value={wert || ''}
+                onChange={(e) => setzen(key, e.target.value)}
+              />
+              {def.hinweis && <p className="text-xs text-muted-foreground">{def.hinweis}</p>}
+            </div>
+          );
+        }
+
         // Fach und Aufgabenart bekommen echte Auswahllisten aus dem Bestand.
         const optionen =
           key === 'fach' ? faecher.map((f) => ({ value: f, label: f })) :

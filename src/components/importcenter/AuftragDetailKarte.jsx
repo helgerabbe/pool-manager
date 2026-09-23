@@ -13,6 +13,7 @@ import { useImportAuftragAktionen } from '@/hooks/useImportCenter';
 const VORSCHAU_ARTEN = ['aktivitaet_einfuegen', 'aktivitaet_aendern'];
 const SCHRITT_ARTEN = ['schritt_einfuegen', 'schritt_aendern'];
 const SEQUENZ_ARTEN = ['allgemeine_aufgabe_anlegen', 'allgemeine_aufgabe_aendern'];
+const FRAGMENT_ARTEN = ['offene_aufgabe_anlegen', 'offene_aufgabe_html_ersetzen'];
 
 /**
  * Ein Auftrag in aufbereiteter Form: Was, Wohin, Womit, Prüfergebnis, Absender —
@@ -35,6 +36,12 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
       ? p.sequenz_schritte
       : []
     : [];
+  // Offene Aufgaben tragen ihr HTML direkt im Auftrag — als offener Schritt
+  // gedacht läuft er durch dieselbe Vorschau wie ein Sequenz-Schritt.
+  const fragmentSchritt =
+    FRAGMENT_ARTEN.includes(auftrag.auftrags_art) && p.fragment
+      ? { typ: 'offen', titel: p.titel || auftrag.titel, offen: { fragment: p.fragment } }
+      : null;
   const offen = auftrag.status === 'eingegangen' || auftrag.status === 'geprueft';
 
   return (
@@ -117,6 +124,10 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
 
           {einzelSchritt && (
             <SchrittVorschauButton schritt={einzelSchritt} aufgabenarten={aufgabenarten} />
+          )}
+
+          {fragmentSchritt && (
+            <SchrittVorschauButton schritt={fragmentSchritt} label="Aufgabe ansehen" />
           )}
 
           {schrittfolge.map((s, idx) => (

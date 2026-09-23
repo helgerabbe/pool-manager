@@ -195,6 +195,40 @@ export function pruefeAktivitaetInhalt(katalog, fieldValues = {}, masterVariante
 }
 
 /**
+ * Die Prüfung eines HTML-FRAGMENTS einer offenen Aufgabe.
+ *
+ * Gemessen wird mit derselben Elle wie in der Aufgabenwerkstatt
+ * (src/lib/aufgabeFragment.js → pruefeFragment): Ein Fragment ist ein
+ * <div class="aufgabe">, kein ganzes Dokument. Ein mitgeschicktes
+ * <html>/<body> würde beim Einbau in den Kurs zu zwei Dokumenten führen —
+ * genau das bekäme sonst niemand mit, bis Schüler eine kaputte Seite sehen.
+ */
+export function pruefeFragmentInhalt(fragment, pfad = 'parameter.fragment') {
+  const missingFields = [];
+  const s = typeof fragment === 'string' ? fragment : '';
+
+  if (leer(s)) {
+    missingFields.push({ fieldName: pfad, label: 'HTML-Fragment', reason: 'Pflichtfeld leer' });
+    return { missingFields };
+  }
+  if (/<!DOCTYPE|<html[\s>]|<head[\s>]|<body[\s>]/i.test(s)) {
+    missingFields.push({
+      fieldName: pfad,
+      label: 'HTML-Fragment',
+      reason: 'Enthält ein komplettes Dokumentgerüst — erwartet wird nur das <div class="aufgabe">',
+    });
+  }
+  if (!/class\s*=\s*["'][^"']*\baufgabe\b/i.test(s)) {
+    missingFields.push({
+      fieldName: pfad,
+      label: 'HTML-Fragment',
+      reason: 'Die äußere Hülle <div class="aufgabe"> fehlt',
+    });
+  }
+  return { missingFields };
+}
+
+/**
  * Die inhaltliche Prüfung EINES Schritts einer Aufgabensequenz.
  *
  * Geprüft wird gegen die Pflichtfelder seiner Schritt-Art (SCHRITT_TYPEN im

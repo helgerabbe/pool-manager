@@ -450,6 +450,102 @@ export default async function (req) {
         break;
       }
 
+      case 'offene_aufgabe_anlegen': {
+        const einheit = await base44.asServiceRole.entities.Einheiten.get(auftrag.ziel_id).catch(() => null);
+        if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+
+        // Angelegt wird eine Sequenz mit EINEM offenen Schritt: So läuft die
+        // Aufgabe durch dieselbe Vorschau, Prüfung und denselben Payload-Weg
+        // wie eine in der Aufgabenwerkstatt gebaute — kein zweiter Datenpfad.
+        const schritte = normalisiereSchritte([
+          {
+            typ: 'offen',
+            titel: p.titel,
+            status: 'uebernommen',
+            offen: { fragment: p.fragment, uebernommen_am: new Date().toISOString() },
+          },
+        ]);
+        const aufgabe = await base44.asServiceRole.entities.AllgemeineAufgabe.create({
+          einheit_id: auftrag.ziel_id,
+          themenfeld_id: p.themenfeld_id || undefined,
+          titel: p.titel,
+          aufgabenstellung: p.aufgabenstellung || '',
+          anforderungsebene: p.anforderungsebene || '1 - Basis',
+          aufgaben_typ: 'inhalt',
+          aufgaben_modus: 'sequenz',
+          mission_type: p.mission_type || undefined,
+          schwierigkeitsgrad: p.schwierigkeitsgrad || undefined,
+          sequenz_schritte: schritte,
+          erstellungs_modus: 'manuell',
+          is_complete: await istSequenzVollstaendig(base44, schritte),
+          content_status: 'draft',
+          sync_status: 'new',
+        });
+        einheitId = auftrag.ziel_id;
+        protokoll.push({
+          schritt: 'Offene Aufgabe angelegt',
+          entity: 'AllgemeineAufgabe',
+          record_id: aufgabe.id,
+          hinweis: `${p.titel} · ${String(p.fragment || '').length} Zeichen HTML`,
+        });
+        break;
+      }
+
+      case 'offene_aufgabe_html_ersetzen': {
+        const aufgabe = await ladeSequenzAufgabe(base44, auftrag.ziel_id);
+        if (!aufgabe.ok) return aufgabe.antwort;
+        const alt = aufgabe.datensatz;
+        const bestand = normalisiereSchritte(alt.sequenz_schritte);
+
+        // Ohne schritt_id gilt der einzige offene Schritt — bei mehreren hat die
+        // Prüfung den Auftrag schon vorher angehalten.
+        const offene = bestand.filter((s) => s.typ === 'offen');
+        const index = p.schritt_id
+          ? bestand.findIndex((s) => s.id === p.schritt_id)
+          : offene.length === 1
+            ? bestand.findIndex((s) => s.id === offene[0].id)
+            : -1;
+        if (index < 0 || bestand[index].typ !== 'offen') {
+          return Response.json(
+            { error: 'In dieser Aufgabe ist kein offener Schritt eindeutig bestimmbar.' },
+            { status: 404 }
+          );
+        }
+
+        const schritt = bestand[index];
+        const vorher = String(schritt.offen?.fragment || '').length;
+        const neu = bestand.slice();
+        neu[index] = {
+          ...schritt,
+          offen: {
+            ...(schritt.offen || {}),
+            fragment: p.fragment,
+            // Der alte Schnappschuss zeigt die VORHERIGE Fassung — er würde der
+            // Lehrkraft nach dem Austausch etwas Falsches anzeigen.
+            snapshot_html: '',
+            snapshot_url: '',
+            uebernommen_am: new Date().toISOString(),
+          },
+        };
+
+        await base44.asServiceRole.entities.AllgemeineAufgabe.update(auftrag.ziel_id, {
+          sequenz_schritte: neu,
+          is_complete: await istSequenzVollstaendig(base44, neu),
+          export_error: false,
+          sync_status: alt.sync_status === 'synced' ? 'modified' : alt.sync_status || 'new',
+        });
+        einheitId = alt.einheit_id || einheitId;
+        protokoll.push({
+          schritt: 'HTML der offenen Aufgabe ersetzt',
+          entity: 'AllgemeineAufgabe',
+          record_id: auftrag.ziel_id,
+          hinweis: `Schritt ${index + 1} · ${vorher} → ${String(p.fragment || '').length} Zeichen${
+            p.begruendung ? ` · ${p.begruendung}` : ''
+          }`,
+        });
+        break;
+      }
+
       case 'schritt_einfuegen':
       case 'schritt_verschieben':
       case 'schritt_aendern':

@@ -35,6 +35,7 @@ import {
   pruefeAktivitaetInhalt,
   pruefeSchrittInhalt,
   pruefeSequenzInhalt,
+  pruefeFragmentInhalt,
 } from '../../shared/importAuftragInhalt.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
@@ -193,6 +194,64 @@ export default async function (req) {
       } else {
         const res = pruefeSchrittInhalt(entwurf.parameter.schritt, katalogById, 'parameter.schritt');
         befunde.push(...res.missingFields);
+      }
+    }
+
+    // ── Offene Aufgaben: das HTML-Fragment ───────────────────────────────
+    if (art === 'offene_aufgabe_anlegen' || art === 'offene_aufgabe_html_ersetzen') {
+      befunde.push(...pruefeFragmentInhalt(entwurf.parameter.fragment).missingFields);
+    }
+
+    // Beim Ersetzen muss klar sein, WELCHE offene Aufgabe gemeint ist. Ohne
+    // diese Auflösung würde erst die Ausführung merken, dass es keinen
+    // passenden Schritt gibt — dann steht der Auftrag schon als ausführbar da.
+    if (art === 'offene_aufgabe_html_ersetzen' && entwurf.ziel_id) {
+      const aufg = await base44.asServiceRole.entities.AllgemeineAufgabe.get(entwurf.ziel_id).catch(() => null);
+      const schritte = Array.isArray(aufg?.sequenz_schritte) ? aufg.sequenz_schritte : [];
+      const offene = schritte.filter((s) => s?.typ === 'offen');
+      if (aufg) {
+        if (entwurf.parameter.schritt_id) {
+          const treffer = schritte.find((s) => s?.id === entwurf.parameter.schritt_id);
+          if (!treffer) {
+            befunde.push({
+              fieldName: 'parameter.schritt_id',
+              label: 'Schritt',
+              reason: 'In dieser Aufgabe gibt es keinen Schritt mit dieser ID',
+            });
+          } else if (treffer.typ !== 'offen') {
+            befunde.push({
+              fieldName: 'parameter.schritt_id',
+              label: 'Schritt',
+              reason: `Dieser Schritt ist keine offene Aufgabe (Art: ${treffer.typ || '—'})`,
+            });
+          }
+        } else if (offene.length === 0) {
+          befunde.push({
+            fieldName: 'ziel_id',
+            label: 'Offene Aufgabe',
+            reason: 'Diese Aufgabe enthält keinen Schritt vom Typ „offen"',
+          });
+        } else if (offene.length > 1) {
+          befunde.push({
+            fieldName: 'parameter.schritt_id',
+            label: 'Schritt',
+            reason: `Diese Aufgabe hat ${offene.length} offene Schritte — bitte schritt_id angeben`,
+          });
+        }
+      }
+    }
+
+    // Ein Themenfeld muss zur Einheit gehören, in der die offene Aufgabe entsteht.
+    if (art === 'offene_aufgabe_anlegen' && entwurf.parameter.themenfeld_id) {
+      const tf = await base44.asServiceRole.entities.Themenfeld
+        .get(entwurf.parameter.themenfeld_id)
+        .catch(() => null);
+      if (!tf || tf.einheit_id !== entwurf.ziel_id) {
+        befunde.push({
+          fieldName: 'parameter.themenfeld_id',
+          label: 'Themenfeld',
+          reason: 'Themenfeld gehört nicht zu dieser Einheit',
+        });
       }
     }
 
