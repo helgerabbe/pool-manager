@@ -254,6 +254,12 @@
       "additionalProperties": true,
       "default": {}
     },
+    "lernplan_dauer_stunden": {
+      "type": "object",
+      "description": "Gesch\u00e4tzte Bearbeitungsdauer je Lernplan (2026-09-24), in ZEITSTUNDEN. Keys: minimalist|pragmatiker|ehrgeizig|passioniert, Wert: Zahl (Dezimalstellen erlaubt, z. B. 7.5). Sch\u00e4tzwert bei konzentrierter Arbeitsweise ohne \u00fcberm\u00e4\u00dfig lange Unterbrechungen. Gepflegt in Tab 7 oberhalb der Sektoren des jeweiligen Lernplans. Fehlender Eintrag = noch nicht gesch\u00e4tzt. Bewusst getrennt von lernpfade_konfiguration, damit das Speichern des Arbeitsplans den Wert nicht \u00fcberschreibt.",
+      "additionalProperties": true,
+      "default": {}
+    },
     "export_lifecycle_status": {
       "type": "string",
       "enum": [

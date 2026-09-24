@@ -15,6 +15,7 @@ import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ClipboardCheck, FilePlu
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
+import LernplanDauerFeld from '@/components/lernpfade/LernplanDauerFeld';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -192,6 +193,14 @@ export default function LernpfadeArchitekt({
 
       {/* Canvas */}
       <div ref={canvasScrollRef} className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
+        {einheitId && activeLernTyp && (
+          <LernplanDauerFeld
+            einheitId={einheitId}
+            lerntyp={activeLernTyp}
+            lerntypLabel={aktivLabel}
+            readOnly={readOnly}
+          />
+        )}
         {sektoren.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full min-h-[260px] p-6 text-center rounded-xl border-2 border-dashed border-border bg-card/60">
             <p className="text-sm font-medium text-foreground/70">

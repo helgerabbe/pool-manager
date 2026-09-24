@@ -68,6 +68,7 @@ Deno.serve(async (req) => {
       grundgeruest_updated_at,
       onboarding_konfiguration,
       cover_image_url,
+      lernplan_dauer_stunden,
       version, // CRITICAL: Client-side version für Optimistic Locking
     } = payload;
 
@@ -186,11 +187,25 @@ Deno.serve(async (req) => {
     if (grundgeruest_updated_at !== undefined) updateData.grundgeruest_updated_at = grundgeruest_updated_at;
     if (onboarding_konfiguration !== undefined) updateData.onboarding_konfiguration = onboarding_konfiguration;
     if (cover_image_url !== undefined) updateData.cover_image_url = cover_image_url;
+    if (lernplan_dauer_stunden !== undefined) {
+      // Nur gültige Lerntyp-Schlüssel und nicht-negative Zahlen übernehmen.
+      const erlaubt = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
+      const sauber = {};
+      for (const [k, v] of Object.entries(lernplan_dauer_stunden || {})) {
+        const n = Number(v);
+        if (erlaubt.includes(k) && v !== null && v !== '' && Number.isFinite(n) && n >= 0) sauber[k] = n;
+      }
+      updateData.lernplan_dauer_stunden = sauber;
+    }
 
     console.log('[updateEinheitSecure] Payload:', { einheit_id, updateData, version });
 
-    // 7. INCREMENT VERSION on successful update
-    updateData.version = dbVersion + 1;
+    // 7. INCREMENT VERSION on successful update — außer bei reiner
+    // Zeitschätzung: ein Schätzwert soll parallel Arbeitenden keinen
+    // Speicherkonflikt bescheren.
+    const nurSchaetzung = Object.keys(updateData).every((k) => k === 'lernplan_dauer_stunden');
+    const neueVersion = nurSchaetzung ? dbVersion : dbVersion + 1;
+    updateData.version = neueVersion;
 
     // 8. Re-Read direkt vor dem Schreiben gegen TOCTOU/Lost Updates.
     const latestEinheit = await base44.entities.Einheiten.get(einheit_id).catch(() => null);
@@ -239,7 +254,7 @@ Deno.serve(async (req) => {
         success: true,
         data: {
           ...updatedEinheit,
-          version: dbVersion + 1, // Return updated version to client
+          version: neueVersion, // Return updated version to client
         },
       },
       {
