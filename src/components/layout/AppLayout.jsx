@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { handleRealtimeUpdate } from '@/utils/realtimeCacheManager';
 import ProblemMeldenButton from '@/components/support/ProblemMeldenButton';
 import EinheitSchnellwahl from '@/components/layout/EinheitSchnellwahl';
+import { useImportCenterZugang } from '@/hooks/useImportCenterZugang';
 
 // Wiederverwendbarer Icon-Nav-Link mit sofortigem Tooltip
 function NavIconLink({ to, icon: Icon, label, isActive }) {
@@ -118,6 +119,7 @@ export default function AppLayout() {
   const { realRolle, permissions } = useRBAC();
   const { wartungsmodus } = useSystemSettings();
   const activeEinheit = useActiveEinheit(location);
+  const importZugang = useImportCenterZugang();
 
   // Globaler Wartungsmodus: Nicht-Admins werden komplett ausgesperrt
   // (Vollbild-Sperre statt App). Admins behalten Zugriff, um die Wartung
@@ -198,7 +200,7 @@ export default function AppLayout() {
               )}
 
               {/* Import-Center: Auftrags-Posteingang für Änderungen von außen. */}
-              {permissions.kannExportBedienen && (
+              {importZugang.hatZugang && (
                 <NavIconLink to="/import-center" icon={Inbox} label="Import-Center" isActive={isActive('/import-center')} />
               )}
 

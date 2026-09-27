@@ -29,6 +29,7 @@ export const ART_LABELS = {
   allgemeine_aufgabe_anlegen: 'Sequenzaufgabe anlegen',
   allgemeine_aufgabe_aendern: 'Sequenzaufgabe ändern',
   allgemeine_aufgabe_loeschen: 'Sequenzaufgabe löschen',
+  allgemeine_aufgabe_einordnen: 'Aufgabe einem Themenfeld zuordnen',
   offene_aufgabe_anlegen: 'Offene Aufgabe anlegen (HTML)',
   offene_aufgabe_html_ersetzen: 'HTML einer offenen Aufgabe ersetzen',
   schritt_einfuegen: 'Schritt einfügen',
@@ -357,6 +358,29 @@ export const ART_SCHEMATA = {
       required: ['grund'],
       properties: {
         grund: feld('string', 'Grund der Entfernung', { minLength: 3 }),
+      },
+    },
+  },
+
+  /**
+   * EINORDNEN (2026-09-27): Setzt nur das Themenfeld einer allgemeinen Aufgabe.
+   * Gilt für JEDEN Aufgabenmodus (auch Altbestand 'einzeln'), weil die
+   * Einordnung nichts mit dem Inhalt zu tun hat — eine Aufgabe ohne Themenfeld
+   * ist im Kurs für niemanden erreichbar.
+   */
+  allgemeine_aufgabe_einordnen: {
+    beschreibung:
+      'Ordnet eine bestehende allgemeine Aufgabe (beliebiger Modus) einem Themenfeld derselben Einheit zu. Inhalt und Schritte bleiben unberührt.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['themenfeld_id'],
+      properties: {
+        themenfeld_id: feld('string', 'Themenfeld', {
+          hinweis: 'ID eines Themenfelds derselben Einheit — abrufbar über getEinheitStrukturLesend.',
+        }),
       },
     },
   },

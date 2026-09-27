@@ -1,7 +1,7 @@
 {
   "name": "ImportAuftrag",
   "type": "object",
-  "description": "Import-Center (2026-09-13): EIN Auftrag, der von au\u00dfen (v1: \u00fcber das interne Formular des Import-Centers) an den Pool-Manager gestellt wird \u2014 'lege eine Einheit an', 'f\u00fcge in Lernpaket X an 2. Stelle eine Zuordnungsaufgabe ein', '\u00e4ndere die Inhalte dieser Aktivit\u00e4t'.\n\nWARUM EIGENST\u00c4NDIG (und NICHT auf Pruefbefund aufgesetzt): Nicht jeder Auftrag entsteht aus einem Fund (jemand kann einfach eine Einheit anlegen wollen), und nicht jeder Fund wird ein Auftrag (Funde d\u00fcrfen bewusst stehen bleiben). Der mit der MBK ausgehandelte R\u00fcckmelde-Vertrag (Pruefbefund + Austauschordner) bleibt davon vollst\u00e4ndig unber\u00fchrt; das Feld `verlinkter_pruefbefund_id` ist die vorbereitete Br\u00fccke und bleibt in v1 leer.\n\nEBENE DER ALLGEMEINEN AUFGABEN (2026-09-13, Etappe 2): Zus\u00e4tzlich zu Struktur und Aktivit\u00e4ten kennt das Import-Center allgemeine Aufgaben vom Typ AUFGABENSEQUENZ \u2014 als ganze Aufgabe (allgemeine_aufgabe_*) UND schrittgenau (schritt_einfuegen | schritt_verschieben | schritt_aendern | schritt_entfernen). Schrittgenau ist bewusst eigenst\u00e4ndig: Eine Sequenz kann viele Schritte tragen, und ein Auftrag 'schiebe Schritt 3 nach vorn' darf nicht bedeuten, dass die ganze Schrittfolge neu geschickt (und damit versehentlich \u00fcberschrieben) wird. Die Schritte werden \u00fcber ihre stabile `id` im Array identifiziert, nie \u00fcber den Index.\n\nOFFENE AUFGABEN (2026-09-23): Die offene Aufgabe ist der Fall, der im Austausch mit dem Kursbau am h\u00e4ufigsten vorkommt \u2014 ihr Inhalt IST ein HTML-Fragment, und der Kursbau verbessert dieses HTML regelm\u00e4\u00dfig. Daf\u00fcr gibt es zwei eigene Arten: `offene_aufgabe_anlegen` (neue offene Aufgabe samt HTML) und `offene_aufgabe_html_ersetzen` (NUR das Fragment einer bestehenden austauschen, damit Titel, Planung, Baustand und grafische Variante nicht still verloren gehen, wie es bei schritt_aendern passieren w\u00fcrde).\n\nDER VERTRAG: Wie ein g\u00fcltiger Auftrag je `auftrags_art` aussehen muss, steht als JSON-Schema in base44/shared/importAuftragSchemata.js \u2014 dieselbe Datei speist das interne Formular UND die Empfangspr\u00fcfung; die erlaubten Schritt-Arten und ihre Felder liegen dort als SCHRITT_TYPEN. Gepruft wird zweistufig: strukturell gegen das Schema, inhaltlich gegen die Vollst\u00e4ndigkeitsregeln der Aktivit\u00e4ten bzw. Schritte (base44/shared/importAuftragInhalt.js).\n\nDAS FREIGABE-TOR: Ein Auftrag ver\u00e4ndert NIE von selbst Daten. Erst wenn eine berechtigte Person ihn im Posteingang gesehen (bei Aktivit\u00e4ten, Schritten und offenen Aufgaben inklusive Sch\u00fcler-Vorschau) und 'Durchf\u00fchren' gedr\u00fcckt hat, \u00fcbersetzt fuehreImportAuftragAus ihn in echte Schreibvorg\u00e4nge.",
+  "description": "Import-Center (2026-09-13): EIN Auftrag, der von au\u00dfen an den Pool-Manager gestellt wird. Das Freigabe-Tor: Ein Auftrag ver\u00e4ndert NIE von selbst Daten \u2014 erst wenn eine berechtigte Person (Admin, Fachschaftsleitung oder seit 2026-09-27 ein Mitarbeiter der betroffenen Einheit) 'Durchf\u00fchren' dr\u00fcckt, \u00fcbersetzt fuehreImportAuftragAus ihn in Schreibvorg\u00e4nge. Der Vertrag je auftrags_art steht in base44/shared/importAuftragSchemata.js. 'allgemeine_aufgabe_einordnen' (2026-09-27) setzt nur das Themenfeld einer allgemeinen Aufgabe und gilt f\u00fcr jeden Aufgabenmodus.",
   "properties": {
     "auftrags_art": {
       "type": "string",
@@ -16,6 +16,7 @@
         "allgemeine_aufgabe_anlegen",
         "allgemeine_aufgabe_aendern",
         "allgemeine_aufgabe_loeschen",
+        "allgemeine_aufgabe_einordnen",
         "offene_aufgabe_anlegen",
         "offene_aufgabe_html_ersetzen",
         "schritt_einfuegen",
@@ -23,11 +24,11 @@
         "schritt_aendern",
         "schritt_entfernen"
       ],
-      "description": "Was der Auftrag bewirken soll. Je Art gilt ein eigenes JSON-Schema (siehe base44/shared/importAuftragSchemata.js). Die vier schritt_*-Arten wirken IMMER auf eine bestehende Sequenzaufgabe (ziel_typ='allgemeine_aufgabe') und benennen den betroffenen Schritt \u00fcber parameter.schritt_id. Die beiden offene_aufgabe_*-Arten arbeiten auf dem HTML-Fragment einer offenen Aufgabe: 'offene_aufgabe_anlegen' legt eine neue an (ziel_typ='einheit'), 'offene_aufgabe_html_ersetzen' tauscht nur das Fragment einer bestehenden aus (ziel_typ='allgemeine_aufgabe', Schritt optional \u00fcber parameter.schritt_id)."
+      "description": "Was der Auftrag bewirken soll. Je Art gilt ein eigenes JSON-Schema (siehe base44/shared/importAuftragSchemata.js)."
     },
     "titel": {
       "type": "string",
-      "description": "Kurze, menschenlesbare Bezeichnung des Auftrags f\u00fcr den Posteingang (z. B. 'Zuordnungsaufgabe in Quadrate/\u00dcben')."
+      "description": "Kurze, menschenlesbare Bezeichnung des Auftrags f\u00fcr den Posteingang."
     },
     "ziel_typ": {
       "type": "string",
@@ -40,25 +41,25 @@
         "allgemeine_aufgabe"
       ],
       "default": "keines",
-      "description": "Art der Stelle, auf die sich der Auftrag bezieht. 'keines' bei Auftr\u00e4gen, die etwas Neues ohne Elternteil anlegen (einheit_anlegen). 'allgemeine_aufgabe' = eine AllgemeineAufgabe (in v1 immer im Modus 'sequenz')."
+      "description": "Art der Stelle, auf die sich der Auftrag bezieht."
     },
     "ziel_id": {
       "type": "string",
-      "description": "ID der Stelle, auf die sich der Auftrag bezieht (Einheit / Themenfeld / Lernpaket / Aktivit\u00e4t / allgemeine Aufgabe). Leer bei ziel_typ='keines'."
+      "description": "ID der Stelle, auf die sich der Auftrag bezieht."
     },
     "einheit_id": {
       "type": "string",
-      "description": "Denormalisiert: Einheit, in der der Auftrag wirkt \u2014 f\u00fcr Filter und Gruppierung im Posteingang. Bei 'einheit_anlegen' erst nach der Ausf\u00fchrung gesetzt."
+      "description": "Denormalisiert: Einheit, in der der Auftrag wirkt \u2014 Grundlage f\u00fcr Filter und f\u00fcr den Mitarbeiter-Zugang."
     },
     "position": {
       "type": "number",
-      "description": "Einf\u00fcge-Position im Baum (0-basiert): Reihenfolge des Themenfelds, des Lernpakets, der Aktivit\u00e4t innerhalb ihrer Phase bzw. des Schritts innerhalb der Aufgabensequenz. Fehlt der Wert, wird hinten angeh\u00e4ngt; bei schritt_verschieben ist er Pflicht."
+      "description": "Einf\u00fcge-Position (0-basiert)."
     },
     "parameter": {
       "type": "object",
       "additionalProperties": true,
       "default": {},
-      "description": "Die Nutzdaten des Auftrags \u2014 je Art unterschiedlich: Metadaten (Titel, Fach, Jahrgang), Phase, aktivitaet_id (Katalog-Typ) und field_values der Aktivit\u00e4t; bei Sequenzaufgaben zus\u00e4tzlich `sequenz_schritte` (ganze Schrittfolge) bzw. `schritt` + `schritt_id` (schrittgenau); bei offenen Aufgaben `fragment` (das HTML) und optional `schritt_id`. Formatgleich zu LernpaketPhaseAktivitaet.field_values bzw. AllgemeineAufgabe.sequenz_schritte, damit dieselben Vorschau-Ansichten und Validatoren greifen."
+      "description": "Die Nutzdaten des Auftrags \u2014 je Art unterschiedlich."
     },
     "quelle": {
       "type": "string",
@@ -68,11 +69,11 @@
         "mbk"
       ],
       "default": "intern",
-      "description": "Woher der Auftrag kam. v1 kennt nur 'intern' (Formular im Import-Center). 'extern' (Skript/KI \u00fcber die Eingangsfunktion) und 'mbk' (sp\u00e4tere Br\u00fccke) sind vorbereitet, aber nicht freigeschaltet."
+      "description": "Woher der Auftrag kam."
     },
     "absender": {
       "type": "string",
-      "description": "E-Mail bzw. Bezeichnung des Absenders (bei quelle='intern' die einreichende Person)."
+      "description": "E-Mail bzw. Bezeichnung des Absenders."
     },
     "pruefstatus": {
       "type": "string",
@@ -82,12 +83,12 @@
         "ausfuehrbar"
       ],
       "default": "ungeprueft",
-      "description": "Ergebnis der Pr\u00fcfung. 'geprueft' = gepr\u00fcft, aber es fehlt noch etwas (siehe pruefergebnis). 'ausfuehrbar' = strukturell und inhaltlich vollst\u00e4ndig, das Freigabe-Tor kann ge\u00f6ffnet werden."
+      "description": "Ergebnis der Pr\u00fcfung."
     },
     "pruefergebnis": {
       "type": "array",
       "default": [],
-      "description": "Die L\u00fccken der letzten Pr\u00fcfung \u2014 dieselbe Form wie die missingFields der Vollst\u00e4ndigkeitspr\u00fcfung, damit das Formular sie pro Feld anzeigen kann.",
+      "description": "Die L\u00fccken der letzten Pr\u00fcfung.",
       "items": {
         "type": "object",
         "additionalProperties": true,
@@ -117,7 +118,7 @@
         "abgelehnt"
       ],
       "default": "eingegangen",
-      "description": "Bearbeitungsstand im Posteingang. 'ausgefuehrt' und 'abgelehnt' sind Endzust\u00e4nde; ein abgelehnter Auftrag kann bewusst wieder auf 'eingegangen' ge\u00f6ffnet werden."
+      "description": "Bearbeitungsstand im Posteingang."
     },
     "entscheid_von": {
       "type": "string",
@@ -134,7 +135,7 @@
     "ausfuehrung_protokoll": {
       "type": "array",
       "default": [],
-      "description": "Was die Ausf\u00fchrung tats\u00e4chlich getan hat (ein Eintrag je Schreibvorgang) \u2014 der Nachvollzug im Posteingang.",
+      "description": "Was die Ausf\u00fchrung tats\u00e4chlich getan hat.",
       "items": {
         "type": "object",
         "additionalProperties": true,
@@ -156,7 +157,7 @@
     },
     "verlinkter_pruefbefund_id": {
       "type": "string",
-      "description": "Optionale Br\u00fccke zum MBK-R\u00fcckmeldesystem: der Pruefbefund, aus dem dieser Auftrag hervorgegangen ist. Bleibt in v1 leer \u2014 der bestehende MBK-Vertrag wird nicht angetastet."
+      "description": "Optionale Br\u00fccke zum MBK-R\u00fcckmeldesystem."
     }
   },
   "required": [

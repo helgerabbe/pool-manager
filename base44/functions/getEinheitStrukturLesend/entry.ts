@@ -29,7 +29,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import { hatAuftragZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 import {
   istAutomationAufruf,
   holeAngemeldetenNutzer,
@@ -42,16 +42,17 @@ export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
 
+    const body = await req.json().catch(() => ({}));
+    const einheitId = body?.einheit_id;
+
     if (!istAutomationAufruf(req)) {
       const user = await holeAngemeldetenNutzer(base44);
       if (!user) return ausweisFehler();
-      if (!(await hatImportCenterZugang(base44, user))) {
+      if (!(await hatAuftragZugang(base44, user, einheitId))) {
         return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
       }
     }
 
-    const body = await req.json().catch(() => ({}));
-    const einheitId = body?.einheit_id;
     const detailId = body?.aktivitaet_detail_id || null;
     const schrittDetailId = body?.schritt_detail_id || null;
     if (!einheitId) return Response.json({ error: 'einheit_id fehlt' }, { status: 400 });
@@ -141,7 +142,25 @@ export default async function (req) {
           { status: 404 }
         );
       }
+      // Varianten-Formate (Lückentext, Zuordnen, Reihenfolge, Miniquiz, Test)
+      // tragen ihren Inhalt in MasterAufgaben, nicht in field_values. Ohne sie
+      // wäre die Aktivität lesend leer — und ein Änderungsauftrag blind.
+      const masterListe = await base44.asServiceRole.entities.MasterAufgabe
+        .filter({ activity_id: akt.id })
+        .catch(() => []);
+      const master_varianten = (masterListe || [])
+        .filter((m) => m.sync_status !== 'to_delete')
+        .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+        .map((m) => ({
+          master_id: m.id,
+          titel: m.titel || '',
+          reihenfolge: m.reihenfolge || 0,
+          vollstaendig: m.is_complete === true,
+          field_values: m.field_values || {},
+        }));
       aktivitaet_detail = {
+        supports_master: katalogById.get(akt.aktivitaet_id)?.supports_master === true,
+        master_varianten,
         aktivitaet_instanz_id: akt.id,
         lernpaket_id: akt.lernpaket_id,
         phase: akt.phase,
@@ -215,7 +234,7 @@ export default async function (req) {
     }
 
     return Response.json({
-      vertrag_version: 'einheit-struktur-2',
+      vertrag_version: 'einheit-struktur-3',
       detailstufe: detailId || schrittDetailId ? 'getrimmt+detail' : 'getrimmt',
       einheit: {
         einheit_id: einheit.id,

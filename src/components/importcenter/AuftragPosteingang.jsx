@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Inbox, Loader2 } from 'lucide-react';
 import AuftragDetailKarte from '@/components/importcenter/AuftragDetailKarte';
 import { useAuftragsSchemata, useImportAuftraege } from '@/hooks/useImportCenter';
+import { useImportCenterZugang } from '@/hooks/useImportCenterZugang';
 
 const FILTER = [
   { key: 'offen', label: 'Offen' },
@@ -17,12 +18,14 @@ const FILTER = [
 export default function AuftragPosteingang() {
   const { data: auftraege = [], isLoading } = useImportAuftraege();
   const { data: schemata } = useAuftragsSchemata();
+  const zugang = useImportCenterZugang();
   const [filter, setFilter] = useState('offen');
   const [art, setArt] = useState('alle');
   const [ziel, setZiel] = useState('');
 
   const sichtbar = useMemo(() => {
     return auftraege.filter((a) => {
+      if (!zugang.voll && !zugang.einheitIds.includes(a.einheit_id)) return false;
       if (filter === 'offen' && a.status !== 'eingegangen' && a.status !== 'geprueft') return false;
       if (filter === 'ausgefuehrt' && a.status !== 'ausgefuehrt') return false;
       if (filter === 'abgelehnt' && a.status !== 'abgelehnt') return false;
@@ -37,7 +40,7 @@ export default function AuftragPosteingang() {
       }
       return true;
     });
-  }, [auftraege, filter, art, ziel]);
+  }, [auftraege, filter, art, ziel, zugang.voll, zugang.einheitIds]);
 
   if (isLoading) {
     return (

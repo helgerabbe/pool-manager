@@ -60,7 +60,7 @@ async function loeseZielAuf(base44, auftrag) {
     const aufg = await base44.asServiceRole.entities.AllgemeineAufgabe.get(auftrag.ziel_id).catch(() => null);
     if (!aufg) {
       fehler.push({ fieldName: 'ziel_id', label: 'Allgemeine Aufgabe', reason: 'Aufgabe nicht gefunden' });
-    } else if (aufg.aufgaben_modus !== 'sequenz') {
+    } else if (aufg.aufgaben_modus !== 'sequenz' && auftrag.auftrags_art !== 'allgemeine_aufgabe_einordnen') {
       fehler.push({
         fieldName: 'ziel_id',
         label: 'Allgemeine Aufgabe',
@@ -289,6 +289,19 @@ export default async function (req) {
           fieldName: 'parameter.themenfeld_id',
           label: 'Themenfeld',
           reason: 'Themenfeld gehört nicht zu dieser Einheit',
+        });
+      }
+    }
+
+    if (art === 'allgemeine_aufgabe_einordnen' && entwurf.parameter.themenfeld_id && einheitId) {
+      const tf = await base44.asServiceRole.entities.Themenfeld
+        .get(entwurf.parameter.themenfeld_id)
+        .catch(() => null);
+      if (!tf || tf.einheit_id !== einheitId) {
+        befunde.push({
+          fieldName: 'parameter.themenfeld_id',
+          label: 'Themenfeld',
+          reason: 'Themenfeld gehört nicht zur Einheit der Aufgabe',
         });
       }
     }

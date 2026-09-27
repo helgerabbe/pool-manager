@@ -10,16 +10,13 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import { hatAuftragZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
 export default async function (req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    if (!(await hatImportCenterZugang(base44, user))) {
-      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
-    }
 
     const body = await req.json().catch(() => ({}));
     const auftragId = body?.auftrag_id;
@@ -28,6 +25,9 @@ export default async function (req) {
 
     const auftrag = await base44.asServiceRole.entities.ImportAuftrag.get(auftragId).catch(() => null);
     if (!auftrag) return Response.json({ error: 'Auftrag nicht gefunden' }, { status: 404 });
+    if (!(await hatAuftragZugang(base44, user, auftrag.einheit_id))) {
+      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+    }
     if (auftrag.status === 'ausgefuehrt') {
       return Response.json({ error: 'Ein durchgeführter Auftrag kann nicht mehr entschieden werden.' }, { status: 409 });
     }

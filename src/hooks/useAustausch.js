@@ -12,9 +12,10 @@ import { toast } from 'sonner';
 
 const KEY = ['austauschNachrichten'];
 
-export function useAustauschNachrichten() {
+export function useAustauschNachrichten({ enabled = true } = {}) {
   return useQuery({
     queryKey: KEY,
+    enabled,
     queryFn: async () => {
       const res = await base44.functions.invoke('listAustauschNachrichten', {});
       return res.data;

@@ -26,7 +26,7 @@ const EinheitCreateWizard = lazyWithRetry(() => import('@/pages/EinheitCreateWiz
 const EinheitenCoach = lazyWithRetry(() => import('@/pages/EinheitenCoach'));
 const ExportCenter = lazyWithRetry(() => import('@/pages/ExportCenter'));
 const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
-const ImportCenter = lazyWithRetry(() => import('@/pages/ImportCenter'));
+const ImportCenterRoute = lazyWithRetry(() => import('@/components/importcenter/ImportCenterRoute'));
 const Didaktiker = lazyWithRetry(() => import('@/pages/Didaktiker'));
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
@@ -236,11 +236,7 @@ const AuthenticatedApp = () => {
             path="/import-center"
             element={
               <ErrorBoundary fallback="Import-Center konnte nicht geladen werden.">
-                <ProtectedRoute
-                  component={ImportCenter}
-                  requiredPermission="kannExportBedienen"
-                  redirectTo="/"
-                />
+                <ImportCenterRoute />
               </ErrorBoundary>
             }
           />

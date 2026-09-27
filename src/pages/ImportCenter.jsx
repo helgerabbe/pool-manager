@@ -9,19 +9,35 @@ import AuftragFormular from '@/components/importcenter/AuftragFormular';
 import SchemaBibliothek from '@/components/importcenter/SchemaBibliothek';
 import BausteinKatalogCard from '@/components/importcenter/BausteinKatalogCard';
 import StrukturLeser from '@/components/importcenter/StrukturLeser';
+import { useImportCenterZugang } from '@/hooks/useImportCenterZugang';
 
 /**
  * Import-Center — das Export-Center gespiegelt.
  *
- * Lesende Seite (Tor nach außen): Schema-Bibliothek + Einheiten-Struktur.
- * Schreibende Seite (Freigabe-Tor): Aufträge stellen, begutachten, freigeben.
- *
- * Bewusst parallel zum MBK-Rückmeldesystem: Der mit dem Kursbau ausgehandelte
- * Prüfbefund-Vertrag bleibt unangetastet.
+ * Mitarbeiter einer Einheit sehen nur den Posteingang (gefiltert auf ihre
+ * Einheiten). Aufträge stellen, Kursbau-Briefkasten und Vertrag bleiben dem
+ * Vollzugang (Admin/Fachschaftsleitung) vorbehalten.
  */
 export default function ImportCenter() {
-  const { data: austausch } = useAustauschNachrichten();
+  const { voll } = useImportCenterZugang();
+  const { data: austausch } = useAustauschNachrichten({ enabled: voll });
   const offeneMbk = austausch?.offen_fuer_pm || 0;
+
+  if (!voll) {
+    return (
+      <div className="mx-auto w-full max-w-6xl space-y-6">
+        <header>
+          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">Import-Center</h1>
+          <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Änderungsvorschläge des Kursbaus für die Einheiten, in denen du Mitarbeiter bist. Sieh dir
+            jeden Vorschlag in der Vorschau an und führe ihn durch oder lehne ihn mit Begründung ab.
+          </p>
+        </header>
+        <AuftragPosteingang />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <header>

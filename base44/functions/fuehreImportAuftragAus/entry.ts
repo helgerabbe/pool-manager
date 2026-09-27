@@ -33,7 +33,7 @@ import {
   entferneSchritt,
   beschreibeSchritt,
 } from '../../shared/importAuftragSequenz.js';
-import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import { hatAuftragZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 
 async function logAudit(base44, event) {
   try {
@@ -95,9 +95,6 @@ export default async function (req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Nicht angemeldet' }, { status: 401 });
-    if (!(await hatImportCenterZugang(base44, user))) {
-      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
-    }
 
     const body = await req.json().catch(() => ({}));
     const auftragId = body?.auftrag_id;
@@ -105,6 +102,11 @@ export default async function (req) {
 
     const auftrag = await base44.asServiceRole.entities.ImportAuftrag.get(auftragId).catch(() => null);
     if (!auftrag) return Response.json({ error: 'Auftrag nicht gefunden' }, { status: 404 });
+    // Mitarbeiter einer Einheit dürfen deren Aufträge durchführen. Aufträge
+    // ohne Einheit (einheit_anlegen) bleiben dem Vollzugang vorbehalten.
+    if (!(await hatAuftragZugang(base44, user, auftrag.einheit_id))) {
+      return Response.json({ error: ZUGANG_FEHLER }, { status: 403 });
+    }
     if (auftrag.status === 'ausgefuehrt') {
       return Response.json({ error: 'Dieser Auftrag wurde bereits durchgeführt.' }, { status: 409 });
     }
@@ -446,6 +448,29 @@ export default async function (req) {
           entity: 'AllgemeineAufgabe',
           record_id: auftrag.ziel_id,
           hinweis: p.grund || '',
+        });
+        break;
+      }
+
+      case 'allgemeine_aufgabe_einordnen': {
+        // Bewusst für JEDEN Aufgabenmodus: Die Einordnung ins Themenfeld ist
+        // unabhängig davon, ob die Aufgabe schon in der Werkstatt-Form vorliegt.
+        const alt = await base44.asServiceRole.entities.AllgemeineAufgabe.get(auftrag.ziel_id).catch(() => null);
+        if (!alt) return Response.json({ error: 'Allgemeine Aufgabe nicht gefunden' }, { status: 404 });
+        const tf = await base44.asServiceRole.entities.Themenfeld.get(p.themenfeld_id).catch(() => null);
+        if (!tf || tf.einheit_id !== alt.einheit_id) {
+          return Response.json({ error: 'Themenfeld gehört nicht zur Einheit der Aufgabe' }, { status: 400 });
+        }
+        await base44.asServiceRole.entities.AllgemeineAufgabe.update(auftrag.ziel_id, {
+          themenfeld_id: tf.id,
+          sync_status: alt.sync_status === 'synced' ? 'modified' : alt.sync_status || 'new',
+        });
+        einheitId = alt.einheit_id || einheitId;
+        protokoll.push({
+          schritt: 'Aufgabe ins Themenfeld eingeordnet',
+          entity: 'AllgemeineAufgabe',
+          record_id: auftrag.ziel_id,
+          hinweis: `${alt.titel || ''} → ${tf.titel}`,
         });
         break;
       }
