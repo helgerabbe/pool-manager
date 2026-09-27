@@ -162,6 +162,27 @@ export function pruefeAktivitaetInhalt(katalog, fieldValues = {}, masterVariante
     return { isComplete: missingFields.length === 0, missingFields };
   }
 
+  // Varianten-fähige Arten (Begriffe zuordnen, Lückentext, Reihenfolge,
+  // Miniquiz, Test) speichert der Editor FLACH (z. B. instruction/pairs/
+  // distractors) — nicht in den json-Feldern des Katalog-Formulars
+  // (match_data …), die nur noch Altbestand sind. Liegt der Inhalt so vor,
+  // wird er mit derselben Elle gemessen, mit der der Pool-Manager ihn anlegt
+  // (build der Format-Spezifikation). Eine leere instruction ist dort erlaubt.
+  const spez = MASTER_TYP_SPEZIFIKATIONEN[katalog.name];
+  const jsonFelderLeer = katalog.form_schema
+    .filter((f) => f?.type === 'json')
+    .every((f) => leer(fieldValues[f.field_name]));
+  if (spez && !mitVarianten && jsonFelderLeer) {
+    if (!spez.build(fieldValues)) {
+      missingFields.push({
+        fieldName: 'field_values',
+        label: katalog.name,
+        reason: 'Inhalt unvollständig für diese Aufgabenart (z. B. zu wenige Paare/Elemente)',
+      });
+    }
+    return { isComplete: missingFields.length === 0, missingFields };
+  }
+
   for (const field of katalog.form_schema) {
     if (!field || !field.field_name || field.type === 'info') continue;
     const wert = fieldValues[field.field_name];
