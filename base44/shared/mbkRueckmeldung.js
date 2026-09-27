@@ -43,7 +43,8 @@ function normalisiereUmgehung(wert) {
 /** Woher der Fund kommt: Heuristik des Generators oder didaktischer Blick. */
 function normalisiereQuelle(wert) {
   const s = String(wert || '').toLowerCase().trim();
-  return s === 'sichtung' ? 'sichtung' : 'bau';
+  if (s === 'sichtung' || s === 'ticket') return s;
+  return 'bau';
 }
 
 /** Dateinamens-Slug — identisch zu src/lib/airGapClipboard.js slugify(). */
@@ -169,6 +170,9 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       gemeldet_am: gemeldetAm,
       mbk_status: mbkStatus === 'erledigt' ? 'erledigt' : mbkStatus === 'zurueckgestellt' ? 'zurueckgestellt' : 'offen',
       mbk_quelle: normalisiereQuelle(b?.quelle),
+      // Tickets (2026-09-27): Issue-Nummer und Originaltext der Schülermeldung.
+      issue_nummer: Number.isFinite(Number(b?.issue)) && Number(b?.issue) > 0 ? Number(b.issue) : null,
+      ticket_originaltext: text(b?.originaltext ?? b?.meldung, 3000),
       kurs_umgehung: normalisiereUmgehung(b?.kurs_umgehung),
       // 2026-09-09: Payload-Pfade, die die Korrekturschicht des Baus an dieser
       // Stelle überschreibt. Damit sieht die Lehrkraft, WELCHE ihrer Angaben im

@@ -57,7 +57,18 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
             {MBK_QUELLE.sichtung.label}
           </Badge>
         )}
+        {befund.mbk_quelle === 'ticket' && (
+          <Badge variant="outline" className="bg-rose-50 text-rose-800 border-rose-200">
+            Meldung von Schüler:innen{befund.issue_nummer ? ` · #${befund.issue_nummer}` : ''}
+          </Badge>
+        )}
       </div>
+
+      {befund.mbk_quelle === 'ticket' && befund.ticket_originaltext && (
+        <blockquote className="text-xs italic border-l-2 border-rose-300 pl-2 text-muted-foreground whitespace-pre-wrap">
+          „{befund.ticket_originaltext}"
+        </blockquote>
+      )}
 
       {befund.fundort && (
         <p className="text-xs text-muted-foreground flex items-start gap-1">

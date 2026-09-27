@@ -60,8 +60,12 @@ export default function MbkBefundeReiter({
   );
   const sichtbar = useMemo(() => {
     const liste = zeigeDubletten ? offene : offene.filter((b) => b.dublette_status !== 'dublette');
+    // Schülermeldungen (Tickets) stehen immer oben, danach nach Schwere.
+    const ticketRang = (b) => (b.mbk_quelle === 'ticket' ? 0 : 1);
     return [...liste].sort(
-      (a, b) => (PRUEF_SCHWERE[a.schwere]?.rang ?? 9) - (PRUEF_SCHWERE[b.schwere]?.rang ?? 9)
+      (a, b) =>
+        ticketRang(a) - ticketRang(b) ||
+        (PRUEF_SCHWERE[a.schwere]?.rang ?? 9) - (PRUEF_SCHWERE[b.schwere]?.rang ?? 9)
     );
   }, [offene, zeigeDubletten]);
 

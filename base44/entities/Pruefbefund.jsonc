@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8: Jeder Befund verweist auf genau eine Stelle und tr\u00e4gt eine Entscheidung der Lehrkraft (offen / behoben / bewusst gelassen / Widerspruch). Der stabile Schl\u00fcssel `fingerprint` sorgt daf\u00fcr, dass ein erneuter Pr\u00fcflauf denselben Befund wiedererkennt statt ihn zu duplizieren: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`. Befunde mit entscheidung='bewusst' reisen im MBK-Payload mit, damit der Bau sie nicht erneut meldet.\n\nHERKUNFT (2026-09-04): `quelle` trennt die beiden Reiter in Tab 8. 'regel' und 'ki' sind die eigene Pr\u00fcfung; 'mbk' sind Funde, die der Bau \u00fcber den Austauschordner im Repository zur\u00fcckgemeldet hat (siehe base44/shared/mbkRueckmeldung.js). MBK-Befunde werden ungefiltert \u00fcbernommen \u2014 die Dublettenpr\u00fcfung gegen die eigene Liste startet die Lehrkraft bewusst per Knopfdruck und ist nur markierend (dublette_status), damit kein echter Fund still verschwindet.\n\nKURS-ABWEICHUNGEN (2026-09-09): Der Bau darf einen Kurs anders ausliefern, als der Payload es sagt \u2014 \u00fcber seine Korrektur- und Gestaltungsschicht. Damit die Fachgruppe nicht raten muss, meldet er den Grund im Feld `kurs_umgehung` mit, die betroffenen Payload-Pfade in `kurs_felder`; `mbk_quelle` sagt zus\u00e4tzlich, ob der Fund aus der Heuristik des Generators ('bau') oder aus dem didaktischen Blick ('sichtung', oft mit fertigem Einf\u00fcgetext im Vorschlag) stammt.\n\nR\u00dcCKWEG (2026-09-09): Die Entscheidungen zu MBK-Befunden reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository \u2014 geschrieben von der Funktion pushMbkAntwort. Neben 'behoben' und 'bewusst' gibt es daf\u00fcr 'widerspruch': Die Fachgruppe h\u00e4lt den Fund f\u00fcr unzutreffend und erwartet eine Antwort des Baus, statt etwas zu \u00e4ndern.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8. Der stabile Schl\u00fcssel `fingerprint` sorgt f\u00fcr Wiedererkennung: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`.\n\nHERKUNFT: `quelle` trennt die Reiter in Tab 8 ('regel'/'ki' = eigene Pr\u00fcfung, 'mbk' = R\u00fcckmeldung des Baus). `mbk_quelle` sagt, wer den MBK-Fund gefunden hat: 'bau', 'sichtung' oder 'ticket' (2026-09-27: Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem, als GitHub-Issue mit Label 'einheit' \u2014 mit Issue-Nummer und Originaltext).\n\nR\u00dcCKWEG: Entscheidungen reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository (pushMbkAntwort). Bei Tickets schlie\u00dft der Bau das Issue bei 'behoben'/'bewusst' automatisch.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -9,11 +9,11 @@
     },
     "prueflauf_id": {
       "type": "string",
-      "description": "FK zum Prueflauf, in dem dieser Befund zuletzt gefunden/best\u00e4tigt wurde. Bei MBK-Befunden leer \u2014 sie entstehen ohne Pr\u00fcflauf."
+      "description": "FK zum Prueflauf. Bei MBK-Befunden leer."
     },
     "fingerprint": {
       "type": "string",
-      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel. Intern: `<ziel_typ>:<ziel_id>:<kategorie>`. MBK: `mbk:<mbk_meldung_id>`. Pro Einheit eindeutig."
+      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel. Pro Einheit eindeutig."
     },
     "ziel_typ": {
       "type": "string",
@@ -24,35 +24,31 @@
         "systembaustein",
         "lernpaket"
       ],
-      "description": "Art der betroffenen Stelle. 'aktivitaet' = LernpaketPhaseAktivitaet, 'master_aufgabe' = MasterAufgabe (Variante einer Aktivit\u00e4t), 'allgemeine_aufgabe' = AllgemeineAufgabe (Ebene 2/3), 'systembaustein' = Systembaustein-Inhalt (SchuelerInhaltSnapshot) bzw. Onboarding-Element, 'lernpaket' = das Lernpaket selbst (nur Kategorie 6: verwaiste Zuordnung)."
+      "description": "Art der betroffenen Stelle."
     },
     "ziel_id": {
       "type": "string",
-      "description": "ID der betroffenen Stelle (activity_id, master_id, aufgabe_id, lernpaket_id bzw. Baustein-Referenz `<lerntyp>::<baustein_id>`). Bei MBK-Befunden ohne aufl\u00f6sbare Stelle die mbk_meldung_id \u2014 dann gibt es keinen Link, aber auch keine falsche Zuordnung."
+      "description": "ID der betroffenen Stelle (bzw. mbk_meldung_id ohne aufl\u00f6sbare Stelle)."
     },
     "ziel_titel": {
       "type": "string",
-      "description": "Denormalisierter Anzeigetitel der Stelle f\u00fcr die Taskliste."
+      "description": "Denormalisierter Anzeigetitel der Stelle."
     },
     "fundort": {
       "type": "string",
-      "description": "Klartext-Pfad zur Stelle f\u00fcr die Taskliste, z. B. \u201eThemenfeld \u201eFl\u00e4chen\" \u00b7 Lernpaket \u201eQuadrate\" \u00b7 Phase \u00dcbung\" oder bei Systembausteinen \u201eArbeitsplan Ehrgeizig \u00b7 Abschluss\". Erg\u00e4nzt 2026-09-09: Bei MBK-Befunden zu Systembausteinen stand vorher nur ein Titel (\u201eAufgabenb\u00fcndel\") in der Liste \u2014 dadurch war unklar, in welchem Arbeitsplan und Abschnitt die Stelle steckt, und niemand f\u00fchlte sich zust\u00e4ndig. Rein anzeigend; die Verlinkung l\u00e4uft weiter \u00fcber ziel_typ/ziel_id."
+      "description": "Klartext-Pfad zur Stelle f\u00fcr die Taskliste."
     },
     "lernpaket_id": {
-      "type": "string",
-      "description": "Denormalisiert: FK zum Lernpaket \u2013 f\u00fcr die Gruppierung in der Taskliste und f\u00fcr Deep-Links."
+      "type": "string"
     },
     "lernpaket_titel": {
-      "type": "string",
-      "description": "Denormalisierter Lernpaket-Titel."
+      "type": "string"
     },
     "themenfeld_id": {
-      "type": "string",
-      "description": "Denormalisiert: FK zum Themenfeld \u2013 f\u00fcr die Gruppierung."
+      "type": "string"
     },
     "themenfeld_titel": {
-      "type": "string",
-      "description": "Denormalisierter Themenfeld-Titel."
+      "type": "string"
     },
     "kategorie": {
       "type": "integer",
@@ -65,7 +61,7 @@
         6,
         7
       ],
-      "description": "Fehlerkategorie: 1 = Leer oder Platzhalter, 2 = Arbeitsauftrag unklar oder nicht bearbeitbar, 3 = Erwartungshorizont fehlt oder tr\u00e4gt nicht, 4 = R\u00fcckmeldeweg nicht entschieden, 5 = Material und Text nicht sch\u00fclertauglich, 6 = Keinem Themenfeld zugeordnet (verwaistes Lernpaket bzw. verwaiste Aufgabe), 7 = Von der MBK gemeldet, ohne Kategorie (nur quelle='mbk')."
+      "description": "Fehlerkategorie (siehe src/lib/pruefungKategorien.js)."
     },
     "schwere": {
       "type": "string",
@@ -74,16 +70,15 @@
         "stoert",
         "hinweis"
       ],
-      "default": "hinweis",
-      "description": "'blockiert' = Sch\u00fcler k\u00f6nnen die Stelle nicht sinnvoll bearbeiten. 'stoert' = bearbeitbar, aber R\u00fcckmeldung/Lernen leidet. 'hinweis' = alles \u00dcbrige."
+      "default": "hinweis"
     },
     "befund": {
       "type": "string",
-      "description": "Ein Satz: Was fehlt oder passt nicht \u2013 mit Zitat der Stelle."
+      "description": "Ein Satz: Was fehlt oder passt nicht."
     },
     "vorschlag": {
       "type": "string",
-      "description": "Ein Satz: Was die Lehrkraft konkret tun kann. Bei mbk_quelle='sichtung' steht hier oft ein FERTIGER EINF\u00dcGETEXT, den die Lehrkraft direkt \u00fcbernehmen kann."
+      "description": "Ein Satz: Was die Lehrkraft konkret tun kann."
     },
     "quelle": {
       "type": "string",
@@ -92,16 +87,24 @@
         "ki",
         "mbk"
       ],
-      "default": "regel",
-      "description": "Herkunft des Befunds: 'regel' = mechanische Pr\u00fcfung im Pool-Manager, 'ki' = KI-Pr\u00fcfung im Pool-Manager, 'mbk' = R\u00fcckmeldung aus dem Bau (eigener Reiter in Tab 8). Nur 'regel' und 'ki' werden beim Abschluss eines Pr\u00fcflaufs aufger\u00e4umt \u2013 MBK-Befunde bleiben stehen, bis sie entschieden werden."
+      "default": "regel"
     },
     "mbk_quelle": {
       "type": "string",
       "enum": [
         "bau",
-        "sichtung"
+        "sichtung",
+        "ticket"
       ],
-      "description": "Nur bei quelle='mbk': Wer den Punkt gefunden hat. 'bau' = Heuristik des Generators beim Bauen des Kurses. 'sichtung' = didaktischer Blick eines Menschen; solche Befunde tragen im Vorschlag h\u00e4ufig einen fertigen Einf\u00fcgetext. HINWEIS: In der MBK-Datei hei\u00dft dieses Feld schlicht `quelle` (Kl\u00e4rung 2026-09-09) \u2014 der Leser in base44/shared/mbkRueckmeldung.js nimmt es von dort und schreibt es hier unter dem eindeutigeren Namen."
+      "description": "Nur bei quelle='mbk': 'bau' = Heuristik des Generators, 'sichtung' = didaktischer Blick (oft mit fertigem Einf\u00fcgetext), 'ticket' = Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem (GitHub-Issue, siehe issue_nummer). In der MBK-Datei hei\u00dft das Feld `quelle`."
+    },
+    "issue_nummer": {
+      "type": "number",
+      "description": "Nur bei mbk_quelle='ticket': Nummer des GitHub-Issues im Kursbau-Repository (Feld `issue` der R\u00fcckmeldung)."
+    },
+    "ticket_originaltext": {
+      "type": "string",
+      "description": "Nur bei mbk_quelle='ticket': der Originaltext der Sch\u00fclermeldung, ungek\u00fcrzt durch den Bau."
     },
     "kurs_umgehung": {
       "type": "string",
@@ -114,16 +117,14 @@
         "korrektur ausgesetzt",
         "gestaltung"
       ],
-      "default": "keine",
-      "description": "Nur bei quelle='mbk': Was der Bau vorerst getan hat, damit der Kurs trotz des Befunds l\u00e4uft \u2014 also WIE der ausgelieferte Kurs an dieser Stelle vom Pool-Manager abweicht. 'keine' = keine Abweichung. 'entfernt' = die Stelle ist im Kurs nicht enthalten. 'baustelle' = die Stelle zeigt einen Platzhalter. 'ausgeblendet' = im Kurs verborgen. 'korrektur' = die Korrekturschicht des Baus \u00fcberschreibt hier einen Wert (welche Felder: siehe kurs_felder). 'korrektur ausgesetzt' = die Fachgruppe hat genau dieses Feld ge\u00e4ndert, ihre Fassung gewinnt, die Korrektur ruht und der Bau pr\u00fcft nach. 'gestaltung' = die Aktivit\u00e4t hat im Kurs eine eigene Darstellung, der Inhalt kommt weiter aus dem Pool-Manager. Klartext-Erkl\u00e4rungen: src/lib/pruefungKategorien.js."
+      "default": "keine"
     },
     "kurs_felder": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "Nur bei quelle='mbk' (Feld `kurs_felder` der R\u00fcckmeldung, ab 2026-09-09): Die Payload-Pfade, die der Kurs an dieser Stelle \u00fcberschreibt \u2014 z. B. ['aufgabenstellung', 'materialien.0.label']. Bei kurs_umgehung='korrektur' sind das die Felder, deren Fassung im Kurs NICHT von der Fachgruppe stammt; bei 'korrektur ausgesetzt' steht hier genau das eine Feld, dessen Fassung jetzt gewinnt. Die Liste wird der Lehrkraft am Befund angezeigt, damit sie sieht, welche ihrer Angaben im Kurs nicht ankommt. Ersetzt den urspr\u00fcnglich geplanten eigenen Vorwarnmechanismus (T7)."
+      "default": []
     },
     "entscheidung": {
       "type": "string",
@@ -133,59 +134,47 @@
         "bewusst",
         "widerspruch"
       ],
-      "default": "offen",
-      "description": "Bearbeitungsstand in der Taskliste. 'offen' = noch zu erledigen. 'behoben' = Lehrkraft hat die Stelle korrigiert. 'bewusst' = Lehrkraft kennt den Befund und l\u00e4sst ihn absichtlich stehen \u2013 reist im Payload mit. 'widerspruch' (2026-09-09, nur sinnvoll bei quelle='mbk') = die Fachgruppe h\u00e4lt den Fund f\u00fcr unzutreffend und erwartet eine Antwort des Baus; reist mit Pflichtkommentar in der Antwortdatei zur\u00fcck. Nur Admin/Fachschaftsleitung/Einheits-Leitung d\u00fcrfen 'bewusst' setzen."
+      "default": "offen"
     },
     "kommentar": {
-      "type": "string",
-      "description": "Pflichtkommentar bei entscheidung='bewusst' und entscheidung='widerspruch'. Wird an die MBK durchgereicht."
+      "type": "string"
     },
     "entschieden_von": {
-      "type": "string",
-      "description": "E-Mail der Lehrkraft, die die Entscheidung gesetzt hat."
+      "type": "string"
     },
     "entschieden_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitpunkt der Entscheidung."
+      "format": "date-time"
     },
     "antwort_gesendet_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Nur bei quelle='mbk': Zeitpunkt, zu dem diese Entscheidung als Teil einer Antwortdatei ins Repository geschrieben wurde (pushMbkAntwort). Leer = die Entscheidung ist beim Bau noch nicht angekommen; die Anzeige unterscheidet dadurch \u201eentschieden\" von \u201ezur\u00fcckgemeldet\"."
+      "format": "date-time"
     },
     "erneut_gefunden": {
       "type": "boolean",
-      "default": false,
-      "description": "true = der Befund war als 'behoben' markiert, wurde beim n\u00e4chsten Pr\u00fcflauf aber wieder gefunden und deshalb auf 'offen' zur\u00fcckgesetzt."
+      "default": false
     },
     "zuletzt_gefunden_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitpunkt des letzten Pr\u00fcflaufs, der diesen Befund (erneut) festgestellt hat."
+      "format": "date-time"
     },
     "bestaetigt_behoben_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitpunkt, zu dem ein erneuter Pr\u00fcflauf die Behebung best\u00e4tigt hat (Befund nicht mehr gefunden)."
+      "format": "date-time"
     },
     "mbk_meldung_id": {
-      "type": "string",
-      "description": "Nur bei quelle='mbk': stabile Kennung des Funds aus der MBK-Datei (Feld `id`). Grundlage der Wiedererkennung \u2013 derselbe Fund darf beim n\u00e4chsten Abholen nicht doppelt entstehen."
+      "type": "string"
     },
     "mbk_quelldatei": {
-      "type": "string",
-      "description": "Nur bei quelle='mbk': Pfad der R\u00fcckmeldungs-Datei im Repository, aus der dieser Befund stammt."
+      "type": "string"
     },
     "mbk_gemeldet_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Nur bei quelle='mbk': Zeitstempel, den die MBK in der Datei angegeben hat (`erzeugt_am`)."
+      "format": "date-time"
     },
     "mbk_erledigt_gemeldet_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Nur bei quelle='mbk': Zeitpunkt, zu dem der Bau diesen Punkt als `status: \"erledigt\"` gemeldet hat. Der Befund wird dann automatisch auf entscheidung='behoben' gesetzt \u2014 er erscheint einmal als erledigt und danach nicht mehr in der offenen Liste."
+      "format": "date-time"
     },
     "dublette_status": {
       "type": "string",
@@ -194,21 +183,17 @@
         "dublette",
         "eigenstaendig"
       ],
-      "default": "offen",
-      "description": "Nur bei quelle='mbk': Ergebnis der bewusst angesto\u00dfenen Dublettenpr\u00fcfung. 'offen' = noch nicht gepr\u00fcft. 'dublette' = beschreibt dieselbe Stelle wie ein eigener Befund (siehe dublette_von_befund_id) \u2013 wird in der Liste zusammengeklappt, aber NICHT gel\u00f6scht. 'eigenstaendig' = gepr\u00fcft und in der eigenen Liste nicht enthalten."
+      "default": "offen"
     },
     "dublette_von_befund_id": {
-      "type": "string",
-      "description": "FK auf den eigenen (internen) Pruefbefund, mit dem dieser MBK-Befund als Dublette erkannt wurde."
+      "type": "string"
     },
     "dublette_begruendung": {
-      "type": "string",
-      "description": "Ein Satz der Pr\u00fcfung, warum die beiden Befunde dieselbe Stelle betreffen. Macht die Markierung f\u00fcr die Lehrkraft nachvollziehbar und korrigierbar."
+      "type": "string"
     },
     "dublette_geprueft_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitpunkt der letzten Dublettenpr\u00fcfung dieses Befunds."
+      "format": "date-time"
     }
   },
   "required": [

@@ -109,6 +109,8 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       // Neu seit 2026-09-09: Herkunft des Funds und die Art, wie der gebaute
       // Kurs an dieser Stelle vom Pool-Manager abweicht.
       mbk_quelle: zugeordnet.mbk_quelle,
+      issue_nummer: rohBefund.issue_nummer || undefined,
+      ticket_originaltext: rohBefund.ticket_originaltext || '',
       kurs_umgehung: zugeordnet.kurs_umgehung,
       kurs_felder: zugeordnet.kurs_felder || [],
       mbk_meldung_id: zugeordnet.mbk_id,
