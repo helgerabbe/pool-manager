@@ -30,6 +30,7 @@ import PruefbereichTab from '@/components/pruefung/PruefbereichTab';
 import LoadingOverlay from '@/components/workspace/LoadingOverlay';
 import EinheitVorschauModal from '@/components/einheiten/EinheitVorschauModal';
 import IdeenkisteButton from '@/components/ideenkiste/IdeenkisteButton';
+import BaumeisterButton from '@/components/baumeister/BaumeisterButton';
 import { istUebungsblock } from '@/lib/einheitFormat';
 
 const LAST_EINHEIT_STORAGE_KEY = 'poolmanager:lastEinheitId';
@@ -851,6 +852,10 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
                   einheit={einheit}
                   kannBearbeiten={kannDieseEinheitBearbeiten}
                 />
+              )}
+              {/* Baumeister (Etappe 1): Test-Platz neben dem Aufgaben-Depot. */}
+              {!isBasismodul && (istAdmin || istFachschaftsleitung) && kannDieseEinheitBearbeiten && (
+                <BaumeisterButton einheitId={selectedEinheitId} />
               )}
               {/* Privat-Modus: Gesamt-Vorschau — aus jedem Tab heraus erreichbar */}
               {einheit?.sichtbarkeit === 'privat' && (
