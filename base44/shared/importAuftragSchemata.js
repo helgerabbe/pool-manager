@@ -30,6 +30,7 @@ export const ART_LABELS = {
   allgemeine_aufgabe_aendern: 'Sequenzaufgabe ändern',
   allgemeine_aufgabe_loeschen: 'Sequenzaufgabe löschen',
   allgemeine_aufgabe_einordnen: 'Aufgabe einem Themenfeld zuordnen',
+  ki_inhalt_uebernehmen: 'KI-Inhalt aus MBK-Revision übernehmen',
   offene_aufgabe_anlegen: 'Offene Aufgabe anlegen (HTML)',
   offene_aufgabe_html_ersetzen: 'HTML einer offenen Aufgabe ersetzen',
   schritt_einfuegen: 'Schritt einfügen',
@@ -381,6 +382,43 @@ export const ART_SCHEMATA = {
         themenfeld_id: feld('string', 'Themenfeld', {
           hinweis: 'ID eines Themenfelds derselben Einheit — abrufbar über getEinheitStrukturLesend.',
         }),
+      },
+    },
+  },
+
+  /**
+   * KI-INHALT ÜBERNEHMEN (2026-09-30): Entsteht beim Abholen der MBK-Rückmeldung
+   * aus kurse/<slug>/ki-inhalte/<datum>.json. Die Ausführung liest die Datei
+   * erneut und überschreibt den Schülerinhalt (base44/shared/kiInhaltUebernahme.js).
+   */
+  ki_inhalt_uebernehmen: {
+    beschreibung:
+      'Übernimmt die von der MBK überarbeitete Fassung eines KI-Schülerinhalts (Sektoreinführung, Kompaktwissen, Onboarding) und überschreibt den bisherigen Inhalt. Die Sichtung wird zurückgesetzt.',
+    ziel_typ: 'einheit',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['baustein_id', 'quelldatei', 'mbk_eintrag_id'],
+      properties: {
+        baustein_id: feld('string', 'KI-Baustein', {
+          enum: [
+            'sys_themenfeld_intro',
+            'kompaktwissen',
+            'onboarding_einfuehrung',
+            'onboarding_fragenblock',
+            'onboarding_einstiegsdiagnose',
+            'onboarding_lerntyp_diagnose',
+          ],
+        }),
+        lerntyp: feld('string', 'Lerntyp'),
+        instance_id: feld('string', 'Sektor-Instanz'),
+        themenfeld_id: feld('string', 'Themenfeld'),
+        aktivitaet_id: feld('string', 'Aktivität (Kompaktwissen)'),
+        stelle: feld('string', 'Stelle'),
+        hinweis: feld('string', 'Hinweis der MBK'),
+        quelldatei: feld('string', 'Quelldatei im Repository'),
+        mbk_eintrag_id: feld('string', 'Eintrag in der Quelldatei'),
       },
     },
   },

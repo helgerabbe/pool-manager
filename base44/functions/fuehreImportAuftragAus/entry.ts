@@ -34,6 +34,9 @@ import {
   beschreibeSchritt,
 } from '../../shared/importAuftragSequenz.js';
 import { hatAuftragZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
+import { secrets } from 'base44:runtime';
+import { readTextFile } from '../../shared/githubRead.js';
+import { parseKiInhalte, wendeKiInhaltAn } from '../../shared/kiInhaltUebernahme.js';
 
 async function logAudit(base44, event) {
   try {
@@ -472,6 +475,28 @@ export default async function (req) {
           record_id: auftrag.ziel_id,
           hinweis: `${alt.titel || ''} → ${tf.titel}`,
         });
+        break;
+      }
+
+      case 'ki_inhalt_uebernehmen': {
+        const einheit = await base44.asServiceRole.entities.Einheiten.get(auftrag.ziel_id).catch(() => null);
+        if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });
+        const token = secrets.get('GITHUB_POOLSIDE_TOKEN');
+        if (!token) return Response.json({ error: 'Der GitHub-Zugang ist nicht hinterlegt.' }, { status: 500 });
+        const roh = await readTextFile(token, p.quelldatei);
+        if (!roh) return Response.json({ error: `${p.quelldatei} liegt nicht mehr im Repository.` }, { status: 404 });
+        const eintrag = parseKiInhalte(roh).eintraege.find((e) => e.id === p.mbk_eintrag_id);
+        if (!eintrag) return Response.json({ error: 'Der Eintrag steht nicht mehr in der MBK-Datei.' }, { status: 404 });
+        protokoll.push(await wendeKiInhaltAn(base44, einheit, eintrag, user.email));
+        if (auftrag.verlinkter_pruefbefund_id) {
+          await base44.asServiceRole.entities.Pruefbefund.update(auftrag.verlinkter_pruefbefund_id, {
+            entscheidung: 'behoben',
+            entschieden_von: user.email,
+            entschieden_am: new Date().toISOString(),
+            kommentar: 'MBK-Fassung über das Import-Center übernommen.',
+          }).catch(() => null);
+        }
+        einheitId = einheit.id;
         break;
       }
 

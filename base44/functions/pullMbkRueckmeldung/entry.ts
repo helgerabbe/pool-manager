@@ -32,6 +32,67 @@ import {
   buildMbkFingerprint,
   ordneBefundZu,
 } from '../../shared/mbkRueckmeldung.js';
+import { KI_BAUSTEINE, getKiInhalteOrdner, parseKiInhalte } from '../../shared/kiInhaltUebernahme.js';
+
+/**
+ * MBK-Revisionen von KI-Inhalten → je Eintrag ein ImportAuftrag
+ * 'ki_inhalt_uebernehmen' im Posteingang. Bekannte Einträge (gleiche Datei +
+ * Eintrag) werden nicht doppelt angelegt.
+ */
+async function legeKiInhaltAuftraegeAn(base44, token, einheit, slug, jetzt) {
+  const datei = waehleJuengsteDatei(await listDirectory(token, getKiInhalteOrdner(slug)));
+  if (!datei) return 0;
+  const roh = await readTextFile(token, datei.path);
+  if (!roh) return 0;
+  const { eintraege } = parseKiInhalte(roh);
+  if (eintraege.length === 0) return 0;
+
+  const db = base44.asServiceRole.entities;
+  const [bestand, befunde] = await Promise.all([
+    db.ImportAuftrag.filter({ einheit_id: einheit.id, auftrags_art: 'ki_inhalt_uebernehmen' }),
+    db.Pruefbefund.filter({ einheit_id: einheit.id, quelle: 'mbk', ziel_typ: 'systembaustein' }),
+  ]);
+  const bekannt = new Set((bestand || []).map((a) => `${a.parameter?.quelldatei}#${a.parameter?.mbk_eintrag_id}`));
+  const sektoren = Object.entries(einheit.lernpfade_konfiguration || {}).flatMap(([lt, s]) =>
+    (Array.isArray(s) ? s : []).map((sek) => ({ lt, sek }))
+  );
+
+  const neu = [];
+  for (const e of eintraege) {
+    if (bekannt.has(`${datei.path}#${e.id}`)) continue;
+    const def = KI_BAUSTEINE[e.baustein_id];
+    const sektor = sektoren.find(({ lt, sek }) => lt === e.lerntyp && (sek?.items || []).some((i) => i?.instance_id === e.instance_id));
+    const stelle = [e.lerntyp, sektor?.sek?.titel || sektor?.sek?.name].filter(Boolean).join(' · ') || 'Einheit';
+    const befund = (befunde || []).find(
+      (b) => b.entscheidung === 'offen' && String(b.ziel_id || '').endsWith(e.baustein_id)
+    );
+    const parameter = {
+      baustein_id: e.baustein_id,
+      stelle,
+      hinweis: e.hinweis,
+      quelldatei: datei.path,
+      mbk_eintrag_id: e.id,
+    };
+    for (const k of ['lerntyp', 'instance_id', 'themenfeld_id', 'aktivitaet_id']) if (e[k]) parameter[k] = e[k];
+    neu.push({
+      auftrags_art: 'ki_inhalt_uebernehmen',
+      titel: `${def.label} übernehmen — ${stelle}`,
+      ziel_typ: 'einheit',
+      ziel_id: einheit.id,
+      einheit_id: einheit.id,
+      parameter,
+      quelle: 'mbk',
+      absender: 'mbk',
+      pruefstatus: 'ausfuehrbar',
+      pruefergebnis: [],
+      geprueft_am: jetzt,
+      status: 'eingegangen',
+      verlinkter_pruefbefund_id: befund?.id || undefined,
+    });
+  }
+  if (neu.length > 0) await db.ImportAuftrag.bulkCreate(neu);
+  return neu.length;
+}
 
 async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   const slug = getKursSlug(einheit);
@@ -185,11 +246,14 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     await base44.asServiceRole.entities.MbkAdminTodo.bulkUpdate(todoUpdates);
   }
 
+  const kiAuftraegeNeu = await legeKiInhaltAuftraegeAn(base44, token, einheit, slug, jetzt);
+
   return {
     einheit_id: einheit.id,
     einheit_titel: einheit.titel_der_einheit || '',
     slug,
     gefunden: true,
+    ki_auftraege_neu: kiAuftraegeNeu,
     quelldatei: datei.path,
     gemeldet_am: meta.erzeugt_am,
     // Vom Bau selbst als geklärt markierte Punkte (bewusst exportiert/erledigt).
