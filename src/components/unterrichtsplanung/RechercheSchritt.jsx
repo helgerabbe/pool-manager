@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import MaterialUpload from './MaterialUpload';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 /** Schritt 1: Thema, Wünsche, Material → Recherche starten. */
 export default function RechercheSchritt({ planung, ue, speichern, recherche }) {
@@ -37,7 +38,10 @@ export default function RechercheSchritt({ planung, ue, speichern, recherche }) 
         <Input value={thema} onChange={(e) => setThema(e.target.value)} placeholder="z. B. Groß- und Kleinschreibung" />
       </div>
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Wünsche & Klassensituation (optional)</label>
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium">Wünsche & Klassensituation (optional)</label>
+          <SpeechInputButton value={vorgaben} onResult={setVorgaben} maxSeconds={60} label="Spracheingabe" />
+        </div>
         <Textarea rows={3} value={vorgaben} onChange={(e) => setVorgaben(e.target.value)} placeholder="Schwerpunkte, Vorwissen, Besonderheiten der Lerngruppe …" />
       </div>
       <MaterialUpload materialien={materialien} onChange={setMaterialien} />
