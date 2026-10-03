@@ -3,6 +3,7 @@ import { Loader2, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InhaltZeile from './InhaltZeile';
 import ZeitbudgetFeld from './ZeitbudgetFeld';
+import KcAbdeckung from './KcAbdeckung';
 
 /** Schritt 2: Inhalte priorisieren, Zeitbudget angeben, Verlauf planen lassen. */
 export default function InhalteSchritt({ planung, speichern, planen }) {
@@ -23,10 +24,16 @@ export default function InhalteSchritt({ planung, speichern, planen }) {
       <div className="space-y-2">
         {inhalte.map((i) => <InhaltZeile key={i.id} inhalt={i} onPrioritaet={(p) => setze(i.id, p)} />)}
       </div>
+      <KcAbdeckung inhalte={inhalte} />
       <ZeitbudgetFeld planung={planung} onSpeichern={(d) => speichern.mutate(d)} />
       {budget > 0 && muss > budget && (
         <p className="text-xs text-destructive">Die „Muss“-Inhalte brauchen geschätzt {muss} Min. — mehr als deine {budget} Min.</p>
       )}
+      <p className="text-xs text-muted-foreground">
+        {planen.isPending
+          ? 'Der Verlauf wird geplant … das kann ein bis zwei Minuten dauern. Bitte die Seite geöffnet lassen.'
+          : 'Achtung: Das Planen des Verlaufs kann etwas länger dauern (ein bis zwei Minuten).'}
+      </p>
       <Button
         onClick={() => planen.mutate({ planung_id: planung.id })}
         disabled={planen.isPending || speichern.isPending || budget === 0}

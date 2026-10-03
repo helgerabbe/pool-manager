@@ -22,6 +22,8 @@ const INHALTE_SCHEMA = {
           begruendung: { type: 'string' },
           empfohlen: { type: 'boolean' },
           minuten: { type: 'number' },
+          kc: { type: 'boolean' },
+          kc_bezug: { type: 'string' },
         },
         required: ['titel', 'beschreibung'],
       },
@@ -65,6 +67,9 @@ export default async function (req) {
           'beschreibung: EIN Satz, was die Schüler hier lernen.',
           'begruendung: EIN Satz, warum der Inhalt dazugehört (Kerncurriculum, Stolperstein, Voraussetzung …).',
           'empfohlen: true für den Kern, den das Kerncurriculum verlangt oder ohne den die Einheit nicht trägt; false für Vertiefungen und Ergänzungen.',
+          'kc: true NUR, wenn das Kerncurriculum Niedersachsen (Fach, Jahrgang/Doppeljahrgang) diesen Inhalt bzw. diese Kompetenz verbindlich vorgibt. Sonst false.',
+          'kc_bezug: bei kc=true kurz die KC-Vorgabe (Kompetenzbereich + erwartete Kompetenz in wenigen Worten); sonst leer.',
+          'Alle verbindlichen KC-Vorgaben zum Thema müssen als eigene Inhalte mit kc=true in der Liste stehen.',
           'minuten: grob geschätzter Unterrichtszeitbedarf (Vielfache von 20).',
           'Liegen Materialien der Lehrkraft bei (Buchseiten, Arbeitsblätter, Folien), richte Inhalte und Begriffe daran aus.',
         ],
@@ -83,7 +88,9 @@ export default async function (req) {
       begruendung: String(i.begruendung || ''),
       empfohlen: !!i.empfohlen,
       minuten: Number(i.minuten) || 0,
-      prioritaet: i.empfohlen ? 'muss' : 'vielleicht',
+      kc: !!i.kc,
+      kc_bezug: String(i.kc_bezug || ''),
+      prioritaet: i.empfohlen || i.kc ? 'muss' : 'vielleicht',
     }));
 
     const aktualisiert = await base44.asServiceRole.entities.UnterrichtsPlanung.update(planung.id, {
