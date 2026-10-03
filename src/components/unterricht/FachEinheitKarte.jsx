@@ -7,6 +7,7 @@ import AnlegenMitWizardDialog from './AnlegenMitWizardDialog';
 import FachStundenListe from './FachStundenListe';
 import FachBloeckeListe from './FachBloeckeListe';
 import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
+import StrukturStatusButton from './StrukturStatusButton';
 import {
   useStundeAnlegen, useUebungsblockAnlegen, useUnterrichtseinheitUmbenennen,
 } from '@/hooks/useFachEinheitInhalte';
@@ -57,9 +58,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => navigate(`/unterrichtseinheit/${unterrichtseinheit.id}/struktur`)} className="gap-2">
-            <ListTree className="w-4 h-4" /> Struktur der Einheit
-          </Button>
+          <StrukturStatusButton unterrichtseinheitId={unterrichtseinheit.id} />
           <Button variant="outline" size="sm" onClick={() => setStundeOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Stunde
           </Button>
