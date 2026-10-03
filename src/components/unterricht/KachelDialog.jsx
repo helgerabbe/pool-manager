@@ -36,7 +36,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
     if (!open) return;
     setFach(kachel?.fach || '');
     setJahrgang(kachel?.jahrgangsstufe || '');
-    setName(kachel?.anzeigename || '');
+    setName(kachel?.name || '');
   }, [open, kachel]);
 
   const gueltig = fach && jahrgang;
@@ -45,7 +45,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95%] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{istBearbeiten ? 'Kachel benennen' : 'Fach hinzufügen'}</DialogTitle>
+          <DialogTitle>{istBearbeiten ? 'Lerngruppe benennen' : 'Lerngruppe hinzufügen'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
@@ -73,14 +73,14 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
             </select>
           </div>
           <div className="space-y-2">
-            <Label>Eigener Name (optional)</Label>
+            <Label>Name der Lerngruppe</Label>
             <Input
-              placeholder="z. B. Mathe 6b"
+              placeholder="z. B. 9a"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Leer lassen — dann steht auf der Kachel Fach und Jahrgang.
+              Mehrere Lerngruppen im selben Fach und Jahrgang sind möglich (z. B. 9a, 9b).
             </p>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button
             disabled={!gueltig || busy}
-            onClick={() => onSpeichern({ fach, jahrgangsstufe: jahrgang, anzeigename: name.trim() })}
+            onClick={() => onSpeichern({ fach, jahrgangsstufe: jahrgang, name: name.trim() })}
           >
             {istBearbeiten ? 'Speichern' : 'Hinzufügen'}
           </Button>

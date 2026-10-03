@@ -1,0 +1,47 @@
+{
+  "name": "Lerngruppe",
+  "type": "object",
+  "description": "LERNGRUPPE (2026-10-03): Die konkrete Klasse bzw. der Kurs, den eine Lehrkraft unterrichtet \u2014 Fach + Jahrgang + Name (z. B. 'Deutsch \u00b7 9 \u00b7 9a'). Einstieg im Bereich 'Mein Unterricht'. Pro Fach+Jahrgang sind mehrere Lerngruppen m\u00f6glich, weil verschiedene Lerngruppen unterschiedlich unterrichtet werden. Darin liegen Unterrichtseinheiten (Unterrichtseinheit.lerngruppe_id, 1:n). Ersetzt die automatisch erzeugte UnterrichtsKachel (Fach+Jahrgang).",
+  "properties": {
+    "besitzer_email": {
+      "type": "string",
+      "description": "E-Mail der Lehrkraft. Lerngruppen sind pers\u00f6nlich."
+    },
+    "fach": {
+      "type": "string",
+      "description": "Fach (Wert aus LookupFaecher.name)."
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "description": "Jahrgangsstufe (Wert aus LookupJahrgaenge.bezeichnung)."
+    },
+    "name": {
+      "type": "string",
+      "description": "Name der Lerngruppe, z. B. '9a'. Leer = Anzeige '<Fach> \u00b7 Jg. <Jahrgang>'."
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 100,
+      "description": "Sortierung der Kacheln (kleiner = weiter vorne)."
+    }
+  },
+  "required": [
+    "besitzer_email",
+    "fach",
+    "jahrgangsstufe"
+  ],
+  "rls": {
+    "create": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "read": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "update": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.besitzer_email": "{{user.email}}"
+    }
+  }
+}

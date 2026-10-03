@@ -37,7 +37,7 @@ export default function UebungsblockMoodleWegInfoBox() {
       <div className="flex items-center gap-2 mb-1">
         <GraduationCap className="w-5 h-5 text-blue-700" />
         <h3 className="text-sm font-bold text-blue-900">
-          Wie kommt mein Übungsblock zu den Schülern nach Moodle?
+          Wie kommt meine selbstständige Übung zu den Schülern nach Moodle?
         </h3>
       </div>
       <p className="text-xs text-blue-800/80 mb-3">

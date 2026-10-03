@@ -21,7 +21,7 @@ export default function UnterrichtKachel({
   const navigate = useNavigate();
 
   const oeffnen = () =>
-    navigate(`/unterricht?fach=${encodeURIComponent(kachel.fach)}&jg=${encodeURIComponent(kachel.jahrgangsstufe)}`);
+    navigate(`/unterricht?lg=${encodeURIComponent(kachel.id)}`);
 
   return (
     <div className="group relative rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/40">
@@ -33,7 +33,11 @@ export default function UnterrichtKachel({
           {kachel.fach}
         </span>
         <p className="mt-2 text-base font-bold text-foreground">
-          {kachel.anzeigename || `${kachel.fach} · Jg. ${kachel.jahrgangsstufe}`}
+          {kachel.name || `${kachel.fach} · Jg. ${kachel.jahrgangsstufe}`}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          {kachel.name ? `${kachel.fach} · Jg. ${kachel.jahrgangsstufe} · ` : ''}
+          {kachel.anzahlEinheiten} Unterrichtseinheit{kachel.anzahlEinheiten !== 1 ? 'en' : ''}
         </p>
         <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5">
@@ -42,7 +46,7 @@ export default function UnterrichtKachel({
           </span>
           <span className="flex items-center gap-1.5">
             <Boxes className="h-3.5 w-3.5 text-violet-600" />
-            {kachel.anzahlBloecke} Übungsblock{kachel.anzahlBloecke !== 1 ? 'e' : ''}
+            {kachel.anzahlBloecke} Übung{kachel.anzahlBloecke !== 1 ? 'en' : ''}
           </span>
           <ChevronRight className="ml-auto h-4 w-4" />
         </div>
@@ -71,7 +75,7 @@ export default function UnterrichtKachel({
         <button
           type="button"
           onClick={() => onUmbenennen(kachel)}
-          title="Kachel benennen"
+          title="Lerngruppe benennen"
           className="rounded p-1 text-muted-foreground hover:bg-muted"
         >
           <Pencil className="h-3.5 w-3.5" />

@@ -97,14 +97,15 @@ export function useUnterrichtseinheitUmbenennen() {
   });
 }
 
-export function useUnterrichtseinheitAnlegen(fach, jahrgang, besitzerEmail) {
+export function useUnterrichtseinheitAnlegen(lerngruppe, besitzerEmail) {
   const invalidate = useInvalidate();
   return useMutation({
     mutationFn: (titel) =>
       base44.entities.Unterrichtseinheit.create({
         besitzer_email: besitzerEmail,
-        fach,
-        jahrgangsstufe: String(jahrgang),
+        lerngruppe_id: lerngruppe.id,
+        fach: lerngruppe.fach,
+        jahrgangsstufe: String(lerngruppe.jahrgangsstufe),
         titel,
       }),
     onSuccess: () => { invalidate(); toast.success('Unterrichtseinheit angelegt.'); },

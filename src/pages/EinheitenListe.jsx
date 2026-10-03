@@ -364,13 +364,13 @@ export default function EinheitenListe() {
           <div>
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-primary" />
-              Meine Einheiten
+              Meine Poolzeit-Einheiten
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Vollständige Einheiten für die Poolzeit — mit Themenfeldern, Lernpaketen und Aufgaben.
             </p>
             <p className="text-xs text-muted-foreground mt-1 italic">
-              Aus deinen Unterrichtsstunden und Übungsblöcken lässt sich später eine ganze Einheit
+              Aus deinen Unterrichtsstunden und selbstständigen Übungen lässt sich später eine ganze Einheit
               zusammenbauen — daran arbeiten wir.
             </p>
           </div>

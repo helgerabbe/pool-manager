@@ -34,7 +34,7 @@ export default function FachEinheitLoeschenButton({ unterrichtseinheit }) {
             <AlertDialogTitle>Unterrichtseinheit löschen?</AlertDialogTitle>
             <AlertDialogDescription>
               „{unterrichtseinheit.titel}" ist leer — es liegen keine Unterrichtsstunden und keine
-              Übungsblöcke darin. Die Mappe wird entfernt.
+              selbstständigen Übungen darin. Die Mappe wird entfernt.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

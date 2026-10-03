@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 
 const REITER = [
   { key: 'unterricht', label: 'Mein Unterricht', icon: LayoutGrid },
-  { key: 'einheiten', label: 'Meine Einheiten', icon: BookOpen },
+  { key: 'einheiten', label: 'Meine Poolzeit-Einheiten', icon: BookOpen },
 ];
 
 export default function PrivatReiter({ aktiv, onChange }) {

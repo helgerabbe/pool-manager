@@ -26,6 +26,7 @@ import { istUebungsblock } from '@/lib/einheitFormat';
 import FachEinheitKarte from '@/components/unterricht/FachEinheitKarte';
 import SchnellAnlegenDialog from '@/components/unterricht/SchnellAnlegenDialog';
 import { useUnterrichtseinheitAnlegen } from '@/hooks/useFachEinheitInhalte';
+import { lerngruppeTitel } from '@/hooks/useLerngruppen';
 import AnleitungDialogButton from '@/components/shared/AnleitungDialogButton';
 import StundenMoodleWegInfoBox from '@/components/unterrichtsstunden/StundenMoodleWegInfoBox';
 import UebungsblockMoodleWegInfoBox from '@/components/uebungsbloecke/UebungsblockMoodleWegInfoBox';
@@ -35,18 +36,31 @@ export default function UnterrichtFachSeite() {
   const { authUser } = useRBAC();
   const [neuOffen, setNeuOffen] = useState(false);
   const params = new URLSearchParams(window.location.search);
-  const fach = params.get('fach') || '';
-  const jahrgang = params.get('jg') || '';
+  const lgId = params.get('lg') || '';
+  // Altlinks (?fach=&jg=) landen in der ersten passenden Lerngruppe.
+  const altFach = params.get('fach') || '';
+  const altJg = params.get('jg') || '';
 
-  const { data: mappen = [], isLoading } = useQuery({
-    queryKey: ['unterrichtseinheiten', authUser?.email, fach, jahrgang],
+  const { data: lerngruppen = [], isLoading: lgLaden } = useQuery({
+    queryKey: ['lerngruppen', authUser?.email],
+    queryFn: () => base44.entities.Lerngruppe.filter({ besitzer_email: authUser.email }, 'reihenfolge', 200),
+    enabled: !!authUser?.email,
+  });
+  const lerngruppe = lgId
+    ? lerngruppen.find((l) => l.id === lgId)
+    : lerngruppen.find((l) => l.fach === altFach && String(l.jahrgangsstufe) === String(altJg));
+  const fach = lerngruppe?.fach || '';
+  const jahrgang = lerngruppe?.jahrgangsstufe || '';
+
+  const { data: mappen = [], isLoading: ueLaden } = useQuery({
+    queryKey: ['unterrichtseinheiten', authUser?.email, 'lg', lerngruppe?.id],
     queryFn: () => base44.entities.Unterrichtseinheit.filter({
       besitzer_email: authUser.email,
-      fach,
-      jahrgangsstufe: String(jahrgang),
+      lerngruppe_id: lerngruppe.id,
     }, 'reihenfolge', 100),
-    enabled: !!authUser?.email && !!fach && !!jahrgang,
+    enabled: !!authUser?.email && !!lerngruppe?.id,
   });
+  const isLoading = lgLaden || ueLaden;
 
   const { data: einheiten = [] } = useQuery({
     queryKey: ['einheiten', 'privat'],
@@ -62,7 +76,7 @@ export default function UnterrichtFachSeite() {
     enabled: !!authUser?.email,
   });
 
-  const anlegen = useUnterrichtseinheitAnlegen(fach, jahrgang, authUser?.email);
+  const anlegen = useUnterrichtseinheitAnlegen(lerngruppe, authUser?.email);
 
   // Übungsblöcke bleiben Einheiten-Datensätze (sie brauchen Moodle-Anbindung);
   // ihre Ordnung in diesem Bereich läuft über eltern_einheit_id.
@@ -73,10 +87,18 @@ export default function UnterrichtFachSeite() {
     [einheiten, fach, jahrgang]
   );
 
-  if (!fach || !jahrgang) {
+  if (lgLaden) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+      </div>
+    );
+  }
+
+  if (!lerngruppe) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">Kein Fach ausgewählt.</p>
+        <p className="text-sm text-muted-foreground">Lerngruppe nicht gefunden.</p>
         <Link to="/" className="text-sm font-medium text-primary hover:underline">Zurück zur Übersicht</Link>
       </div>
     );
@@ -95,14 +117,14 @@ export default function UnterrichtFachSeite() {
         </button>
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {fach} · Jg. {jahrgang}
+            {lerngruppeTitel(lerngruppe)}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Deine Unterrichtseinheiten in diesem Fach — mit ihren Unterrichtsstunden und Übungsblöcken.
+            {lerngruppe.name ? `${fach} · Jg. ${jahrgang} — ` : ''}Deine Unterrichtseinheiten in dieser Lerngruppe — mit Unterrichtsstunden und selbstständigen Übungen.
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <AnleitungDialogButton titel="Wie kommen Stunden und Übungsblöcke zu den Schülern nach Moodle?">
+          <AnleitungDialogButton titel="Wie kommen Stunden und selbstständige Übungen zu den Schülern nach Moodle?">
             <div className="space-y-4">
               <StundenMoodleWegInfoBox />
               <UebungsblockMoodleWegInfoBox />
@@ -121,8 +143,8 @@ export default function UnterrichtFachSeite() {
       ) : mappen.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center">
           <p className="text-sm text-muted-foreground">
-            Noch keine Unterrichtseinheit in {fach} Jg. {jahrgang}. Leg eine an — z. B.
-            „Rechtschreibung" — und plane darin Stunden und Übungsblöcke.
+            Noch keine Unterrichtseinheit in dieser Lerngruppe. Leg eine an — z. B.
+            „Rechtschreibung" — und plane darin Stunden und selbstständige Übungen.
           </p>
         </div>
       ) : (
@@ -142,7 +164,7 @@ export default function UnterrichtFachSeite() {
       <SchnellAnlegenDialog
         open={neuOffen}
         onOpenChange={setNeuOffen}
-        titel={`Neue Unterrichtseinheit in ${fach} Jg. ${jahrgang}`}
+        titel={`Neue Unterrichtseinheit in ${lerngruppeTitel(lerngruppe)}`}
         label="Name der Unterrichtseinheit *"
         platzhalter="z. B. Rechtschreibung"
         hinweis="Den Namen kannst du später jederzeit ändern."

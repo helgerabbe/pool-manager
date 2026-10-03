@@ -53,7 +53,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             {stunden.length} Stunde{stunden.length !== 1 ? 'n' : ''} ·{' '}
-            {bloecke.length} {bloecke.length !== 1 ? 'Übungsblöcke' : 'Übungsblock'}
+            {bloecke.length} {bloecke.length !== 1 ? 'selbstständige Übungen' : 'selbstständige Übung'}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -61,7 +61,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
             <Plus className="w-4 h-4" /> Neue Stunde
           </Button>
           <Button size="sm" onClick={() => setBlockOffen(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Neuer Übungsblock
+            <Plus className="w-4 h-4" /> Neue selbstständige Übung
           </Button>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
 
       <div className="space-y-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Übungsblöcke
+          Selbstständige Übungen
         </p>
         <FachBloeckeListe bloecke={bloecke} />
       </div>
@@ -105,11 +105,11 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
       <SchnellAnlegenDialog
         open={blockOffen}
         onOpenChange={setBlockOffen}
-        titel={`Neuer Übungsblock in „${unterrichtseinheit.titel}"`}
-        label="Titel des Übungsblocks *"
+        titel={`Neue selbstständige Übung in „${unterrichtseinheit.titel}"`}
+        label="Titel der Übung *"
         platzhalter="z. B. Wortstämme erkennen"
         hinweis="Fach, Jahrgang und Unterrichtseinheit stehen schon fest."
-        aktionText="Übungsblock anlegen"
+        aktionText="Übung anlegen"
         laeuft={blockAnlegen.isPending}
         onSubmit={(name, reset) => blockAnlegen.mutate(name, {
           onSuccess: (block) => {

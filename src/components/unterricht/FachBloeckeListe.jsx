@@ -30,7 +30,7 @@ export default function FachBloeckeListe({ bloecke = [] }) {
   });
 
   if (bloecke.length === 0) {
-    return <p className="text-xs text-muted-foreground italic">Noch keine Übungsblöcke.</p>;
+    return <p className="text-xs text-muted-foreground italic">Noch keine selbstständigen Übungen.</p>;
   }
 
   return (
@@ -65,7 +65,7 @@ export default function FachBloeckeListe({ bloecke = [] }) {
       <AlertDialog open={!!loeschZiel} onOpenChange={(o) => { if (!o) setLoeschZiel(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Übungsblock löschen?</AlertDialogTitle>
+            <AlertDialogTitle>Übung löschen?</AlertDialogTitle>
             <AlertDialogDescription>
               „{loeschZiel?.titel_der_einheit}" wird mit allem Inhalt gelöscht — Themenfeld,
               Lernpakete und Aufgaben. Das lässt sich nicht rückgängig machen.

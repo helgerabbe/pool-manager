@@ -59,7 +59,7 @@ export default function EinheitSchnellwahl({ activeEinheitId }) {
       <SelectContent className="max-h-[70vh]">
         {meine.length > 0 && (
           <SelectGroup>
-            <SelectLabel>Meine Einheiten</SelectLabel>
+            <SelectLabel>Meine Poolzeit-Einheiten</SelectLabel>
             {meine.map((e) => (
               <SelectItem key={e.id} value={e.id} className="text-xs">
                 {label(e)}

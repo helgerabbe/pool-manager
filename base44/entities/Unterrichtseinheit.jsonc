@@ -1,28 +1,32 @@
 {
   "name": "Unterrichtseinheit",
   "type": "object",
-  "description": "UNTERRICHTSEINHEIT (2026-09-14): Die thematische Mappe einer Lehrkraft im Bereich 'Mein Unterricht' \u2014 z. B. 'Deutsch 9, Rechtschreibung'. Darin liegen ihre Unterrichtsstunden (Unterrichtsstunde.unterrichtseinheit_id) und ihre \u00dcbungsbl\u00f6cke (Einheiten mit format='uebungsblock' und unterrichtseinheit_id).\n\nWARUM EIGENST\u00c4NDIG UND NICHT EINE 'Einheit': Eine EINHEIT (Entity 'Einheiten') ist das vollst\u00e4ndige Lernszenario mit Lernpfaden, Dashboards, Freigabe-Lebenszyklus und Moodle-Kurs. Eine UNTERRICHTSEINHEIT ist nur eine Ordnungsmappe f\u00fcr die eigene Unterrichtsplanung: kein Dashboard, keine Freigabe, kein Kurs. Vorher wurde sie als Einheiten-Datensatz angelegt \u2014 dadurch tauchten reine Ordnungsmappen in 'Meine Einheiten', in Freigabe-Listen und im Export auf, wo sie nichts zu suchen haben. Die beiden Begriffe bezeichnen verschiedene Dinge und sind deshalb getrennte Datens\u00e4tze.\n\nL\u00d6SCHEN: Eine Unterrichtseinheit ist nur eine H\u00fclle. Wird sie gel\u00f6scht, d\u00fcrfen Stunden und \u00dcbungsbl\u00f6cke NICHT mitgel\u00f6scht werden \u2014 sie bestehen als eigene Datens\u00e4tze weiter.",
+  "description": "UNTERRICHTSEINHEIT (2026-09-14): Die thematische Mappe einer Lehrkraft im Bereich 'Mein Unterricht' \u2014 z. B. 'Rechtschreibung'. Sie liegt in einer LERNGRUPPE (lerngruppe_id, seit 2026-10-03). Darin liegen ihre Unterrichtsstunden (Unterrichtsstunde.unterrichtseinheit_id) und ihre Selbstst\u00e4ndigen \u00dcbungen (Einheiten mit format='uebungsblock' und eltern_einheit_id).\n\nWARUM EIGENST\u00c4NDIG UND NICHT EINE 'Einheit': Eine EINHEIT (Entity 'Einheiten') ist das vollst\u00e4ndige Poolzeit-Lernszenario mit Lernpfaden, Dashboards, Freigabe-Lebenszyklus und Moodle-Kurs. Eine UNTERRICHTSEINHEIT ist nur eine Ordnungsmappe f\u00fcr die eigene Unterrichtsplanung.\n\nL\u00d6SCHEN: Eine Unterrichtseinheit ist nur eine H\u00fclle. Wird sie gel\u00f6scht, d\u00fcrfen Stunden und \u00dcbungen NICHT mitgel\u00f6scht werden.",
   "properties": {
     "besitzer_email": {
       "type": "string",
-      "description": "E-Mail der Lehrkraft, zu deren Unterricht diese Mappe geh\u00f6rt. Unterrichtseinheiten sind immer pers\u00f6nlich."
+      "description": "E-Mail der Lehrkraft, zu deren Unterricht diese Mappe geh\u00f6rt."
+    },
+    "lerngruppe_id": {
+      "type": "string",
+      "description": "FK zur Lerngruppe (prim\u00e4re Zuordnung). fach/jahrgangsstufe bleiben als denormalisierte Tags f\u00fcr Filter erhalten."
     },
     "fach": {
       "type": "string",
-      "description": "Fach (Wert aus LookupFaecher.name)."
+      "description": "Fach (Wert aus LookupFaecher.name), denormalisiert aus der Lerngruppe."
     },
     "jahrgangsstufe": {
       "type": "string",
-      "description": "Jahrgangsstufe (Wert aus LookupJahrgaenge.bezeichnung)."
+      "description": "Jahrgangsstufe, denormalisiert aus der Lerngruppe."
     },
     "titel": {
       "type": "string",
-      "description": "Name der Unterrichtseinheit, z. B. 'Rechtschreibung'. Jederzeit umbenennbar."
+      "description": "Name der Unterrichtseinheit, z. B. 'Rechtschreibung'."
     },
     "reihenfolge": {
       "type": "number",
       "default": 100,
-      "description": "Sortierreihenfolge innerhalb der Fach-Kachel (kleiner = weiter vorne)."
+      "description": "Sortierreihenfolge innerhalb der Lerngruppe."
     }
   },
   "required": [
