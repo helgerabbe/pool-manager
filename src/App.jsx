@@ -27,7 +27,7 @@ const EinheitenCoach = lazyWithRetry(() => import('@/pages/EinheitenCoach'));
 const ExportCenter = lazyWithRetry(() => import('@/pages/ExportCenter'));
 const MBKConsole = lazyWithRetry(() => import('@/pages/MBKConsole'));
 const ImportCenterRoute = lazyWithRetry(() => import('@/components/importcenter/ImportCenterRoute'));
-const Didaktiker = lazyWithRetry(() => import('@/pages/Didaktiker'));
+const UnterrichtseinheitStruktur = lazyWithRetry(() => import('@/pages/UnterrichtseinheitStruktur'));
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const UnterrichtsstundeDetail = lazyWithRetry(() => import('@/pages/UnterrichtsstundeDetail'));
@@ -157,6 +157,7 @@ const AuthenticatedApp = () => {
           <Route path="/einheiten" element={<ErrorBoundary fallback="Einheitenliste konnte nicht geladen werden."><EinheitenListe /></ErrorBoundary>} />
           <Route path="/einheiten/:id" element={<ErrorBoundary fallback="Einheitansicht konnte nicht geladen werden."><EinheitViewManager /></ErrorBoundary>} />
           <Route path="/unterricht" element={<ErrorBoundary fallback="Der Fach-Bereich konnte nicht geladen werden."><UnterrichtFachSeite /></ErrorBoundary>} />
+          <Route path="/unterrichtseinheit/:id/struktur" element={<ErrorBoundary fallback="Die Struktur konnte nicht geladen werden."><UnterrichtseinheitStruktur /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id" element={<ErrorBoundary fallback="Unterrichtsstunde konnte nicht geladen werden."><UnterrichtsstundeDetail /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
@@ -241,20 +242,6 @@ const AuthenticatedApp = () => {
             }
           />
 
-          {/* Didaktiker: geführter Aufbau eines Basispakets (schreibt über das
-              Freigabe-Tor des Import-Centers). */}
-          <Route
-            path="/didaktiker"
-            element={
-              <ErrorBoundary fallback="Der Didaktiker konnte nicht geladen werden.">
-                <ProtectedRoute
-                  component={Didaktiker}
-                  requiredPermission="kannExportBedienen"
-                  redirectTo="/"
-                />
-              </ErrorBoundary>
-            }
-          />
 
           {/* Interne MBK-Konsole (Proof-of-Concept, Stufe 1: Architekt) */}
           <Route

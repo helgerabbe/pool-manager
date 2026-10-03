@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Pencil, Layers } from 'lucide-react';
+import { Plus, Pencil, Layers, ListTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SchnellAnlegenDialog from './SchnellAnlegenDialog';
 import AnlegenMitWizardDialog from './AnlegenMitWizardDialog';
@@ -57,6 +57,9 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate(`/unterrichtseinheit/${unterrichtseinheit.id}/struktur`)} className="gap-2">
+            <ListTree className="w-4 h-4" /> Struktur der Einheit
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setStundeOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Stunde
           </Button>

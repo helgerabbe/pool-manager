@@ -204,11 +204,6 @@ export default function AppLayout() {
                 <NavIconLink to="/import-center" icon={Inbox} label="Import-Center" isActive={isActive('/import-center')} />
               )}
 
-              {/* Didaktiker: geführter Aufbau eines Basispakets. */}
-              {permissions.kannExportBedienen && (
-                <NavIconLink to="/didaktiker" icon={Sparkles} label="Didaktiker – Basispaket aufbauen" isActive={isActive('/didaktiker')} />
-              )}
-
               {/* Interne MBK-Konsole (paralleler Pfad zum Export-Center). */}
               {permissions.kannExportBedienen && (
                 <NavIconLink to="/mbk" icon={Cpu} label="MBK – Interne Builder-KI" isActive={isActive('/mbk')} />

@@ -1,0 +1,162 @@
+{
+  "name": "UnterrichtsPlanung",
+  "type": "object",
+  "description": "STRUKTUR EINER UNTERRICHTSEINHEIT (2026-10-03): Ged\u00e4chtnis der Unterrichtsplanung in drei Schritten. 1) Recherche: Material der Lehrkraft + Websuche (Kerncurriculum Niedersachsen, Fachdidaktik, Studyflix) \u2192 fundament + Liste m\u00f6glicher Inhalte. 2) Auswahl: Lehrkraft priorisiert Inhalte (muss/vielleicht/raus) und gibt Einzel-/Doppelstunden an. 3) Verlauf: Planungs-Assistent verteilt die Inhalte auf die Stunden; im Gespr\u00e4ch anpassbar. Netto-Zeit: Einzelstunde 40 Min., Doppelstunde 85 Min.",
+  "properties": {
+    "unterrichtseinheit_id": {
+      "type": "string",
+      "description": "FK zur Unterrichtseinheit (1:1)."
+    },
+    "besitzer_email": {
+      "type": "string"
+    },
+    "thema": {
+      "type": "string",
+      "description": "Thema in den Worten der Lehrkraft."
+    },
+    "vorgaben": {
+      "type": "string",
+      "description": "Schwerpunkte, Klassensituation, W\u00fcnsche."
+    },
+    "materialien": {
+      "type": "array",
+      "default": [],
+      "description": "Hochgeladene Buchseiten, Arbeitsbl\u00e4tter, Folien (privat gespeichert).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "file_uri": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fundament": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Ergebnis der Recherche (gemeinsamer Recherche-Kern)."
+    },
+    "inhalte": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "beschreibung": {
+            "type": "string"
+          },
+          "begruendung": {
+            "type": "string"
+          },
+          "empfohlen": {
+            "type": "boolean"
+          },
+          "minuten": {
+            "type": "number",
+            "description": "Grob gesch\u00e4tzter Zeitbedarf."
+          },
+          "prioritaet": {
+            "type": "string",
+            "enum": [
+              "muss",
+              "vielleicht",
+              "raus"
+            ],
+            "default": "vielleicht"
+          }
+        }
+      }
+    },
+    "einzelstunden": {
+      "type": "number",
+      "default": 0
+    },
+    "doppelstunden": {
+      "type": "number",
+      "default": 0
+    },
+    "verlauf": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "nr": {
+            "type": "number"
+          },
+          "art": {
+            "type": "string",
+            "enum": [
+              "einzel",
+              "doppel"
+            ]
+          },
+          "minuten": {
+            "type": "number"
+          },
+          "titel": {
+            "type": "string"
+          },
+          "lernziel": {
+            "type": "string"
+          },
+          "vorschlag": {
+            "type": "string"
+          },
+          "inhalte": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "gespraech": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "unterrichtseinheit_id",
+    "besitzer_email"
+  ],
+  "rls": {
+    "create": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "read": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "update": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.besitzer_email": "{{user.email}}"
+    }
+  }
+}

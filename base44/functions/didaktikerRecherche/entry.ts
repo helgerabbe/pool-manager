@@ -27,6 +27,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { recherchiereFundament } from '../../shared/didaktikRecherche.js';
 import {
   ladeSitzung,
   baueKontext,
@@ -35,50 +36,6 @@ import {
   ZUGANG_FEHLER,
 } from '../../shared/didaktikerSitzung.js';
 
-const FUNDAMENT_SCHEMA = {
-  type: 'object',
-  properties: {
-    leitidee: { type: 'string' },
-    zugaenge: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          titel: { type: 'string' },
-          begruendung: { type: 'string' },
-        },
-        required: ['titel', 'begruendung'],
-      },
-    },
-    stolpersteine: { type: 'array', items: { type: 'string' } },
-    kernbegriffe: { type: 'array', items: { type: 'string' } },
-    quellen: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          titel: { type: 'string' },
-          url: { type: 'string' },
-          erkenntnis: { type: 'string' },
-        },
-        required: ['titel', 'url'],
-      },
-    },
-    video_vorschlaege: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          titel: { type: 'string' },
-          url: { type: 'string' },
-          passt_zu: { type: 'string' },
-        },
-        required: ['titel', 'url'],
-      },
-    },
-  },
-  required: ['leitidee', 'zugaenge', 'stolpersteine', 'kernbegriffe'],
-};
 
 const STRUKTUR_SCHEMA = {
   type: 'object',
@@ -134,31 +91,14 @@ export default async function (req) {
     const dateien = buchDateien(sitzung);
 
     // ── 1. Recherche (mit Websuche) ────────────────────────────────────
-    const rechercheAntwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Du bist Fachdidaktikerin für ${sitzung.fach} an einer Gesamtschule in Niedersachsen und bereitest eine Unterrichtseinheit für selbstgesteuertes Lernen vor.
-
-Thema: ${sitzung.thema}
-Jahrgangsstufe: ${sitzung.jahrgangsstufe}
-${sitzung.vorgaben ? `Wünsche der Lehrkraft: ${sitzung.vorgaben}` : ''}
-
-Recherchiere im Internet, wie man diesen Inhalt Schülern dieser Jahrgangsstufe wirklich gut beibringt. Sieh dir an, wie etablierte deutschsprachige Lernangebote (z. B. studyflix.de, öffentlich-rechtliche Bildungsangebote, Lernportale, Fachdidaktik-Veröffentlichungen) das Thema aufbauen.
-
-Liefere:
-- leitidee: In 3–5 Sätzen der didaktische Kern — worauf es beim Lernen dieses Inhalts wirklich ankommt und in welcher Logik man vorgeht.
-- zugaenge: Die bewährte REIHENFOLGE der Lernschritte (4–8 Einträge), jeweils mit kurzer Begründung, warum dieser Schritt an dieser Stelle steht.
-- stolpersteine: 3–6 typische Fehlvorstellungen und Fehler, an denen Schüler bei diesem Thema erfahrungsgemäß scheitern.
-- kernbegriffe: Die Fachbegriffe, die am Ende sitzen müssen.
-- quellen: Die Seiten, aus denen du das hast (echte, existierende Adressen — erfinde nichts), je mit der Erkenntnis, die du dort gefunden hast.
-- video_vorschlaege: Konkrete Lernvideos, bevorzugt auf studyflix.de. Nur echte Adressen.
-
-Antworte auf Deutsch.`,
-      add_context_from_internet: true,
-      model: 'gemini_3_flash',
-      response_json_schema: FUNDAMENT_SCHEMA,
+    const fundament = await recherchiereFundament(base44, {
+      fach: sitzung.fach,
+      jahrgangsstufe: sitzung.jahrgangsstufe,
+      thema: sitzung.thema,
+      vorgaben: sitzung.vorgaben,
+      zweck: 'für selbstgesteuertes Lernen',
     });
-
-    const fundament = unwrapLLM(rechercheAntwort);
-    if (!fundament?.leitidee) {
+    if (!fundament) {
       return Response.json({ error: 'Die Recherche hat kein verwertbares Ergebnis geliefert. Bitte erneut versuchen.' }, { status: 502 });
     }
 
