@@ -6,6 +6,7 @@ const GEWICHTE = [
   { wert: 'weniger', label: 'Weniger Zeit', aktiv: 'bg-muted text-foreground border-foreground/30' },
   { wert: 'passt', label: 'Passt so', aktiv: 'bg-primary/10 text-primary border-primary' },
   { wert: 'wichtiger', label: 'Mehr Zeit', aktiv: 'bg-primary text-primary-foreground border-primary' },
+  { wert: 'raus', label: 'Streichen', aktiv: 'bg-destructive text-destructive-foreground border-destructive' },
 ];
 
 const SCHWERPUNKTE = {
@@ -21,7 +22,7 @@ export default function VerlaufAbschnitt({ abschnitt: s, index, onGewichtung }) 
   const gewicht = s.gewichtung || 'passt';
   const zeit = s.minuten || (s.art === 'doppel' ? 85 : 40);
   return (
-    <li className="rounded-lg border p-3">
+    <li className={cn('rounded-lg border p-3', gewicht === 'raus' && 'opacity-50')}>
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
