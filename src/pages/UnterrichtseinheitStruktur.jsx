@@ -42,7 +42,7 @@ export default function UnterrichtseinheitStruktur() {
       {planung?.inhalte?.length > 0 && !recherche.isPending && (
         <InhalteSchritt planung={planung} speichern={speichern} planen={planen} />
       )}
-      {planung?.verlauf?.length > 0 && !recherche.isPending && <VerlaufSchritt planung={planung} planen={planen} />}
+      {planung?.verlauf?.length > 0 && !recherche.isPending && <VerlaufSchritt planung={planung} planen={planen} speichern={speichern} />}
     </div>
   );
 }

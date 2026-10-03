@@ -1,7 +1,7 @@
 {
   "name": "UnterrichtsPlanung",
   "type": "object",
-  "description": "STRUKTUR EINER UNTERRICHTSEINHEIT (2026-10-03): Ged\u00e4chtnis der Unterrichtsplanung in drei Schritten. 1) Recherche: Material der Lehrkraft + Websuche (Kerncurriculum Niedersachsen, Fachdidaktik, Studyflix) \u2192 fundament + Liste m\u00f6glicher Inhalte (mit KC-Kennzeichnung). 2) Auswahl: Lehrkraft priorisiert Inhalte (muss/vielleicht/raus) und gibt Einzel-/Doppelstunden an. 3) Verlauf: Planungs-Assistent verteilt die Inhalte auf die Stunden; im Gespr\u00e4ch anpassbar. Netto-Zeit: Einzelstunde 40 Min., Doppelstunde 85 Min.",
+  "description": "STRUKTUR EINER UNTERRICHTSEINHEIT (2026-10-03): Ged\u00e4chtnis der Unterrichtsplanung in drei Schritten. 1) Recherche: Material der Lehrkraft + Websuche (Kerncurriculum Niedersachsen, Fachdidaktik, Studyflix) \u2192 fundament + Liste m\u00f6glicher Inhalte (mit KC-Kennzeichnung). 2) Auswahl: Lehrkraft priorisiert Inhalte (muss/vielleicht/raus) und gibt Einzel-/Doppelstunden an. 3) Verlauf: geordnete Abschnitte mit Zeitvorschlag; die Lehrkraft gewichtet (mehr Zeit / passt / weniger) und l\u00e4sst neu berechnen. Netto-Zeit: Einzelstunde 40 Min., Doppelstunde 85 Min.",
   "properties": {
     "unterrichtseinheit_id": {
       "type": "string",
@@ -106,10 +106,16 @@
             "enum": [
               "einzel",
               "doppel"
-            ]
+            ],
+            "description": "@legacy: fr\u00fchere Stunden-Art."
           },
           "minuten": {
-            "type": "number"
+            "type": "number",
+            "description": "Geplante Zeit dieses Abschnitts."
+          },
+          "zeit_text": {
+            "type": "string",
+            "description": "Zeitvorschlag in Worten, z. B. '2 \u00d7 40 Min.' oder '40 Min. + \u00dcbung'."
           },
           "titel": {
             "type": "string"
@@ -125,6 +131,23 @@
             "items": {
               "type": "string"
             }
+          },
+          "gewichtung": {
+            "type": "string",
+            "enum": [
+              "weniger",
+              "passt",
+              "wichtiger"
+            ],
+            "default": "passt",
+            "description": "Gewichtung der Lehrkraft f\u00fcr die Neuberechnung."
+          },
+          "uebung_empfohlen": {
+            "type": "boolean",
+            "description": "true = hier w\u00e4re eine ausgelagerte selbstst\u00e4ndige \u00dcbung sinnvoll."
+          },
+          "uebung_hinweis": {
+            "type": "string"
           }
         }
       }

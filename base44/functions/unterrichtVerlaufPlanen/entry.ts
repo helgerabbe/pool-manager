@@ -17,13 +17,16 @@ const VERLAUF_SCHEMA = {
       items: {
         type: 'object',
         properties: {
-          art: { type: 'string', enum: ['einzel', 'doppel'] },
+          minuten: { type: 'number' },
+          zeit_text: { type: 'string' },
           titel: { type: 'string' },
+          uebung_empfohlen: { type: 'boolean' },
+          uebung_hinweis: { type: 'string' },
           lernziel: { type: 'string' },
           vorschlag: { type: 'string' },
           inhalte: { type: 'array', items: { type: 'string' } },
         },
-        required: ['art', 'titel', 'lernziel', 'vorschlag'],
+        required: ['minuten', 'titel', 'lernziel', 'vorschlag'],
       },
     },
   },
@@ -47,7 +50,9 @@ export default async function (req) {
     if (!auswahl.length) return Response.json({ error: 'Es ist kein Inhalt ausgewählt.' }, { status: 400 });
 
     const wunsch = String(body?.wunsch || '').trim();
-    const gespraech = [...(planung.gespraech || []), ...(wunsch ? [{ role: 'user', content: wunsch }] : [])];
+    const neuBerechnen = !!body?.neu_berechnen;
+    const budget = einzel * NETTO_MINUTEN.einzel + doppel * NETTO_MINUTEN.doppel;
+    const gespraech = [...(planung.gespraech || []), ...(wunsch ? [{ role: 'user', content: wunsch }] : body?.neu_berechnen ? [{ role: 'user', content: 'Bitte nach meinen Gewichtungen neu berechnen.' }] : [])];
 
     const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
       prompt: JSON.stringify({
@@ -60,14 +65,18 @@ export default async function (req) {
           bisheriger_verlauf: planung.verlauf || [],
           gespraech,
         },
-        auftrag: wunsch
-          ? 'Passe den bisherigen Verlauf gemäß der letzten Nachricht der Lehrkraft an. Ändere nur, was nötig ist.'
-          : 'Erstelle den Verlauf der Einheit: Stunde 1, Stunde 2, … für genau dieses Zeitbudget.',
+        auftrag: neuBerechnen
+          ? 'Berechne die Zeitverteilung neu nach den Gewichtungen der Lehrkraft im bisherigen Verlauf: gewichtung "wichtiger" = deutlich mehr Zeit, "weniger" = weniger Zeit (knapper, ggf. in eine Übung auslagern), "passt" oder leer = Zeit möglichst beibehalten. Behalte Abschnitte und Reihenfolge bei; verschiebe nur Zeit, damit das Budget aufgeht.'
+          : wunsch
+            ? 'Passe den bisherigen Verlauf gemäß der letzten Nachricht der Lehrkraft an. Ändere nur, was nötig ist.'
+            : 'Erstelle den Verlauf der Einheit als geordnete Folge von Abschnitten (erstens, zweitens, …) mit je einem Zeitvorschlag.',
         regeln: [
-          `Genau ${einzel} Stunden mit art "einzel" und genau ${doppel} mit art "doppel" — Reihenfolge darfst du didaktisch sinnvoll wählen, solange sich die Lehrkraft nichts anderes wünscht.`,
+          `Gesamtbudget: ${budget} Minuten (${einzel} Einzelstunden à 40 Min., ${doppel} Doppelstunden à 85 Min.). Die Summe aller minuten muss ungefähr ${budget} ergeben und mit den Stundenblöcken umsetzbar sein.`,
+          'Ein Abschnitt ist eine inhaltliche Einheit, KEINE Stundennummer. minuten: geplante Zeit (z. B. 40, 80, 85, 125). zeit_text: wie du die Zeit nutzen würdest, kurz, z. B. "1 Einzelstunde", "2 × 40 Min.", "1 Doppelstunde", "40 Min. + Übung".',
           'Alle Inhalte mit prioritaet "muss" kommen vor. "vielleicht"-Inhalte nur, wenn Zeit bleibt — sonst in "antwort" nennen, was weggefallen ist.',
-          'Plane realistisch: Eine Doppelstunde trägt einen Durchgang Erarbeitung–Übung–Sicherung, eine Einzelstunde meist nur einen Teil davon. Plane Übungs- und Wiederholungszeit ein, gegen Ende ggf. eine Sicherung/Überprüfung.',
-          'titel: kurzer Stundentitel. lernziel: EIN Satz "Die Schüler können …". vorschlag: 1–2 Sätze, wie du die Stunde gestalten würdest. inhalte: Titel der behandelten Inhalte aus der Liste.',
+          'Plane realistisch: Erarbeitung–Übung–Sicherung braucht Zeit. Plane Übungs- und Wiederholungszeit ein, gegen Ende ggf. eine Sicherung/Überprüfung.',
+          'uebung_empfohlen: true, wenn die Unterrichtszeit hier knapp ist und eine ausgelagerte selbstständige Übung (Poolzeit/Hausaufgabe) sinnvoll wäre. uebung_hinweis: dann EIN Satz, was die Schüler üben sollten; sonst leer.',
+          'titel: kurzer Titel. lernziel: EIN Satz "Die Schüler können …". vorschlag: 1–2 Sätze zur Gestaltung. inhalte: Titel der behandelten Inhalte aus der Liste.',
           'antwort: 1–3 Sätze an die Lehrkraft (was du gemacht hast, was weggefallen ist, wo es eng wird).',
         ],
       }),
@@ -78,14 +87,16 @@ export default async function (req) {
     const stunden = Array.isArray(ergebnis?.stunden) ? ergebnis.stunden : [];
     if (!stunden.length) return Response.json({ error: 'Der Verlauf war leer. Bitte erneut versuchen.' }, { status: 502 });
 
-    const verlauf = stunden.map((s, i) => {
-      const art = s.art === 'doppel' ? 'doppel' : 'einzel';
-      return {
-        nr: i + 1, art, minuten: NETTO_MINUTEN[art],
-        titel: String(s.titel || ''), lernziel: String(s.lernziel || ''), vorschlag: String(s.vorschlag || ''),
-        inhalte: Array.isArray(s.inhalte) ? s.inhalte.map(String) : [],
-      };
-    });
+    const verlauf = stunden.map((s, i) => ({
+      nr: i + 1,
+      minuten: Number(s.minuten) || 0,
+      zeit_text: String(s.zeit_text || ''),
+      titel: String(s.titel || ''), lernziel: String(s.lernziel || ''), vorschlag: String(s.vorschlag || ''),
+      inhalte: Array.isArray(s.inhalte) ? s.inhalte.map(String) : [],
+      gewichtung: 'passt',
+      uebung_empfohlen: !!s.uebung_empfohlen,
+      uebung_hinweis: String(s.uebung_hinweis || ''),
+    }));
 
     const aktualisiert = await base44.asServiceRole.entities.UnterrichtsPlanung.update(planung.id, {
       verlauf,
