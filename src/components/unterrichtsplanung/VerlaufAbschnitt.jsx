@@ -3,10 +3,18 @@ import { Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const GEWICHTE = [
-  { wert: 'weniger', label: 'Weniger wichtig', aktiv: 'bg-muted text-foreground border-foreground/30' },
+  { wert: 'weniger', label: 'Weniger Zeit', aktiv: 'bg-muted text-foreground border-foreground/30' },
   { wert: 'passt', label: 'Passt so', aktiv: 'bg-primary/10 text-primary border-primary' },
   { wert: 'wichtiger', label: 'Mehr Zeit', aktiv: 'bg-primary text-primary-foreground border-primary' },
 ];
+
+const SCHWERPUNKTE = {
+  erarbeitung: { label: 'Erarbeitung', farbe: 'bg-primary/10 text-primary' },
+  uebung: { label: 'Übung', farbe: 'bg-chart-3/15 text-chart-3' },
+  vertiefung: { label: 'Vertiefte Übung', farbe: 'bg-bundle-soft text-bundle' },
+  sicherung: { label: 'Sicherung', farbe: 'bg-accent/15 text-accent' },
+  ueberpruefung: { label: 'Überprüfung', farbe: 'bg-destructive/10 text-destructive' },
+};
 
 /** Ein Abschnitt des Verlaufs: Zeitvorschlag, Gewichtung, ggf. Übungsempfehlung. */
 export default function VerlaufAbschnitt({ abschnitt: s, index, onGewichtung }) {
@@ -19,6 +27,11 @@ export default function VerlaufAbschnitt({ abschnitt: s, index, onGewichtung }) 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-bold text-muted-foreground">{index + 1}.</span>
             <span className="text-sm font-semibold">{s.titel}</span>
+            {SCHWERPUNKTE[s.schwerpunkt] && (
+              <span className={cn('rounded px-1.5 py-0.5 text-[11px] font-semibold', SCHWERPUNKTE[s.schwerpunkt].farbe)}>
+                Schwerpunkt: {SCHWERPUNKTE[s.schwerpunkt].label}
+              </span>
+            )}
           </div>
           <p className="mt-0.5 text-xs font-medium text-primary">
             Geplante Zeit: {zeit} Min.{s.zeit_text ? ` · ${s.zeit_text}` : ''}

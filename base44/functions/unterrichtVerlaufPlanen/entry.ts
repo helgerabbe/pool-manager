@@ -22,11 +22,12 @@ const VERLAUF_SCHEMA = {
           titel: { type: 'string' },
           uebung_empfohlen: { type: 'boolean' },
           uebung_hinweis: { type: 'string' },
+          schwerpunkt: { type: 'string', enum: ['erarbeitung', 'uebung', 'vertiefung', 'sicherung', 'ueberpruefung'] },
           lernziel: { type: 'string' },
           vorschlag: { type: 'string' },
           inhalte: { type: 'array', items: { type: 'string' } },
         },
-        required: ['minuten', 'titel', 'lernziel', 'vorschlag'],
+        required: ['minuten', 'schwerpunkt', 'titel', 'lernziel', 'vorschlag'],
       },
     },
   },
@@ -75,6 +76,8 @@ export default async function (req) {
           'Ein Abschnitt ist eine inhaltliche Einheit, KEINE Stundennummer. minuten: geplante Zeit (z. B. 40, 80, 85, 125). zeit_text: wie du die Zeit nutzen würdest, kurz, z. B. "1 Einzelstunde", "2 × 40 Min.", "1 Doppelstunde", "40 Min. + Übung".',
           'Alle Inhalte mit prioritaet "muss" kommen vor. "vielleicht"-Inhalte nur, wenn Zeit bleibt — sonst in "antwort" nennen, was weggefallen ist.',
           'Plane realistisch: Erarbeitung–Übung–Sicherung braucht Zeit. Plane Übungs- und Wiederholungszeit ein, gegen Ende ggf. eine Sicherung/Überprüfung.',
+          'schwerpunkt: der HAUPTschwerpunkt des Abschnitts — "erarbeitung" (Neues erarbeiten), "uebung" (Üben), "vertiefung" (vertiefte Übung/Transfer, auch Anwendung), "sicherung" (Sichern/Festhalten), "ueberpruefung" (Lernerfolgskontrolle/Test).',
+          'gewichtung im bisherigen Verlauf: "wichtiger" = die Lehrkraft will MEHR ZEIT, "weniger" = WENIGER ZEIT.',
           'uebung_empfohlen: true, wenn die Unterrichtszeit hier knapp ist und eine ausgelagerte selbstständige Übung (Poolzeit/Hausaufgabe) sinnvoll wäre. uebung_hinweis: dann EIN Satz, was die Schüler üben sollten; sonst leer.',
           'titel: kurzer Titel. lernziel: EIN Satz "Die Schüler können …". vorschlag: 1–2 Sätze zur Gestaltung. inhalte: Titel der behandelten Inhalte aus der Liste.',
           'antwort: 1–3 Sätze an die Lehrkraft (was du gemacht hast, was weggefallen ist, wo es eng wird).',
@@ -96,6 +99,7 @@ export default async function (req) {
       gewichtung: 'passt',
       uebung_empfohlen: !!s.uebung_empfohlen,
       uebung_hinweis: String(s.uebung_hinweis || ''),
+      schwerpunkt: String(s.schwerpunkt || ''),
     }));
 
     const aktualisiert = await base44.asServiceRole.entities.UnterrichtsPlanung.update(planung.id, {

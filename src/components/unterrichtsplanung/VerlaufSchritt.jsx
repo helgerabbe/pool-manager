@@ -3,6 +3,7 @@ import { Loader2, Send, RefreshCw } from 'lucide-react';
 import VerlaufAbschnitt from './VerlaufAbschnitt';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 /** Schritt 3: Verlauf Stunde für Stunde; im Gespräch anpassbar. */
 export default function VerlaufSchritt({ planung, planen, speichern }) {
@@ -31,10 +32,14 @@ export default function VerlaufSchritt({ planung, planen, speichern }) {
           Nach meinen Gewichtungen neu berechnen
         </Button>
         <span className="text-xs text-muted-foreground">
-          {geaendert ? 'Kann ein bis zwei Minuten dauern.' : 'Markiere Abschnitte mit „Mehr Zeit“ oder „Weniger wichtig“.'}
+          {geaendert ? 'Kann ein bis zwei Minuten dauern.' : 'Markiere Abschnitte mit „Mehr Zeit“ oder „Weniger Zeit“.'}
         </span>
       </div>
       <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">Allgemeine Wünsche zum Verlauf</span>
+          <SpeechInputButton value={wunsch} onResult={setWunsch} maxSeconds={60} label="Spracheingabe" />
+        </div>
         <Textarea
           rows={2}
           value={wunsch}
