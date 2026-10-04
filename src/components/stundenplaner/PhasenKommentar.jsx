@@ -1,23 +1,21 @@
 import React from 'react';
-import { MessageSquarePlus, Pin, RefreshCw, X } from 'lucide-react';
-import { toast } from 'sonner';
+import { Loader2, MessageSquarePlus, Pin, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import SpeechInputButton from '@/components/ui/SpeechInputButton';
 
 /** Kommentar zu einer Phase: als Hinweis merken oder die Phase neu planen lassen. */
-export default function PhasenKommentar({ phase }) {
+export default function PhasenKommentar({ hinweise, onHinweise, onNeuPlanen, laedt }) {
   const [offen, setOffen] = React.useState(false);
   const [text, setText] = React.useState('');
-  const [hinweise, setHinweise] = React.useState([]);
 
   const merken = () => {
-    setHinweise([...hinweise, text.trim()]);
+    onHinweise([...hinweise, text.trim()]);
     setText('');
     setOffen(false);
   };
-  const neuPlanen = () => {
-    toast.info(`In der Vorschau planen wir „${phase}“ noch nicht neu – später entsteht hier eine neue Fassung nach deinen Wünschen.`);
+  const neuPlanen = async () => {
+    await onNeuPlanen(text.trim());
     setText('');
     setOffen(false);
   };
@@ -28,7 +26,7 @@ export default function PhasenKommentar({ phase }) {
         <p key={i} className="flex gap-2 rounded-md bg-primary/5 px-2 py-1.5 text-xs">
           <Pin className="h-3.5 w-3.5 shrink-0 text-primary" />
           <span className="flex-1">{h}</span>
-          <button onClick={() => setHinweise(hinweise.filter((_, j) => j !== i))} aria-label="Hinweis entfernen">
+          <button onClick={() => onHinweise(hinweise.filter((_, j) => j !== i))} aria-label="Hinweis entfernen">
             <X className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         </p>
@@ -45,11 +43,11 @@ export default function PhasenKommentar({ phase }) {
             <SpeechInputButton value={text} onResult={setText} maxSeconds={90} className="absolute right-2 top-2" />
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" className="gap-1.5" disabled={!text.trim()} onClick={merken}>
+            <Button size="sm" variant="outline" className="gap-1.5" disabled={!text.trim() || laedt} onClick={merken}>
               <Pin className="h-3.5 w-3.5" /> Als Hinweis mitgeben
             </Button>
-            <Button size="sm" className="gap-1.5" disabled={!text.trim()} onClick={neuPlanen}>
-              <RefreshCw className="h-3.5 w-3.5" /> Diese Phase neu planen
+            <Button size="sm" className="gap-1.5" disabled={!text.trim() || laedt} onClick={neuPlanen}>
+              {laedt ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} Diese Phase neu planen
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setOffen(false)}>Abbrechen</Button>
           </div>

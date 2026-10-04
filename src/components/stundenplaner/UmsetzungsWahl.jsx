@@ -2,8 +2,7 @@ import React from 'react';
 import { Check } from 'lucide-react';
 
 /** Umsetzung einer Phase: bei mehreren Möglichkeiten wählbar, bei nur einer direkt gesetzt. */
-export default function UmsetzungsWahl({ optionen, standard }) {
-  const [gewaehlt, setGewaehlt] = React.useState(standard || optionen[0]);
+export default function UmsetzungsWahl({ optionen, gewaehlt, onWahl }) {
   const waehlbar = optionen.length > 1;
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
@@ -15,7 +14,7 @@ export default function UmsetzungsWahl({ optionen, standard }) {
             key={o}
             type="button"
             disabled={!waehlbar}
-            onClick={() => setGewaehlt(o)}
+            onClick={() => onWahl(o)}
             className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-medium transition-colors ${
               aktiv ? 'border-green-600 bg-green-600 text-white' : 'border-border bg-card text-muted-foreground hover:bg-muted'
             } ${waehlbar ? '' : 'cursor-default'}`}

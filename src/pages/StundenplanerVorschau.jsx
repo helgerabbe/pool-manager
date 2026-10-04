@@ -12,6 +12,7 @@ import Feinplanung from '@/components/stundenplaner/Feinplanung';
 import { pruefeRahmen } from '@/lib/stundenPruefung';
 import { erstelleGrobentwurf } from '@/lib/stundenGrobentwurf';
 import { zielMinuten } from '@/lib/stundenKontext';
+import { erstelleFeinplanung, planePhaseNeu } from '@/lib/stundenFeinplanung';
 import { toast } from 'sonner';
 
 /** Klickbare Vorschau des Stundenplaners – echter Verlauf, Beispielinhalte, keine KI. */
@@ -43,6 +44,34 @@ export default function StundenplanerVorschau() {
       setEntwirftGerade(false);
     }
   };
+  const [plan, setPlan] = React.useState(null);
+  const [plantGerade, setPlantGerade] = React.useState(false);
+  const [neuPlanIndex, setNeuPlanIndex] = React.useState(null);
+  const ctx = () => ({ planung, abschnitt, rahmen, vorherige });
+  const feinPlanen = async (internet = false) => {
+    setSchritt(4); setPlantGerade(true);
+    if (!internet) setPlan(null);
+    try {
+      const neu = await erstelleFeinplanung({ ctx: ctx(), entwurf, internet });
+      setPlan(internet && plan ? { phasen: plan.phasen, materialien: [...plan.materialien, ...neu.materialien.filter((m) => m.herkunft === 'internet')] } : neu);
+    } catch (e) {
+      toast.error('Die Feinplanung konnte nicht erstellt werden. Bitte versuche es erneut.');
+      if (!internet) setSchritt(3);
+    } finally {
+      setPlantGerade(false);
+    }
+  };
+  const phaseNeu = async (index, wunsch) => {
+    setNeuPlanIndex(index);
+    try {
+      const neu = await planePhaseNeu({ ctx: ctx(), plan, index, wunsch });
+      setPlan((p) => ({ ...p, phasen: p.phasen.map((x, j) => (j === index ? neu : x)) }));
+    } catch (e) {
+      toast.error('Die Phase konnte nicht neu geplant werden.');
+    } finally {
+      setNeuPlanIndex(null);
+    }
+  };
   const vorherige = (planung?.verlauf || []).slice(0, abschnitt?.index ?? 0).filter((s) => s.gewichtung !== 'raus');
   const pruefen = async () => {
     setSchritt(2); setPruefung(null); setWahl({}); setPrueftGerade(true);
@@ -62,7 +91,7 @@ export default function StundenplanerVorschau() {
         <Link to="/unterricht" className="flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</Link>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde aus dem Verlauf</h1>
-          <p className="text-xs text-accent">Rahmen, Prüfung und Grobentwurf sind echt – die Feinplanung zeigt noch Beispiele.</p>
+          <p className="text-xs text-accent">Alle Planungsschritte sind echt – das Anlegen der Stunde folgt im nächsten Schritt.</p>
         </div>
         <SchrittLeiste aktiv={schritt} onWahl={setSchritt} />
         <section className="rounded-xl border bg-card/50 p-5">
@@ -74,8 +103,8 @@ export default function StundenplanerVorschau() {
           )}
           {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={vorherige} rahmen={rahmen} setRahmen={setRahmen} onWeiter={pruefen} />}
           {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => entwerfen()} />}
-          {schritt === 3 && <Grobentwurf entwurf={entwurf} laedt={entwirftGerade} ziel={abschnitt ? zielMinuten(rahmen, abschnitt) : 40} onAendern={entwerfen} onWeiter={() => setSchritt(4)} />}
-          {schritt === 4 && <Feinplanung />}
+          {schritt === 3 && <Grobentwurf entwurf={entwurf} laedt={entwirftGerade} ziel={abschnitt ? zielMinuten(rahmen, abschnitt) : 40} onAendern={entwerfen} onWeiter={() => feinPlanen()} />}
+          {schritt === 4 && <Feinplanung plan={plan} laedt={plantGerade} neuPlanIndex={neuPlanIndex} setPlan={setPlan} onNeuPlanen={phaseNeu} onInternet={() => feinPlanen(true)} />}
         </section>
       </div>
     </div>

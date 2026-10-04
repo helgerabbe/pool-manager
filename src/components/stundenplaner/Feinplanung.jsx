@@ -1,36 +1,30 @@
 import React from 'react';
-import { Wand2, Lightbulb, BookOpen } from 'lucide-react';
-import FesteMaterialien from './FesteMaterialien';
-import PhasenKommentar from './PhasenKommentar';
-import UmsetzungsWahl from './UmsetzungsWahl';
+import { Globe, Loader2, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { FEINPLANUNG } from '@/lib/stundenplanerVorschauDaten';
-import InternetVertiefenButton from './InternetVertiefenButton';
+import FesteMaterialien from './FesteMaterialien';
+import FeinPhase from './FeinPhase';
 
-/** Schritt 5: Aktivität je Phase mit Begründung, dann Übernahme. */
-export default function Feinplanung() {
+/** Schritt 5: Methode je Phase mit Begründung, Hinweisen und Neuplanung. */
+export default function Feinplanung({ plan, laedt, neuPlanIndex, setPlan, onNeuPlanen, onInternet }) {
+  if (!plan) {
+    return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich plane die Phasen genau …</p>;
+  }
+  const aendern = (i, teil) => setPlan({ ...plan, phasen: plan.phasen.map((p, j) => (j === i ? { ...p, ...teil } : p)) });
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">Für jede Phase wählen wir eine Methode aus unserem Katalog, sagen, was die Schüler tun, und begründen es.</p>
       <ol className="space-y-2">
-        {FEINPLANUNG.map((p, i) => (
-          <li key={i} className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">{p.phase} · <span className="font-medium text-foreground">{p.minuten} Min.</span></p>
-            <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
-              <BookOpen className="h-4 w-4 text-primary" />{p.methode}
-              <UmsetzungsWahl optionen={p.optionen} standard={p.umsetzung} />
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">Aufgabe: {p.aktivitaet}</p>
-            <p className="mt-1.5 text-xs">{p.ablauf}</p>
-            <p className="mt-1 flex gap-2 text-xs"><Lightbulb className="h-3.5 w-3.5 shrink-0 text-accent" />{p.begruendung}</p>
-            <PhasenKommentar phase={p.phase} />
-          </li>
+        {plan.phasen.map((p, i) => (
+          <FeinPhase key={i} p={p} laedt={neuPlanIndex === i} onAendern={(t) => aendern(i, t)} onNeuPlanen={(w) => onNeuPlanen(i, w)} />
         ))}
       </ol>
-      <FesteMaterialien />
-      <InternetVertiefenButton text="Im Internet nach passenden Materialien und Aufgabenideen suchen und zur Liste hinzufügen" />
-      <Button className="gap-2" onClick={() => toast.info('In der Vorschau wird noch keine Stunde angelegt.')}>
+      <FesteMaterialien materialien={plan.materialien} />
+      <Button size="sm" variant="outline" className="gap-2" disabled={laedt} onClick={onInternet}>
+        {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
+        Im Internet nach passenden Materialien und Aufgabenideen suchen und zur Liste hinzufügen
+      </Button>
+      <Button className="gap-2" onClick={() => toast.info('Das Anlegen der Stunde kommt im nächsten Schritt.')}>
         <Wand2 className="h-4 w-4" /> Stunde mit Aufgaben anlegen
       </Button>
     </div>
