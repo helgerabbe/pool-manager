@@ -88,6 +88,11 @@ Deno.serve(async (req) => {
     if (b.user_id) existingByEmail[b.user_id.toLowerCase()] = b;
   }
 
+  const schuelerByEmail = {};
+  for (const s of await base44.asServiceRole.entities.Schueler.list('-created_date', 5000)) {
+    if (s.email) schuelerByEmail[s.email.toLowerCase()] = s;
+  }
+
   let angelegt = 0;
   let aktualisiert = 0;
   const fehler = [];
@@ -112,6 +117,20 @@ Deno.serve(async (req) => {
         if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
           fehler.push({ zeile, email: row.email || '—', grund: 'Ungültige oder fehlende E-Mail-Adresse' });
           processedCount++;
+          continue;
+        }
+
+        // Rolle "Schüler": Eintrag in die Schülerliste statt in die Lehrerverwaltung.
+        if (/^sch(ü|ue)ler/i.test((row.rolle || '').trim())) {
+          const sPayload = { email, vorname: row.vorname || '', nachname: row.nachname || '' };
+          const vorhanden = schuelerByEmail[email];
+          chunkPromises.push(
+            (vorhanden
+              ? base44.asServiceRole.entities.Schueler.update(vorhanden.id, sPayload).then(() => { aktualisiert++; })
+              : base44.asServiceRole.entities.Schueler.create(sPayload).then(() => { angelegt++; }))
+              .catch(err => { fehler.push({ zeile, email, grund: err.message || 'Schüler-Import fehlgeschlagen' }); })
+              .finally(() => { processedCount++; })
+          );
           continue;
         }
 

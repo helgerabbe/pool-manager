@@ -27,7 +27,7 @@ const TRENNZEICHEN = [
   { value: '/',  label: 'Slash  /' },
 ];
 
-const GUELTIGE_ROLLEN = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft', 'Betrachter', 'Moodle-Designer'];
+const GUELTIGE_ROLLEN = ['Administrator', 'Fachschaftsleitung', 'Fachlehrkraft', 'Betrachter', 'Moodle-Designer', 'Schüler'];
 
 /** Einfacher CSV-Parser: unterstützt quoted fields und verschiedene Zeilenumbrüche. */
 function parseCSV(text) {
@@ -501,11 +501,11 @@ export default function UserImport() {
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">rolle</span>
-                    <span>Optional – Eine von: Administrator, Fachschaftsleitung, Fachlehrkraft, Betrachter, Moodle-Designer (Standard: Fachlehrkraft)</span>
+                    <span>Optional – Eine von: Administrator, Fachschaftsleitung, Fachlehrkraft, Betrachter, Moodle-Designer, Schüler (Standard: Fachlehrkraft). Schüler landen in der Schülerverwaltung.</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <span className="font-mono bg-white px-2 py-1 rounded border border-slate-200 shrink-0">faecher</span>
-                    <span>Optional – Fachbereiche, getrennt durch Semikolon, Komma, Pipe oder Slash (z.B. Deutsch; Mathe; Physik)</span>
+                    <span>Optional – Fachbereiche, getrennt durch Semikolon, Komma, Pipe oder Slash (z.B. Deutsch; Mathe; Physik). Bei Schülern leer lassen.</span>
                   </div>
                 </div>
               </div>
@@ -514,6 +514,7 @@ export default function UserImport() {
               <p className="whitespace-nowrap">email,vorname,nachname,rolle,faecher</p>
               <p className="whitespace-nowrap text-slate-500">max@schule.de,Maximilian,Müller,Fachlehrkraft,Deutsch; Mathematik</p>
               <p className="whitespace-nowrap text-slate-500">anna@schule.de,Anna,Schmidt,Fachschaftsleitung,Biologie; Chemie</p>
+              <p className="whitespace-nowrap text-slate-500">tom@schule.de,Tom,Becker,Schüler,</p>
             </div>
           </div>
         )}
