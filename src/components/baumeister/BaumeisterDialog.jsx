@@ -14,11 +14,13 @@ const LADE_TEXT = {
   ausfuehren: 'Ich übernehme die Änderung …',
 };
 
-export default function BaumeisterDialog({ open, onOpenChange, einheitId, startHinweis, onFertig }) {
+export default function BaumeisterDialog({ open, onOpenChange, einheitId, startHinweis, startRef, onFertig }) {
   const b = useBaumeister(einheitId);
-  // Aus einem Prüfbefund geöffnet: Hinweis vorbefüllen (Lehrkraft kann ihn noch anpassen).
+  // Aus einem Prüfbefund geöffnet: bei bekannter Stelle direkt bauen, sonst Hinweis vorbefüllen.
   React.useEffect(() => {
-    if (open && startHinweis && b.phase === 'eingabe' && !b.hinweis) b.setHinweis(startHinweis);
+    if (!open || !startHinweis || b.phase !== 'eingabe' || b.hinweis) return;
+    if (startRef) b.direktBauen(startRef, startHinweis);
+    else b.setHinweis(startHinweis);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {
     if (b.phase === 'fertig') onFertig?.();
@@ -86,7 +88,7 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
         {b.phase === 'fertig' && (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <CheckCircle2 className="w-10 h-10 text-chart-3" />
-            <p className="text-sm">Erledigt — die Änderung ist übernommen und im Import-Center protokolliert.</p>
+            <p className="text-sm">Erledigt — die Änderung ist übernommen.</p>
             <Button variant="outline" onClick={b.neuStarten}>Weitere Änderung</Button>
           </div>
         )}

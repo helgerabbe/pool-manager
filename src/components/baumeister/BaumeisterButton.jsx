@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { HardHat } from 'lucide-react';
 import BaumeisterDialog from './BaumeisterDialog';
 
-export default function BaumeisterButton({ einheitId, startHinweis, onFertig, label = 'Baumeister' }) {
+export default function BaumeisterButton({ einheitId, startHinweis, startRef, onFertig, label = 'Baumeister' }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -14,7 +14,7 @@ export default function BaumeisterButton({ einheitId, startHinweis, onFertig, la
         <HardHat className="w-3.5 h-3.5" />
         {label}
       </button>
-      <BaumeisterDialog open={open} onOpenChange={setOpen} einheitId={einheitId} startHinweis={startHinweis} onFertig={onFertig} />
+      <BaumeisterDialog open={open} onOpenChange={setOpen} einheitId={einheitId} startHinweis={startHinweis} startRef={startRef} onFertig={onFertig} />
     </>
   );
 }

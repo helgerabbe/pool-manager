@@ -30,17 +30,26 @@ export function useBaumeister(einheitId) {
     setPhase('auswahl');
   }, 'eingabe');
 
-  const bauen = (ziel, zusatz) => lauf('bauen', async () => {
+  const bauen = (ziel, zusatz, text = hinweis) => lauf('bauen', async () => {
     const res = await base44.functions.invoke('baumeisterAenderungBauen', {
-      einheit_id: einheitId, ref: ziel.ref, hinweis, zusatz: zusatz || undefined,
+      einheit_id: einheitId, ref: ziel.ref, hinweis: text, zusatz: zusatz || undefined,
       basis: zusatz ? vorschlag?.neu : undefined,
     });
-    setStelle(ziel);
+    setStelle(res.data.stelle || ziel);
     setVorschlag((alt) => ({ ...res.data, alt: zusatz && alt ? alt.alt : res.data.alt }));
     setPhase('vergleich');
-  }, vorschlag ? 'vergleich' : 'auswahl');
+  }, vorschlag ? 'vergleich' : suche ? 'auswahl' : 'eingabe');
+
+  // Aus einem Prüfbefund mit bekannter Stelle: Suche überspringen.
+  const direktBauen = (ref, text) => { setHinweis(text); bauen({ ref }, undefined, text); };
 
   const uebernehmen = () => lauf('ausfuehren', async () => {
+    if (stelle.art === 'aufgabe') {
+      await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, vorschlag.neu);
+      await queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
+      setPhase('fertig');
+      return;
+    }
     const offen = stelle.art === 'offen';
     const eingang = await base44.functions.invoke('pruefeImportAuftrag', {
       auftrags_art: offen ? 'offene_aufgabe_html_ersetzen' : 'aktivitaet_aendern',
@@ -63,5 +72,5 @@ export function useBaumeister(einheitId) {
     setPhase('eingabe'); setHinweis(''); setSuche(null); setStelle(null); setVorschlag(null); setFehler('');
   };
 
-  return { phase, setPhase, hinweis, setHinweis, suche, stelle, vorschlag, fehler, suchen, bauen, uebernehmen, neuStarten };
+  return { phase, setPhase, hinweis, setHinweis, suche, stelle, vorschlag, fehler, suchen, bauen, direktBauen, uebernehmen, neuStarten };
 }

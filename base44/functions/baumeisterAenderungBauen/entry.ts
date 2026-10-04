@@ -41,7 +41,7 @@ export default async function (req) {
     const stelle = (await ladeStellen(base44, einheit_id)).find((s) => s.ref === ref);
     if (!stelle) return Response.json({ error: 'Die Stelle ist nicht (mehr) bearbeitbar.' }, { status: 404 });
 
-    if (stelle.art === 'aktivitaet') {
+    if (stelle.art === 'aktivitaet' || stelle.art === 'aufgabe') {
       const alt = stelle.roh.field_values;
       const ausgang = basis && typeof basis === 'object' ? basis : alt;
       const felder = (stelle.roh.form_schema || [])
@@ -59,7 +59,9 @@ export default async function (req) {
         stelle: stelleOhneRoh(stelle),
         form_schema: stelle.roh.form_schema,
         alt,
-        neu: { ...ausgang, ...antwort.field_values },
+        neu: stelle.art === 'aufgabe'
+          ? Object.fromEntries(Object.keys(alt).map((k) => [k, String(antwort.field_values[k] ?? ausgang[k] ?? '')]))
+          : { ...ausgang, ...antwort.field_values },
         aenderung: antwort.aenderung || '',
       });
     }

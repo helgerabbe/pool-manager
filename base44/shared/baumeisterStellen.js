@@ -90,8 +90,38 @@ export async function ladeStellen(base44, einheitId) {
         });
     });
 
+  // Allgemeine Aufgaben und Projektaufgaben: die Textfelder an der Aufgabe selbst.
+  (aufgaben || [])
+    .filter((a) => a.sync_status !== 'to_delete' && !istFreigegeben(a))
+    .forEach((a) => {
+      const felder = Object.fromEntries(AUFGABE_FELDER.map((f) => [f.field_name, a[f.field_name] || '']));
+      stellen.push({
+        ref: `auf:${a.id}`,
+        art: 'aufgabe',
+        ziel_id: a.id,
+        titel: a.titel || 'Aufgabe ohne Titel',
+        ort: [
+          tfTitel.get(a.themenfeld_id) && `Themenfeld „${tfTitel.get(a.themenfeld_id)}"`,
+          a.anforderungsebene === '3 - Projekt' || a.aufgabentyp_projekt ? 'Projektaufgaben' : 'Allgemeine Aufgaben',
+        ].filter(Boolean).join(' · '),
+        text: textAus(felder),
+        roh: { field_values: felder, form_schema: AUFGABE_FELDER },
+      });
+    });
+
   return stellen;
 }
+
+/** Bearbeitbare Textfelder einer allgemeinen Aufgabe / Projektaufgabe. */
+export const AUFGABE_FELDER = [
+  { field_name: 'aufgabenstellung', type: 'textarea', label: 'Aufgabenstellung' },
+  { field_name: 'musterloesung', type: 'textarea', label: 'Musterlösung' },
+  { field_name: 'erwartungshorizont', type: 'textarea', label: 'Erwartungshorizont' },
+  { field_name: 'projekt_ablauf_beschreibung', type: 'textarea', label: 'Geplanter Projektablauf (für die KI)' },
+  { field_name: 'brian_learner_instruction', type: 'textarea', label: 'Tutor: Anweisung für Lernende' },
+  { field_name: 'brian_system_instruction', type: 'textarea', label: 'Tutor: interne Anleitung (Rolle, Aufgabe, Grenzen)' },
+  { field_name: 'brian_completion_rule', type: 'textarea', label: 'Tutor: Abschlussregel' },
+];
 
 /** Öffentliche Sicht einer Stelle — ohne den vollen Inhalt. */
 export function stelleOhneRoh(s) {
