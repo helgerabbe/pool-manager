@@ -64,9 +64,9 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           <StundeAusVerlaufButton unterrichtseinheitId={unterrichtseinheit.id} />
           <AusBibliothekButton unterrichtseinheit={unterrichtseinheit} besitzerEmail={besitzerEmail} />
           <Button variant="outline" size="sm" onClick={() => setStundeOffen(true)} className="gap-2">
-            <Plus className="w-4 h-4" /> Neue Stunde
+            <Plus className="w-4 h-4" /> Freie Stunde (ohne Verlauf)
           </Button>
-          <Button size="sm" onClick={() => setBlockOffen(true)} className="gap-2">
+          <Button size="sm" variant="outline" onClick={() => setBlockOffen(true)} className="gap-2 border-bundle-border bg-bundle-soft text-bundle hover:bg-bundle-soft/70 hover:text-bundle">
             <Plus className="w-4 h-4" /> Neue selbstständige Übung
           </Button>
         </div>
