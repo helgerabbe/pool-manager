@@ -34,6 +34,10 @@ export function htmlZuText(html) {
 }
 
 const istFreigegeben = (d) => d?.content_status === 'approved' && !!d?.released_at;
+// Bearbeitungssperre eines Kollegen: gilt 30 Minuten ab dem letzten Setzen.
+const SPERR_DAUER_MS = 30 * 60 * 1000;
+export const sperreVon = (wer, wann) =>
+  wer && wann && Date.now() - new Date(wann).getTime() < SPERR_DAUER_MS ? wer : null;
 
 export async function ladeStellen(base44, einheitId) {
   const sr = base44.asServiceRole.entities;
@@ -45,7 +49,7 @@ export async function ladeStellen(base44, einheitId) {
   ]);
   const tfTitel = new Map((themenfelder || []).map((t) => [t.id, t.titel]));
   const katalogById = new Map((katalog || []).map((k) => [k.id, k]));
-  const pakete = (lernpakete || []).filter((lp) => lp.sync_status !== 'to_delete' && !istFreigegeben(lp));
+  const pakete = (lernpakete || []).filter((lp) => lp.sync_status !== 'to_delete');
 
   const aktListen = await Promise.all(
     pakete.map((lp) => sr.LernpaketPhaseAktivitaet.filter({ lernpaket_id: lp.id }))
@@ -61,6 +65,9 @@ export async function ladeStellen(base44, einheitId) {
           ref: `akt:${a.id}`,
           art: 'aktivitaet',
           ziel_id: a.id,
+          lernpaket_id: lp.id,
+          freigegeben: istFreigegeben(lp) || istFreigegeben(a),
+          gesperrt_von: lp.is_locked ? sperreVon(lp.locked_by_email, lp.locked_at) : null,
           titel: k?.name || 'Aktivität',
           ort: [tfTitel.get(lp.themenfeld_id), `Lernpaket „${lp.titel_des_pakets}"`, PHASEN_LABEL[a.phase] || a.phase]
             .filter(Boolean)
@@ -72,7 +79,7 @@ export async function ladeStellen(base44, einheitId) {
   });
 
   (aufgaben || [])
-    .filter((a) => a.aufgaben_modus === 'sequenz' && a.sync_status !== 'to_delete' && !istFreigegeben(a))
+    .filter((a) => a.aufgaben_modus === 'sequenz' && a.sync_status !== 'to_delete')
     .forEach((a) => {
       (Array.isArray(a.sequenz_schritte) ? a.sequenz_schritte : [])
         .filter((s) => s?.typ === 'offen' && s?.offen?.fragment)
@@ -82,6 +89,8 @@ export async function ladeStellen(base44, einheitId) {
             art: 'offen',
             ziel_id: a.id,
             schritt_id: s.id,
+            freigegeben: istFreigegeben(a),
+            gesperrt_von: sperreVon(a.locked_by, a.locked_at),
             titel: s.titel || a.titel || 'Offene Aufgabe',
             ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`].filter(Boolean).join(' · '),
             text: htmlZuText(s.offen.fragment),
@@ -92,13 +101,15 @@ export async function ladeStellen(base44, einheitId) {
 
   // Allgemeine Aufgaben und Projektaufgaben: die Textfelder an der Aufgabe selbst.
   (aufgaben || [])
-    .filter((a) => a.sync_status !== 'to_delete' && !istFreigegeben(a))
+    .filter((a) => a.sync_status !== 'to_delete')
     .forEach((a) => {
       const felder = Object.fromEntries(AUFGABE_FELDER.map((f) => [f.field_name, a[f.field_name] || '']));
       stellen.push({
         ref: `auf:${a.id}`,
         art: 'aufgabe',
         ziel_id: a.id,
+        freigegeben: istFreigegeben(a),
+        gesperrt_von: sperreVon(a.locked_by, a.locked_at),
         titel: a.titel || 'Aufgabe ohne Titel',
         ort: [
           tfTitel.get(a.themenfeld_id) && `Themenfeld „${tfTitel.get(a.themenfeld_id)}"`,

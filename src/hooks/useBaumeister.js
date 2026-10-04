@@ -43,9 +43,31 @@ export function useBaumeister(einheitId) {
   // Aus einem Prüfbefund mit bekannter Stelle: Suche überspringen.
   const direktBauen = (ref, text) => { setHinweis(text); bauen({ ref }, undefined, text); };
 
+  // Sperre JETZT prüfen (nicht nur beim Bauen): Ein Kollege könnte die
+  // Stelle inzwischen geöffnet haben — seine Arbeit darf nicht überschrieben werden.
+  const pruefeSperre = async () => {
+    const ich = (await base44.auth.me())?.email;
+    const frisch = stelle.art === 'aktivitaet'
+      ? await base44.entities.Lernpakete.get(stelle.lernpaket_id)
+      : await base44.entities.AllgemeineAufgabe.get(stelle.ziel_id);
+    const wer = stelle.art === 'aktivitaet'
+      ? (frisch?.is_locked ? frisch.locked_by_email : null)
+      : frisch?.locked_by;
+    const wann = frisch?.locked_at;
+    const aktiv = wer && wann && Date.now() - new Date(wann).getTime() < 30 * 60 * 1000;
+    if (aktiv && wer !== ich) {
+      throw new Error(`Achtung: ${wer} bearbeitet diese Stelle gerade. Ich ändere nichts, damit die Arbeit nicht überschrieben wird. Versuch es später noch einmal.`);
+    }
+  };
+
   const uebernehmen = () => lauf('ausfuehren', async () => {
+    await pruefeSperre();
     if (stelle.art === 'aufgabe') {
-      await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, vorschlag.neu);
+      // Freigabe bleibt bestehen; die Änderung muss aber neu gebaut werden.
+      await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, {
+        ...vorschlag.neu,
+        ...(stelle.freigegeben ? { sync_status: 'modified' } : {}),
+      });
       await queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
       setPhase('fertig');
       return;

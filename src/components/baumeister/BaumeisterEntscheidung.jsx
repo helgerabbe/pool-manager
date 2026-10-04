@@ -4,7 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Check, X, Wand2 } from 'lucide-react';
 
 /** Ja / Nein / Ja-mit-Hinweis unter dem Vergleich. */
-export default function BaumeisterEntscheidung({ onJa, onNein, onNachbessern }) {
+export default function BaumeisterEntscheidung({ onJa, onNein, onNachbessern, jaGesperrt = false }) {
   const [zusatz, setZusatz] = useState('');
   return (
     <div className="space-y-2 shrink-0">
@@ -21,7 +21,7 @@ export default function BaumeisterEntscheidung({ onJa, onNein, onNachbessern }) 
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onNein}><X /> Nein, verwerfen</Button>
-        <Button onClick={onJa}><Check /> Ja, so übernehmen</Button>
+        <Button disabled={jaGesperrt} onClick={onJa}><Check /> Ja, so übernehmen</Button>
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { setBaumeisterKontext, clearBaumeisterKontext } from '@/lib/baumeisterKontext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getEinheitById } from '@/services/EinheitenService';
@@ -760,6 +761,18 @@ export default function AllgemeineAufgabenView({
   }, [aufgabenNachFilter, themenfelder]);
 
   const selectedAufgabe = allgemeineAufgaben.find(a => a.id === selectedAufgabeId);
+
+  // Baumeister weiß, welche Aufgabe gerade geöffnet ist.
+  useEffect(() => {
+    if (!selectedAufgabe) return undefined;
+    const ref = `auf:${selectedAufgabe.id}`;
+    setBaumeisterKontext({
+      ref,
+      titel: selectedAufgabe.titel || 'Aufgabe ohne Titel',
+      art: isEbene3 ? 'Projektaufgabe' : 'Allgemeine Aufgabe',
+    });
+    return () => clearBaumeisterKontext(ref);
+  }, [selectedAufgabe?.id, selectedAufgabe?.titel, isEbene3]);
 
   // Beim ersten Laden das erste Themenfeld als Anker vorauswählen.
   useEffect(() => {
