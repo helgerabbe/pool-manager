@@ -41,7 +41,9 @@ export function useBaumeister(einheitId) {
   const bauen = (ziel, zusatz, text = hinweis) => lauf('bauen', async () => {
     const res = await base44.functions.invoke('baumeisterAenderungBauen', {
       einheit_id: einheitId, ref: ziel.ref, hinweis: text, zusatz: zusatz || undefined,
-      basis: zusatz ? vorschlag?.neu : undefined,
+      basis: zusatz
+        ? (vorschlag?.artwechsel ? { ...vorschlag.neu, __artwechsel_id: vorschlag.artwechsel.aktivitaet_id } : vorschlag?.neu)
+        : undefined,
     });
     setStelle(res.data.stelle || ziel);
     setVorschlag((alt) => ({ ...res.data, alt: zusatz && alt ? alt.alt : res.data.alt }));
@@ -77,6 +79,37 @@ export function useBaumeister(einheitId) {
         ...vorschlag.neu,
         ...(stelle.freigegeben ? { sync_status: 'modified' } : {}),
       });
+      await queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
+      setPhase('fertig');
+      return;
+    }
+    if (vorschlag.artwechsel) {
+      // Aufgabenart wechseln = neue Aktivität an gleicher Stelle einfügen + alte entfernen.
+      const w = vorschlag.artwechsel;
+      const pruefe = async (daten) => {
+        const r = await base44.functions.invoke('pruefeImportAuftrag', daten);
+        if (!r.data?.ausfuehrbar) {
+          const gruende = (r.data?.pruefergebnis || []).map((b) => `${b.label}: ${b.reason}`).join(' · ');
+          setLuecken(gruende);
+          throw new Error(`Der Vorschlag ist noch nicht vollständig — ${gruende}`);
+        }
+        return r.data.auftrag.id;
+      };
+      const einfuegen = await pruefe({
+        auftrags_art: 'aktivitaet_einfuegen',
+        titel: `Baumeister: ${w.zu} statt ${w.von}`,
+        ziel_id: stelle.lernpaket_id,
+        position: w.position,
+        parameter: { aktivitaet_id: w.aktivitaet_id, phase: w.phase, field_values: vorschlag.neu },
+      });
+      const loeschen = await pruefe({
+        auftrags_art: 'aktivitaet_loeschen',
+        titel: `Baumeister: ${w.von} ersetzt`,
+        ziel_id: stelle.ziel_id,
+        parameter: { grund: `Ersetzt durch ${w.zu}` },
+      });
+      await base44.functions.invoke('fuehreImportAuftragAus', { auftrag_id: einfuegen });
+      await base44.functions.invoke('fuehreImportAuftragAus', { auftrag_id: loeschen });
       await queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] });
       setPhase('fertig');
       return;

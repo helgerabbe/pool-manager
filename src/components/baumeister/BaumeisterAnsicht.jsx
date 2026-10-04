@@ -30,9 +30,26 @@ const BaumeisterAnsicht = forwardRef(function BaumeisterAnsicht({ art, inhalt, v
   }
   const labels = new Map(formSchema.map((f) => [f.field_name, f.label]));
   const keys = [...new Set([...Object.keys(inhalt || {}), ...Object.keys(vergleich || {})])];
+  const intern = (k) => NUR_LEHRKRAFT.test(`${k} ${labels.get(k) || ''}`);
+  const gruppen = [
+    ['Das sehen die Schüler', keys.filter((k) => !intern(k))],
+    ['Nur für dich: das bekommt die KI', keys.filter(intern)],
+  ].filter(([, ks]) => ks.length);
   return (
     <div ref={ref} className={cn('h-full overflow-y-auto p-3 space-y-2 bg-card', className)}>
-      {keys.map((k) => {
+      {gruppen.map(([titel, ks]) => (
+        <div key={titel} className="space-y-2">
+          {gruppen.length > 1 && (
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-1">{titel}</div>
+          )}
+          {feldListe(ks)}
+        </div>
+      ))}
+    </div>
+  );
+
+  function feldListe(ks) {
+    return ks.map((k) => {
         const geaendert = wert(inhalt?.[k] ?? '') !== wert(vergleich?.[k] ?? '');
         return (
           <div key={k} className={cn('rounded-md border p-2', geaendert ? 'border-accent bg-accent/10' : 'border-border')}>
@@ -40,9 +57,11 @@ const BaumeisterAnsicht = forwardRef(function BaumeisterAnsicht({ art, inhalt, v
             <pre className="text-xs whitespace-pre-wrap break-words font-inter">{wert(inhalt?.[k] ?? '—')}</pre>
           </div>
         );
-      })}
-    </div>
-  );
+    });
+  }
 });
+
+// Felder, die nur die KI bzw. die Lehrkraft sieht (Erwartungshorizont, Prompts, Regeln).
+const NUR_LEHRKRAFT = /erwartung|system|prompt|instruction|completion|persona|musterl|loesung|lösung|für ki|fuer ki|intern/i;
 
 export default BaumeisterAnsicht;

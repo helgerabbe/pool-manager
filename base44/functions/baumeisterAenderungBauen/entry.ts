@@ -89,6 +89,49 @@ export default async function (req) {
       });
     }
 
+    // Verlangt der Wunsch eine ANDERE Aufgabenart (z. B. KI-Tutor statt Bestätigen)?
+    if (stelle.art === 'aktivitaet') {
+      const katalog = (await base44.asServiceRole.entities.AktivitaetenKatalog.filter({ is_active: true }))
+        .filter((k) => Array.isArray(k.form_schema) && k.form_schema.length);
+      const bisher = basis?.__artwechsel_id ? katalog.find((k) => k.id === basis.__artwechsel_id) : null;
+      const wahl = bisher ? { wechsel: true, aktivitaet_id: bisher.id } : await askAnthropicJson(cfg, {
+        system: 'Entscheide, ob der Änderungswunsch eine ANDERE Aufgabenart verlangt, als die Aktivität jetzt hat (z. B. sollen Schüler etwas schreiben und prüfen lassen, die Aktivität kann aber nur bestätigen). Antworte NUR mit JSON: {"wechsel":false} oder {"wechsel":true,"aktivitaet_id":"<id aus der Liste>"}',
+        prompt: `JETZIGE AUFGABENART: ${stelle.titel}\nINHALT: ${stelle.text.slice(0, 800)}\n\nMÖGLICHE AUFGABENARTEN:\n${katalog.map((k) => `[${k.id}] ${k.name}: ${(k.beschreibung || '').slice(0, 150)}`).join('\n')}\n\n${wunschText(hinweis, zusatz)}`,
+        maxTokens: 300,
+      });
+      const ziel = wahl?.wechsel === true && katalog.find((k) => k.id === wahl.aktivitaet_id);
+      if (ziel && ziel.name !== stelle.titel) {
+        const felder = ziel.form_schema
+          .filter((f) => f.type !== 'info')
+          .map((f) => `- ${f.field_name} (${f.type}${f.required ? ', Pflicht' : ''}): ${f.label}`)
+          .join('\n');
+        const vorher = bisher ? { ...basis } : {};
+        delete vorher.__artwechsel_id;
+        const antwort = await askAnthropicJson(cfg, {
+          system: `${GRUNDREGEL}\nDie Aktivität wird durch die Aufgabenart „${ziel.name}" ersetzt. Fülle ALLE Felder dieser Art vollständig und fachlich passend aus, auch die nur für die KI bestimmten (Erwartungshorizont, Anweisungen, Abschlussregel). Übernimm Inhalte der alten Aktivität, wo sie passen. Antworte NUR mit JSON: {"field_values":{...},"aenderung":"..."}`,
+          prompt: `ALTE AKTIVITÄT (${stelle.titel}):\n${JSON.stringify(stelle.roh.field_values, null, 2)}\n\n${bisher ? `BISHERIGER ENTWURF:\n${JSON.stringify(vorher, null, 2)}\n\n` : ''}FELDER DER NEUEN ART:\n${felder}\n\n${wunschText(hinweis, zusatz)}`,
+          maxTokens: 8000,
+        });
+        if (!antwort?.field_values) {
+          return Response.json({ error: 'Die KI hat keine verwertbare Fassung geliefert. Bitte erneut versuchen.' }, { status: 502 });
+        }
+        return Response.json({
+          stelle: stelleOhneRoh(stelle),
+          form_schema: ziel.form_schema,
+          alt: stelle.roh.field_values,
+          neu: antwort.field_values,
+          artwechsel: {
+            aktivitaet_id: ziel.id,
+            von: stelle.titel,
+            zu: ziel.name,
+            phase: stelle.roh.phase,
+            position: stelle.roh.position,
+          },
+          aenderung: `Aufgabenart gewechselt: „${stelle.titel}" → „${ziel.name}". ${antwort.aenderung || ''}`.trim(),
+        });
+      }
+    }
+
     if (stelle.art === 'aktivitaet' || stelle.art === 'aufgabe') {
       const alt = stelle.roh.field_values;
       const ausgang = basis && typeof basis === 'object' ? basis : alt;

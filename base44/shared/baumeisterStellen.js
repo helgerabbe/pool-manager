@@ -57,9 +57,10 @@ export async function ladeStellen(base44, einheitId) {
 
   const stellen = [];
   pakete.forEach((lp, i) => {
-    (aktListen[i] || [])
+    const aktive = (aktListen[i] || [])
       .filter((a) => a.sync_status !== 'to_delete')
-      .forEach((a) => {
+      .sort((x, y) => (x.reihenfolge || 0) - (y.reihenfolge || 0));
+    aktive.forEach((a) => {
         const k = katalogById.get(a.aktivitaet_id);
         stellen.push({
           ref: `akt:${a.id}`,
@@ -73,7 +74,12 @@ export async function ladeStellen(base44, einheitId) {
             .filter(Boolean)
             .join(' · '),
           text: textAus(a.field_values || {}),
-          roh: { field_values: a.field_values || {}, form_schema: k?.form_schema || [] },
+          roh: {
+            field_values: a.field_values || {},
+            form_schema: k?.form_schema || [],
+            phase: a.phase,
+            position: aktive.filter((x) => x.phase === a.phase).indexOf(a),
+          },
         });
       });
   });
