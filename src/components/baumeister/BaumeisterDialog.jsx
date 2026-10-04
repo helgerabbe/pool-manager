@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Loader2, HardHat, CheckCircle2 } from 'lucide-react';
 import { useBaumeister } from '@/hooks/useBaumeister';
 import { base44 } from '@/api/base44Client';
+import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import { getBaumeisterKontext } from '@/lib/baumeisterKontext';
 import BaumeisterKandidaten from './BaumeisterKandidaten';
 import BaumeisterVergleich from './BaumeisterVergleich';
@@ -57,7 +58,16 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
 
         {b.phase === 'eingabe' && (
           <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">Beschreib in eigenen Worten, was an welcher Aufgabe geändert werden soll.</p>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-sm text-muted-foreground">Beschreib in eigenen Worten, was an welcher Aufgabe geändert werden soll.</p>
+              <SpeechInputButton
+                value={b.hinweis}
+                onResult={b.setHinweis}
+                label="Einsprechen"
+                listeningLabel="Aufnahme stoppen"
+                maxSeconds={90}
+              />
+            </div>
             <Textarea
               value={b.hinweis}
               onChange={(e) => b.setHinweis(e.target.value)}
