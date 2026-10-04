@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, KeyRound, Check } from 'lucide-react';
+import { ArrowLeft, KeyRound, Check, Monitor } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
 import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
@@ -59,6 +59,11 @@ export default function UnterrichtsstundeDetail() {
         Zurück zur Privaten Bibliothek
       </Link>
 
+      {phasen.length > 0 && (
+        <Link to={`/unterrichtsstunde/${id}/editor`} className="float-right inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
+          <Monitor className="w-4 h-4" /> Tafel & Schüleransicht bearbeiten
+        </Link>
+      )}
       <div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight">{stunde.arbeitstitel}</h1>
         <p className="text-sm text-muted-foreground mt-1">

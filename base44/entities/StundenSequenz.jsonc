@@ -1,7 +1,7 @@
 {
   "name": "StundenSequenz",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear ueber 'reihenfolge'. Die Phasen-Art unterscheidet analog/digital: bei digitalen Arten wird eine Aktivitaet aus dem Pool-Manager-Katalog verknuepft (aktivitaet_id + field_values), bei analogen Arten genuegen Anweisung und Material. Die Art 'brian_aufgabe' ist eine offene Aufgabe, die die Schueler im Dialog mit dem KI-Tutor Brian bearbeiten (Konfiguration im Feld 'brian').",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine Phase (Zeile des Stunden-Regieblatts) innerhalb einer Unterrichtsstunde. Streng linear ueber 'reihenfolge'. Die Phasen-Art unterscheidet analog/digital: bei digitalen Arten wird eine Aktivitaet aus dem Pool-Manager-Katalog verknuepft (aktivitaet_id + field_values), bei analogen Arten genuegen Anweisung und Material. Die Art 'brian_aufgabe' ist eine offene Aufgabe, die die Schueler im Dialog mit dem KI-Tutor Brian bearbeiten (Konfiguration im Feld 'brian'). ZWEI ANSICHTEN (2026-10-04): Jede Phase hat eine LEHRERANSICHT (Feld 'tafel' - was an der digitalen Tafel steht, abgespielt im Lehrer-Player des Pool-Managers) und eine SCHUELERANSICHT (schueler_anweisung + Aktivitaet/Brian - abgespielt ueber Moodle). Beide laufen unsynchron; Bruecke ist der dreistellige freischalt_code.",
   "properties": {
     "stunde_id": {
       "type": "string",
@@ -32,7 +32,7 @@
         "sicherung"
       ],
       "default": "analog_input",
-      "description": "Phasen-Art (2026-08-16): 'analog_input' = Input der Lehrkraft ohne Geraet (Vortrag, Gespraech, Tafel). 'digital_input' = digital ausgespielter Input (z. B. Lehrvideo) - verknuepfte Aktivitaet. 'analog_aufgabe' = Aufgabe ohne digitale Bearbeitung (Arbeitsblatt, Gespraech). 'digital_aufgabe' = Aufgabe, die als Aktivitaet aus dem Pool-Manager verknuepft und von den Schuelern digital bearbeitet wird (deterministisch richtig/falsch). 'brian_aufgabe' (2026-08-16) = offene Aufgabe, die die Schueler im Dialog mit dem KI-Tutor Brian bearbeiten - analog zu den Allgemeinen Aufgaben des Pool-Managers; die vier Brian-Uebergabefelder liegen im Feld 'brian' und werden ueber einen eigenen Dialog (Register) gepflegt. 'analog_sicherung' = Sicherung/Auswertung im Plenum. 'digital_sicherung' = digitale Sicherung ueber eine verknuepfte Aktivitaet. Alle 'digital_*'-Arten ziehen eine Aktivitaet hinzu. Die Werte 'lehrer_input', 'schueler_aktivitaet', 'analog' und 'sicherung' sind @legacy-Bestandswerte und werden im Frontend auf die neuen Arten abgebildet (src/lib/stundenPhasen.js)."
+      "description": "Phasen-Art (2026-08-16). Alle 'digital_*'-Arten ziehen eine Aktivitaet hinzu, 'brian_aufgabe' ist ein KI-Tutor-Dialog. 'lehrer_input', 'schueler_aktivitaet', 'analog' und 'sicherung' sind @legacy-Bestandswerte (src/lib/stundenPhasen.js)."
     },
     "dauer_minuten": {
       "type": "number",
@@ -40,23 +40,52 @@
     },
     "lehrer_hinweis": {
       "type": "string",
-      "description": "Regieanweisung fuer die Lehrkraft (erscheint auf dem gedruckten Regieblatt, NICHT fuer Schueler). Enthaelt NUR den inhaltlichen Ablauf - Methode/Sozialform und Materialhinweis liegen in eigenen Feldern (2026-08-16)."
+      "description": "Regieanweisung fuer die Lehrkraft (Regieblatt, NICHT fuer Schueler)."
     },
     "methode_sozialform": {
       "type": "string",
-      "description": "Optionale Angabe zu Methode und Sozialform dieser Phase (z. B. 'Plenumsgespraech', 'Partnerarbeit'). Wird im Regieblatt als kleine Pille und im Phasen-Editor als eigenes Feld gepflegt."
+      "description": "Optionale Angabe zu Methode und Sozialform dieser Phase."
     },
     "material_hinweis": {
       "type": "string",
-      "description": "Optionaler Kurz-Hinweis auf benoetigtes Material dieser Phase als Text (z. B. 'Tafel, Impulsbild'). Ergaenzt material_urls, das hochgeladene Dateien enthaelt."
+      "description": "Optionaler Kurz-Hinweis auf benoetigtes Material als Text."
     },
     "schueler_anweisung": {
       "type": "string",
-      "description": "Was die Schueler in dieser Phase auf ihrem Geraet lesen (z. B. 'Hoer zu und mach dir Notizen')."
+      "description": "Was die Schueler in dieser Phase auf ihrem Geraet lesen."
     },
     "folien_hinweis": {
       "type": "string",
-      "description": "Verweis auf Foliensatz/Praesentation (z. B. 'Folie 2-4') oder ein Link."
+      "description": "Verweis auf Foliensatz/Praesentation oder ein Link."
+    },
+    "tafel": {
+      "type": "array",
+      "default": [],
+      "description": "LEHRERANSICHT (2026-10-04): Was in dieser Phase an der digitalen Tafel steht, als geordnete Bausteine. Wird im WYSIWYG-Editor gebaut und im Lehrer-Player im Vollbild gezeigt. Die Schueler sehen diese Ansicht NICHT auf ihrem Geraet.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "typ": {
+            "type": "string",
+            "enum": [
+              "ueberschrift",
+              "text",
+              "bild"
+            ]
+          },
+          "inhalt": {
+            "type": "string",
+            "description": "Text bei ueberschrift/text, Bildunterschrift bei bild."
+          },
+          "url": {
+            "type": "string",
+            "description": "Nur bei bild: private Datei-URI oder URL."
+          }
+        }
+      }
     },
     "material_urls": {
       "type": "array",
@@ -76,7 +105,7 @@
     },
     "differenzierung": {
       "type": "object",
-      "description": "Differenzierungs-Hinweise der Phase: 'standard' (normale Anforderung), 'stark' (leistungsstarke Schueler), 'foerderung' (Hilfestellungen/Scaffolding).",
+      "description": "Differenzierungs-Hinweise der Phase.",
       "additionalProperties": true,
       "properties": {
         "standard": {
@@ -92,16 +121,14 @@
     },
     "brian": {
       "type": "object",
-      "description": "Brian-Aufgabe (2026-08-16, nur bei typ='brian_aufgabe'): Aufgabenstellung und Erwartungshorizont der Lehrkraft sowie die vier Uebergabefelder fuer Brian.study (Dialogname, Anweisung fuer Lernende, interne Anweisung, Abbruchbedingung). Format und Bedeutung sind identisch zu den brian_*-Feldern der AllgemeineAufgabe, damit dieselbe Generierung (generateBrianSegments) und derselbe Export genutzt werden koennen.",
+      "description": "Brian-Aufgabe (nur bei typ='brian_aufgabe'): Aufgabenstellung, Erwartungshorizont und die vier Uebergabefelder fuer Brian.study.",
       "additionalProperties": true,
       "properties": {
         "aufgabenstellung": {
-          "type": "string",
-          "description": "Die Aufgabe, die die Schueler im Brian-Dialog bearbeiten."
+          "type": "string"
         },
         "erwartungshorizont": {
-          "type": "string",
-          "description": "Fachliche Messlatte fuer Brian - NICHT schuelersichtbar."
+          "type": "string"
         },
         "tutor_persona": {
           "type": "string",
@@ -111,58 +138,51 @@
             "streng",
             "restriktiv"
           ],
-          "default": "standard",
-          "description": "Betreuungsstil des KI-Tutors."
+          "default": "standard"
         },
         "tutor_persona_zusatz": {
-          "type": "string",
-          "description": "Optionale ergaenzende Hinweise zum Betreuungsstil."
+          "type": "string"
         },
         "dialog_name": {
-          "type": "string",
-          "description": "Uebergabefeld 1: Dialogname in Brian.study."
+          "type": "string"
         },
         "learner_instruction": {
-          "type": "string",
-          "description": "Uebergabefeld 2: Anweisung fuer die Lernenden (schuelersichtbar)."
+          "type": "string"
         },
         "system_instruction": {
-          "type": "string",
-          "description": "Uebergabefeld 3: interne Anweisung fuer den Chatbot (nicht schuelersichtbar)."
+          "type": "string"
         },
         "completion_rule": {
-          "type": "string",
-          "description": "Uebergabefeld 4: Wann ist der Dialog beendet?"
+          "type": "string"
         },
         "generiert_am": {
           "type": "string",
-          "format": "date-time",
-          "description": "Zeitstempel der letzten KI-Generierung der Uebergabefelder."
+          "format": "date-time"
         }
       }
     },
     "freischalt_code": {
       "type": "string",
-      "description": "Dreistelliger Zahlencode, den die Schueler eingeben, damit diese Phase im Stunden-Player freigeschaltet wird. Zufaellig vergeben, pro Stunde eindeutig, fuer die Lehrkraft jederzeit im Regieblatt sichtbar."
+      "description": "Dreistelliger Zahlencode, mit dem die Schueler diese Phase im Stunden-Player freischalten."
     },
     "code_deaktiviert": {
       "type": "boolean",
       "default": false,
-      "description": "Haltepunkt-Steuerung (2026-08-16): true = diese Phase verlangt KEINE Code-Eingabe, die Schueler gehen direkt hinein. Der Code in freischalt_code bleibt gespeichert und wird im Regieblatt nur ausgeblendet (durchgestrichener Schluessel); ein Klick auf den Schluessel schaltet den Haltepunkt wieder ein."
+      "description": "true = diese Phase verlangt KEINE Code-Eingabe."
     },
     "aktivitaet_id": {
       "type": "string",
-      "description": "Nur bei digitalen Phasen-Arten ('digital_input', 'digital_aufgabe', 'digital_sicherung'): FK zu AktivitaetenKatalog (welche digitale Aufgabenart aus dem Pool-Manager hinzugezogen wird)."
+      "description": "Nur bei digitalen Phasen-Arten: FK zu AktivitaetenKatalog."
     },
     "field_values": {
       "type": "object",
-      "description": "Konfigurierte Inhalte der digitalen Aktivitaet - identisches Format wie LernpaketPhaseAktivitaet.field_values, damit die bestehenden Aktivitaets-Editoren und Schueler-Renderer unveraendert genutzt werden koennen.",
+      "description": "Inhalte der digitalen Aktivitaet (Format wie LernpaketPhaseAktivitaet.field_values).",
       "additionalProperties": true
     },
     "is_complete": {
       "type": "boolean",
       "default": false,
-      "description": "Ampel-Logik des Regieblatts: true = Phase ist vollstaendig konfiguriert (bei digitalen Arten gepruefte Verknuepfung/Vollstaendigkeit der Aktivitaet, bei 'brian_aufgabe' vorhandene Uebergabefelder)."
+      "description": "Ampel-Logik des Regieblatts."
     }
   },
   "required": [
