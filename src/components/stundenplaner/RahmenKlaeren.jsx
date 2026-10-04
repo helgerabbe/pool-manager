@@ -21,8 +21,14 @@ export default function RahmenKlaeren({ abschnitt, vorherige, onWeiter }) {
           ))}
         </div>
       </Frage>
-      <Frage titel="Was hast du vorher schon mit der Lerngruppe bearbeitet, und wie ist der Wissensstand der Schüler?">
-        {vorherige.length > 0 && <VorherigeAbschnitte abschnitte={vorherige} />}
+      {vorherige.length > 0 && (
+        <Frage titel="Wie sind die bisherigen Stunden aus deinem Verlauf gelaufen?">
+          <VorherigeAbschnitte abschnitte={vorherige} />
+        </Frage>
+      )}
+      <Frage titel={vorherige.length > 0
+        ? 'Gibt es darüber hinaus etwas, das du mit der Lerngruppe zu diesem Thema schon gemacht hast? Wie ist der Wissensstand?'
+        : 'Das ist die erste Stunde der Einheit. Was hast du vorher schon mit der Lerngruppe bearbeitet, und wie ist der Wissensstand der Schüler?'}>
         <FreitextMitSprache placeholder="z. B. Rechtwinklige Dreiecke kennen alle, Flächen von Quadraten sitzen bei einigen noch nicht sicher …" />
       </Frage>
       <Frage titel="Hast du Material, das dir für diese Stunde wichtig ist und das du unbedingt benutzen möchtest?">
