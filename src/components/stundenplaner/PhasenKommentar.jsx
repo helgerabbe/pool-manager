@@ -35,7 +35,7 @@ export default function PhasenKommentar({ phase }) {
       ))}
       {!offen ? (
         <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs text-muted-foreground" onClick={() => setOffen(true)}>
-          <MessageSquarePlus className="h-3.5 w-3.5" /> Ich möchte dazu etwas sagen
+          <MessageSquarePlus className="h-3.5 w-3.5" /> Ich möchte dazu etwas sagen bzw. etwas ändern
         </Button>
       ) : (
         <div className="space-y-2 rounded-md border bg-muted/30 p-2">

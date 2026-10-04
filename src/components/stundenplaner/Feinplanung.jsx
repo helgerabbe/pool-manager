@@ -15,7 +15,7 @@ export default function Feinplanung() {
       <ol className="space-y-2">
         {FEINPLANUNG.map((p, i) => (
           <li key={i} className="rounded-lg border bg-card p-3">
-            <p className="text-xs text-muted-foreground">{p.phase}</p>
+            <p className="text-xs text-muted-foreground">{p.phase} · <span className="font-medium text-foreground">{p.minuten} Min.</span></p>
             <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
               <BookOpen className="h-4 w-4 text-primary" />{p.methode}
               <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{p.umsetzung}</span>
