@@ -199,6 +199,16 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
       continue;
     }
 
+    // Gestaltungs-Hinweise (2026-10-04, mit der MBK geklärt): kein offener
+    // Auftrag, nur die Info „der Kurs zeigt hier eine eigene Form". Deshalb
+    // gleich als 'bewusst' ablegen statt als unerledigt anzuzeigen.
+    if (zugeordnet.kurs_umgehung === 'gestaltung' && (!alt || alt.entscheidung === 'offen')) {
+      const info = { entscheidung: 'bewusst', kommentar: 'Info vom Kursbau: Der Kurs zeigt hier eine eigene Form, der Inhalt kommt weiter aus dem Pool-Manager.' };
+      if (alt) befundUpdates.push({ ...daten, ...info, id: alt.id });
+      else neueBefunde.push({ ...daten, ...info, dublette_status: 'offen' });
+      continue;
+    }
+
     if (!alt) {
       neueBefunde.push({ ...daten, entscheidung: 'offen', dublette_status: 'offen' });
       continue;
