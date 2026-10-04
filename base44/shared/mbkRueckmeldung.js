@@ -172,7 +172,7 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       mbk_quelle: normalisiereQuelle(b?.quelle),
       // Tickets (2026-09-27): Issue-Nummer und Originaltext der Schülermeldung.
       issue_nummer: Number.isFinite(Number(b?.issue)) && Number(b?.issue) > 0 ? Number(b.issue) : null,
-      ticket_originaltext: text(b?.originaltext ?? b?.meldung, 3000),
+      ticket_originaltext: text(b?.originaltext ?? b?.meldung, 12000),
       kurs_umgehung: normalisiereUmgehung(b?.kurs_umgehung),
       // 2026-09-09: Payload-Pfade, die die Korrekturschicht des Baus an dieser
       // Stelle überschreibt. Damit sieht die Lehrkraft, WELCHE ihrer Angaben im
