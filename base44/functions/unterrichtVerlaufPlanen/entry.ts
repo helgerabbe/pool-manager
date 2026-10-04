@@ -138,8 +138,12 @@ export default async function (req) {
       });
       const ergebnis = unwrapLLM(antwort);
       const zeiten = Array.isArray(ergebnis?.zeiten) ? ergebnis.zeiten : [];
-      verlauf = bleibende.map((s, i) => {
-        const z = zeiten.find((x) => Number(x.nr) === i + 1) || {};
+      // Gestrichene Abschnitte bleiben erhalten (deaktiviert, 0 Min.) – gelöscht wird nur im Verlauf.
+      let k = 0;
+      verlauf = (planung.verlauf || []).map((s, i) => {
+        if (s.gewichtung === 'raus') return { ...s, nr: i + 1, minuten: 0, zeit_text: '' };
+        k += 1;
+        const z = zeiten.find((x) => Number(x.nr) === k) || {};
         return { ...s, nr: i + 1, minuten: Number(z.minuten) || 0, zeit_text: String(z.zeit_text || ''), gewichtung: 'passt' };
       });
       antwortText = String(ergebnis.antwort || '');

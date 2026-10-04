@@ -43,10 +43,18 @@ export default function ZeitplanungSchritt({ planung, planen, speichern }) {
             abschnitt={s}
             index={i}
             gedimmt={s.gewichtung === 'raus'}
-            kopfZusatz={s.minuten > 0 && <span className="text-xs font-semibold text-primary">{s.minuten} Min.</span>}
+            kopfZusatz={
+              <span className="flex items-center gap-3">
+                {hatZeit && <ZeitGewichtung wert={s.gewichtung} onChange={(g) => setzeGewicht(i, g)} />}
+                {hatZeit && (
+                  <span className="whitespace-nowrap text-right text-xs font-semibold text-primary">
+                    {s.gewichtung === 'raus' ? 'deaktiviert · 0 Min.' : `${s.minuten || 0} Min.`}
+                  </span>
+                )}
+              </span>
+            }
           >
-            {s.zeit_text && <p className="text-xs font-medium text-primary">{s.zeit_text}</p>}
-            {hatZeit && <ZeitGewichtung wert={s.gewichtung} onChange={(g) => setzeGewicht(i, g)} />}
+            {s.zeit_text && s.gewichtung !== 'raus' && <p className="text-xs font-medium text-primary">{s.zeit_text}</p>}
           </VerlaufAbschnitt>
         ))}
       </ol>

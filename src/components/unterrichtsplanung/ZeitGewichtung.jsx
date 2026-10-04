@@ -5,7 +5,7 @@ const GEWICHTE = [
   { wert: 'weniger', label: 'Weniger Zeit', aktiv: 'bg-muted text-foreground border-foreground/30' },
   { wert: 'passt', label: 'Passt so', aktiv: 'bg-primary/10 text-primary border-primary' },
   { wert: 'wichtiger', label: 'Mehr Zeit', aktiv: 'bg-primary text-primary-foreground border-primary' },
-  { wert: 'raus', label: 'Streichen', aktiv: 'bg-destructive text-destructive-foreground border-destructive' },
+  { wert: 'raus', label: 'Deaktivieren', aktiv: 'bg-destructive text-destructive-foreground border-destructive' },
 ];
 
 /** Zeitwunsch für einen Abschnitt in der Zeitplanung. */
