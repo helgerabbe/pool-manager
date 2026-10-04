@@ -6,10 +6,13 @@ const TEXT = { type: 'string' };
 export async function strukturiereBauplan(methode, rohtext, felder) {
   const zielfelder = felder.map(([k, titel]) => `- ${k}: ${titel}`).join('\n');
   const prompt = `Du bist erfahrene Fachdidaktikerin. Eine Lehrkraft hat die Unterrichtsmethode "${methode.name}" in EINEM freien, oft gesprochenen Text beschrieben. Der Text ist umgangssprachlich und teils durcheinander.
-Verteile die Aussagen auf die folgenden Felder und formuliere sie professionell, knapp und sachlich. Erfinde nichts Neues dazu; wozu nichts gesagt wurde, bleibt das Feld leer.
+Verteile die Aussagen auf die folgenden Felder und formuliere sie professionell und sachlich. Erfinde nichts Neues dazu; wozu nichts gesagt wurde, bleibt das Feld leer.
+WICHTIG: KÜRZE NICHTS. Jede Information des Textes muss in einem Feld landen. Übernimm Details, Zahlen, Zeitangaben, Regeln, Beispiele und Zitate vollständig und möglichst wörtlich.
 FELDER:
 ${zielfelder}
-Listenfelder (pflicht_material, optional_material, assistent_fragen) schreibst du als eine Zeile je Punkt, ohne Aufzählungszeichen.
+Listenfelder (pflicht_material, optional_material, beispiele, pruefregeln) schreibst du als eine Zeile je Punkt, ohne Aufzählungszeichen. Den Ablauf schreibst du als eine Zeile je Schritt.
+assistent_fragen ist ein Entscheidungsbaum: je Frage ein Block – erste Zeile die Frage, darunter je Option eine Zeile "→ Option: was der Assistent dann tut". Blöcke durch eine Leerzeile trennen.
+varianten: je Variante ein Block mit Ablauf, Vorteil und Nachteil, Blöcke durch eine Leerzeile trennen.
 Erstelle außerdem eine Übersicht: gehoert_dazu = was diese Methode ausmacht (Kernmerkmale), gehoert_nicht_dazu = was ausdrücklich nicht dazugehört oder wovon sie sich abgrenzt (nur, was sich aus den Eingaben ergibt). Je Punkt ein kurzer Satz.
 
 TEXT DER LEHRKRAFT:

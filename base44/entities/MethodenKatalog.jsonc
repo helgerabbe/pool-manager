@@ -19,6 +19,10 @@
       "type": "string",
       "description": "Ein Satz: Was ist das?"
     },
+    "zweck_lernziele": {
+      "type": "string",
+      "description": "P\u00e4dagogischer Zweck und Lernziele."
+    },
     "ablauf": {
       "type": "string"
     },
@@ -72,6 +76,10 @@
     "analog_umsetzung": {
       "type": "string"
     },
+    "varianten": {
+      "type": "string",
+      "description": "Umsetzungsvarianten (analog / hybrid / digital) mit Vor- und Nachteilen."
+    },
     "aufwand_analog": {
       "type": "string",
       "enum": [
@@ -96,8 +104,17 @@
     "optional_material": {
       "type": "string"
     },
+    "beispiele": {
+      "type": "string",
+      "description": "Beispiele und Formulierungshilfen."
+    },
     "assistent_fragen": {
-      "type": "string"
+      "type": "string",
+      "description": "Entscheidungsbaum: je Frage die Optionen und was daraus folgt."
+    },
+    "pruefregeln": {
+      "type": "string",
+      "description": "Was der Assistent im Hintergrund pr\u00fcfen und anmahnen soll."
     },
     "bauplan_rohtext": {
       "type": "string",

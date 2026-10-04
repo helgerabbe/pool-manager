@@ -13,13 +13,17 @@ const PHASEN = [['einstieg', 'Einstieg'], ['erarbeitung', 'Erarbeitung'], ['sich
 
 const FELDER = [
   ['kurzbeschreibung', 'Was macht diese Aktivität?', 'Ein Satz, worum es geht.'],
+  ['zweck_lernziele', 'Zweck & Lernziele', 'Warum wird die Methode eingesetzt, was sollen die Schüler lernen?'],
   ['ablauf', 'Ablauf', 'Schritt für Schritt, wie die Methode im Raum läuft.'],
   ['lehreransicht', 'Lehreransicht (Tafel)', 'Was steht in dieser Phase an der digitalen Tafel?'],
   ['schueleransicht', 'Schüleransicht (Gerät)', 'Was sehen und tun die Schüler auf ihrem Gerät? Was geben sie ein?'],
   ['pflicht_material', 'Muss vorhanden sein', 'z. B. „Ein Bild als Impuls (hochladen oder erzeugen)“ – je Punkt eine Zeile.'],
   ['optional_material', 'Kann zusätzlich genutzt werden', 'Je Punkt eine Zeile.'],
   ['analog_umsetzung', 'Analoge Umsetzung', 'Wie läuft die Methode ohne Geräte, welches Material braucht es?'],
-  ['assistent_fragen', 'Fragen des Assistenten an die Lehrkraft', 'z. B. „Hast du einen Foliensatz oder sollen wir einen erstellen?“ – je Frage eine Zeile.'],
+  ['varianten', 'Varianten', 'Analog, hybrid, digital – je Variante Ablauf, Vor- und Nachteile.'],
+  ['beispiele', 'Beispiele & Formulierungshilfen', 'Gute und schlechte Beispiele, Satzanfänge, Musterformulierungen.'],
+  ['assistent_fragen', 'Entscheidungsbaum des Assistenten', 'Je Frage: die Optionen und was der Assistent daraufhin tut.'],
+  ['pruefregeln', 'Prüfregeln für den Assistenten', 'Was der Assistent im Hintergrund prüfen oder anmahnen soll (z. B. Zeit).'],
 ];
 
 /** Bauplan einer Methode bearbeiten. */
