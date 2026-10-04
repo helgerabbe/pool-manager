@@ -1,5 +1,7 @@
 import React from 'react';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Sparkles } from 'lucide-react';
+import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
+import BauplanUebersicht from './BauplanUebersicht';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -26,9 +28,23 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
   const setze = (k, v) => setWerte((w) => ({ ...w, [k]: v }));
   const phasen = werte.phasen || [];
 
+  const [strukturiert, setStrukturiert] = React.useState(false);
+  const strukturieren = async () => {
+    setStrukturiert(true);
+    try {
+      const res = await strukturiereBauplan(werte, FELDER);
+      setWerte((w) => ({ ...w, ...res }));
+      toast.success('Eingaben überarbeitet. Bitte prüfen und speichern.');
+    } catch (e) {
+      toast.error('Das Strukturieren ist fehlgeschlagen.');
+    } finally {
+      setStrukturiert(false);
+    }
+  };
+
   const speichern = async () => {
     setSpeichert(true);
-    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig'].map((k) => [k, werte[k]]));
+    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig', 'gehoert_dazu', 'gehoert_nicht_dazu'].map((k) => [k, werte[k]]));
     await base44.entities.MethodenKatalog.update(methode.id, daten);
     setSpeichert(false);
     toast.success('Gespeichert.');
@@ -56,9 +72,15 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
         </div>
       </div>
       {FELDER.map(([k, titel, hilfe]) => <BauplanFeld key={k} titel={titel} hilfe={hilfe} value={werte[k] || ''} onChange={(v) => setze(k, v)} />)}
-      <Button className="gap-2" disabled={speichert} onClick={speichern}>
-        {speichert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Speichern
-      </Button>
+      <BauplanUebersicht dazu={werte.gehoert_dazu} nicht={werte.gehoert_nicht_dazu} />
+      <div className="flex flex-wrap gap-2">
+        <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
+          {strukturiert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Eingaben strukturiert übernehmen
+        </Button>
+        <Button className="gap-2" disabled={speichert || strukturiert} onClick={speichern}>
+          {speichert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Speichern
+        </Button>
+      </div>
     </div>
   );
 }

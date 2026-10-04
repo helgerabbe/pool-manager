@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN (2026-10-04): lehreransicht, schueleransicht, pflicht_material, optional_material und assistent_fragen beschreiben, wie die Methode im Stunden-Editor umgesetzt wird. Gepflegt in der Aktivit\u00e4tengalerie (/aktivitaetengalerie); Grundlage f\u00fcr den Phasen-Assistenten.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN (2026-10-04): lehreransicht, schueleransicht, pflicht_material, optional_material, assistent_fragen sowie die \u00dcbersicht gehoert_dazu/gehoert_nicht_dazu beschreiben, wie die Methode im Stunden-Editor umgesetzt wird. Gepflegt in der Aktivit\u00e4tengalerie (/aktivitaetengalerie); Grundlage f\u00fcr den Phasen-Assistenten.",
   "properties": {
     "name": {
       "type": "string"
@@ -87,7 +87,7 @@
     },
     "pflicht_material": {
       "type": "string",
-      "description": "Bauplan: Was muss zwingend vorhanden sein, damit die Methode funktioniert (z. B. Bild, Foliensatz)? Je Punkt eine Zeile."
+      "description": "Bauplan: Was muss zwingend vorhanden sein? Je Punkt eine Zeile."
     },
     "optional_material": {
       "type": "string",
@@ -95,7 +95,23 @@
     },
     "assistent_fragen": {
       "type": "string",
-      "description": "Bauplan: Fragen, mit denen der Phasen-Assistent die Lehrkraft durch die Umsetzung f\u00fchrt. Je Frage eine Zeile."
+      "description": "Bauplan: Fragen des Phasen-Assistenten an die Lehrkraft. Je Frage eine Zeile."
+    },
+    "gehoert_dazu": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "\u00dcbersicht: Kernmerkmale der Methode (KI-strukturiert aus den Eingaben)."
+    },
+    "gehoert_nicht_dazu": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "\u00dcbersicht: Was ausdr\u00fccklich nicht zur Methode geh\u00f6rt."
     },
     "bauplan_fertig": {
       "type": "boolean",
