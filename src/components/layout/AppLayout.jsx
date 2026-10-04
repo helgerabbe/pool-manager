@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles, Shapes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -207,6 +207,10 @@ export default function AppLayout() {
               {/* Interne MBK-Konsole (paralleler Pfad zum Export-Center). */}
               {permissions.kannExportBedienen && (
                 <NavIconLink to="/mbk" icon={Cpu} label="MBK – Interne Builder-KI" isActive={isActive('/mbk')} />
+              )}
+
+              {permissions.kannBenutzerVerwalten && (
+                <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Aktivitätengalerie" isActive={isActive('/aktivitaetengalerie')} />
               )}
 
               {/* Hilfe: Assistent (mit Dokumentation dahinter) */}

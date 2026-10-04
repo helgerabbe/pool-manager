@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus' legt fest, wie digital die Methode ist: D = nur digital sinnvoll, D(A) = Standard digital, analog m\u00f6glich, A(D) = Standard analog, digital nachbaubar, F = analog mit digitaler Unterst\u00fctzung, A = nur analog (Gespr\u00e4che). Grundlage f\u00fcr Feinplanung, Nachschlagen durch Lehrkr\u00e4fte und die Liste 'Das musst du noch vorbereiten'.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN (2026-10-04): lehreransicht, schueleransicht, pflicht_material, optional_material und assistent_fragen beschreiben, wie die Methode im Stunden-Editor umgesetzt wird. Gepflegt in der Aktivit\u00e4tengalerie (/aktivitaetengalerie); Grundlage f\u00fcr den Phasen-Assistenten.",
   "properties": {
     "name": {
       "type": "string"
@@ -29,8 +29,7 @@
           "uebung",
           "abschluss"
         ]
-      },
-      "description": "Phasen, f\u00fcr die sich die Methode typischerweise eignet. Die Phasen einer konkreten Stunde ergeben sich aus deren Schwerpunkt."
+      }
     },
     "sozialformen": {
       "type": "array",
@@ -45,12 +44,10 @@
       }
     },
     "dauer_min": {
-      "type": "number",
-      "description": "Typische Mindestdauer in Minuten."
+      "type": "number"
     },
     "dauer_max": {
-      "type": "number",
-      "description": "Typische H\u00f6chstdauer in Minuten."
+      "type": "number"
     },
     "modus": {
       "type": "string",
@@ -63,12 +60,10 @@
       ]
     },
     "digital_umsetzung": {
-      "type": "string",
-      "description": "Wie die Methode digital l\u00e4uft bzw. digital unterst\u00fctzt wird."
+      "type": "string"
     },
     "analog_umsetzung": {
-      "type": "string",
-      "description": "Wie die Methode analog l\u00e4uft."
+      "type": "string"
     },
     "aufwand_analog": {
       "type": "string",
@@ -77,20 +72,42 @@
         "gering",
         "mittel",
         "hoch"
-      ],
-      "description": "Vorbereitungsaufwand der Lehrkraft bei analoger Durchf\u00fchrung."
+      ]
     },
     "analog_material": {
+      "type": "string"
+    },
+    "lehreransicht": {
       "type": "string",
-      "description": "Reales Material, das bei analoger Durchf\u00fchrung beschafft oder erstellt werden muss."
+      "description": "Bauplan: Was steht in dieser Phase an der digitalen Tafel (Lehreransicht)?"
+    },
+    "schueleransicht": {
+      "type": "string",
+      "description": "Bauplan: Was sehen und tun die Sch\u00fcler auf ihrem Ger\u00e4t?"
+    },
+    "pflicht_material": {
+      "type": "string",
+      "description": "Bauplan: Was muss zwingend vorhanden sein, damit die Methode funktioniert (z. B. Bild, Foliensatz)? Je Punkt eine Zeile."
+    },
+    "optional_material": {
+      "type": "string",
+      "description": "Bauplan: Was kann erg\u00e4nzend genutzt werden? Je Punkt eine Zeile."
+    },
+    "assistent_fragen": {
+      "type": "string",
+      "description": "Bauplan: Fragen, mit denen der Phasen-Assistent die Lehrkraft durch die Umsetzung f\u00fchrt. Je Frage eine Zeile."
+    },
+    "bauplan_fertig": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = Bauplan von der Lehrkraft gepr\u00fcft."
     },
     "poolzeit_aktivitaeten": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "Namen passender Aktivit\u00e4ten aus dem AktivitaetenKatalog der Poolzeit, die die digitale Umsetzung tragen."
+      "default": []
     },
     "ist_aktiv": {
       "type": "boolean",
