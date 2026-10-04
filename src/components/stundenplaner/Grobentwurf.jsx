@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import GrobPhase from './GrobPhase';
+import DidaktischesModell from './DidaktischesModell';
 import InternetVertiefenButton from './InternetVertiefenButton';
 import { GROBENTWURF } from '@/lib/stundenplanerVorschauDaten';
 
@@ -12,6 +13,7 @@ export default function Grobentwurf({ onWeiter }) {
   const summe = GROBENTWURF.reduce((a, p) => a + p.minuten, 0);
   return (
     <div className="space-y-4">
+      <DidaktischesModell />
       <p className="text-xs text-muted-foreground">Grober Ablauf · {summe} von 40 Min.</p>
       <ol className="space-y-2">{GROBENTWURF.map((p, i) => <GrobPhase key={i} phase={p} nr={i + 1} />)}</ol>
       <div className="space-y-2 rounded-lg bg-muted/40 p-3">
