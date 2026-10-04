@@ -10,6 +10,8 @@ import PlausibilitaetsPruefung from '@/components/stundenplaner/PlausibilitaetsP
 import Grobentwurf from '@/components/stundenplaner/Grobentwurf';
 import Feinplanung from '@/components/stundenplaner/Feinplanung';
 import { pruefeRahmen } from '@/lib/stundenPruefung';
+import { erstelleGrobentwurf } from '@/lib/stundenGrobentwurf';
+import { zielMinuten } from '@/lib/stundenKontext';
 import { toast } from 'sonner';
 
 /** Klickbare Vorschau des Stundenplaners – echter Verlauf, Beispielinhalte, keine KI. */
@@ -26,6 +28,21 @@ export default function StundenplanerVorschau() {
     queryFn: async () => (await base44.entities.UnterrichtsPlanung.filter({ unterrichtseinheit_id: id }))[0] || null,
   });
 
+  const [entwurf, setEntwurf] = React.useState(null);
+  const [entwirftGerade, setEntwirftGerade] = React.useState(false);
+  const entwerfen = async (wunsch, internet) => {
+    setSchritt(3); setEntwirftGerade(true);
+    const bisher = wunsch || internet ? entwurf : null;
+    if (!bisher) setEntwurf(null);
+    try {
+      setEntwurf(await erstelleGrobentwurf({ ctx: { planung, abschnitt, rahmen, vorherige }, pruefung, wahl, bisher, wunsch, internet }));
+    } catch (e) {
+      toast.error('Der Grobentwurf konnte nicht erstellt werden. Bitte versuche es erneut.');
+      if (!bisher) setSchritt(2);
+    } finally {
+      setEntwirftGerade(false);
+    }
+  };
   const vorherige = (planung?.verlauf || []).slice(0, abschnitt?.index ?? 0).filter((s) => s.gewichtung !== 'raus');
   const pruefen = async () => {
     setSchritt(2); setPruefung(null); setWahl({}); setPrueftGerade(true);
@@ -45,7 +62,7 @@ export default function StundenplanerVorschau() {
         <Link to="/unterricht" className="flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</Link>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde aus dem Verlauf</h1>
-          <p className="text-xs text-accent">Rahmen und Prüfung sind echt – Grobentwurf und Feinplanung zeigen noch Beispiele.</p>
+          <p className="text-xs text-accent">Rahmen, Prüfung und Grobentwurf sind echt – die Feinplanung zeigt noch Beispiele.</p>
         </div>
         <SchrittLeiste aktiv={schritt} onWahl={setSchritt} />
         <section className="rounded-xl border bg-card/50 p-5">
@@ -56,8 +73,8 @@ export default function StundenplanerVorschau() {
               : <p className="text-sm text-muted-foreground">Diese Unterrichtseinheit hat noch keinen Verlauf.</p>
           )}
           {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={vorherige} rahmen={rahmen} setRahmen={setRahmen} onWeiter={pruefen} />}
-          {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => setSchritt(3)} />}
-          {schritt === 3 && <Grobentwurf onWeiter={() => setSchritt(4)} />}
+          {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => entwerfen()} />}
+          {schritt === 3 && <Grobentwurf entwurf={entwurf} laedt={entwirftGerade} ziel={abschnitt ? zielMinuten(rahmen, abschnitt) : 40} onAendern={entwerfen} onWeiter={() => setSchritt(4)} />}
           {schritt === 4 && <Feinplanung />}
         </section>
       </div>
