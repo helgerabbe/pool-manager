@@ -32,9 +32,10 @@ export default function Aktivitaetengalerie() {
           {isLoading && <Loader2 className="m-4 h-5 w-5 animate-spin" />}
           {liste.map((m) => (
             <button key={m.id} onClick={() => setAuswahlId(m.id)}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahl?.id === m.id ? 'bg-muted font-semibold' : ''}`}>
+              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahl?.id === m.id ? 'bg-muted font-semibold' : ''} ${m.quelle === 'poolzeit' ? 'border-l-4 border-bundle' : ''}`}>
               {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
               <span className="flex-1 truncate">{m.name}</span>
+              {m.quelle === 'poolzeit' && <span className="rounded bg-bundle-soft px-1.5 py-0.5 text-[10px] font-semibold text-bundle">Poolzeit</span>}
               <span className="text-xs text-muted-foreground">{m.modus}</span>
             </button>
           ))}

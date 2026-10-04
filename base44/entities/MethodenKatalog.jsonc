@@ -1,10 +1,19 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder (kurzbeschreibung \u2026 assistent_fragen) und die \u00dcbersicht. Gepflegt in der Aktivit\u00e4tengalerie; Grundlage f\u00fcr den Phasen-Assistenten.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht.",
   "properties": {
     "name": {
       "type": "string"
+    },
+    "quelle": {
+      "type": "string",
+      "enum": [
+        "methode",
+        "poolzeit"
+      ],
+      "default": "methode",
+      "description": "'poolzeit' = digitale Aktivit\u00e4t aus dem Pool-Manager-Katalog, in der Galerie farbig gekennzeichnet."
     },
     "kurzbeschreibung": {
       "type": "string",
