@@ -1,0 +1,84 @@
+{
+  "name": "BibliotheksEintrag",
+  "type": "object",
+  "description": "\u00d6FFENTLICHE BIBLIOTHEK (2026-10-04): Eine ver\u00f6ffentlichte Unterrichtsstunde oder selbstst\u00e4ndige \u00dcbung, sofort f\u00fcr das ganze Kollegium sichtbar. Stunden werden als SCHNAPPSCHUSS gespeichert (stunde_snapshot + sequenzen_snapshot), damit sp\u00e4tere \u00c4nderungen am Original \u00dcbernahmen nicht ver\u00e4ndern. \u00dcbungen verweisen auf den \u00dcbungsblock (quelle_id), der daf\u00fcr im_austausch=true erh\u00e4lt und \u00fcber duplicateEinheitSecure kopiert wird.",
+  "properties": {
+    "art": {
+      "type": "string",
+      "enum": [
+        "stunde",
+        "uebung"
+      ]
+    },
+    "quelle_id": {
+      "type": "string",
+      "description": "ID der Original-Stunde bzw. des \u00dcbungsblocks."
+    },
+    "titel": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Stundenziel bzw. Kurzbeschreibung \u2014 Grundlage der KI-Suche."
+    },
+    "fach": {
+      "type": "string"
+    },
+    "jahrgangsstufe": {
+      "type": "string"
+    },
+    "schuljahr": {
+      "type": "string"
+    },
+    "unterrichtseinheit_titel": {
+      "type": "string",
+      "description": "Thema/Unterrichtseinheit, aus der der Eintrag stammt."
+    },
+    "veroeffentlicht_von": {
+      "type": "string",
+      "description": "E-Mail der ver\u00f6ffentlichenden Lehrkraft."
+    },
+    "veroeffentlicht_von_name": {
+      "type": "string"
+    },
+    "stunde_snapshot": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "sequenzen_snapshot": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "default": []
+    }
+  },
+  "required": [
+    "art",
+    "quelle_id",
+    "titel",
+    "veroeffentlicht_von"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "data.veroeffentlicht_von": "{{user.email}}"
+    },
+    "update": {
+      "data.veroeffentlicht_von": "{{user.email}}"
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.veroeffentlicht_von": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

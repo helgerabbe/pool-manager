@@ -4,9 +4,10 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { CalendarDays, ChevronRight, PlaySquare } from 'lucide-react';
 import StundeLoeschenButton from '@/components/unterrichtsstunden/StundeLoeschenButton';
+import VeroeffentlichenButton from '@/components/bibliothek/VeroeffentlichenButton';
 
 /** Die Unterrichtsstunden EINER Einheit. */
-export default function FachStundenListe({ stunden = [] }) {
+export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
   if (stunden.length === 0) {
     return <p className="text-xs text-muted-foreground italic">Noch keine Unterrichtsstunden.</p>;
   }
@@ -31,6 +32,7 @@ export default function FachStundenListe({ stunden = [] }) {
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </Link>
+          <VeroeffentlichenButton art="stunde" quelle={s} unterrichtseinheit={unterrichtseinheit} />
           <StundeLoeschenButton stunde={s} />
         </div>
       ))}

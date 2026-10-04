@@ -18,6 +18,7 @@ import EinheitErstellenButtons from '@/components/einheiten/EinheitErstellenButt
 import BasismoduleListe from '@/pages/BasismoduleListe';
 import BereichSwitcher from '@/components/einheiten/BereichSwitcher';
 import AustauschBibliothek from '@/components/einheiten/AustauschBibliothek';
+import BibliothekKatalog from '@/components/bibliothek/BibliothekKatalog';
 import VorgeschlageneEinheitenSektion from '@/components/einheiten/VorgeschlageneEinheitenSektion';
 import MoodleWegInfoBox from '@/components/einheiten/MoodleWegInfoBox';
 import SyncStatusBadge from '@/components/sync/SyncStatusBadge';
@@ -385,13 +386,22 @@ export default function EinheitenListe() {
       {ansicht === 'privat' && privatReiter === 'unterricht' ? null : ansicht === 'basismodule' ? (
         <BasismoduleListe />
       ) : ansicht === 'austausch' ? (
+        <div className="space-y-8">
+        <div className="space-y-2">
+          <h2 className="text-base font-bold">Unterrichtsstunden & selbstständige Übungen</h2>
+          <BibliothekKatalog />
+        </div>
+        <div className="space-y-2">
+        <h2 className="text-base font-bold">Freigegebene Einheiten</h2>
         <AustauschBibliothek
-          einheiten={einheiten}
+          einheiten={einheiten.filter((e) => !istUebungsblock(e))}
           rolle={rolle}
           benutzerFaecher={userFaecher}
           currentUserEmail={authUser?.email}
           istAdmin={permissions.istAdmin}
         />
+        </div>
+        </div>
       ) : ansicht === 'privat' && permissions.istAdmin ? (
         /* Admin: kompakte Besitzer-Übersicht statt Kachel-Flut */
         <PrivateEinheitenUebersicht einheiten={einheiten} />

@@ -9,9 +9,10 @@ import {
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import MoodleParameterButton from '@/components/einheiten/MoodleParameterButton';
+import VeroeffentlichenButton from '@/components/bibliothek/VeroeffentlichenButton';
 
 /** Die Übungsblöcke EINER Einheit. */
-export default function FachBloeckeListe({ bloecke = [] }) {
+export default function FachBloeckeListe({ bloecke = [], unterrichtseinheit }) {
   const [loeschZiel, setLoeschZiel] = useState(null);
   const queryClient = useQueryClient();
 
@@ -48,6 +49,7 @@ export default function FachBloeckeListe({ bloecke = [] }) {
                 {b.last_exported_at ? 'in Moodle' : 'Entwurf'}
               </p>
             </Link>
+            <VeroeffentlichenButton art="uebung" quelle={b} unterrichtseinheit={unterrichtseinheit} />
             <MoodleParameterButton einheit={b} />
             <button
               type="button"

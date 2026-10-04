@@ -9,6 +9,7 @@ import FachBloeckeListe from './FachBloeckeListe';
 import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
 import StrukturStatusButton from './StrukturStatusButton';
 import StundeAusVerlaufButton from './StundeAusVerlaufButton';
+import AusBibliothekButton from '@/components/bibliothek/AusBibliothekButton';
 import {
   useStundeAnlegen, useUebungsblockAnlegen, useUnterrichtseinheitUmbenennen,
 } from '@/hooks/useFachEinheitInhalte';
@@ -61,6 +62,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
         <div className="flex flex-wrap items-center gap-2">
           <StrukturStatusButton unterrichtseinheitId={unterrichtseinheit.id} />
           <StundeAusVerlaufButton unterrichtseinheitId={unterrichtseinheit.id} />
+          <AusBibliothekButton unterrichtseinheit={unterrichtseinheit} besitzerEmail={besitzerEmail} />
           <Button variant="outline" size="sm" onClick={() => setStundeOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Stunde
           </Button>
@@ -74,14 +76,14 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Unterrichtsstunden
         </p>
-        <FachStundenListe stunden={stunden} />
+        <FachStundenListe stunden={stunden} unterrichtseinheit={unterrichtseinheit} />
       </div>
 
       <div className="space-y-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Selbstständige Übungen
         </p>
-        <FachBloeckeListe bloecke={bloecke} />
+        <FachBloeckeListe bloecke={bloecke} unterrichtseinheit={unterrichtseinheit} />
       </div>
 
       <AnlegenMitWizardDialog

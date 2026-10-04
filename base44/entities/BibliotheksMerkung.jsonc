@@ -1,0 +1,31 @@
+{
+  "name": "BibliotheksMerkung",
+  "type": "object",
+  "description": "Pers\u00f6nliche Markierung (Stern) eines Eintrags der \u00d6ffentlichen Bibliothek. Markierte Eintr\u00e4ge stehen beim \u00dcbernehmen oben.",
+  "properties": {
+    "user_email": {
+      "type": "string"
+    },
+    "eintrag_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_email",
+    "eintrag_id"
+  ],
+  "rls": {
+    "read": {
+      "data.user_email": "{{user.email}}"
+    },
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "update": {
+      "data.user_email": "{{user.email}}"
+    },
+    "delete": {
+      "data.user_email": "{{user.email}}"
+    }
+  }
+}
