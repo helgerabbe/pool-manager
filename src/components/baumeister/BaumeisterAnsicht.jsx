@@ -9,7 +9,14 @@ const wert = (v) => (typeof v === 'string' ? v : JSON.stringify(v, null, 2));
  * Der Ref zeigt auf das scrollbare Element (iframe bzw. div).
  */
 const BaumeisterAnsicht = forwardRef(function BaumeisterAnsicht({ art, inhalt, vergleich, formSchema = [], className }, ref) {
-  if (art === 'offen') {
+  if (art === 'neu' && !inhalt) {
+    return (
+      <div ref={ref} className={cn('h-full flex items-center justify-center text-sm text-muted-foreground bg-card', className)}>
+        Diese Aufgabe gibt es bisher noch nicht.
+      </div>
+    );
+  }
+  if (art === 'offen' || art === 'neu') {
     const doc = `<!doctype html><html><head><meta charset="utf-8"></head><body style="margin:12px;font-family:sans-serif">${inhalt || ''}</body></html>`;
     return (
       <iframe

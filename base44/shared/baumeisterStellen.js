@@ -120,7 +120,53 @@ export async function ladeStellen(base44, einheitId) {
       });
     });
 
+  // Schrittfolgen als Ganzes: hier kann ein Schritt ENTFERNT werden (schritt_entfernen).
+  (aufgaben || [])
+    .filter((a) => a.aufgaben_modus === 'sequenz' && a.sync_status !== 'to_delete')
+    .forEach((a) => {
+      const schritte = [...(Array.isArray(a.sequenz_schritte) ? a.sequenz_schritte : [])]
+        .sort((x, y) => (x.reihenfolge ?? 0) - (y.reihenfolge ?? 0))
+        .map((s, i) => ({
+          id: s.id,
+          nr: i + 1,
+          titel: s.titel || s.typ,
+          text: (s.typ === 'offen' ? htmlZuText(s.offen?.fragment) : textAus(s[s.typ] || s.field_values || {})).slice(0, 400),
+        }));
+      if (schritte.length < 2) return;
+      stellen.push({
+        ref: `seq:${a.id}`,
+        art: 'sequenz',
+        ziel_id: a.id,
+        freigegeben: istFreigegeben(a),
+        gesperrt_von: sperreVon(a.locked_by, a.locked_at),
+        titel: `Schrittfolge „${a.titel || 'ohne Titel'}" (Schritt entfernen)`,
+        ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`].filter(Boolean).join(' · '),
+        text: schritte.map((s) => `Schritt ${s.nr}: ${s.titel} – ${s.text}`).join('\n'),
+        roh: { schritte },
+      });
+    });
+
+  // Platzhalter für eine GANZ NEUE offene Aufgabe in der Einheit (offene_aufgabe_anlegen).
+  stellen.push({
+    ref: `neu:${einheitId}`,
+    art: 'neu',
+    ziel_id: einheitId,
+    freigegeben: false,
+    gesperrt_von: null,
+    titel: 'Neue Aufgabe anlegen',
+    ort: 'Einheit · Allgemeine Aufgaben',
+    text: 'Nur wählen, wenn eine Aufgabe komplett NEU entstehen soll, die es noch nicht gibt.',
+    roh: {},
+  });
+
   return stellen;
+}
+
+/** Alt/Neu-Ansicht einer Schrittfolge: ein Feld je Schritt. */
+export function schritteAlsFelder(schritte, ohneId) {
+  return Object.fromEntries(
+    schritte.filter((s) => s.id !== ohneId).map((s) => [`Schritt ${s.nr}: ${s.titel}`, s.text])
+  );
 }
 
 /** Bearbeitbare Textfelder einer allgemeinen Aufgabe / Projektaufgabe. */

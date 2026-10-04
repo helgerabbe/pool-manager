@@ -11,7 +11,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { getAnthropicConfig, askAnthropicJson, askAnthropicText } from '../../shared/anthropicClient.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
-import { ladeStellen, stelleOhneRoh } from '../../shared/baumeisterStellen.js';
+import { ladeStellen, stelleOhneRoh, schritteAlsFelder } from '../../shared/baumeisterStellen.js';
 
 const GRUNDREGEL = `Du bist der Bauer eines Unterrichtsplanungs-Werkzeugs. Du setzt den Änderungswunsch einer Lehrkraft an EINER Aufgabe um.
 - Ändere nur, was der Wunsch verlangt. Alles andere bleibt Zeichen für Zeichen gleich.
@@ -38,8 +38,56 @@ export default async function (req) {
     const cfg = await getAnthropicConfig(base44);
     if (!cfg.aktiv) return Response.json({ error: 'Kein Anthropic-Schlüssel hinterlegt' }, { status: 400 });
 
-    const stelle = (await ladeStellen(base44, einheit_id)).find((s) => s.ref === ref);
+    const alleStellen = await ladeStellen(base44, einheit_id);
+    let stelle = alleStellen.find((s) => s.ref === ref);
     if (!stelle) return Response.json({ error: 'Die Stelle ist nicht (mehr) bearbeitbar.' }, { status: 404 });
+
+    // Aufgabe mit Schrittfolge: erst klären, ob ein Schritt GELÖSCHT werden soll.
+    const seq = stelle.art === 'aufgabe' ? alleStellen.find((s) => s.ref === `seq:${stelle.ziel_id}`) : null;
+    if (seq) {
+      const wahl = await askAnthropicJson(cfg, {
+        system: 'Entscheide, ob der Änderungswunsch verlangt, einen Schritt der Aufgabenfolge zu ENTFERNEN (z. B. weil Schritte doppelt sind). Antworte NUR mit JSON: {"entfernen":true|false}',
+        prompt: `SCHRITTE:\n${seq.text}\n\n${wunschText(hinweis, zusatz)}`,
+        maxTokens: 200,
+      });
+      if (wahl?.entfernen === true) stelle = seq;
+    }
+
+    if (stelle.art === 'sequenz') {
+      const schritte = stelle.roh.schritte;
+      const antwort = await askAnthropicJson(cfg, {
+        system: `${GRUNDREGEL}\nDu darfst hier NUR einen Schritt entfernen. Sind zwei Schritte gleich, entferne den späteren. Antworte NUR mit JSON: {"schritt_id":"<id>","grund":"...","aenderung":"..."}`,
+        prompt: `SCHRITTE:\n${schritte.map((s) => `[${s.id}] Schritt ${s.nr}: ${s.titel} – ${s.text}`).join('\n')}\n\n${wunschText(hinweis, zusatz)}`,
+        maxTokens: 800,
+      });
+      const weg = schritte.find((s) => s.id === antwort?.schritt_id);
+      if (!weg) return Response.json({ error: 'Die KI konnte keinen Schritt zum Entfernen bestimmen. Bitte genauer beschreiben.' }, { status: 502 });
+      return Response.json({
+        stelle: stelleOhneRoh(stelle),
+        alt: schritteAlsFelder(schritte),
+        neu: schritteAlsFelder(schritte, weg.id),
+        entfernen: { schritt_id: weg.id, grund: antwort.grund || `Schritt ${weg.nr} entfernt` },
+        aenderung: antwort.aenderung || `Schritt ${weg.nr} „${weg.titel}" entfernt.`,
+      });
+    }
+
+    if (stelle.art === 'neu') {
+      const { text } = await askAnthropicText(cfg, {
+        system: `${GRUNDREGEL}\nBaue eine NEUE offene Aufgabe als HTML-Fragment (<div class="aufgabe"> mit eigenem <style>/<script>, ohne <html>/<body>). Gib zurück:\nerste Zeile: TITEL: <Titel der Aufgabe>\nzweite Zeile: AENDERUNG: <ein Satz>\ndanach NUR das Fragment, ohne Markdown-Zäune.`,
+        prompt: `${typeof basis === 'string' && basis ? `BISHERIGER ENTWURF:\n${basis}\n\n` : ''}${wunschText(hinweis, zusatz)}`,
+        maxTokens: 20000,
+      });
+      const start = text.indexOf('<');
+      const neu = start >= 0 ? text.slice(start).replace(/```\s*$/, '').trim() : '';
+      if (!neu) return Response.json({ error: 'Die KI hat kein HTML geliefert. Bitte erneut versuchen.' }, { status: 502 });
+      return Response.json({
+        stelle: stelleOhneRoh(stelle),
+        alt: '',
+        neu,
+        titel: (text.match(/TITEL:\s*(.+)/)?.[1] || 'Neue Aufgabe').trim(),
+        aenderung: (text.match(/AENDERUNG:\s*(.+)/)?.[1] || 'Neue Aufgabe angelegt.').trim(),
+      });
+    }
 
     if (stelle.art === 'aktivitaet' || stelle.art === 'aufgabe') {
       const alt = stelle.roh.field_values;

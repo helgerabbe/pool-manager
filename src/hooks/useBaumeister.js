@@ -46,6 +46,7 @@ export function useBaumeister(einheitId) {
   // Sperre JETZT prüfen (nicht nur beim Bauen): Ein Kollege könnte die
   // Stelle inzwischen geöffnet haben — seine Arbeit darf nicht überschrieben werden.
   const pruefeSperre = async () => {
+    if (stelle.art === 'neu') return;
     const ich = (await base44.auth.me())?.email;
     const frisch = stelle.art === 'aktivitaet'
       ? await base44.entities.Lernpakete.get(stelle.lernpaket_id)
@@ -73,13 +74,17 @@ export function useBaumeister(einheitId) {
       return;
     }
     const offen = stelle.art === 'offen';
+    const auftrag = stelle.art === 'sequenz'
+      ? { auftrags_art: 'schritt_entfernen', parameter: vorschlag.entfernen }
+      : stelle.art === 'neu'
+        ? { auftrags_art: 'offene_aufgabe_anlegen', parameter: { titel: vorschlag.titel, fragment: vorschlag.neu } }
+        : offen
+          ? { auftrags_art: 'offene_aufgabe_html_ersetzen', parameter: { fragment: vorschlag.neu, schritt_id: stelle.schritt_id, begruendung: vorschlag.aenderung } }
+          : { auftrags_art: 'aktivitaet_aendern', parameter: { field_values: vorschlag.neu } };
     const eingang = await base44.functions.invoke('pruefeImportAuftrag', {
-      auftrags_art: offen ? 'offene_aufgabe_html_ersetzen' : 'aktivitaet_aendern',
-      titel: `Baumeister: ${stelle.titel}`,
+      ...auftrag,
+      titel: `Baumeister: ${stelle.art === 'neu' ? vorschlag.titel : stelle.titel}`,
       ziel_id: stelle.ziel_id,
-      parameter: offen
-        ? { fragment: vorschlag.neu, schritt_id: stelle.schritt_id, begruendung: vorschlag.aenderung }
-        : { field_values: vorschlag.neu },
     });
     if (!eingang.data?.ausfuehrbar) {
       const gruende = (eingang.data?.pruefergebnis || []).map((b) => `${b.label}: ${b.reason}`).join(' · ');

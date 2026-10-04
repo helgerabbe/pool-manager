@@ -18,6 +18,8 @@ Deine EINZIGE Aufgabe: Finde heraus, welche Stelle(n) die Lehrkraft mit ihrem Hi
 Regeln:
 - Belege jede Zuordnung mit einem WÖRTLICHEN kurzen Zitat aus dem Text der Stelle.
 - Bist du dir nicht sicher, nenne bis zu 3 Kandidaten (wahrscheinlichster zuerst) und setze "eindeutig": false.
+- Soll ein Schritt einer Aufgabenfolge GELÖSCHT werden (z. B. doppelte Schritte), wähle die Stelle "seq:…" dieser Aufgabe.
+- Soll eine Aufgabe komplett NEU angelegt werden, wähle die Stelle "neu:…".
 - Passt nichts, gib eine leere Kandidatenliste und eine freundliche Rückfrage.
 Antworte NUR mit JSON:
 {"kandidaten":[{"ref":"<ref aus der Liste>","zitat":"...","begruendung":"ein Satz"}],"eindeutig":true,"rueckfrage":""}`;
