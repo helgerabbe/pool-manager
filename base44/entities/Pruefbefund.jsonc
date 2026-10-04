@@ -1,7 +1,7 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8. Der stabile Schl\u00fcssel `fingerprint` sorgt f\u00fcr Wiedererkennung: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`.\n\nHERKUNFT: `quelle` trennt die Reiter in Tab 8 ('regel'/'ki' = eigene Pr\u00fcfung, 'mbk' = R\u00fcckmeldung des Baus). `mbk_quelle` sagt, wer den MBK-Fund gefunden hat: 'bau', 'sichtung' oder 'ticket' (2026-09-27: Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem, als GitHub-Issue mit Label 'einheit' \u2014 mit Issue-Nummer und Originaltext).\n\nR\u00dcCKWEG: Entscheidungen reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository (pushMbkAntwort). Bei Tickets schlie\u00dft der Bau das Issue bei 'behoben'/'bewusst' automatisch.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8. Der stabile Schl\u00fcssel `fingerprint` sorgt f\u00fcr Wiedererkennung: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`.\n\nHERKUNFT: `quelle` trennt die Reiter in Tab 8 ('regel'/'ki' = eigene Pr\u00fcfung, 'mbk' = R\u00fcckmeldung des Baus). `mbk_quelle` sagt, wer den MBK-Fund gefunden hat: 'bau', 'sichtung' oder 'ticket' (2026-09-27: Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem, als GitHub-Issue mit Label 'einheit' \u2014 mit Issue-Nummer und Originaltext).\n\nR\u00dcCKWEG: Entscheidungen reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository (pushMbkAntwort). Bei Tickets schlie\u00dft der Bau das Issue bei 'behoben'/'bewusst' automatisch.\n\nKI-VORSORTIERUNG (2026-10-04): mbkVorsortierung ordnet offene MBK-Befunde einem Stapel zu (ki_stapel) und formuliert sie f\u00fcr Lehrkr\u00e4fte verst\u00e4ndlich (ki_klartext). Sie entscheidet NICHTS \u2014 die Entscheidung bleibt bei der Lehrkraft.",
   "properties": {
     "einheit_id": {
       "type": "string",
@@ -192,6 +192,28 @@
       "type": "string"
     },
     "dublette_geprueft_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "ki_stapel": {
+      "type": "string",
+      "enum": [
+        "uebernehmen",
+        "reparieren",
+        "lehrkraft",
+        "schliessen"
+      ],
+      "description": "KI-Vorsortierung: 'uebernehmen' = im Kurs schon korrigiert, Korrektur in den Pool-Manager \u00fcbernehmen; 'reparieren' = die KI kann es selbst beheben; 'lehrkraft' = braucht Material oder eine Entscheidung der Lehrkraft; 'schliessen' = veraltet, doppelt oder nur Moodle-Gestaltung."
+    },
+    "ki_klartext": {
+      "type": "string",
+      "description": "Der Hinweis in einfacher Sprache f\u00fcr Lehrkr\u00e4fte (1\u20132 S\u00e4tze)."
+    },
+    "ki_naechster_schritt": {
+      "type": "string",
+      "description": "Was die Lehrkraft konkret tun kann, in einfacher Sprache."
+    },
+    "ki_sortiert_am": {
       "type": "string",
       "format": "date-time"
     }

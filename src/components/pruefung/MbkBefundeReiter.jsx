@@ -27,6 +27,7 @@ import MbkAdminPunkteListe from './MbkAdminPunkteListe';
 import MbkAntwortSenden from './MbkAntwortSenden';
 import BrianAdressenInfoCard from './BrianAdressenInfoCard';
 import MbkGelostePunkte from './MbkGelostePunkte';
+import MbkStapelLeiste from './MbkStapelLeiste';
 
 export default function MbkBefundeReiter({
   einheitId,
@@ -49,6 +50,7 @@ export default function MbkBefundeReiter({
   } = useMbkRueckmeldungAktionen(einheitId);
   const erledigen = useMbkAdminTodoErledigen();
   const [zeigeDubletten, setZeigeDubletten] = useState(false);
+  const [stapel, setStapel] = useState('alle');
 
   const offene = useMemo(
     () => befunde.filter((b) => (b.entscheidung || 'offen') === 'offen'),
@@ -59,7 +61,9 @@ export default function MbkBefundeReiter({
     [offene]
   );
   const sichtbar = useMemo(() => {
-    const liste = zeigeDubletten ? offene : offene.filter((b) => b.dublette_status !== 'dublette');
+    let liste = zeigeDubletten ? offene : offene.filter((b) => b.dublette_status !== 'dublette');
+    if (stapel === 'ohne') liste = liste.filter((b) => !b.ki_stapel);
+    else if (stapel !== 'alle') liste = liste.filter((b) => b.ki_stapel === stapel);
     // Schülermeldungen (Tickets) stehen immer oben, danach nach Schwere.
     const ticketRang = (b) => (b.mbk_quelle === 'ticket' ? 0 : 1);
     return [...liste].sort(
@@ -67,7 +71,7 @@ export default function MbkBefundeReiter({
         ticketRang(a) - ticketRang(b) ||
         (PRUEF_SCHWERE[a.schwere]?.rang ?? 9) - (PRUEF_SCHWERE[b.schwere]?.rang ?? 9)
     );
-  }, [offene, zeigeDubletten]);
+  }, [offene, zeigeDubletten, stapel]);
 
   // Zweite Zahl: alles, was schon entschieden ist (behoben, bewusst gelassen,
   // Widerspruch) — steht eingeklappt unter der Liste.
@@ -147,6 +151,16 @@ export default function MbkBefundeReiter({
           anzahlOffen={offene.length}
           laeuft={antwortLaeuft}
           onSenden={antwortSenden}
+        />
+      )}
+
+      {offene.length > 0 && (
+        <MbkStapelLeiste
+          einheitId={einheitId}
+          offene={offene}
+          filter={stapel}
+          onFilter={setStapel}
+          kannStarten={kannStarten}
         />
       )}
 

@@ -18,6 +18,7 @@ import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 import InhaltGesichtetButton from './InhaltGesichtetButton';
 import MbkAbweichungBanner from './MbkAbweichungBanner';
 import VorschlagBlock from './VorschlagBlock';
+import BefundKlartext, { BefundDatum } from './BefundKlartext';
 
 const BEWUSST_PLACEHOLDER =
   'Warum soll das so bleiben? Ein Satz reicht – das Moodle-Team liest ihn und meldet den Punkt dann nicht noch einmal.';
@@ -77,13 +78,28 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         </p>
       )}
 
+      {befund.quelle === 'mbk' && <BefundDatum befund={befund} />}
+
       <MbkAbweichungBanner befund={befund} />
 
-      <p className="text-sm text-foreground">{befund.befund}</p>
-      <VorschlagBlock
-        vorschlag={befund.vorschlag}
-        istEinfuegetext={befund.mbk_quelle === 'sichtung'}
-      />
+      <BefundKlartext befund={befund} />
+      {befund.ki_klartext ? (
+        <details className="text-sm">
+          <summary className="text-xs text-muted-foreground cursor-pointer">Originaltext des Moodle-Teams</summary>
+          <div className="space-y-2 pt-2">
+            <p className="text-sm text-foreground">{befund.befund}</p>
+            <VorschlagBlock vorschlag={befund.vorschlag} istEinfuegetext={befund.mbk_quelle === 'sichtung'} />
+          </div>
+        </details>
+      ) : (
+        <>
+          <p className="text-sm text-foreground">{befund.befund}</p>
+          <VorschlagBlock
+            vorschlag={befund.vorschlag}
+            istEinfuegetext={befund.mbk_quelle === 'sichtung'}
+          />
+        </>
+      )}
       {(befund.entscheidung === 'bewusst' || befund.entscheidung === 'widerspruch') && befund.kommentar && (
         <p className="text-xs text-violet-800">Begründung: {befund.kommentar}</p>
       )}
