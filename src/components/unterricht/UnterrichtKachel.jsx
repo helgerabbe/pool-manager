@@ -36,6 +36,7 @@ export default function UnterrichtKachel({
           {kachel.name || `${kachel.fach} · Jg. ${kachel.jahrgangsstufe}`}
         </p>
         <p className="text-xs text-muted-foreground">
+          {kachel.schuljahr ? `${kachel.schuljahr} · ` : ''}
           {kachel.name ? `${kachel.fach} · Jg. ${kachel.jahrgangsstufe} · ` : ''}
           {kachel.anzahlEinheiten} Unterrichtseinheit{kachel.anzahlEinheiten !== 1 ? 'en' : ''}
         </p>

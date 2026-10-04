@@ -19,12 +19,13 @@ import { useLerngruppen } from '@/hooks/useLerngruppen';
 import UnterrichtKachel from './UnterrichtKachel';
 import KachelDialog from './KachelDialog';
 import LerngruppenFilter from './LerngruppenFilter';
+import { AKTUELLES_SCHULJAHR } from '@/lib/schuljahre';
 
 export default function MeinUnterrichtBereich({ einheiten = [], besitzerEmail, faecher = [] }) {
   const queryClient = useQueryClient();
   const [dialogOffen, setDialogOffen] = useState(false);
   const [bearbeiten, setBearbeiten] = useState(null);
-  const [filter, setFilter] = useState({ fach: '', jg: '' });
+  const [filter, setFilter] = useState({ fach: '', jg: '', sj: AKTUELLES_SCHULJAHR });
 
   const { data: stunden = [] } = useQuery({
     queryKey: ['unterrichtsstunden', besitzerEmail],
@@ -51,7 +52,7 @@ export default function MeinUnterrichtBereich({ einheiten = [], besitzerEmail, f
   }, [lerngruppen, unterrichtseinheiten, stunden, bloecke]);
 
   const sichtbar = kacheln.filter(
-    (k) => (!filter.fach || k.fach === filter.fach) && (!filter.jg || String(k.jahrgangsstufe) === filter.jg)
+    (k) => (!filter.sj || k.schuljahr === filter.sj) && (!filter.fach || k.fach === filter.fach) && (!filter.jg || String(k.jahrgangsstufe) === filter.jg)
   );
 
   const speichern = useMutation({
@@ -90,7 +91,7 @@ export default function MeinUnterrichtBereich({ einheiten = [], besitzerEmail, f
         </Button>
       </div>
 
-      {kacheln.length > 1 && <LerngruppenFilter kacheln={kacheln} filter={filter} onChange={setFilter} />}
+      {kacheln.length > 0 && <LerngruppenFilter kacheln={kacheln} filter={filter} onChange={setFilter} />}
 
       {kacheln.length === 0 ? (
         <EmptyState

@@ -10,6 +10,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AKTUELLES_SCHULJAHR, SCHULJAHRE } from '@/lib/schuljahre';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from '@/components/ui/dialog';
@@ -22,6 +23,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
   const [fach, setFach] = useState('');
   const [jahrgang, setJahrgang] = useState('');
   const [name, setName] = useState('');
+  const [schuljahr, setSchuljahr] = useState(AKTUELLES_SCHULJAHR);
 
   const { data: jahrgaenge = [] } = useQuery({
     queryKey: ['lookup-jahrgaenge'],
@@ -37,6 +39,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
     setFach(kachel?.fach || '');
     setJahrgang(kachel?.jahrgangsstufe || '');
     setName(kachel?.name || '');
+    setSchuljahr(kachel?.schuljahr || AKTUELLES_SCHULJAHR);
   }, [open, kachel]);
 
   const gueltig = fach && jahrgang;
@@ -48,6 +51,12 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
           <DialogTitle>{istBearbeiten ? 'Lerngruppe benennen' : 'Lerngruppe hinzufügen'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label>Schuljahr</Label>
+            <select className={selectClass} value={schuljahr} onChange={(e) => setSchuljahr(e.target.value)}>
+              {SCHULJAHRE.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
           <div className="space-y-2">
             <Label>Fach</Label>
             <select
@@ -88,7 +97,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button
             disabled={!gueltig || busy}
-            onClick={() => onSpeichern({ fach, jahrgangsstufe: jahrgang, name: name.trim() })}
+            onClick={() => onSpeichern({ schuljahr, fach, jahrgangsstufe: jahrgang, name: name.trim() })}
           >
             {istBearbeiten ? 'Speichern' : 'Hinzufügen'}
           </Button>

@@ -1,11 +1,15 @@
 {
   "name": "Lerngruppe",
   "type": "object",
-  "description": "LERNGRUPPE (2026-10-03): Die konkrete Klasse bzw. der Kurs, den eine Lehrkraft unterrichtet \u2014 Fach + Jahrgang + Name (z. B. 'Deutsch \u00b7 9 \u00b7 9a'). Einstieg im Bereich 'Mein Unterricht'. Pro Fach+Jahrgang sind mehrere Lerngruppen m\u00f6glich, weil verschiedene Lerngruppen unterschiedlich unterrichtet werden. Darin liegen Unterrichtseinheiten (Unterrichtseinheit.lerngruppe_id, 1:n). Ersetzt die automatisch erzeugte UnterrichtsKachel (Fach+Jahrgang).",
+  "description": "LERNGRUPPE (2026-10-03): Die konkrete Klasse bzw. der Kurs, den eine Lehrkraft unterrichtet \u2014 Fach + Jahrgang + Name (z. B. 'Deutsch \u00b7 9 \u00b7 9a'), gebunden an EIN Schuljahr (seit 2026-10-04). Einstieg im Bereich 'Mein Unterricht'. Pro Fach+Jahrgang sind mehrere Lerngruppen m\u00f6glich. Darin liegen Unterrichtseinheiten (Unterrichtseinheit.lerngruppe_id, 1:n). Offen: schnelles Kopieren einer Lerngruppe ins n\u00e4chste Schuljahr.",
   "properties": {
     "besitzer_email": {
       "type": "string",
       "description": "E-Mail der Lehrkraft. Lerngruppen sind pers\u00f6nlich."
+    },
+    "schuljahr": {
+      "type": "string",
+      "description": "Schuljahr der Lerngruppe, z. B. '2026/2027' (Werte vorerst fest in src/lib/schuljahre.js)."
     },
     "fach": {
       "type": "string",
