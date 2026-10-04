@@ -8,9 +8,8 @@ const STATUS = [
 ];
 
 /** Aufklappbare Liste der Abschnitte vor der geplanten Stunde. */
-export default function VorherigeAbschnitte({ abschnitte }) {
+export default function VorherigeAbschnitte({ abschnitte, status, setStatus }) {
   const [offen, setOffen] = React.useState(false);
-  const [status, setStatus] = React.useState(() => abschnitte.map(() => 'ja'));
   return (
     <div className="rounded-lg border bg-card">
       <button type="button" onClick={() => setOffen(!offen)} className="flex w-full items-center justify-between p-3 text-left text-sm">
