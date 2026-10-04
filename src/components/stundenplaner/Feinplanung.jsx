@@ -2,6 +2,7 @@ import React from 'react';
 import { Wand2, Lightbulb, BookOpen } from 'lucide-react';
 import FesteMaterialien from './FesteMaterialien';
 import PhasenKommentar from './PhasenKommentar';
+import UmsetzungsWahl from './UmsetzungsWahl';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FEINPLANUNG } from '@/lib/stundenplanerVorschauDaten';
@@ -18,7 +19,7 @@ export default function Feinplanung() {
             <p className="text-xs text-muted-foreground">{p.phase} · <span className="font-medium text-foreground">{p.minuten} Min.</span></p>
             <p className="flex flex-wrap items-center gap-2 text-sm font-semibold">
               <BookOpen className="h-4 w-4 text-primary" />{p.methode}
-              <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">{p.umsetzung}</span>
+              <UmsetzungsWahl optionen={p.optionen} standard={p.umsetzung} />
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">Aufgabe: {p.aktivitaet}</p>
             <p className="mt-1.5 text-xs">{p.ablauf}</p>
