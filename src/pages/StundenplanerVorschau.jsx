@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import SchrittLeiste from '@/components/stundenplaner/SchrittLeiste';
-import AbschnittWahl from '@/components/stundenplaner/AbschnittWahl';
+import StartWeiche from '@/components/stundenplaner/StartWeiche';
 import RahmenKlaeren from '@/components/stundenplaner/RahmenKlaeren';
 import PlausibilitaetsPruefung from '@/components/stundenplaner/PlausibilitaetsPruefung';
 import Grobentwurf from '@/components/stundenplaner/Grobentwurf';
@@ -104,16 +104,14 @@ export default function StundenplanerVorschau() {
       <div className="mx-auto max-w-3xl space-y-5 p-6">
         <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/unterrichtseinheit/${id}/struktur`))} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
-          <h1 className="font-display text-2xl font-bold">Neue Stunde aus dem Verlauf</h1>
+          <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
           <p className="text-xs text-accent">Am Ende legst du die Stunde an und gestaltest sie im Editor weiter.</p>
         </div>
         <SchrittLeiste aktiv={schritt} onWahl={setSchritt} />
         <section className="rounded-xl border bg-card/50 p-5">
           {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
           {!isLoading && schritt === 0 && (
-            planung?.verlauf?.length
-              ? <AbschnittWahl verlauf={planung.verlauf} onWahl={(s, i) => { setAbschnitt({ ...s, index: i }); setSchritt(1); }} />
-              : <p className="text-sm text-muted-foreground">Diese Unterrichtseinheit hat noch keinen Verlauf.</p>
+            <StartWeiche verlauf={planung?.verlauf} onWahl={(s, i) => { setAbschnitt({ ...s, index: i }); setSchritt(1); }} />
           )}
           {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={vorherige} rahmen={rahmen} setRahmen={setRahmen} onWeiter={pruefen} />}
           {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => entwerfen()} />}
