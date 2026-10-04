@@ -9,7 +9,7 @@
  *   basis = die zuletzt vorgeschlagene Fassung, wenn die Lehrkraft nachbessern lässt.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { getAnthropicConfig, askAnthropicJson, askAnthropicText } from '../../shared/anthropicClient.js';
+import { plattformConfig, askAnthropicJson, askAnthropicText } from '../../shared/anthropicClient.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 import { ladeStellen, stelleOhneRoh } from '../../shared/baumeisterStellen.js';
 
@@ -35,7 +35,7 @@ export default async function (req) {
     if (!einheit_id || !ref || !hinweis) {
       return Response.json({ error: 'einheit_id, ref und hinweis sind Pflicht' }, { status: 400 });
     }
-    const cfg = await getAnthropicConfig(base44);
+    const cfg = plattformConfig(base44);
     if (!cfg.aktiv) return Response.json({ error: 'Kein Anthropic-Schlüssel hinterlegt' }, { status: 400 });
 
     const stelle = (await ladeStellen(base44, einheit_id)).find((s) => s.ref === ref);

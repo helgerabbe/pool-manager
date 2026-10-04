@@ -35,7 +35,21 @@ export async function getAnthropicConfig(base44) {
  *
  * @returns {Promise<{ text: string, abgeschnitten: boolean }>}
  */
+/** Eingebaute Plattform-KI statt eigenem Anthropic-Schlüssel. */
+export function plattformConfig(base44) {
+  return { aktiv: true, plattform: true, base44 };
+}
+
+async function plattformText(cfg, system, prompt) {
+  const text = await cfg.base44.asServiceRole.integrations.Core.InvokeLLM({
+    prompt: `${system}\n\n${prompt}`,
+    model: 'claude_sonnet_4_6',
+  });
+  return typeof text === 'string' ? text : JSON.stringify(text);
+}
+
 export async function askAnthropicText(cfg, { system, prompt, maxTokens = 20000 }) {
+  if (cfg.plattform) return { text: await plattformText(cfg, system, prompt), abgeschnitten: false };
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -64,6 +78,12 @@ export async function askAnthropicText(cfg, { system, prompt, maxTokens = 20000 
  * @returns {Promise<any|null>} geparstes JSON oder null, wenn nichts brauchbar kam
  */
 export async function askAnthropicJson(cfg, { system, prompt, maxTokens = 2000 }) {
+  if (cfg.plattform) {
+    const t = await plattformText(cfg, system, prompt);
+    const s = t.indexOf('{'), e = t.lastIndexOf('}');
+    if (s === -1 || e <= s) return null;
+    try { return JSON.parse(t.slice(s, e + 1)); } catch { return null; }
+  }
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
