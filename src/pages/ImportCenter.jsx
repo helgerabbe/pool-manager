@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Inbox, FilePlus2, BookOpen, Layers, Mail } from 'lucide-react';
+import { Inbox, FilePlus2, BookOpen, Layers, Mail, ListChecks } from 'lucide-react';
+import EinheitenMeldungen from '@/components/importcenter/EinheitenMeldungen';
 import { Badge } from '@/components/ui/badge';
 import AuftragPosteingang from '@/components/importcenter/AuftragPosteingang';
 import AustauschPosteingang from '@/components/austausch/AustauschPosteingang';
@@ -54,6 +55,9 @@ export default function ImportCenter() {
           <TabsTrigger value="posteingang" className="gap-2">
             <Inbox className="h-4 w-4" /> Posteingang
           </TabsTrigger>
+          <TabsTrigger value="einheiten" className="gap-2">
+            <ListChecks className="h-4 w-4" /> Einheiten
+          </TabsTrigger>
           <TabsTrigger value="austausch" className="gap-2">
             <Mail className="h-4 w-4" /> Kursbau
             {offeneMbk > 0 && (
@@ -73,6 +77,9 @@ export default function ImportCenter() {
 
         <TabsContent value="posteingang" className="mt-5">
           <AuftragPosteingang />
+        </TabsContent>
+        <TabsContent value="einheiten" className="mt-5">
+          <EinheitenMeldungen />
         </TabsContent>
         <TabsContent value="austausch" className="mt-5">
           <AustauschPosteingang />
