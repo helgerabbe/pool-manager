@@ -33,10 +33,10 @@ export default function StundenplanerVorschau() {
           {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
           {!isLoading && schritt === 0 && (
             planung?.verlauf?.length
-              ? <AbschnittWahl verlauf={planung.verlauf} onWahl={(s) => { setAbschnitt(s); setSchritt(1); }} />
+              ? <AbschnittWahl verlauf={planung.verlauf} onWahl={(s, i) => { setAbschnitt({ ...s, index: i }); setSchritt(1); }} />
               : <p className="text-sm text-muted-foreground">Diese Unterrichtseinheit hat noch keinen Verlauf.</p>
           )}
-          {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} onWeiter={() => setSchritt(2)} />}
+          {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={(planung?.verlauf || []).slice(0, abschnitt.index).filter((s) => s.gewichtung !== 'raus')} onWeiter={() => setSchritt(2)} />}
           {schritt === 2 && <PlausibilitaetsPruefung onWeiter={() => setSchritt(3)} />}
           {schritt === 3 && <Grobentwurf onWeiter={() => setSchritt(4)} />}
           {schritt === 4 && <Feinplanung />}

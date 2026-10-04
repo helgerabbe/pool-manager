@@ -11,7 +11,7 @@ export default function AbschnittWahl({ verlauf, onWahl }) {
             <button
               type="button"
               disabled={s.gewichtung === 'raus'}
-              onClick={() => onWahl(s)}
+              onClick={() => onWahl(s, i)}
               className="flex w-full items-center justify-between gap-3 rounded-lg border bg-card p-3 text-left hover:border-primary disabled:opacity-40"
             >
               <span>
