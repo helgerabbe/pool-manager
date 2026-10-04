@@ -1,12 +1,11 @@
 import React from 'react';
 import { Globe, Loader2, Wand2 } from 'lucide-react';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import FesteMaterialien from './FesteMaterialien';
 import FeinPhase from './FeinPhase';
 
 /** Schritt 5: Methode je Phase mit Begründung, Hinweisen und Neuplanung. */
-export default function Feinplanung({ plan, laedt, neuPlanIndex, setPlan, onNeuPlanen, onInternet }) {
+export default function Feinplanung({ plan, laedt, neuPlanIndex, setPlan, onNeuPlanen, onInternet, onAnlegen, legtAn }) {
   if (!plan) {
     return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich plane die Phasen genau …</p>;
   }
@@ -24,8 +23,8 @@ export default function Feinplanung({ plan, laedt, neuPlanIndex, setPlan, onNeuP
         {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />}
         Im Internet nach passenden Materialien und Aufgabenideen suchen und zur Liste hinzufügen
       </Button>
-      <Button className="gap-2" onClick={() => toast.info('Das Anlegen der Stunde kommt im nächsten Schritt.')}>
-        <Wand2 className="h-4 w-4" /> Stunde mit Aufgaben anlegen
+      <Button className="gap-2" disabled={legtAn || laedt} onClick={onAnlegen}>
+        {legtAn ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />} Stunde anlegen und im Editor öffnen
       </Button>
     </div>
   );

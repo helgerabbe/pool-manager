@@ -14,6 +14,7 @@ import { erstelleGrobentwurf } from '@/lib/stundenGrobentwurf';
 import { zielMinuten } from '@/lib/stundenKontext';
 import { erstelleFeinplanung, planePhaseNeu } from '@/lib/stundenFeinplanung';
 import { toast } from 'sonner';
+import { legeStundeAn } from '@/lib/stundeAnlegen';
 
 /** Klickbare Vorschau des Stundenplaners – echter Verlauf, Beispielinhalte, keine KI. */
 export default function StundenplanerVorschau() {
@@ -73,6 +74,18 @@ export default function StundenplanerVorschau() {
       setNeuPlanIndex(null);
     }
   };
+  const [legtAn, setLegtAn] = React.useState(false);
+  const anlegen = async () => {
+    setLegtAn(true);
+    try {
+      const stundeId = await legeStundeAn({ unterrichtseinheitId: id, abschnitt, plan });
+      toast.success('Die Stunde wurde angelegt.');
+      navigate(`/unterrichtsstunde/${stundeId}/editor`);
+    } catch (e) {
+      toast.error('Die Stunde konnte nicht angelegt werden.');
+      setLegtAn(false);
+    }
+  };
   const vorherige = (planung?.verlauf || []).slice(0, abschnitt?.index ?? 0).filter((s) => s.gewichtung !== 'raus');
   const pruefen = async () => {
     setSchritt(2); setPruefung(null); setWahl({}); setPrueftGerade(true);
@@ -92,7 +105,7 @@ export default function StundenplanerVorschau() {
         <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/unterrichtseinheit/${id}/struktur`))} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde aus dem Verlauf</h1>
-          <p className="text-xs text-accent">Alle Planungsschritte sind echt – das Anlegen der Stunde folgt im nächsten Schritt.</p>
+          <p className="text-xs text-accent">Am Ende legst du die Stunde an und gestaltest sie im Editor weiter.</p>
         </div>
         <SchrittLeiste aktiv={schritt} onWahl={setSchritt} />
         <section className="rounded-xl border bg-card/50 p-5">
@@ -105,7 +118,7 @@ export default function StundenplanerVorschau() {
           {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={vorherige} rahmen={rahmen} setRahmen={setRahmen} onWeiter={pruefen} />}
           {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => entwerfen()} />}
           {schritt === 3 && <Grobentwurf entwurf={entwurf} laedt={entwirftGerade} ziel={abschnitt ? zielMinuten(rahmen, abschnitt) : 40} onAendern={entwerfen} onWeiter={() => feinPlanen()} />}
-          {schritt === 4 && <Feinplanung plan={plan} laedt={plantGerade} neuPlanIndex={neuPlanIndex} setPlan={setPlan} onNeuPlanen={phaseNeu} onInternet={() => feinPlanen(true)} />}
+          {schritt === 4 && <Feinplanung plan={plan} laedt={plantGerade} neuPlanIndex={neuPlanIndex} setPlan={setPlan} onNeuPlanen={phaseNeu} onInternet={() => feinPlanen(true)} onAnlegen={anlegen} legtAn={legtAn} />}
         </section>
       </div>
     </div>
