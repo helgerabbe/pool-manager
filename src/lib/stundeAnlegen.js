@@ -40,6 +40,7 @@ export async function legeStundeAn({ unterrichtseinheitId, abschnitt, plan }) {
         { id: crypto.randomUUID(), typ: 'text', inhalt: p.aktivitaet || '' },
       ],
       freischalt_code: codes[i],
+      ...(typ.startsWith('digital') && p.aktivitaet_id ? { aktivitaet_id: p.aktivitaet_id, field_values: {} } : {}),
     };
   }));
   return stunde.id;
