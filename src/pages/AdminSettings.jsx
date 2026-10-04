@@ -37,7 +37,6 @@ import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorC
 import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
 import AnthropicConnectorCard from '@/components/admin/AnthropicConnectorCard';
 import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
-import MbkAdminTodoCard from '@/components/admin/MbkAdminTodoCard';
 import AufgabenFormateTab from '@/components/admin/formate/AufgabenFormateTab';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
@@ -135,9 +134,6 @@ export default function AdminSettings() {
 
         {/* Allgemein — Schul-Stammdaten, Wartungsmodus, Werkszustand (dezent) */}
         <TabsContent value="allgemein" className="mt-5 space-y-6">
-          {/* Rückmeldungen des Kursbaus, die die Administration betreffen —
-              erscheint nur, wenn etwas offen ist. */}
-          <MbkAdminTodoCard />
 
           <SchulStammdatenCard />
 

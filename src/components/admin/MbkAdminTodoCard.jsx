@@ -12,8 +12,9 @@ import { Inbox } from 'lucide-react';
 import { useMbkAdminTodos, useMbkAdminTodoErledigen } from '@/hooks/useMbkRueckmeldung';
 import MbkAdminPunkteListe from '@/components/pruefung/MbkAdminPunkteListe';
 
-export default function MbkAdminTodoCard() {
-  const { data: punkte = [], isLoading } = useMbkAdminTodos();
+export default function MbkAdminTodoCard({ einheitId }) {
+  const { data: alle = [], isLoading } = useMbkAdminTodos();
+  const punkte = einheitId ? alle.filter((p) => p.einheit_id === einheitId) : alle;
   const erledigen = useMbkAdminTodoErledigen();
 
   if (isLoading || punkte.length === 0) return null;
