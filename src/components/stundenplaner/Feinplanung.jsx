@@ -1,6 +1,7 @@
 import React from 'react';
 import { Wand2, Lightbulb, BookOpen } from 'lucide-react';
 import FesteMaterialien from './FesteMaterialien';
+import PhasenKommentar from './PhasenKommentar';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FEINPLANUNG } from '@/lib/stundenplanerVorschauDaten';
@@ -22,6 +23,7 @@ export default function Feinplanung() {
             <p className="mt-0.5 text-xs text-muted-foreground">Aufgabe: {p.aktivitaet}</p>
             <p className="mt-1.5 text-xs">{p.ablauf}</p>
             <p className="mt-1 flex gap-2 text-xs"><Lightbulb className="h-3.5 w-3.5 shrink-0 text-accent" />{p.begruendung}</p>
+            <PhasenKommentar phase={p.phase} />
           </li>
         ))}
       </ol>
