@@ -75,7 +75,15 @@ ${aktivitaetenText(akt)}`;
     prompt, response_json_schema: SCHEMA, file_urls: file_urls.length ? file_urls : undefined,
     ...(internet ? { add_context_from_internet: true, model: 'gemini_3_flash' } : {}),
   });
-  return { phasen: (res.phasen || []).map((p) => anreichern(p, methoden, akt)), materialien: res.materialien || [] };
+  return { phasen: (res.phasen || []).map((p) => anreichern(p, methoden, akt)), materialien: mitDateien(res.materialien || [], ctx.rahmen.materialien || []) };
+}
+
+/** Hochgeladene Dateien der Lehrkraft an die Materialliste hängen (fehlende ergänzen). */
+function mitDateien(liste, uploads) {
+  const ergebnis = liste.map((m) => ({ ...m, file_uri: uploads.find((u) => gleich(u.name, m.name))?.file_uri }));
+  uploads.filter((u) => !ergebnis.some((m) => m.file_uri === u.file_uri))
+    .forEach((u) => ergebnis.push({ name: u.name, herkunft: 'lehrkraft', phase: '', file_uri: u.file_uri }));
+  return ergebnis;
 }
 
 /** Eine einzelne Phase nach dem Wunsch der Lehrkraft neu planen. */

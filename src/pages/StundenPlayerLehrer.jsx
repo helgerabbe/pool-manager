@@ -7,6 +7,8 @@ import TafelAnzeige from '@/components/stundenplayer/TafelAnzeige';
 import CodeTimer from '@/components/stundenplayer/CodeTimer';
 import PlayerLeiste from '@/components/stundenplayer/PlayerLeiste';
 import SchuelerGeraet from '@/components/stundeneditor/SchuelerGeraet';
+import MaterialLeiste from '@/components/stundenplayer/MaterialLeiste';
+import MaterialVorschau from '@/components/stundenplayer/MaterialVorschau';
 
 /** Lehrer-Player: die Tafel der Stunde im Vollbild, Phase für Phase. */
 export default function StundenPlayerLehrer() {
@@ -22,7 +24,8 @@ export default function StundenPlayerLehrer() {
   });
   const phase = phasen[index];
 
-  const gehe = (i) => { setIndex(i); setSchueler(false); };
+  const [vorschau, setVorschau] = React.useState(null);
+  const gehe = (i) => { setIndex(i); setSchueler(false); setVorschau(null); };
   React.useEffect(() => {
     const taste = (e) => {
       if (e.key === 'ArrowRight' && index < phasen.length - 1) gehe(index + 1);
@@ -41,6 +44,7 @@ export default function StundenPlayerLehrer() {
       <div className="relative flex flex-1 flex-col items-center justify-center gap-8 overflow-y-auto p-10">
         {schueler ? <SchuelerGeraet phase={phase} /> : <TafelAnzeige phase={phase} />}
         {starts[phase.id] && <CodeTimer code={zeigeCode ? phase.freischalt_code : null} minuten={phase.dauer_minuten} gestartetAm={starts[phase.id]} />}
+        {vorschau && <MaterialVorschau datei={vorschau} onSchliessen={() => setVorschau(null)} />}
         {regie && (
           <aside className="absolute bottom-4 right-4 max-w-sm rounded-xl bg-white p-4 text-sm text-foreground shadow-xl">
             <button className="float-right" onClick={() => setRegie(false)}><X className="h-4 w-4" /></button>
@@ -49,6 +53,7 @@ export default function StundenPlayerLehrer() {
           </aside>
         )}
       </div>
+      <MaterialLeiste materialien={phase.material_urls} onVorschau={setVorschau} />
       <PlayerLeiste
         index={index} anzahl={phasen.length} phase={phase} laeuft={!!starts[phase.id]}
         onZurueck={() => gehe(index - 1)} onWeiter={() => gehe(index + 1)}

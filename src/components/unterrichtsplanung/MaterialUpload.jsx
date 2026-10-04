@@ -45,8 +45,8 @@ export default function MaterialUpload({ materialien = [], onChange }) {
       ))}
       <label className="flex cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed px-3 py-3 text-sm text-muted-foreground hover:bg-muted/50">
         {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-        {laedt ? 'Wird hochgeladen …' : 'Buchseiten, Arbeitsblätter, Folien hochladen (PDF oder Bild)'}
-        <input type="file" multiple accept=".pdf,image/*" className="hidden" onChange={hochladen} disabled={laedt} />
+        {laedt ? 'Wird hochgeladen …' : 'Buchseiten, Arbeitsblätter, Foliensätze hochladen (PDF, Bild, PowerPoint, Word)'}
+        <input type="file" multiple accept=".pdf,image/*,.ppt,.pptx,.doc,.docx" className="hidden" onChange={hochladen} disabled={laedt} />
       </label>
       <div
         tabIndex={0}

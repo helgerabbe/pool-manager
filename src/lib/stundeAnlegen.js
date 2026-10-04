@@ -24,7 +24,8 @@ export async function legeStundeAn({ unterrichtseinheitId, abschnitt, plan }) {
   });
   await base44.entities.StundenSequenz.bulkCreate(plan.phasen.map((p, i) => {
     const typ = typVon(p);
-    const material = (plan.materialien || []).filter((m) => m.phase === p.phase).map((m) => m.name);
+    const zugeordnet = (plan.materialien || []).filter((m) => m.phase === p.phase);
+    const material = zugeordnet.map((m) => m.name);
     return {
       stunde_id: stunde.id,
       reihenfolge: i,
@@ -34,6 +35,7 @@ export async function legeStundeAn({ unterrichtseinheitId, abschnitt, plan }) {
       methode_sozialform: p.methode,
       lehrer_hinweis: [p.ablauf, p.begruendung && `Warum: ${p.begruendung}`, ...(p.hinweise || []).map((h) => `Hinweis: ${h}`)].filter(Boolean).join('\n'),
       material_hinweis: material.join(', '),
+      material_urls: zugeordnet.filter((m) => m.file_uri).map((m) => ({ url: m.file_uri, name: m.name })),
       schueler_anweisung: standardSchuelerAnweisung(typ),
       tafel: [
         { id: crypto.randomUUID(), typ: 'ueberschrift', inhalt: p.phase },
