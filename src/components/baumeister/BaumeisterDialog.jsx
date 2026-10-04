@@ -14,8 +14,15 @@ const LADE_TEXT = {
   ausfuehren: 'Ich übernehme die Änderung …',
 };
 
-export default function BaumeisterDialog({ open, onOpenChange, einheitId }) {
+export default function BaumeisterDialog({ open, onOpenChange, einheitId, startHinweis, onFertig }) {
   const b = useBaumeister(einheitId);
+  // Aus einem Prüfbefund geöffnet: Hinweis vorbefüllen (Lehrkraft kann ihn noch anpassen).
+  React.useEffect(() => {
+    if (open && startHinweis && b.phase === 'eingabe' && !b.hinweis) b.setHinweis(startHinweis);
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => {
+    if (b.phase === 'fertig') onFertig?.();
+  }, [b.phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const schliessen = (v) => { if (!v) b.neuStarten(); onOpenChange(v); };
 
   return (

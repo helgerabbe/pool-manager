@@ -18,6 +18,7 @@ import InternenInhaltErzeugenButton from './InternenInhaltErzeugenButton';
 import InhaltGesichtetButton from './InhaltGesichtetButton';
 import MbkAbweichungBanner from './MbkAbweichungBanner';
 import VorschlagBlock from './VorschlagBlock';
+import BaumeisterButton from '@/components/baumeister/BaumeisterButton';
 import BefundKlartext, { BefundDatum } from './BefundKlartext';
 
 const BEWUSST_PLACEHOLDER =
@@ -125,6 +126,18 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
               <InhaltGesichtetButton
                 snapshotId={sichtungsZiel}
                 onGesichtet={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
+              />
+            )}
+            {befund.ki_stapel === 'reparieren' && (
+              <BaumeisterButton
+                einheitId={einheitId}
+                label="Mit Baumeister reparieren"
+                startHinweis={[
+                  befund.fundort || befund.ziel_titel,
+                  befund.befund,
+                  befund.vorschlag && `Vorschlag: ${befund.vorschlag}`,
+                ].filter(Boolean).join('\n')}
+                onFertig={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
               />
             )}
             {direktErzeugbar && (
