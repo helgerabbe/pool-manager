@@ -27,6 +27,8 @@ const LERNTYP_LABEL = {
   passioniert: 'Passioniert',
 };
 
+import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
+
 export default function ThemenfeldEinfuehrungPreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, context,
 }) {
@@ -107,7 +109,8 @@ export default function ThemenfeldEinfuehrungPreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="externes-theme-scope max-w-2xl max-h-[90vh] flex flex-col">
+        <ExternesThemeStyle fresh />
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-violet-600" />

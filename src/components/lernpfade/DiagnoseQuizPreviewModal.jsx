@@ -32,6 +32,8 @@ function getBand(quote) {
   return { key: 'niedrig', emoji: '🌱', cls: 'bg-violet-50 border-violet-200 text-violet-800' };
 }
 
+import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
+
 export default function DiagnoseQuizPreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, initialSnapshot, onUebernehmen,
 }) {
@@ -124,7 +126,8 @@ export default function DiagnoseQuizPreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[97vh] w-[97vw] max-w-[760px] overflow-visible bg-transparent border-0 shadow-none p-0">
+      <DialogContent className="externes-theme-scope max-h-[97vh] w-[97vw] max-w-[760px] overflow-visible bg-transparent border-0 shadow-none p-0">
+        <ExternesThemeStyle fresh />
         {/* iPad-Rahmen */}
         <div className="bg-slate-800 rounded-[28px] p-3 shadow-2xl ring-1 ring-slate-900/10 mx-auto w-full">
           <div className="bg-white rounded-[18px] overflow-hidden flex flex-col" style={{ height: '74vh', maxHeight: 720 }}>

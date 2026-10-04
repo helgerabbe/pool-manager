@@ -16,6 +16,8 @@ import { base44 } from '@/api/base44Client';
 import { Sparkles, RefreshCw, Loader2, ImageIcon, AlertTriangle } from 'lucide-react';
 import PreviewActionBar from './preview/PreviewActionBar';
 
+import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
+
 export default function EinfuehrungPreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, initialSnapshot, onUebernehmen,
 }) {
@@ -76,7 +78,8 @@ export default function EinfuehrungPreviewModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className="externes-theme-scope max-w-2xl max-h-[90vh] flex flex-col">
+        <ExternesThemeStyle fresh />
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-violet-600" />
