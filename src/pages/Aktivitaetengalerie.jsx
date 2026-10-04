@@ -19,7 +19,7 @@ export default function Aktivitaetengalerie() {
 
   return (
     <div className="flex h-full">
-      <aside className="flex w-72 shrink-0 flex-col border-r bg-card">
+      <aside className="sticky top-0 flex max-h-[calc(100dvh-5rem)] w-72 shrink-0 flex-col self-start border-r bg-card">
         <div className="space-y-2 border-b p-4">
           <h1 className="font-display text-lg font-bold">Aktivitätengalerie</h1>
           <p className="text-xs text-muted-foreground">{fertig} von {methoden.length} Bauplänen geprüft</p>
