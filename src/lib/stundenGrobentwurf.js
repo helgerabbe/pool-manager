@@ -1,4 +1,4 @@
-import { base44 } from '@/api/base44Client';
+import { kiAnfrage } from '@/lib/kiAnfrage';
 import { kontextText, signiereMaterial, zielMinuten } from '@/lib/stundenKontext';
 
 const SCHEMA = {
@@ -36,7 +36,7 @@ Regeln:
 - modell: Name des didaktischen Modells (z. B. "Erarbeitungsstunde mit induktivem Aufbau"), 2 Sätze Erklärung, die typischen Schritte dieses Modells.
 - Je Phase: titel im Format "Phase: Kurztitel", sozialform (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), art (z. B. Lehrkraft-Impuls, Digitale Entdeckung, Gemeinsame Sicherung, Digitale Übung), idee (1–2 Sätze, was passiert), analyse (didaktische Begründung: gedankliche Operation, Bedeutsamkeit, Methodenwahl).
 - Deutsch, konkret, fachlich korrekt, schülerorientiert.`;
-  return base44.integrations.Core.InvokeLLM({
+  return kiAnfrage({
     prompt,
     response_json_schema: SCHEMA,
     file_urls: file_urls.length ? file_urls : undefined,

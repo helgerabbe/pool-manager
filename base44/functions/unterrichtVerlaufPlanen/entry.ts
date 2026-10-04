@@ -7,6 +7,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 import { ladePlanung, NETTO_MINUTEN } from '../../shared/unterrichtsPlanung.js';
 
 const SCHWERPUNKTE = ['erarbeitung', 'uebung', 'vertiefung', 'sicherung', 'ueberpruefung'];
@@ -73,7 +74,7 @@ export default async function (req) {
     if (modus === 'struktur') {
       const auswahl = (planung.inhalte || []).filter((i) => i.prioritaet !== 'raus');
       if (!auswahl.length) return Response.json({ error: 'Es ist kein Inhalt ausgewählt.' }, { status: 400 });
-      const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const antwort = await kiAufruf(base44, {
         prompt: JSON.stringify({
           rolle,
           kontext: {
@@ -116,7 +117,7 @@ export default async function (req) {
       if (!bleibende.length) return Response.json({ error: 'Es gibt keinen Verlauf zum Verplanen.' }, { status: 400 });
       const gestrichen = (planung.verlauf || []).filter((s) => s.gewichtung === 'raus').map((s) => s.titel);
       const budget = einzel * NETTO_MINUTEN.einzel + doppel * NETTO_MINUTEN.doppel;
-      const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const antwort = await kiAufruf(base44, {
         prompt: JSON.stringify({
           rolle,
           kontext: {

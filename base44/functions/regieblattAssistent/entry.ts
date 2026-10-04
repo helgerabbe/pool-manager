@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 
 /**
  * Regieblatt-Assistent (MUG, 2026-08-16)
@@ -85,7 +86,7 @@ ${katalog || '- (keine Aufgabenarten verfügbar)'}
 
 Antworte außerdem im Feld "antwort" in maximal 3 Sätzen auf Deutsch, was du geändert hast.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await kiAufruf(base44, {
       prompt,
       response_json_schema: {
         type: 'object',

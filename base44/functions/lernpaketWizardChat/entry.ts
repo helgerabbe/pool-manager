@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hasUnitWriteAccess } from '../../shared/unitAccess.js';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 
 /**
  * Lernpaket-Wizard — Dialog-Modus (Etappe 1, 2026-08-24)
@@ -160,7 +161,7 @@ Deine Aufgabe:
    Ändere nur, was die Lehrkraft wirklich möchte. Wenn eine dieser Aktivitäten schon Inhalt hat, weise in deiner Antwort darauf hin, dass die bestehenden Inhalte erhalten bleiben und nach der Änderung ggf. neu ausgearbeitet werden müssen. Löschen kannst du nichts — wenn du eine Aktivität für überflüssig hältst, sage es der Lehrkraft, sie entfernt sie selbst.
 Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
 
-    const result = unwrapLLM(await base44.integrations.Core.InvokeLLM({
+    const result = unwrapLLM(await kiAufruf(base44, {
       prompt,
       model: 'claude-sonnet-5',
       response_json_schema: {

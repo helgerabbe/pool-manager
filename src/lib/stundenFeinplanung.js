@@ -1,5 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { kontextText, signiereMaterial } from '@/lib/stundenKontext';
+import { kiAnfrage } from '@/lib/kiAnfrage';
 
 const PHASE = {
   type: 'object',
@@ -71,7 +72,7 @@ ${katalogText(methoden)}
 
 Aktivitätenkatalog (digitale Bausteine):
 ${aktivitaetenText(akt)}`;
-  const res = await base44.integrations.Core.InvokeLLM({
+  const res = await kiAnfrage({
     prompt, response_json_schema: SCHEMA, file_urls: file_urls.length ? file_urls : undefined,
     ...(internet ? { add_context_from_internet: true, model: 'gemini_3_flash' } : {}),
   });
@@ -104,6 +105,6 @@ ${katalogText(methoden)}
 
 Aktivitätenkatalog (digitale Bausteine):
 ${aktivitaetenText(akt)}`;
-  const neu = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: PHASE });
+  const neu = await kiAnfrage({ prompt, response_json_schema: PHASE });
   return anreichern({ ...neu, hinweise: alt.hinweise }, methoden, akt);
 }

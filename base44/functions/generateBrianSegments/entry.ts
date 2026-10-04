@@ -9,6 +9,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 import {
   PERSONA_ZIEL,
   COMPLETION_STANDARD,
@@ -361,7 +362,7 @@ Leite den Schüler durch gezielte Fragen und Impulse, bis er die Aufgabe in den 
       },
     ];
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await kiAufruf(base44, {
       prompt: JSON.stringify(messages),
       response_json_schema: RESPONSE_JSON_SCHEMA,
     });

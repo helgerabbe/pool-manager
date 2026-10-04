@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 
 /**
  * KI-Stunden-Coach (MUG Paket 2) — Dialog-Modus
@@ -81,7 +82,7 @@ ${katalog || '- (keine Aufgabenarten verfügbar)'}
    - didaktische_hinweise: didaktisch-methodische Hinweise und alles, was sonst nirgendwo hineinpasst (Fließtext mit Absätzen, keine Markdown-Sonderzeichen).
 Schreibe auf Deutsch, in normaler Groß-/Kleinschreibung.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await kiAufruf(base44, {
       prompt,
       response_json_schema: {
         type: 'object',

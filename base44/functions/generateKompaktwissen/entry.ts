@@ -13,6 +13,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { hasUnitWriteAccess } from '../../shared/unitAccess.js';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 
 const MAX_FELD_LAENGE = 1200;
 
@@ -94,7 +95,7 @@ export default async function(req) {
     ].filter(u => typeof u === 'string' && /^https?:\/\//i.test(u)).slice(0, 5);
     const hatVorarbeit = !!eigenerText || quellDateien.length > 0;
 
-    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const res = await kiAufruf(base44, {
       prompt: JSON.stringify([
         {
           role: 'system',

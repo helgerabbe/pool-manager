@@ -6,6 +6,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 
 const RATE_LIMIT_MAX_REQUESTS = 8;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
       },
     ];
 
-    const generatedText = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const generatedText = await kiAufruf(base44, {
       prompt: JSON.stringify(messages),
       model: 'automatic',
       ...(lesbareDatei ? { file_urls: [lesbareDatei] } : {}),
