@@ -2,16 +2,13 @@ import React from 'react';
 import { Loader2, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InhaltZeile from './InhaltZeile';
-import ZeitbudgetFeld from './ZeitbudgetFeld';
 import KcAbdeckung from './KcAbdeckung';
 
-/** Schritt 2: Inhalte priorisieren, Zeitbudget angeben, Verlauf planen lassen. */
-export default function InhalteSchritt({ planung, speichern, planen }) {
+/** Schritt 2: Inhalte priorisieren, Verlauf planen lassen. */
+export default function InhalteSchritt({ planung, speichern, planen, onFertig }) {
   const inhalte = planung.inhalte || [];
   const setze = (id, prioritaet) =>
     speichern.mutate({ inhalte: inhalte.map((i) => (i.id === id ? { ...i, prioritaet } : i)) });
-  const muss = inhalte.filter((i) => i.prioritaet === 'muss').reduce((s, i) => s + (i.minuten || 0), 0);
-  const budget = (planung.einzelstunden || 0) * 40 + (planung.doppelstunden || 0) * 85;
 
   return (
     <section className="space-y-4 rounded-xl border bg-card p-5">
@@ -25,18 +22,14 @@ export default function InhalteSchritt({ planung, speichern, planen }) {
         {inhalte.map((i) => <InhaltZeile key={i.id} inhalt={i} onPrioritaet={(p) => setze(i.id, p)} />)}
       </div>
       <KcAbdeckung inhalte={inhalte} />
-      <ZeitbudgetFeld planung={planung} onSpeichern={(d) => speichern.mutate(d)} />
-      {budget > 0 && muss > budget && (
-        <p className="text-xs text-destructive">Die „Muss“-Inhalte brauchen geschätzt {muss} Min. — mehr als deine {budget} Min.</p>
-      )}
       <p className="text-xs text-muted-foreground">
         {planen.isPending
           ? 'Der Verlauf wird geplant … das kann ein bis zwei Minuten dauern. Bitte die Seite geöffnet lassen.'
           : 'Achtung: Das Planen des Verlaufs kann etwas länger dauern (ein bis zwei Minuten).'}
       </p>
       <Button
-        onClick={() => planen.mutate({ planung_id: planung.id })}
-        disabled={planen.isPending || speichern.isPending || budget === 0}
+        onClick={() => planen.mutate({ planung_id: planung.id }, { onSuccess: onFertig })}
+        disabled={planen.isPending || speichern.isPending}
         className="gap-2"
       >
         {planen.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ListOrdered className="h-4 w-4" />}

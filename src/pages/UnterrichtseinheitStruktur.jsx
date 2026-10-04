@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import ZeitplanungSchritt from '@/components/unterrichtsplanung/ZeitplanungSchritt';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
@@ -18,6 +20,10 @@ export default function UnterrichtseinheitStruktur() {
     queryFn: () => base44.entities.Unterrichtseinheit.get(id),
   });
   const { planung, isLoading, speichern, recherche, planen } = useUnterrichtsPlanung(id, authUser?.email);
+  const [tab, setTab] = useState(null);
+  const hatInhalte = planung?.inhalte?.length > 0 && !recherche.isPending;
+  const hatVerlauf = planung?.verlauf?.length > 0 && !recherche.isPending;
+  const aktiv = tab || (hatVerlauf ? 'verlauf' : hatInhalte ? 'inhalte' : 'recherche');
 
   if (ueLaden || isLoading) {
     return (
@@ -38,11 +44,28 @@ export default function UnterrichtseinheitStruktur() {
           <p className="text-sm text-muted-foreground">{ue?.fach} · Jg. {ue?.jahrgangsstufe}</p>
         </div>
       </div>
-      <RechercheSchritt planung={planung} ue={ue} speichern={speichern} recherche={recherche} />
-      {planung?.inhalte?.length > 0 && !recherche.isPending && (
-        <InhalteSchritt planung={planung} speichern={speichern} planen={planen} />
-      )}
-      {planung?.verlauf?.length > 0 && !recherche.isPending && <VerlaufSchritt planung={planung} planen={planen} speichern={speichern} />}
+      <Tabs value={aktiv} onValueChange={setTab}>
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="recherche">1 · Material & Recherche</TabsTrigger>
+          <TabsTrigger value="inhalte" disabled={!hatInhalte}>2 · Inhalte</TabsTrigger>
+          <TabsTrigger value="verlauf" disabled={!hatVerlauf}>3 · Verlauf</TabsTrigger>
+          <TabsTrigger value="zeit" disabled={!hatVerlauf}>4 · Zeitplanung</TabsTrigger>
+        </TabsList>
+        <TabsContent value="recherche">
+          <RechercheSchritt planung={planung} ue={ue} speichern={speichern} recherche={recherche} />
+        </TabsContent>
+        {hatInhalte && (
+          <TabsContent value="inhalte">
+            <InhalteSchritt planung={planung} speichern={speichern} planen={planen} onFertig={() => setTab('verlauf')} />
+          </TabsContent>
+        )}
+        {hatVerlauf && (
+          <>
+            <TabsContent value="verlauf"><VerlaufSchritt planung={planung} planen={planen} speichern={speichern} /></TabsContent>
+            <TabsContent value="zeit"><ZeitplanungSchritt planung={planung} planen={planen} speichern={speichern} /></TabsContent>
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }
