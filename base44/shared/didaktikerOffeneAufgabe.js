@@ -18,6 +18,7 @@
  *
  * Reine Daten, ein LLM-Aufruf, keine Schreibvorgänge.
  */
+import { kiAufruf } from './anthropicClient.js';
 
 /** Die didaktische Messlatte — geht in Planung UND Bau. */
 export const OPERATIONS_REGELN = [
@@ -127,7 +128,7 @@ export function istBrauchbaresFragment(fragment = '') {
  * @returns {Promise<{ fragment: string, aufgabentext: string }|null>}
  */
 export async function baueOffeneAufgabe(base44, { kontext, operation, idee }) {
-  const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  const antwort = await kiAufruf(base44, {
     prompt: `${BAU_SYSTEM_PROMPT}
 
 # RAHMEN DIESER AUFGABE (nicht wörtlich anzeigen)

@@ -18,6 +18,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 import {
   istMasterArt,
   getMasterSpezifikation,
@@ -107,7 +108,7 @@ export default async function (req) {
     if (istMasterArt(katalog)) {
       const spez = getMasterSpezifikation(katalog);
       const anzahl = Math.min(Math.max(Number(body?.anzahl_varianten) || 2, 1), 4);
-      const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const antwort = await kiAufruf(base44, {
         prompt: JSON.stringify([
           { role: 'system', content: SYSTEM_PROMPT },
           {
@@ -191,7 +192,7 @@ export default async function (req) {
       });
     }
 
-    const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const antwort = await kiAufruf(base44, {
       prompt: JSON.stringify([
         { role: 'system', content: SYSTEM_PROMPT },
         {

@@ -9,7 +9,7 @@
  * Payload: { einheit_id, hinweis }
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { plattformConfig, askAnthropicJson } from '../../shared/anthropicClient.js';
+import { getAnthropicConfig, askAnthropicJson } from '../../shared/anthropicClient.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 import { ladeStellen, stelleOhneRoh } from '../../shared/baumeisterStellen.js';
 
@@ -36,7 +36,7 @@ export default async function (req) {
       return Response.json({ error: 'einheit_id und hinweis sind Pflicht' }, { status: 400 });
     }
 
-    const cfg = plattformConfig(base44);
+    const cfg = await getAnthropicConfig(base44);
     if (!cfg.aktiv) return Response.json({ error: 'Kein Anthropic-Schlüssel hinterlegt' }, { status: 400 });
 
     const stellen = await ladeStellen(base44, einheit_id);

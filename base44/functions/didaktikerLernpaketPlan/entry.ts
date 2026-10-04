@@ -23,6 +23,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { unwrapLLM } from '../../shared/llmUtils.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 import {
   baueVorlagenZeilen,
   verfuegbareUebungsArten,
@@ -80,7 +81,7 @@ export default async function (req) {
     }
 
     // Nachschärfung: nur die beiden offenen Entscheidungen.
-    const antwort = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const antwort = await kiAufruf(base44, {
       prompt: JSON.stringify([
         {
           role: 'system',

@@ -35,6 +35,28 @@ export async function getAnthropicConfig(base44) {
  *
  * @returns {Promise<{ text: string, abgeschnitten: boolean }>}
  */
+/**
+ * Gleiche Signatur wie Core.InvokeLLM, läuft aber über den eigenen
+ * Anthropic-Schlüssel (Modell aus den Admin-Einstellungen), sobald er
+ * hinterlegt ist. Internetsuche und Dateianhänge bleiben bei der Plattform-KI.
+ */
+export async function kiAufruf(base44, params) {
+  const cfg = await getAnthropicConfig(base44);
+  const brauchtPlattform = params.add_context_from_internet || (params.file_urls && params.file_urls.length);
+  if (!cfg.aktiv || brauchtPlattform) return base44.asServiceRole.integrations.Core.InvokeLLM(params);
+  if (!params.response_json_schema) {
+    const { text } = await askAnthropicText(cfg, { system: undefined, prompt: params.prompt });
+    return text;
+  }
+  const json = await askAnthropicJson(cfg, {
+    system: `Antworte ausschließlich mit validem JSON nach diesem Schema:\n${JSON.stringify(params.response_json_schema)}`,
+    prompt: params.prompt,
+    maxTokens: 16000,
+  });
+  if (!json) throw new Error('Die KI hat kein lesbares JSON geliefert.');
+  return json;
+}
+
 /** Eingebaute Plattform-KI statt eigenem Anthropic-Schlüssel. */
 export function plattformConfig(base44) {
   return { aktiv: true, plattform: true, base44 };

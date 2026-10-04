@@ -8,6 +8,7 @@
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { hasPruefungLeitungAccess } from '../../shared/pruefungAccess.js';
+import { kiAufruf } from '../../shared/anthropicClient.js';
 const STAPEL = ['uebernehmen', 'reparieren', 'lehrkraft', 'schliessen'];
 const SCHEMA = {
   type: 'object',
@@ -85,7 +86,7 @@ export default async function (req) {
     const antworten = [];
     for (let i = 0; i < pakete.length; i += 3) {
       const teil = await Promise.all(pakete.slice(i, i + 3).map((p) =>
-        base44.asServiceRole.integrations.Core.InvokeLLM({
+        kiAufruf(base44, {
           prompt: `${SYSTEM}\n\nMeldungen:\n${JSON.stringify(p.map(kurz), null, 1)}`,
           response_json_schema: SCHEMA,
         })
