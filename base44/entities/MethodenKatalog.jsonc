@@ -1,0 +1,126 @@
+{
+  "name": "MethodenKatalog",
+  "type": "object",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus' legt fest, wie digital die Methode ist: D = nur digital sinnvoll, D(A) = Standard digital, analog m\u00f6glich, A(D) = Standard analog, digital nachbaubar, F = analog mit digitaler Unterst\u00fctzung, A = nur analog (Gespr\u00e4che). Grundlage f\u00fcr Feinplanung, Nachschlagen durch Lehrkr\u00e4fte und die Liste 'Das musst du noch vorbereiten'.",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "kurzbeschreibung": {
+      "type": "string",
+      "description": "Ein Satz: Was ist das?"
+    },
+    "ablauf": {
+      "type": "string",
+      "description": "Wie funktioniert die Methode Schritt f\u00fcr Schritt?"
+    },
+    "eignung": {
+      "type": "string",
+      "description": "Wann passt die Methode besonders gut?"
+    },
+    "phasen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "einstieg",
+          "erarbeitung",
+          "sicherung",
+          "uebung",
+          "abschluss"
+        ]
+      },
+      "description": "Phasen, f\u00fcr die sich die Methode typischerweise eignet. Die Phasen einer konkreten Stunde ergeben sich aus deren Schwerpunkt."
+    },
+    "sozialformen": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "EA",
+          "PA",
+          "GA",
+          "PL"
+        ]
+      }
+    },
+    "dauer_min": {
+      "type": "number",
+      "description": "Typische Mindestdauer in Minuten."
+    },
+    "dauer_max": {
+      "type": "number",
+      "description": "Typische H\u00f6chstdauer in Minuten."
+    },
+    "modus": {
+      "type": "string",
+      "enum": [
+        "D",
+        "D(A)",
+        "A(D)",
+        "F",
+        "A"
+      ]
+    },
+    "digital_umsetzung": {
+      "type": "string",
+      "description": "Wie die Methode digital l\u00e4uft bzw. digital unterst\u00fctzt wird."
+    },
+    "analog_umsetzung": {
+      "type": "string",
+      "description": "Wie die Methode analog l\u00e4uft."
+    },
+    "aufwand_analog": {
+      "type": "string",
+      "enum": [
+        "keiner",
+        "gering",
+        "mittel",
+        "hoch"
+      ],
+      "description": "Vorbereitungsaufwand der Lehrkraft bei analoger Durchf\u00fchrung."
+    },
+    "analog_material": {
+      "type": "string",
+      "description": "Reales Material, das bei analoger Durchf\u00fchrung beschafft oder erstellt werden muss."
+    },
+    "poolzeit_aktivitaeten": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Namen passender Aktivit\u00e4ten aus dem AktivitaetenKatalog der Poolzeit, die die digitale Umsetzung tragen."
+    },
+    "ist_aktiv": {
+      "type": "boolean",
+      "default": true
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 100
+    }
+  },
+  "required": [
+    "name",
+    "modus"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
