@@ -17,6 +17,7 @@ export function useBaumeister(einheitId) {
   const [stelle, setStelle] = useState(null);
   const [vorschlag, setVorschlag] = useState(null);
   const [fehler, setFehler] = useState('');
+  const [luecken, setLuecken] = useState('');
 
   const lauf = async (ladePhase, fn, fallback) => {
     setFehler('');
@@ -29,6 +30,13 @@ export function useBaumeister(einheitId) {
     setSuche(res.data);
     setPhase('auswahl');
   }, 'eingabe');
+
+  // Prüfung meldet leere Pflichtfelder: den Bauer gezielt nachfüllen lassen.
+  const lueckenFuellen = () => {
+    const zusatz = `Die Übernahme scheitert, weil diese Pflichtfelder leer oder ungültig sind: ${luecken}. Fülle sie passend zum Inhalt der Aufgabe sinnvoll aus. Alles andere bleibt unverändert.`;
+    setLuecken('');
+    bauen(stelle, zusatz);
+  };
 
   const bauen = (ziel, zusatz, text = hinweis) => lauf('bauen', async () => {
     const res = await base44.functions.invoke('baumeisterAenderungBauen', {
@@ -88,6 +96,7 @@ export function useBaumeister(einheitId) {
     });
     if (!eingang.data?.ausfuehrbar) {
       const gruende = (eingang.data?.pruefergebnis || []).map((b) => `${b.label}: ${b.reason}`).join(' · ');
+      setLuecken(gruende);
       throw new Error(`Der Vorschlag ist noch nicht vollständig — ${gruende}`);
     }
     await base44.functions.invoke('fuehreImportAuftragAus', { auftrag_id: eingang.data.auftrag.id });
@@ -96,8 +105,8 @@ export function useBaumeister(einheitId) {
   }, 'vergleich');
 
   const neuStarten = () => {
-    setPhase('eingabe'); setHinweis(''); setSuche(null); setStelle(null); setVorschlag(null); setFehler('');
+    setLuecken(''); setPhase('eingabe'); setHinweis(''); setSuche(null); setStelle(null); setVorschlag(null); setFehler('');
   };
 
-  return { phase, setPhase, hinweis, setHinweis, suche, stelle, vorschlag, fehler, suchen, bauen, direktBauen, uebernehmen, neuStarten };
+  return { phase, setPhase, hinweis, setHinweis, suche, stelle, vorschlag, fehler, luecken, lueckenFuellen, suchen, bauen, direktBauen, uebernehmen, neuStarten };
 }

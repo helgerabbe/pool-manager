@@ -54,7 +54,14 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
           <DialogTitle className="flex items-center gap-2"><HardHat className="w-5 h-5" /> Baumeister</DialogTitle>
         </DialogHeader>
 
-        {b.fehler && <div className="text-xs rounded-md bg-destructive/10 text-destructive px-3 py-2">{b.fehler}</div>}
+        {b.fehler && (
+          <div className="text-xs rounded-md bg-destructive/10 text-destructive px-3 py-2 flex items-center gap-3">
+            <span className="flex-1">{b.fehler}</span>
+            {b.luecken && b.phase === 'vergleich' && (
+              <Button size="sm" variant="outline" onClick={b.lueckenFuellen}>Fehlende Felder ergänzen lassen</Button>
+            )}
+          </div>
+        )}
 
         {b.phase === 'eingabe' && (
           <div className="space-y-3">
