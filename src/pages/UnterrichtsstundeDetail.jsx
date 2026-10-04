@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, KeyRound, Check, Monitor } from 'lucide-react';
+import { ArrowLeft, KeyRound, Check, Monitor, Play } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import StundenCoachPanel from '@/components/unterrichtsstunden/StundenCoachPanel';
 import StundenPhaseCard from '@/components/unterrichtsstunden/StundenPhaseCard';
@@ -60,9 +60,14 @@ export default function UnterrichtsstundeDetail() {
       </Link>
 
       {phasen.length > 0 && (
-        <Link to={`/unterrichtsstunde/${id}/editor`} className="float-right inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground">
-          <Monitor className="w-4 h-4" /> Tafel & Schüleransicht bearbeiten
-        </Link>
+        <div className="float-right flex gap-2">
+          <Link to={`/unterrichtsstunde/${id}/editor`} className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium">
+            <Monitor className="w-4 h-4" /> Tafel & Schüleransicht bearbeiten
+          </Link>
+          <Link to={`/unterrichtsstunde/${id}/start`} className="inline-flex items-center gap-2 rounded-md bg-accent px-3 py-2 text-sm font-medium text-accent-foreground">
+            <Play className="w-4 h-4" /> Stunde jetzt starten
+          </Link>
+        </div>
       )}
       <div>
         <h1 className="text-2xl font-bold text-foreground tracking-tight">{stunde.arbeitstitel}</h1>
