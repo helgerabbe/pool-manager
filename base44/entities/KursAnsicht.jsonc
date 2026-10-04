@@ -1,0 +1,73 @@
+{
+  "name": "KursAnsicht",
+  "type": "object",
+  "description": "KURS-ANSICHT (2026-10-04, Regel mit der MBK): Die MBK hat eine Stelle im Moodle-Kurs bewusst anders gestaltet (kurs_umgehung 'gestaltung') und die fertige Ansicht als HTML unter kurse/<slug>/gestaltung/ geliefert. Nach der Freigabe im Import-Center ('kurs_ansicht_uebernehmen') liegt das HTML hier und ersetzt in der Vorschau die Pool-Manager-Ansicht. Der Inhalt bleibt Grundlage im Pool-Manager: Wird die Stelle bewusst neu bearbeitet und gepusht, fuehrt wieder der Pool-Manager.",
+  "properties": {
+    "einheit_id": {
+      "type": "string"
+    },
+    "ziel_typ": {
+      "type": "string",
+      "enum": [
+        "aktivitaet",
+        "master_aufgabe",
+        "allgemeine_aufgabe",
+        "systembaustein",
+        "lernpaket"
+      ]
+    },
+    "ziel_id": {
+      "type": "string"
+    },
+    "schritt_id": {
+      "type": "string",
+      "description": "Nur bei Schritten einer Aufgabenfolge."
+    },
+    "darstellung": {
+      "type": "string",
+      "description": "Name der Darstellung, z. B. koerper_netz."
+    },
+    "beschreibung": {
+      "type": "string",
+      "description": "Begruendung bzw. Kurzbeschreibung der MBK."
+    },
+    "quelldatei": {
+      "type": "string"
+    },
+    "file_uri": {
+      "type": "string",
+      "description": "Private Datei mit dem HTML der Kurs-Ansicht."
+    },
+    "uebernommen_am": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "uebernommen_von": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "einheit_id",
+    "ziel_typ",
+    "ziel_id",
+    "file_uri"
+  ],
+  "rls": {
+    "read": {},
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

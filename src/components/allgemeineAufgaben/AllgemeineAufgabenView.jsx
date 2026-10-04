@@ -63,6 +63,7 @@ const AKTIVITAETEN_HELP = {
 };
 import MissionFilterSelect, { FILTER_ALL, FILTER_NONE } from '@/components/missionen/MissionFilterSelect';
 import { isMissionApplicable, getMission } from '@/lib/missionen';
+import KursAnsichtHinweis from '@/components/kursansicht/KursAnsichtHinweis';
 
 /**
  * Schwierigkeitsgrad-Anzeige (1-3 Sterne)
@@ -874,6 +875,7 @@ export default function AllgemeineAufgabenView({
         {/* Rechte Spalte: Detail-Panel */}
         {selectedAufgabe ? (
           <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+            <div className="px-4 pt-3 empty:hidden"><KursAnsichtHinweis zielId={selectedAufgabe.id} /></div>
             {/* Lock-Bar */}
             {kannBearbeiten && (
               <TaskLockBar

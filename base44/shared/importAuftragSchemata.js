@@ -31,6 +31,7 @@ export const ART_LABELS = {
   allgemeine_aufgabe_loeschen: 'Sequenzaufgabe löschen',
   allgemeine_aufgabe_einordnen: 'Aufgabe einem Themenfeld zuordnen',
   ki_inhalt_uebernehmen: 'KI-Inhalt aus MBK-Revision übernehmen',
+  kurs_ansicht_uebernehmen: 'Kurs-Ansicht übernehmen (Gestaltung der MBK)',
   offene_aufgabe_anlegen: 'Offene Aufgabe anlegen (HTML)',
   offene_aufgabe_html_ersetzen: 'HTML einer offenen Aufgabe ersetzen',
   schritt_einfuegen: 'Schritt einfügen',
@@ -419,6 +420,35 @@ export const ART_SCHEMATA = {
         hinweis: feld('string', 'Hinweis der MBK'),
         quelldatei: feld('string', 'Quelldatei im Repository'),
         mbk_eintrag_id: feld('string', 'Eintrag in der Quelldatei'),
+      },
+    },
+  },
+
+  /**
+   * KURS-ANSICHT ÜBERNEHMEN (2026-10-04): Entsteht beim Abholen der
+   * MBK-Rückmeldung aus einem Gestaltungs-Befund mit `gestaltung_datei`. Die
+   * Ausführung liest das HTML aus kurse/<slug>/gestaltung/ und legt es als
+   * KursAnsicht ab — die Vorschau zeigt dann die Ansicht des Kurses.
+   */
+  kurs_ansicht_uebernehmen: {
+    beschreibung:
+      'Übernimmt die von der MBK gelieferte Kurs-Ansicht (HTML) einer Stelle. Die Vorschau im Pool-Manager zeigt danach dieselbe Ansicht wie der Kurs; der Inhalt bleibt im Pool-Manager.',
+    ziel_typ: 'einheit',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['stelle_typ', 'stelle_id', 'quelldatei'],
+      properties: {
+        stelle_typ: feld('string', 'Art der Stelle', {
+          enum: ['aktivitaet', 'master_aufgabe', 'allgemeine_aufgabe', 'systembaustein', 'lernpaket'],
+        }),
+        stelle_id: feld('string', 'ID der Stelle'),
+        schritt_id: feld('string', 'Schritt (Aufgabenfolge)'),
+        stelle: feld('string', 'Stelle'),
+        darstellung: feld('string', 'Darstellung'),
+        hinweis: feld('string', 'Begründung der MBK'),
+        quelldatei: feld('string', 'HTML-Datei im Repository'),
       },
     },
   },

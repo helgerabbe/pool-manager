@@ -174,6 +174,10 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       issue_nummer: Number.isFinite(Number(b?.issue)) && Number(b?.issue) > 0 ? Number(b.issue) : null,
       ticket_originaltext: text(b?.originaltext ?? b?.meldung, 12000),
       kurs_umgehung: normalisiereUmgehung(b?.kurs_umgehung),
+      // 2026-10-04: fertige Kurs-Ansicht als HTML (kurse/<slug>/gestaltung/…).
+      gestaltung_datei: text(b?.gestaltung_datei, 300),
+      darstellung: text(b?.darstellung, 120),
+      schritt_id: text(b?.schritt_id, 120),
       // 2026-09-09: Payload-Pfade, die die Korrekturschicht des Baus an dieser
       // Stelle überschreibt. Damit sieht die Lehrkraft, WELCHE ihrer Angaben im
       // Kurs nicht ankommt (bei 'korrektur ausgesetzt' genau das eine Feld,

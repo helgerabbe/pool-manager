@@ -500,6 +500,38 @@ export default async function (req) {
         break;
       }
 
+      case 'kurs_ansicht_uebernehmen': {
+        const token = secrets.get('GITHUB_POOLSIDE_TOKEN');
+        if (!token) return Response.json({ error: 'Der GitHub-Zugang ist nicht hinterlegt.' }, { status: 500 });
+        const html = await readTextFile(token, p.quelldatei);
+        if (!html) return Response.json({ error: `${p.quelldatei} liegt nicht im Repository.` }, { status: 404 });
+        const datei = new File([html], 'kurs-ansicht.html', { type: 'text/html' });
+        const { file_uri } = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file: datei });
+        const db = base44.asServiceRole.entities;
+        const filter = { einheit_id: auftrag.ziel_id, ziel_id: p.stelle_id };
+        const alte = (await db.KursAnsicht.filter(filter)).filter((k) => (k.schritt_id || '') === (p.schritt_id || ''));
+        const daten = {
+          ...filter,
+          ziel_typ: p.stelle_typ,
+          schritt_id: p.schritt_id || '',
+          darstellung: p.darstellung || '',
+          beschreibung: p.hinweis || '',
+          quelldatei: p.quelldatei,
+          file_uri,
+          uebernommen_am: new Date().toISOString(),
+          uebernommen_von: user.email,
+        };
+        const satz = alte[0] ? await db.KursAnsicht.update(alte[0].id, daten) : await db.KursAnsicht.create(daten);
+        einheitId = auftrag.ziel_id;
+        protokoll.push({
+          schritt: 'Kurs-Ansicht übernommen',
+          entity: 'KursAnsicht',
+          record_id: satz.id,
+          hinweis: `${p.stelle || p.stelle_id} · ${html.length} Zeichen HTML`,
+        });
+        break;
+      }
+
       case 'offene_aufgabe_anlegen': {
         const einheit = await base44.asServiceRole.entities.Einheiten.get(auftrag.ziel_id).catch(() => null);
         if (!einheit) return Response.json({ error: 'Einheit nicht gefunden' }, { status: 404 });

@@ -89,6 +89,15 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
         </div>
 
         {auftrag.auftrags_art === 'ki_inhalt_uebernehmen' && <KiInhaltHinweis parameter={p} />}
+        {auftrag.auftrags_art === 'kurs_ansicht_uebernehmen' && (
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+            <p className="font-semibold">{p.stelle || p.stelle_id}{p.darstellung ? ` · ${p.darstellung}` : ''}</p>
+            {p.hinweis && <p className="mt-1">{p.hinweis}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Beim Durchführen wird die Kurs-Ansicht ({p.quelldatei}) übernommen. Die Vorschau zeigt danach dieselbe Ansicht wie der Kurs, der Inhalt bleibt im Pool-Manager.
+            </p>
+          </div>
+        )}
 
         <div>
           <p className="mb-1 text-xs uppercase text-muted-foreground">Womit</p>

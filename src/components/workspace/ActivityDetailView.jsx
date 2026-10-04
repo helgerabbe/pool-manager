@@ -20,6 +20,7 @@ import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 // Phase 10 (Freigabe-Konzept 2026-05-14): neuer Sync-Badge + Lock-Indikator.
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import SidebarLockIcon from '@/components/release/SidebarLockIcon';
+import KursAnsichtHinweis from '@/components/kursansicht/KursAnsichtHinweis';
 
 export default function ActivityDetailView({ activityRecord, kannBearbeiten, queryClient, einheitFach, onEditModeChange }) {
   const { permissions } = useRBAC();
@@ -91,6 +92,7 @@ export default function ActivityDetailView({ activityRecord, kannBearbeiten, que
 
   return (
     <div className="space-y-3 relative">
+      <KursAnsichtHinweis zielId={activityRecord?.id} />
       {/* Overlay während Lock-Transition */}
       {lockTransition && (
         <div className="absolute inset-0 z-10 bg-white/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center gap-2">

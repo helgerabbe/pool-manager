@@ -94,6 +94,47 @@ async function legeKiInhaltAuftraegeAn(base44, token, einheit, slug, jetzt) {
   return neu.length;
 }
 
+/**
+ * Gestaltungs-Befunde mit fertigem HTML → je Stelle ein ImportAuftrag
+ * 'kurs_ansicht_uebernehmen'. Gleiche Datei + Stelle wird nicht doppelt angelegt.
+ */
+async function legeKursAnsichtAuftraegeAn(base44, einheit, liste, jetzt) {
+  if (liste.length === 0) return 0;
+  const db = base44.asServiceRole.entities;
+  const bestand = await db.ImportAuftrag.filter({ einheit_id: einheit.id, auftrags_art: 'kurs_ansicht_uebernehmen' });
+  const bekannt = new Set((bestand || []).map((a) => `${a.parameter?.quelldatei}#${a.parameter?.stelle_id}`));
+  const neu = [];
+  for (const { rohBefund, zugeordnet } of liste) {
+    const quelldatei = rohBefund.gestaltung_datei;
+    if (bekannt.has(`${quelldatei}#${zugeordnet.ziel_id}`)) continue;
+    const parameter = {
+      stelle_typ: zugeordnet.ziel_typ,
+      stelle_id: zugeordnet.ziel_id,
+      stelle: zugeordnet.ziel_titel || zugeordnet.fundort || '',
+      hinweis: zugeordnet.befund || '',
+      quelldatei,
+    };
+    if (rohBefund.schritt_id) parameter.schritt_id = rohBefund.schritt_id;
+    if (rohBefund.darstellung) parameter.darstellung = rohBefund.darstellung;
+    neu.push({
+      auftrags_art: 'kurs_ansicht_uebernehmen',
+      titel: `Kurs-Ansicht übernehmen — ${parameter.stelle || parameter.stelle_id}`,
+      ziel_typ: 'einheit',
+      ziel_id: einheit.id,
+      einheit_id: einheit.id,
+      parameter,
+      quelle: 'mbk',
+      absender: 'mbk',
+      pruefstatus: 'ausfuehrbar',
+      pruefergebnis: [],
+      geprueft_am: jetzt,
+      status: 'eingegangen',
+    });
+  }
+  if (neu.length > 0) await db.ImportAuftrag.bulkCreate(neu);
+  return neu.length;
+}
+
 async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   const slug = getKursSlug(einheit);
   const ordner = getRueckmeldungOrdner(slug);
@@ -140,6 +181,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   const befundUpdates = [];
   // Vom Bau als erledigt gemeldete Punkte, die der Pool-Manager nicht kennt.
   let erledigtGemeldet = 0;
+  const ansichtAuftraege = [];
 
   for (const rohBefund of befunde) {
     const zugeordnet = ordneBefundZu(rohBefund, {
@@ -202,6 +244,9 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     // Gestaltungs-Hinweise (2026-10-04, mit der MBK geklärt): kein offener
     // Auftrag, nur die Info „der Kurs zeigt hier eine eigene Form". Deshalb
     // gleich als 'bewusst' ablegen statt als unerledigt anzuzeigen.
+    if (zugeordnet.kurs_umgehung === 'gestaltung' && rohBefund.gestaltung_datei) {
+      ansichtAuftraege.push({ rohBefund, zugeordnet });
+    }
     if (zugeordnet.kurs_umgehung === 'gestaltung' && (!alt || alt.entscheidung === 'offen')) {
       const info = { entscheidung: 'bewusst', kommentar: 'Info vom Kursbau: Der Kurs zeigt hier eine eigene Form, der Inhalt kommt weiter aus dem Pool-Manager.' };
       if (alt) befundUpdates.push({ ...daten, ...info, id: alt.id });
@@ -257,6 +302,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   }
 
   const kiAuftraegeNeu = await legeKiInhaltAuftraegeAn(base44, token, einheit, slug, jetzt);
+  const ansichtAuftraegeNeu = await legeKursAnsichtAuftraegeAn(base44, einheit, ansichtAuftraege, jetzt);
 
   return {
     einheit_id: einheit.id,
@@ -264,6 +310,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     slug,
     gefunden: true,
     ki_auftraege_neu: kiAuftraegeNeu,
+    ansicht_auftraege_neu: ansichtAuftraegeNeu,
     quelldatei: datei.path,
     gemeldet_am: meta.erzeugt_am,
     // Vom Bau selbst als geklärt markierte Punkte (bewusst exportiert/erledigt).
