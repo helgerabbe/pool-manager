@@ -55,6 +55,7 @@ import { hatGueltigeLtiSession, getLtiSession } from '@/lib/ltiSession';
 import MoodleKeineEinheit from '@/components/schueler/MoodleKeineEinheit';
 import { hasToken } from '@/services/AuthService';
 import ExternesThemeGate from '@/components/schueler/ExternesThemeGate';
+import RollenWeiche from '@/components/schueler/auth/RollenWeiche';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -147,6 +148,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <ErrorBoundary fallback="Die Navigation konnte nicht geladen werden.">
+      <RollenWeiche>
       <Suspense
         fallback={
           <div className="fixed inset-0 flex items-center justify-center">
@@ -282,6 +284,7 @@ const AuthenticatedApp = () => {
         <Route path="*" element={<PageNotFound />} />
       </Routes>
       </Suspense>
+      </RollenWeiche>
     </ErrorBoundary>
   );
 };

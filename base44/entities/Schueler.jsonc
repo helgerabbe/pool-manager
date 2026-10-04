@@ -1,0 +1,57 @@
+{
+  "name": "Schueler",
+  "type": "object",
+  "description": "SCHUELER-STAMMDATEN (2026-10-04): Vorab von der Administration angelegte Schuelerliste fuer den IServ-SSO-Zugang. Beim ersten Login vergleicht initializeNewUser die E-Mail des Kontos mit dieser Liste, verknuepft den Datensatz (user_id) und setzt die User-Rolle auf 'schueler'.",
+  "properties": {
+    "email": {
+      "type": "string",
+      "description": "IServ-E-Mail-Adresse des Schuelers (Abgleich-Schluessel, klein geschrieben)."
+    },
+    "vorname": {
+      "type": "string"
+    },
+    "nachname": {
+      "type": "string"
+    },
+    "klasse": {
+      "type": "string",
+      "description": "Klasse bzw. Lerngruppe, z. B. '9a'."
+    },
+    "user_id": {
+      "type": "string",
+      "description": "ID des verknuepften Base44-Kontos (gesetzt beim ersten Login)."
+    }
+  },
+  "required": [
+    "email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
