@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 /** Klickbare Vorschau des Stundenplaners – echter Verlauf, Beispielinhalte, keine KI. */
 export default function StundenplanerVorschau() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [schritt, setSchritt] = React.useState(0);
   const [abschnitt, setAbschnitt] = React.useState(null);
   const [rahmen, setRahmen] = React.useState({ zeit: 'Einzelstunde (40 Min.)' });
@@ -88,7 +89,7 @@ export default function StundenplanerVorschau() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl space-y-5 p-6">
-        <Link to="/unterricht" className="flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</Link>
+        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/unterrichtseinheit/${id}/struktur`))} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde aus dem Verlauf</h1>
           <p className="text-xs text-accent">Alle Planungsschritte sind echt – das Anlegen der Stunde folgt im nächsten Schritt.</p>
