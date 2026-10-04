@@ -1,7 +1,7 @@
 {
   "name": "ImportAuftrag",
   "type": "object",
-  "description": "Import-Center (2026-09-13): EIN Auftrag, der von au\u00dfen an den Pool-Manager gestellt wird. Das Freigabe-Tor: Ein Auftrag ver\u00e4ndert NIE von selbst Daten \u2014 erst wenn eine berechtigte Person (Admin, Fachschaftsleitung oder seit 2026-09-27 ein Mitarbeiter der betroffenen Einheit) 'Durchf\u00fchren' dr\u00fcckt, \u00fcbersetzt fuehreImportAuftragAus ihn in Schreibvorg\u00e4nge. Der Vertrag je auftrags_art steht in base44/shared/importAuftragSchemata.js. 'allgemeine_aufgabe_einordnen' (2026-09-27) setzt nur das Themenfeld einer allgemeinen Aufgabe und gilt f\u00fcr jeden Aufgabenmodus. 'ki_inhalt_uebernehmen' (2026-09-30) \u00fcbernimmt eine von der MBK \u00fcberarbeitete Fassung eines KI-Sch\u00fclerinhalts aus kurse/<slug>/ki-inhalte/. 'kurs_ansicht_uebernehmen' (2026-10-04) \u00fcbernimmt die von der MBK gelieferte Kurs-Ansicht (HTML aus kurse/<slug>/gestaltung/) als KursAnsicht.",
+  "description": "Import-Center (2026-09-13): EIN Auftrag, der von au\u00dfen an den Pool-Manager gestellt wird. Das Freigabe-Tor: Ein Auftrag ver\u00e4ndert NIE von selbst Daten \u2014 erst wenn eine berechtigte Person (Admin, Fachschaftsleitung oder seit 2026-09-27 ein Mitarbeiter der betroffenen Einheit) 'Durchf\u00fchren' dr\u00fcckt, \u00fcbersetzt fuehreImportAuftragAus ihn in Schreibvorg\u00e4nge. Der Vertrag je auftrags_art steht in base44/shared/importAuftragSchemata.js. 'allgemeine_aufgabe_einordnen' (2026-09-27) setzt nur das Themenfeld einer allgemeinen Aufgabe. 'ki_inhalt_uebernehmen' (2026-09-30) \u00fcbernimmt eine MBK-Fassung eines KI-Sch\u00fclerinhalts. 'kurs_ansicht_uebernehmen' (2026-10-04) \u00fcbernimmt die MBK-Kurs-Ansicht (HTML aus kurse/<slug>/gestaltung/) als KursAnsicht. 'aufgabe_durch_offene_ersetzen' (2026-10-04) ersetzt eine von der MBK grundlegend umgebaute Aufgabe durch eine offene Aufgabe mit gleichem Datensatz; die alte Fassung steht im Ausf\u00fchrungsprotokoll (Feld 'vorher').",
   "properties": {
     "auftrags_art": {
       "type": "string",
@@ -19,6 +19,7 @@
         "allgemeine_aufgabe_einordnen",
         "ki_inhalt_uebernehmen",
         "kurs_ansicht_uebernehmen",
+        "aufgabe_durch_offene_ersetzen",
         "offene_aufgabe_anlegen",
         "offene_aufgabe_html_ersetzen",
         "schritt_einfuegen",
@@ -137,7 +138,7 @@
     "ausfuehrung_protokoll": {
       "type": "array",
       "default": [],
-      "description": "Was die Ausf\u00fchrung tats\u00e4chlich getan hat.",
+      "description": "Was die Ausf\u00fchrung tats\u00e4chlich getan hat. 'vorher' sichert bei Ersetzungen die alte Fassung.",
       "items": {
         "type": "object",
         "additionalProperties": true,
@@ -153,6 +154,10 @@
           },
           "hinweis": {
             "type": "string"
+          },
+          "vorher": {
+            "type": "object",
+            "additionalProperties": true
           }
         }
       }

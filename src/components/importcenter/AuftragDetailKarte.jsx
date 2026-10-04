@@ -89,6 +89,15 @@ export default function AuftragDetailKarte({ auftrag, aufgabenarten = [] }) {
         </div>
 
         {auftrag.auftrags_art === 'ki_inhalt_uebernehmen' && <KiInhaltHinweis parameter={p} />}
+        {auftrag.auftrags_art === 'aufgabe_durch_offene_ersetzen' && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm">
+            <p className="font-semibold">Die MBK hat diese Aufgabe grundlegend umgebaut.</p>
+            {p.begruendung && <p className="mt-1">{p.begruendung}</p>}
+            <p className="mt-1 text-xs text-muted-foreground">
+              Beim Durchführen wird die bisherige Fassung durch eine offene Aufgabe mit dem HTML der MBK ersetzt. Einordnung und Lernpfade bleiben, die alte Fassung wird im Protokoll gesichert.
+            </p>
+          </div>
+        )}
         {auftrag.auftrags_art === 'kurs_ansicht_uebernehmen' && (
           <div className="rounded-lg border bg-muted/40 p-3 text-sm">
             <p className="font-semibold">{p.stelle || p.stelle_id}{p.darstellung ? ` · ${p.darstellung}` : ''}</p>

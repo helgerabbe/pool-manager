@@ -573,6 +573,52 @@ export default async function (req) {
         break;
       }
 
+      case 'aufgabe_durch_offene_ersetzen': {
+        const db = base44.asServiceRole.entities;
+        const alt = await db.AllgemeineAufgabe.get(auftrag.ziel_id).catch(() => null);
+        if (!alt) return Response.json({ error: 'Aufgabe nicht gefunden' }, { status: 404 });
+        let fragment = p.fragment || '';
+        if (!fragment && p.quelldatei) {
+          const token = secrets.get('GITHUB_POOLSIDE_TOKEN');
+          if (!token) return Response.json({ error: 'Der GitHub-Zugang ist nicht hinterlegt.' }, { status: 500 });
+          fragment = (await readTextFile(token, p.quelldatei)) || '';
+        }
+        if (!fragment.trim()) return Response.json({ error: 'Kein HTML geliefert.' }, { status: 400 });
+
+        const titel = p.titel || alt.titel || 'Offene Aufgabe';
+        const schritte = normalisiereSchritte([
+          { typ: 'offen', titel, status: 'uebernommen', offen: { fragment, uebernommen_am: new Date().toISOString() } },
+        ]);
+        await db.AllgemeineAufgabe.update(alt.id, {
+          titel,
+          aufgaben_typ: 'inhalt',
+          aufgaben_modus: 'sequenz',
+          sequenz_schritte: schritte,
+          html_code: '',
+          is_complete: await istSequenzVollstaendig(base44, schritte),
+          content_status: 'draft',
+          export_error: false,
+          sync_status: alt.sync_status === 'new' ? 'new' : 'modified',
+        });
+        einheitId = alt.einheit_id || einheitId;
+        protokoll.push({
+          schritt: 'Aufgabe durch offene Aufgabe ersetzt',
+          entity: 'AllgemeineAufgabe',
+          record_id: alt.id,
+          hinweis: `${alt.aufgaben_modus || 'einzeln'}/${alt.aufgaben_typ || 'inhalt'} → offene Aufgabe · ${fragment.length} Zeichen HTML${p.begruendung ? ` · ${p.begruendung}` : ''}`,
+          // Sicherung der alten Fassung — damit nichts verloren geht.
+          vorher: {
+            titel: alt.titel,
+            aufgaben_typ: alt.aufgaben_typ,
+            aufgaben_modus: alt.aufgaben_modus,
+            aufgabenstellung: alt.aufgabenstellung,
+            html_code: alt.html_code,
+            sequenz_schritte: alt.sequenz_schritte,
+          },
+        });
+        break;
+      }
+
       case 'offene_aufgabe_html_ersetzen': {
         const aufgabe = await ladeSequenzAufgabe(base44, auftrag.ziel_id);
         if (!aufgabe.ok) return aufgabe.antwort;

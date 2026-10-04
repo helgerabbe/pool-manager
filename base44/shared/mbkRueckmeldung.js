@@ -178,6 +178,8 @@ export function parseRueckmeldung(rohText, quelldatei = '') {
       gestaltung_datei: text(b?.gestaltung_datei, 300),
       darstellung: text(b?.darstellung, 120),
       schritt_id: text(b?.schritt_id, 120),
+      // 2026-10-04: grundlegend umgebaute Aufgabe → fertiges HTML zum Ersetzen.
+      ersatz_datei: text(b?.ersatz_datei, 300),
       // 2026-09-09: Payload-Pfade, die die Korrekturschicht des Baus an dieser
       // Stelle überschreibt. Damit sieht die Lehrkraft, WELCHE ihrer Angaben im
       // Kurs nicht ankommt (bei 'korrektur ausgesetzt' genau das eine Feld,

@@ -32,6 +32,7 @@ export const ART_LABELS = {
   allgemeine_aufgabe_einordnen: 'Aufgabe einem Themenfeld zuordnen',
   ki_inhalt_uebernehmen: 'KI-Inhalt aus MBK-Revision übernehmen',
   kurs_ansicht_uebernehmen: 'Kurs-Ansicht übernehmen (Gestaltung der MBK)',
+  aufgabe_durch_offene_ersetzen: 'Umgebaute Aufgabe als offene Aufgabe übernehmen',
   offene_aufgabe_anlegen: 'Offene Aufgabe anlegen (HTML)',
   offene_aufgabe_html_ersetzen: 'HTML einer offenen Aufgabe ersetzen',
   schritt_einfuegen: 'Schritt einfügen',
@@ -523,6 +524,33 @@ export const ART_SCHEMATA = {
         begruendung: feld('string', 'Was wurde verbessert?', {
           hinweis: 'Erscheint im Posteingang, damit die Fachgruppe die Änderung einordnen kann.',
         }),
+      },
+    },
+  },
+
+  /**
+   * UMGEBAUTE AUFGABE (2026-10-04, Regel mit der MBK): Die MBK hat eine Aufgabe
+   * grundlegend umgebaut (z. B. anderer Aufgabentyp) und liefert das fertige
+   * HTML. Die Aufgabe wird AN ORT UND STELLE zur offenen Aufgabe — gleiche ID,
+   * damit Lernpfade, Bündel und Lernziel-Verknüpfungen erhalten bleiben. Die
+   * alte Fassung steht vollständig im Ausführungsprotokoll.
+   */
+  aufgabe_durch_offene_ersetzen: {
+    beschreibung:
+      'Ersetzt eine grundlegend umgebaute Aufgabe durch eine offene Aufgabe mit dem HTML der MBK. Einordnung (Themenfeld, Lernpfade, Lernziele) bleibt, die alte Fassung wird im Protokoll gesichert.',
+    ziel_typ: 'allgemeine_aufgabe',
+    position_erlaubt: false,
+    parameter: {
+      type: 'object',
+      additionalProperties: false,
+      required: [],
+      properties: {
+        fragment: feld('string', 'HTML-Fragment (div.aufgabe)'),
+        quelldatei: feld('string', 'HTML-Datei im Repository', {
+          hinweis: 'Alternativ zum Fragment: Pfad unter kurse/<slug>/.',
+        }),
+        titel: feld('string', 'Neuer Titel (optional)'),
+        begruendung: feld('string', 'Was wurde umgebaut?'),
       },
     },
   },

@@ -135,6 +135,32 @@ async function legeKursAnsichtAuftraegeAn(base44, einheit, liste, jetzt) {
   return neu.length;
 }
 
+/** Umgebaute Aufgaben mit `ersatz_datei` → Auftrag 'aufgabe_durch_offene_ersetzen'. */
+async function legeErsatzAuftraegeAn(base44, einheit, liste, jetzt) {
+  if (liste.length === 0) return 0;
+  const db = base44.asServiceRole.entities;
+  const bestand = await db.ImportAuftrag.filter({ einheit_id: einheit.id, auftrags_art: 'aufgabe_durch_offene_ersetzen' });
+  const bekannt = new Set((bestand || []).map((a) => `${a.parameter?.quelldatei}#${a.ziel_id}`));
+  const neu = liste
+    .filter(({ rohBefund, zugeordnet }) => !bekannt.has(`${rohBefund.ersatz_datei}#${zugeordnet.ziel_id}`))
+    .map(({ rohBefund, zugeordnet }) => ({
+      auftrags_art: 'aufgabe_durch_offene_ersetzen',
+      titel: `Umgebaute Aufgabe übernehmen — ${zugeordnet.ziel_titel || zugeordnet.ziel_id}`,
+      ziel_typ: 'allgemeine_aufgabe',
+      ziel_id: zugeordnet.ziel_id,
+      einheit_id: einheit.id,
+      parameter: { quelldatei: rohBefund.ersatz_datei, begruendung: zugeordnet.befund || '' },
+      quelle: 'mbk',
+      absender: 'mbk',
+      pruefstatus: 'ausfuehrbar',
+      pruefergebnis: [],
+      geprueft_am: jetzt,
+      status: 'eingegangen',
+    }));
+  if (neu.length > 0) await db.ImportAuftrag.bulkCreate(neu);
+  return neu.length;
+}
+
 async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   const slug = getKursSlug(einheit);
   const ordner = getRueckmeldungOrdner(slug);
@@ -182,6 +208,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
   // Vom Bau als erledigt gemeldete Punkte, die der Pool-Manager nicht kennt.
   let erledigtGemeldet = 0;
   const ansichtAuftraege = [];
+  const ersatzAuftraege = [];
 
   for (const rohBefund of befunde) {
     const zugeordnet = ordneBefundZu(rohBefund, {
@@ -244,6 +271,9 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     // Gestaltungs-Hinweise (2026-10-04, mit der MBK geklärt): kein offener
     // Auftrag, nur die Info „der Kurs zeigt hier eine eigene Form". Deshalb
     // gleich als 'bewusst' ablegen statt als unerledigt anzuzeigen.
+    if (rohBefund.ersatz_datei && zugeordnet.ziel_typ === 'allgemeine_aufgabe') {
+      ersatzAuftraege.push({ rohBefund, zugeordnet });
+    }
     if (zugeordnet.kurs_umgehung === 'gestaltung' && rohBefund.gestaltung_datei) {
       ansichtAuftraege.push({ rohBefund, zugeordnet });
     }
@@ -303,6 +333,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
 
   const kiAuftraegeNeu = await legeKiInhaltAuftraegeAn(base44, token, einheit, slug, jetzt);
   const ansichtAuftraegeNeu = await legeKursAnsichtAuftraegeAn(base44, einheit, ansichtAuftraege, jetzt);
+  const ersatzAuftraegeNeu = await legeErsatzAuftraegeAn(base44, einheit, ersatzAuftraege, jetzt);
 
   return {
     einheit_id: einheit.id,
@@ -311,6 +342,7 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     gefunden: true,
     ki_auftraege_neu: kiAuftraegeNeu,
     ansicht_auftraege_neu: ansichtAuftraegeNeu,
+    ersatz_auftraege_neu: ersatzAuftraegeNeu,
     quelldatei: datei.path,
     gemeldet_am: meta.erzeugt_am,
     // Vom Bau selbst als geklärt markierte Punkte (bewusst exportiert/erledigt).
