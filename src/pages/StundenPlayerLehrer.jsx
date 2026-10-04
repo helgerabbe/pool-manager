@@ -59,7 +59,7 @@ export default function StundenPlayerLehrer() {
         onZurueck={() => gehe(index - 1)} onWeiter={() => gehe(index + 1)}
         onStart={() => setStarts((s) => ({ ...s, [phase.id]: Date.now() }))}
         onSchueler={() => setSchueler((v) => !v)} onRegie={() => setRegie((v) => !v)}
-        onBeenden={() => { document.fullscreenElement && document.exitFullscreen(); navigate(`/unterrichtsstunde/${id}`); }}
+        onBeenden={() => { document.fullscreenElement && document.exitFullscreen(); navigate(`/unterrichtsstunde/${id}/editor`); }}
       />
     </div>
   );

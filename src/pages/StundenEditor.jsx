@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, Monitor, Tablet } from 'lucide-react';
+import { ArrowLeft, Loader2, Monitor, Tablet, Play } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import PhasenLeiste from '@/components/stundeneditor/PhasenLeiste';
@@ -30,8 +30,13 @@ export default function StundenEditor() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-6xl space-y-4 p-6">
-        <Link to={`/unterrichtsstunde/${id}`} className="flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Zurück zur Stunde</Link>
-        <h1 className="font-display text-2xl font-bold">{stunde?.arbeitstitel || 'Stunde'} · Editor</h1>
+        <Link to="/unterricht" className="flex items-center gap-1 text-sm text-muted-foreground"><ArrowLeft className="h-4 w-4" /> Zurück zu Mein Unterricht</Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-2xl font-bold">{stunde?.arbeitstitel || 'Stunde'} · Editor</h1>
+          <Button asChild className="gap-2 bg-accent text-accent-foreground hover:bg-accent/90">
+            <Link to={`/unterrichtsstunde/${id}/start`}><Play className="h-4 w-4" /> Stunde jetzt starten</Link>
+          </Button>
+        </div>
         {!phase ? (
           <p className="text-sm text-muted-foreground">Diese Stunde hat noch keine Phasen.</p>
         ) : (

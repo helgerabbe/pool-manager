@@ -16,7 +16,7 @@ export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
     <div className="divide-y rounded-lg border bg-card">
       {stunden.map((s) => (
         <div key={s.id} className="flex items-center gap-1 pr-2 hover:bg-muted/20 transition-colors">
-          <Link to={`/unterrichtsstunde/${s.id}`} className="flex items-center gap-3 px-3 py-2 flex-1 min-w-0">
+          <Link to={`/unterrichtsstunde/${s.id}/editor`} className="flex items-center gap-3 px-3 py-2 flex-1 min-w-0">
             <PlaySquare className="w-4 h-4 text-accent shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">{s.arbeitstitel}</p>
