@@ -56,7 +56,7 @@ export default function UnterrichtseinheitStruktur() {
         </TabsContent>
         {hatInhalte && (
           <TabsContent value="inhalte">
-            <InhalteSchritt planung={planung} speichern={speichern} planen={planen} onFertig={() => setTab('verlauf')} />
+            <InhalteSchritt planung={planung} speichern={speichern} planen={planen} recherche={recherche} onFertig={() => setTab('verlauf')} />
           </TabsContent>
         )}
         {hatVerlauf && (

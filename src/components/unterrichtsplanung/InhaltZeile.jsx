@@ -16,7 +16,6 @@ export default function InhaltZeile({ inhalt, onPrioritaet }) {
           {inhalt.kc && <span title={inhalt.kc_bezug || 'Vorgabe des Kerncurriculums'} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">KC-Inhalt</span>}
           {inhalt.empfohlen && !inhalt.kc && <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">Empfohlen</span>}
           {inhalt.kc && inhalt.prioritaet === 'raus' && <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">Bewusst gegen KC-Vorgabe entschieden</span>}
-          {inhalt.minuten > 0 && <span className="text-[11px] text-muted-foreground">ca. {inhalt.minuten} Min.</span>}
         </div>
         <p className="text-xs text-foreground/80">{inhalt.beschreibung}</p>
         {inhalt.kc && inhalt.kc_bezug && <p className="text-[11px] font-medium text-primary">KC: {inhalt.kc_bezug}</p>}

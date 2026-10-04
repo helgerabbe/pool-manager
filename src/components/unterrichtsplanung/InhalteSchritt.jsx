@@ -3,9 +3,11 @@ import { Loader2, ListOrdered } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import InhaltZeile from './InhaltZeile';
 import KcAbdeckung from './KcAbdeckung';
+import EigenerInhaltFeld from './EigenerInhaltFeld';
+import NeuStartenLeiste from './NeuStartenLeiste';
 
 /** Schritt 2: Inhalte priorisieren, Verlauf planen lassen. */
-export default function InhalteSchritt({ planung, speichern, planen, onFertig }) {
+export default function InhalteSchritt({ planung, speichern, planen, recherche, onFertig }) {
   const inhalte = planung.inhalte || [];
   const setze = (id, prioritaet) =>
     speichern.mutate({ inhalte: inhalte.map((i) => (i.id === id ? { ...i, prioritaet } : i)) });
@@ -18,10 +20,22 @@ export default function InhalteSchritt({ planung, speichern, planen, onFertig })
           Mögliche Inhalte aus der Recherche. Lege fest, was unbedingt rein muss, was optional ist und was raus kann.
         </p>
       </div>
+      <NeuStartenLeiste
+        text="Neu recherchieren"
+        hinweis="Erstellt die Inhaltsliste auf Grundlage deiner Materialien und Vorgaben aus Schritt 1 komplett neu (deine Auswahl geht dabei verloren)."
+        laeuft={recherche.isPending}
+        onClick={() => window.confirm('Inhaltsliste wirklich neu erstellen?') && recherche.mutate({ planung_id: planung.id })}
+      />
       <div className="space-y-2">
         {inhalte.map((i) => <InhaltZeile key={i.id} inhalt={i} onPrioritaet={(p) => setze(i.id, p)} />)}
       </div>
       <KcAbdeckung inhalte={inhalte} />
+      <EigenerInhaltFeld
+        laeuft={speichern.isPending}
+        onAufnehmen={(titel) => speichern.mutate({
+          inhalte: [...inhalte, { id: `eigen-${Date.now()}`, titel, beschreibung: 'Ausdrücklicher Wunsch der Lehrkraft.', prioritaet: 'muss' }],
+        })}
+      />
       <p className="text-xs text-muted-foreground">
         {planen.isPending
           ? 'Der Verlauf wird geplant … das kann ein bis zwei Minuten dauern. Bitte die Seite geöffnet lassen.'
