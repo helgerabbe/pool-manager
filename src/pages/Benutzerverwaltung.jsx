@@ -328,6 +328,7 @@ export default function Benutzerverwaltung() {
   const [editingUser, setEditingUser] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [showImport, setShowImport] = useState(false);
+  const [matrixOffen, setMatrixOffen] = useState(false);
 
   const { data: faecher = [] } = useQuery({
     queryKey: ['lookupFaecher'],
@@ -447,13 +448,16 @@ export default function Benutzerverwaltung() {
 
       {/* Rechtematrix-Übersicht */}
       <Card className="border-0 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Rechtematrix</CardTitle>
+        <CardHeader className="pb-3 cursor-pointer select-none" onClick={() => setMatrixOffen(v => !v)}>
+          <CardTitle className="text-base flex items-center justify-between">
+            Rechtematrix
+            {matrixOffen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </CardTitle>
           <p className="text-xs text-muted-foreground mt-2">
             3 Bereiche: Struktur (Einheiten/Themenfelder/LP) | Inhalte (Aktivitäten/Aufgaben) | Export (Moodle)
           </p>
         </CardHeader>
-        <CardContent className={isMobile ? 'pb-4' : 'p-0'}>
+        {matrixOffen && <CardContent className={isMobile ? 'pb-4' : 'p-0'}>
           {isMobile ? (
             <MobileRechteMatrix />
           ) : (
@@ -523,7 +527,7 @@ export default function Benutzerverwaltung() {
               </p>
             </div>
           )}
-        </CardContent>
+        </CardContent>}
       </Card>
 
       {/* Benutzerliste mit Tabs */}
