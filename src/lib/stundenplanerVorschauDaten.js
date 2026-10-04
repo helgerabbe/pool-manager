@@ -34,8 +34,23 @@ export const GROBENTWURF = [
 ];
 
 export const FEINPLANUNG = [
-  { phase: 'Einstieg', aktivitaet: 'Bild mit Impulsfrage', begruendung: 'Ein starkes Bild genügt – keine Interaktion nötig, die Diskussion passiert im Raum.' },
-  { phase: 'Erarbeitung', aktivitaet: 'Offene Aufgabe (interaktive Konstruktion)', begruendung: 'Nur wenn die Schüler das Dreieck selbst verändern, können sie den Zusammenhang entdecken.' },
-  { phase: 'Sicherung', aktivitaet: 'Analog im Plenum', begruendung: 'Die Regel entsteht im Gespräch – digital würde das abkürzen.' },
-  { phase: 'Anwendung', aktivitaet: 'Test mit gestuften Rechenaufgaben', begruendung: 'Die Schüler wenden die Regel an und bekommen sofort Rückmeldung. Ein Lückentext würde nur den Merksatz abfragen.' },
+  { phase: 'Einstieg', methode: 'Stummer Impuls', umsetzung: 'Beamer', aktivitaet: 'Bild mit Impulsfrage',
+    ablauf: 'Wir zeigen wortlos das Bild der Leiter an der Hauswand. Die Schüler äußern Vermutungen, wie lang die Leiter sein muss.',
+    begruendung: 'Ein starkes Bild genügt – keine Interaktion nötig, die Diskussion passiert im Raum.' },
+  { phase: 'Erarbeitung', methode: 'Think-Pair-Share', umsetzung: 'digital', aktivitaet: 'Offene Aufgabe (interaktive Konstruktion)',
+    ablauf: 'Erst verändert jeder allein das Dreieck und notiert ein Muster, dann vergleichen wir zu zweit, zum Schluss tragen einzelne Paare vor.',
+    begruendung: 'Nur wenn die Schüler das Dreieck selbst verändern, können sie den Zusammenhang entdecken.' },
+  { phase: 'Sicherung', methode: 'Tafelbild gemeinsam entwickeln', umsetzung: 'analog', aktivitaet: 'Merksatz an der Tafel',
+    ablauf: 'Wir sammeln die Vermutungen an der Tafel und verdichten sie gemeinsam zur Regel a² + b² = c². Die Schüler übertragen den Merksatz ins Heft.',
+    begruendung: 'Die Regel entsteht im Gespräch – digital würde das abkürzen.' },
+  { phase: 'Anwendung', methode: 'Tandembogen / Partnerkontrolle', umsetzung: 'digital', aktivitaet: 'Test mit gestuften Rechenaufgaben',
+    ablauf: 'Die Schüler rechnen die gestuften Aufgaben und bekommen sofort Rückmeldung. Wer fertig ist, kontrolliert mit einem Partner die Lösungswege.',
+    begruendung: 'Die Schüler wenden die Regel an und bekommen sofort Rückmeldung. Ein Lückentext würde nur den Merksatz abfragen.' },
+];
+
+/** Materialien, die fest in der Stunde verwendet werden (Vorgaben der Lehrkraft + übernommene Funde). */
+export const FESTE_MATERIALIEN = [
+  { name: 'Arbeitsblatt „Pythagoras entdecken“ (deine Vorgabe)', phase: 'Erarbeitung', herkunft: 'vorgabe' },
+  { name: 'Lehrbuch S. 112, Aufgaben 3–6', phase: 'Anwendung', herkunft: 'vorgabe' },
+  { name: 'Studyflix-Video „Satz des Pythagoras“', phase: 'Anwendung', herkunft: 'internet' },
 ];
