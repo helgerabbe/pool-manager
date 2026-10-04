@@ -324,7 +324,9 @@ export default function EinheitenListe() {
             <BookOpen className="w-6 h-6 text-accent" />
             {ansicht === 'privat' ? 'Private Bibliothek' : ansicht === 'austausch' ? 'Öffentliche Bibliothek' : 'Gemeinschaftliche Bibliothek'}
             <HelpBadge
-              text="Eine Einheit ist das Grundgerüst deiner Unterrichtsplanung. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben."
+              text={ansicht === 'privat'
+                ? 'Dein persönlicher Arbeitsbereich. Unter „Mein Unterricht“ planst du deinen Unterricht: Lerngruppen anlegen, darin Unterrichtseinheiten mit Recherche, Inhalten, Verlauf und Zeitplanung aufbauen und daraus einzelne Stunden und selbstständige Übungen erstellen. Unter „Meine Einheiten“ kannst du außerdem eine Poolzeit-Einheit bauen und sie später zur Veröffentlichung vorschlagen. Alles hier sehen nur du und die Personen, die du einlädst.'
+                : 'Eine Einheit ist das Grundgerüst der Poolzeit. Jede Einheit enthält Themenfelder, Lernpakete und Aufgaben.'}
               docsSlug="einheiten-struktur"
             />
           </h1>
