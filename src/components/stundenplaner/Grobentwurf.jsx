@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import GrobPhase from './GrobPhase';
+import InternetVertiefenButton from './InternetVertiefenButton';
 import { GROBENTWURF } from '@/lib/stundenplanerVorschauDaten';
 
 const IMPULSE = ['Mehr Schüleraktivität', 'Wirkt mir zu rezeptiv', 'Woher bekomme ich das Material?'];
@@ -19,6 +20,7 @@ export default function Grobentwurf({ onWeiter }) {
           {IMPULSE.map((t) => <Button key={t} size="sm" variant="outline">{t}</Button>)}
         </div>
         <Textarea rows={2} placeholder="Oder in eigenen Worten …" />
+        <InternetVertiefenButton text="Im Internet vertiefend nach Ideen suchen und einbauen" />
       </div>
       <Button onClick={onWeiter}>Passt – jetzt genau planen</Button>
     </div>

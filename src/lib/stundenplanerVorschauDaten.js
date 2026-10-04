@@ -7,7 +7,6 @@ export const PRUEFUNG = {
   entscheidungen: [
     { frage: 'Wie gehen wir mit der Zeit um?', optionen: ['Doppelstunde nehmen', 'Bei 40 Min. bleiben – zügig arbeiten', 'Übung als selbstständige Übung auslagern'] },
     { frage: 'Dein Arbeitsblatt passt nur teilweise. Was tun?', optionen: ['Unbedingt einbauen', 'Nur als Zusatz nutzen', 'Weglassen'] },
-    { frage: 'Soll ich im Internet nach weiteren Ideen suchen?', optionen: ['Ja, bitte', 'Nein, nicht nötig'] },
   ],
 };
 

@@ -3,6 +3,7 @@ import { Wand2, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { FEINPLANUNG } from '@/lib/stundenplanerVorschauDaten';
+import InternetVertiefenButton from './InternetVertiefenButton';
 
 /** Schritt 5: Aktivität je Phase mit Begründung, dann Übernahme. */
 export default function Feinplanung() {
@@ -18,6 +19,7 @@ export default function Feinplanung() {
           </li>
         ))}
       </ol>
+      <InternetVertiefenButton text="Im Internet nach passenden Materialien und Aufgabenideen suchen" />
       <Button className="gap-2" onClick={() => toast.info('In der Vorschau wird noch keine Stunde angelegt.')}>
         <Wand2 className="h-4 w-4" /> Stunde mit Aufgaben anlegen
       </Button>
