@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit: Dieser Katalog beschreibt die Methode im Raum, der AktivitaetenKatalog die digitalen Bausteine auf den Sch\u00fclerger\u00e4ten. 'poolzeit_aktivitaeten' verkn\u00fcpft beide. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN (2026-10-04): lehreransicht, schueleransicht, pflicht_material, optional_material, assistent_fragen sowie die \u00dcbersicht gehoert_dazu/gehoert_nicht_dazu beschreiben, wie die Methode im Stunden-Editor umgesetzt wird. Gepflegt in der Aktivit\u00e4tengalerie (/aktivitaetengalerie); Grundlage f\u00fcr den Phasen-Assistenten.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). ADDITIV zum AktivitaetenKatalog der Poolzeit. 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder (kurzbeschreibung \u2026 assistent_fragen) und die \u00dcbersicht. Gepflegt in der Aktivit\u00e4tengalerie; Grundlage f\u00fcr den Phasen-Assistenten.",
   "properties": {
     "name": {
       "type": "string"
@@ -11,12 +11,10 @@
       "description": "Ein Satz: Was ist das?"
     },
     "ablauf": {
-      "type": "string",
-      "description": "Wie funktioniert die Methode Schritt f\u00fcr Schritt?"
+      "type": "string"
     },
     "eignung": {
-      "type": "string",
-      "description": "Wann passt die Methode besonders gut?"
+      "type": "string"
     },
     "phasen": {
       "type": "array",
@@ -78,45 +76,41 @@
       "type": "string"
     },
     "lehreransicht": {
-      "type": "string",
-      "description": "Bauplan: Was steht in dieser Phase an der digitalen Tafel (Lehreransicht)?"
+      "type": "string"
     },
     "schueleransicht": {
-      "type": "string",
-      "description": "Bauplan: Was sehen und tun die Sch\u00fcler auf ihrem Ger\u00e4t?"
+      "type": "string"
     },
     "pflicht_material": {
-      "type": "string",
-      "description": "Bauplan: Was muss zwingend vorhanden sein? Je Punkt eine Zeile."
+      "type": "string"
     },
     "optional_material": {
-      "type": "string",
-      "description": "Bauplan: Was kann erg\u00e4nzend genutzt werden? Je Punkt eine Zeile."
+      "type": "string"
     },
     "assistent_fragen": {
+      "type": "string"
+    },
+    "bauplan_rohtext": {
       "type": "string",
-      "description": "Bauplan: Fragen des Phasen-Assistenten an die Lehrkraft. Je Frage eine Zeile."
+      "description": "Urspr\u00fcngliche freie Beschreibung der Lehrkraft, aus der der Bauplan strukturiert wurde."
     },
     "gehoert_dazu": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "\u00dcbersicht: Kernmerkmale der Methode (KI-strukturiert aus den Eingaben)."
+      "default": []
     },
     "gehoert_nicht_dazu": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "\u00dcbersicht: Was ausdr\u00fccklich nicht zur Methode geh\u00f6rt."
+      "default": []
     },
     "bauplan_fertig": {
       "type": "boolean",
-      "default": false,
-      "description": "true = Bauplan von der Lehrkraft gepr\u00fcft."
+      "default": false
     },
     "poolzeit_aktivitaeten": {
       "type": "array",

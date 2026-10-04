@@ -1,12 +1,13 @@
 import React from 'react';
-import { Loader2, Save, Sparkles } from 'lucide-react';
+import { Loader2, Save, Sparkles, FileText, Pencil, Palette } from 'lucide-react';
+import BauplanKompakt from './BauplanKompakt';
+import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
 import BauplanUebersicht from './BauplanUebersicht';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import BauplanFeld from './BauplanFeld';
 
 const PHASEN = [['einstieg', 'Einstieg'], ['erarbeitung', 'Erarbeitung'], ['sicherung', 'Sicherung'], ['uebung', 'Übung'], ['abschluss', 'Abschluss']];
 
@@ -28,12 +29,17 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
   const setze = (k, v) => setWerte((w) => ({ ...w, [k]: v }));
   const phasen = werte.phasen || [];
 
+  const hatStruktur = FELDER.some(([k]) => (methode[k] || '').trim());
+  const [eingabe, setEingabe] = React.useState(!hatStruktur);
+  const [zeigeRoh, setZeigeRoh] = React.useState(false);
   const [strukturiert, setStrukturiert] = React.useState(false);
   const strukturieren = async () => {
+    if (!(werte.bauplan_rohtext || '').trim()) return toast.error('Bitte zuerst eine Beschreibung eingeben.');
     setStrukturiert(true);
     try {
-      const res = await strukturiereBauplan(werte, FELDER);
+      const res = await strukturiereBauplan(werte, werte.bauplan_rohtext, FELDER);
       setWerte((w) => ({ ...w, ...res }));
+      setEingabe(false);
       toast.success('Eingaben überarbeitet. Bitte prüfen und speichern.');
     } catch (e) {
       toast.error('Das Strukturieren ist fehlgeschlagen.');
@@ -44,7 +50,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
 
   const speichern = async () => {
     setSpeichert(true);
-    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig', 'gehoert_dazu', 'gehoert_nicht_dazu'].map((k) => [k, werte[k]]));
+    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu'].map((k) => [k, werte[k]]));
     await base44.entities.MethodenKatalog.update(methode.id, daten);
     setSpeichert(false);
     toast.success('Gespeichert.');
@@ -52,7 +58,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5 p-6">
+    <div className="mx-auto max-w-5xl space-y-5 p-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="font-display text-2xl font-bold">{methode.name}</h2>
@@ -71,11 +77,34 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
           ))}
         </div>
       </div>
-      {FELDER.map(([k, titel, hilfe]) => <BauplanFeld key={k} titel={titel} hilfe={hilfe} value={werte[k] || ''} onChange={(v) => setze(k, v)} />)}
-      <BauplanUebersicht dazu={werte.gehoert_dazu} nicht={werte.gehoert_nicht_dazu} />
+      {eingabe ? (
+        <BauplanRohEingabe felder={FELDER} value={werte.bauplan_rohtext || ''} onChange={(v) => setze('bauplan_rohtext', v)} />
+      ) : (
+        <>
+          <BauplanKompakt werte={werte} felder={FELDER} />
+          <BauplanUebersicht dazu={werte.gehoert_dazu} nicht={werte.gehoert_nicht_dazu} />
+          {werte.bauplan_rohtext && (
+            <div className="space-y-2">
+              <Button variant="ghost" size="sm" className="gap-2" onClick={() => setZeigeRoh(!zeigeRoh)}>
+                <FileText className="h-4 w-4" /> {zeigeRoh ? 'Ursprüngliche Beschreibung ausblenden' : 'Ursprüngliche Beschreibung anzeigen'}
+              </Button>
+              {zeigeRoh && <p className="whitespace-pre-line rounded-xl border bg-muted/40 p-3 text-sm text-muted-foreground">{werte.bauplan_rohtext}</p>}
+            </div>
+          )}
+        </>
+      )}
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
-          {strukturiert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Eingaben strukturiert übernehmen
+        {eingabe ? (
+          <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
+            {strukturiert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Eingaben strukturiert übernehmen
+          </Button>
+        ) : (
+          <Button variant="outline" className="gap-2" onClick={() => setEingabe(true)}>
+            <Pencil className="h-4 w-4" /> Beschreibung überarbeiten
+          </Button>
+        )}
+        <Button variant="outline" className="gap-2" onClick={() => toast.info('Die grafische Vorlage kommt in einem späteren Schritt.')}>
+          <Palette className="h-4 w-4" /> Grafische Vorlage
         </Button>
         <Button className="gap-2" disabled={speichert || strukturiert} onClick={speichern}>
           {speichert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Speichern
