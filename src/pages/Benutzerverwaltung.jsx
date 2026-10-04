@@ -422,7 +422,7 @@ export default function Benutzerverwaltung() {
         <div>
           <h1 className="text-2xl font-bold text-foreground tracking-tight flex items-center gap-2">
             <ShieldCheck className="w-6 h-6 text-primary" />
-            Benutzerverwaltung
+            Lehrerverwaltung
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {benutzer.filter(b => users?.find(u => u.email === b.user_id)).length} registriert | {benutzer.filter(b => !users?.find(u => u.email === b.user_id)).length} ausstehend

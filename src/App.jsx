@@ -18,7 +18,7 @@ import ProtectedRoute from '@/lib/ProtectedRoute';
 // diesen Code beim ersten Öffnen NICHT mit herunterladen muss.
 const AppLayout = lazyWithRetry(() => import('@/components/layout/AppLayout'));
 const EinheitenListe = lazyWithRetry(() => import('@/pages/EinheitenListe'));
-const Benutzerverwaltung = lazyWithRetry(() => import('@/pages/Benutzerverwaltung'));
+const Benutzerverwaltung = lazyWithRetry(() => import('@/pages/Personenverwaltung'));
 const MoodleExport = lazyWithRetry(() => import('@/pages/MoodleExport'));
 const Workspace = lazyWithRetry(() => import('@/pages/Workspace'));
 const AdminSettings = lazyWithRetry(() => import('@/pages/AdminSettings'));
