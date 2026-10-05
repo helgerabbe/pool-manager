@@ -15,6 +15,8 @@ const LABELS = {
   behoben: 'Behoben',
   bewusst: 'Soll so bleiben',
   widerspruch: 'Widerspruch',
+  an_mbk: 'An Moodle-Team weitergegeben',
+  an_admin: 'An Administration weitergegeben',
 };
 
 export default function MbkGelostePunkte({ befunde = [] }) {

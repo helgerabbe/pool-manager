@@ -20,6 +20,7 @@ import MbkAbweichungBanner from './MbkAbweichungBanner';
 import VorschlagBlock from './VorschlagBlock';
 import BaumeisterButton from '@/components/baumeister/BaumeisterButton';
 import BefundStellen from './BefundStellen';
+import WeitergebenButtons from './WeitergebenButtons';
 import BefundKlartext, { BefundDatum } from './BefundKlartext';
 
 const BEWUSST_PLACEHOLDER =
@@ -52,6 +53,8 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         <Badge variant="outline" className="bg-slate-50">{befund.kategorie}. {getKategorieLabel(befund.kategorie)}</Badge>
         <span className="text-sm font-semibold flex-1 min-w-0">{befund.ziel_titel || 'Unbenannte Stelle'}</span>
         {befund.entscheidung === 'behoben' && <Badge className="bg-green-100 text-green-800 border-green-300" variant="outline">Erledigt</Badge>}
+        {befund.entscheidung === 'an_mbk' && <Badge variant="outline" className="bg-sky-100 text-sky-800 border-sky-300">An Moodle-Team weitergegeben</Badge>}
+        {befund.entscheidung === 'an_admin' && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">An Administration weitergegeben</Badge>}
         {befund.entscheidung === 'bewusst' && <Badge className="bg-violet-100 text-violet-800 border-violet-300" variant="outline">Bleibt so</Badge>}
         {befund.entscheidung === 'widerspruch' && <Badge className="bg-orange-100 text-orange-800 border-orange-300" variant="outline">Widerspruch</Badge>}
         {befund.erneut_gefunden && <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">Wieder aufgetaucht</Badge>}
@@ -166,6 +169,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
                 <MessageSquareWarning className="w-3.5 h-3.5" /> Sehe ich anders
               </Button>
             )}
+            <WeitergebenButtons onWeitergeben={(e, k) => onEntscheiden({ befundId: befund.id, entscheidung: e, kommentar: k })} />
           </>
         ) : (
           <Button size="sm" variant="ghost" onClick={() => onEntscheiden({ befundId: befund.id, entscheidung: 'offen' })}>

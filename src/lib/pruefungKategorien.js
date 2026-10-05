@@ -38,6 +38,8 @@ export const PRUEF_ENTSCHEIDUNG = Object.freeze({
   offen: { label: 'Offen' },
   behoben: { label: 'Erledigt' },
   bewusst: { label: 'Bleibt so' },
+  an_mbk: { label: 'An Moodle-Team' },
+  an_admin: { label: 'An Administration' },
 });
 
 /**

@@ -71,6 +71,8 @@ export default async function (req) {
       antworten: entschieden.map((b) => ({
         id: b.mbk_meldung_id || b.fingerprint,
         entscheidung: b.entscheidung,
+        // 'an_mbk': Die Fachgruppe kann das nicht beheben – Auftrag an das Moodle-Team.
+        auftrag_an_mbk: b.entscheidung === 'an_mbk',
         kommentar: b.kommentar || '',
         entschieden_von: b.entschieden_von || '',
         entschieden_am: b.entschieden_am || '',

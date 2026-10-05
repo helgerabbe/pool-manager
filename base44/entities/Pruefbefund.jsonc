@@ -1,19 +1,16 @@
 {
   "name": "Pruefbefund",
   "type": "object",
-  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20135 sind die klassischen MBK-Fehlerkategorien, Kategorie 6 ist eine Erg\u00e4nzung des Pool-Managers f\u00fcr verwaiste Struktur, Kategorie 7 entsteht nur beim Abholen einer MBK-R\u00fcckmeldung ohne zuordenbare Kategorie (siehe src/lib/pruefungKategorien.js). Befunde bilden die Taskliste in Tab 8. Der stabile Schl\u00fcssel `fingerprint` sorgt f\u00fcr Wiedererkennung: intern `<ziel_typ>:<ziel_id>:<kategorie>`, bei MBK-R\u00fcckmeldungen `mbk:<mbk_meldung_id>`.\n\nHERKUNFT: `quelle` trennt die Reiter in Tab 8 ('regel'/'ki' = eigene Pr\u00fcfung, 'mbk' = R\u00fcckmeldung des Baus). `mbk_quelle` sagt, wer den MBK-Fund gefunden hat: 'bau', 'sichtung' oder 'ticket' (2026-09-27: Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem, als GitHub-Issue mit Label 'einheit' \u2014 mit Issue-Nummer und Originaltext).\n\nR\u00dcCKWEG: Entscheidungen reisen als Antwortdatei (`rueckmeldung/<datum>.antwort.json`, Format 'antwort-1') zur\u00fcck ins Repository (pushMbkAntwort). Bei Tickets schlie\u00dft der Bau das Issue bei 'behoben'/'bewusst' automatisch.\n\nKI-VORSORTIERUNG (2026-10-04): mbkVorsortierung ordnet offene MBK-Befunde einem Stapel zu (ki_stapel) und formuliert sie f\u00fcr Lehrkr\u00e4fte verst\u00e4ndlich (ki_klartext). Sie entscheidet NICHTS \u2014 die Entscheidung bleibt bei der Lehrkraft.",
+  "description": "Vollst\u00e4ndigkeitspr\u00fcfung (Pr\u00fcfbereich Tab 8): EIN Befund aus der Pr\u00fcfung einer gemeinschaftlichen Einheit. Kategorien 1\u20137 siehe src/lib/pruefungKategorien.js. `fingerprint` sorgt f\u00fcr Wiedererkennung. `quelle` trennt eigene Pr\u00fcfung ('regel'/'ki') von MBK-R\u00fcckmeldungen ('mbk'). R\u00dcCKWEG: Entscheidungen reisen als Antwortdatei (Format 'antwort-1') zur\u00fcck ins Repository (pushMbkAntwort). WEITERGABE (2026-10-05): 'an_mbk' = die Lehrkraft kann es nicht beheben, das Moodle-Team muss es tun (reist in der Antwortdatei als Auftrag mit); 'an_admin' = die Administration muss es tun (wird als MbkAdminTodo angelegt).",
   "properties": {
     "einheit_id": {
-      "type": "string",
-      "description": "FK zur Einheit, die gepr\u00fcft wurde."
+      "type": "string"
     },
     "prueflauf_id": {
-      "type": "string",
-      "description": "FK zum Prueflauf. Bei MBK-Befunden leer."
+      "type": "string"
     },
     "fingerprint": {
-      "type": "string",
-      "description": "Stabiler Wiedererkennungs-Schl\u00fcssel. Pro Einheit eindeutig."
+      "type": "string"
     },
     "ziel_typ": {
       "type": "string",
@@ -23,20 +20,16 @@
         "allgemeine_aufgabe",
         "systembaustein",
         "lernpaket"
-      ],
-      "description": "Art der betroffenen Stelle."
+      ]
     },
     "ziel_id": {
-      "type": "string",
-      "description": "ID der betroffenen Stelle (bzw. mbk_meldung_id ohne aufl\u00f6sbare Stelle)."
+      "type": "string"
     },
     "ziel_titel": {
-      "type": "string",
-      "description": "Denormalisierter Anzeigetitel der Stelle."
+      "type": "string"
     },
     "fundort": {
-      "type": "string",
-      "description": "Klartext-Pfad zur Stelle f\u00fcr die Taskliste."
+      "type": "string"
     },
     "lernpaket_id": {
       "type": "string"
@@ -60,8 +53,7 @@
         5,
         6,
         7
-      ],
-      "description": "Fehlerkategorie (siehe src/lib/pruefungKategorien.js)."
+      ]
     },
     "schwere": {
       "type": "string",
@@ -73,12 +65,10 @@
       "default": "hinweis"
     },
     "befund": {
-      "type": "string",
-      "description": "Ein Satz: Was fehlt oder passt nicht."
+      "type": "string"
     },
     "vorschlag": {
-      "type": "string",
-      "description": "Ein Satz: Was die Lehrkraft konkret tun kann."
+      "type": "string"
     },
     "quelle": {
       "type": "string",
@@ -95,16 +85,13 @@
         "bau",
         "sichtung",
         "ticket"
-      ],
-      "description": "Nur bei quelle='mbk': 'bau' = Heuristik des Generators, 'sichtung' = didaktischer Blick (oft mit fertigem Einf\u00fcgetext), 'ticket' = Meldung von Sch\u00fcler:innen \u00fcber das Meldesystem (GitHub-Issue, siehe issue_nummer). In der MBK-Datei hei\u00dft das Feld `quelle`."
+      ]
     },
     "issue_nummer": {
-      "type": "number",
-      "description": "Nur bei mbk_quelle='ticket': Nummer des GitHub-Issues im Kursbau-Repository (Feld `issue` der R\u00fcckmeldung)."
+      "type": "number"
     },
     "ticket_originaltext": {
-      "type": "string",
-      "description": "Nur bei mbk_quelle='ticket': der Originaltext der Sch\u00fclermeldung, ungek\u00fcrzt durch den Bau."
+      "type": "string"
     },
     "kurs_umgehung": {
       "type": "string",
@@ -132,9 +119,12 @@
         "offen",
         "behoben",
         "bewusst",
-        "widerspruch"
+        "widerspruch",
+        "an_mbk",
+        "an_admin"
       ],
-      "default": "offen"
+      "default": "offen",
+      "description": "'an_mbk' / 'an_admin' = an das Moodle-Team bzw. die Administration weitergegeben."
     },
     "kommentar": {
       "type": "string"
@@ -202,16 +192,13 @@
         "reparieren",
         "lehrkraft",
         "schliessen"
-      ],
-      "description": "KI-Vorsortierung: 'uebernehmen' = im Kurs schon korrigiert, Korrektur in den Pool-Manager \u00fcbernehmen; 'reparieren' = die KI kann es selbst beheben; 'lehrkraft' = braucht Material oder eine Entscheidung der Lehrkraft; 'schliessen' = veraltet, doppelt oder nur Moodle-Gestaltung."
+      ]
     },
     "ki_klartext": {
-      "type": "string",
-      "description": "Der Hinweis in einfacher Sprache f\u00fcr Lehrkr\u00e4fte (1\u20132 S\u00e4tze)."
+      "type": "string"
     },
     "ki_naechster_schritt": {
-      "type": "string",
-      "description": "Was die Lehrkraft konkret tun kann, in einfacher Sprache."
+      "type": "string"
     },
     "ki_sortiert_am": {
       "type": "string",

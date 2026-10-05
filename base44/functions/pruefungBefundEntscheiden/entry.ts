@@ -22,7 +22,7 @@ export default async function (req) {
     const befundId = body?.befund_id;
     const entscheidung = body?.entscheidung;
     const kommentar = typeof body?.kommentar === 'string' ? body.kommentar.trim() : '';
-    if (!befundId || !['offen', 'behoben', 'bewusst', 'widerspruch'].includes(entscheidung)) {
+    if (!befundId || !['offen', 'behoben', 'bewusst', 'widerspruch', 'an_mbk', 'an_admin'].includes(entscheidung)) {
       return Response.json({ error: 'befund_id und gültige entscheidung sind erforderlich' }, { status: 400 });
     }
 
@@ -50,13 +50,31 @@ export default async function (req) {
 
     const updated = await base44.asServiceRole.entities.Pruefbefund.update(befundId, {
       entscheidung,
-      kommentar: entscheidung === 'bewusst' || entscheidung === 'widerspruch' ? kommentar : '',
+      kommentar: entscheidung === 'offen' || entscheidung === 'behoben' ? '' : kommentar,
       entschieden_von: user.email,
       entschieden_am: new Date().toISOString(),
       // Der Hinweis „war behoben, kam wieder" gilt nach einer neuen
       // Entscheidung als gelesen.
       erneut_gefunden: false,
     });
+
+    // Weitergabe an die Administration: als Admin-Punkt anlegen (einmalig je Befund).
+    if (entscheidung === 'an_admin') {
+      const mbkId = `befund:${befundId}`;
+      const vorhanden = await base44.asServiceRole.entities.MbkAdminTodo.filter({ einheit_id: einheit.id, mbk_id: mbkId });
+      const daten = {
+        einheit_id: einheit.id,
+        einheit_titel: einheit.titel_der_einheit || '',
+        mbk_id: mbkId,
+        titel: befund.ziel_titel || 'Hinweis aus der Prüfung',
+        beschreibung: [befund.fundort, befund.ki_klartext || befund.befund, kommentar && `Lehrkraft: ${kommentar}`].filter(Boolean).join('\n'),
+        art: 'sonstiges',
+        status: 'offen',
+        gemeldet_am: new Date().toISOString(),
+      };
+      if (vorhanden?.[0]) await base44.asServiceRole.entities.MbkAdminTodo.update(vorhanden[0].id, daten);
+      else await base44.asServiceRole.entities.MbkAdminTodo.create(daten);
+    }
 
     return Response.json({ ok: true, befund: updated });
   } catch (error) {
