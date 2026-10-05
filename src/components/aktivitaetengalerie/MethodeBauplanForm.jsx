@@ -4,6 +4,8 @@ import BauplanKompakt from './BauplanKompakt';
 import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
 import BauplanUebersicht from './BauplanUebersicht';
+import StundenmodellRaster from './StundenmodellRaster';
+import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -72,7 +74,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
           <Switch checked={!!werte.bauplan_fertig} onCheckedChange={(v) => setze('bauplan_fertig', v)} /> Bauplan geprüft
         </label>
       </div>
-      <div className="space-y-2">
+      {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} /> : <div className="space-y-2">
         <p className="text-sm font-medium">In welchen Phasen kommt sie vor?</p>
         <div className="flex flex-wrap gap-2">
           {PHASEN.map(([k, l]) => (
@@ -80,7 +82,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
               onClick={() => setze('phasen', phasen.includes(k) ? phasen.filter((p) => p !== k) : [...phasen, k])}>{l}</Button>
           ))}
         </div>
-      </div>
+      </div>}
       {eingabe ? (
         <BauplanRohEingabe felder={FELDER} value={werte.bauplan_rohtext || ''} onChange={(v) => setze('bauplan_rohtext', v)} />
       ) : (
