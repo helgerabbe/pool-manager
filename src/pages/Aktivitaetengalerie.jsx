@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Search, CheckCircle2, Circle } from 'lucide-react';
+import { Loader2, Search, CheckCircle2, Circle, BookOpen } from 'lucide-react';
+import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import MethodeBauplanForm from '@/components/aktivitaetengalerie/MethodeBauplanForm';
@@ -21,6 +22,10 @@ export default function Aktivitaetengalerie() {
     <div className="flex h-full">
       <aside className="sticky top-0 flex max-h-[calc(100dvh-5rem)] w-72 shrink-0 flex-col self-start border-r bg-card">
         <div className="space-y-2 border-b p-4">
+          <button onClick={() => setAuswahlId('konzeption')}
+            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahlId === 'konzeption' ? 'bg-muted font-semibold' : ''}`}>
+            <BookOpen className="h-4 w-4 text-primary" /> Didaktische Konzeption
+          </button>
           <h1 className="font-display text-lg font-bold">Aktivitätengalerie</h1>
           <p className="text-xs text-muted-foreground">{fertig} von {methoden.length} Bauplänen geprüft</p>
           <div className="relative">
@@ -42,7 +47,7 @@ export default function Aktivitaetengalerie() {
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        {auswahl ? <MethodeBauplanForm key={auswahl.id} methode={auswahl} onGespeichert={refetch} /> : !isLoading && <p className="p-8 text-sm text-muted-foreground">Keine Methoden gefunden.</p>}
+        {auswahlId === 'konzeption' ? <DidaktischeKonzeption /> : auswahl ? <MethodeBauplanForm key={auswahl.id} methode={auswahl} onGespeichert={refetch} /> : !isLoading && <p className="p-8 text-sm text-muted-foreground">Keine Methoden gefunden.</p>}
       </main>
     </div>
   );
