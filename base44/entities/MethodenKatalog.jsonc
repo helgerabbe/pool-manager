@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent' sind Arbeitsgrundlagen f\u00fcr den Unterrichts- bzw. Grafikassistenten beim sp\u00e4teren Bau der Methode.",
   "properties": {
     "name": {
       "type": "string"
@@ -133,6 +133,14 @@
         "type": "string"
       },
       "default": []
+    },
+    "info_unterrichtsassistent": {
+      "type": "string",
+      "description": "Was der Unterrichtsassistent inhaltlich leisten kann, was nicht, und was die Lehrkraft entscheidet."
+    },
+    "info_grafikassistent": {
+      "type": "string",
+      "description": "Vorgaben f\u00fcr die grafische Aufbereitung: Lehrer-Display, Sch\u00fcler-Display, Interaktivit\u00e4t."
     },
     "bauplan_fertig": {
       "type": "boolean",

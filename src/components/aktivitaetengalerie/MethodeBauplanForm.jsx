@@ -4,6 +4,7 @@ import BauplanKompakt from './BauplanKompakt';
 import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
 import BauplanUebersicht from './BauplanUebersicht';
+import AssistentenInfos from './AssistentenInfos';
 import StundenmodellRaster from './StundenmodellRaster';
 import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { toast } from 'sonner';
@@ -56,7 +57,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
 
   const speichern = async () => {
     setSpeichert(true);
-    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu'].map((k) => [k, werte[k]]));
+    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_grafikassistent'].map((k) => [k, werte[k]]));
     await base44.entities.MethodenKatalog.update(methode.id, daten);
     setSpeichert(false);
     toast.success('Gespeichert.');
@@ -99,6 +100,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
           )}
         </>
       )}
+      <AssistentenInfos werte={werte} setze={setze} />
       <div className="flex flex-wrap gap-2">
         {eingabe ? (
           <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
