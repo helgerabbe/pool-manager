@@ -37,4 +37,16 @@ export const EINORDNUNG_PROBE = {
     diagnose_mittel: { passung: 1, phasen: { 'Kriterien transparent machen': 'kern' }, hinweis: 'Ablauf und Kriterien erklären, ohne Lösungen vorwegzunehmen.' },
     diagnose_lang: { passung: 1, phasen: { 'Ziel & Kriterien klären': 'kern' }, hinweis: 'Bei mehreren Teilen oder Stationen fast notwendig.' },
   },
+  'Stummer Impuls': {
+    induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Beobachten & erkunden': 'teil', 'Vermutungen bilden': 'bedingt' }, hinweis: 'Idealer überraschender Ausgangspunkt. Das Erkunden deckt er nur ab, wenn gezielte Beobachtungsaufträge folgen.' },
+    deduktiv: { passung: 3, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'teil' }, hinweis: 'Kann eine Leitfrage aufwerfen. Weniger passend, wenn die Stunde mit einer klaren Erklärung beginnt.' },
+    uebung_kurz: { passung: 4, phasen: { 'Übungsfokus klären': 'bedingt' }, hinweis: 'Höchstens als sehr kurzer Erinnerungsreiz, sonst kostet er Übungszeit.' },
+    uebung_mittel: { passung: 4, phasen: { 'Übungsfokus klären': 'bedingt' }, hinweis: 'Kann einen thematischen Rahmen setzen, ist aber kein Teil des Übens.' },
+    uebung_lang: { passung: 3, phasen: { 'Arbeitsplan & Orientierung': 'bedingt' }, hinweis: 'Kann eine Anwendungssituation eröffnen, ersetzt aber nicht die Erklärung des Ablaufs.' },
+    wiederholung: { passung: 2, phasen: { 'Vorwissen reaktivieren': 'kern', 'Lücken bestimmen': 'teil' }, hinweis: 'Macht sichtbar, was erinnert wird und was unklar ist.' },
+    vertieft: { passung: 2, phasen: { 'Aufgabe & Ziel klären': 'teil', 'Problem erschließen': 'teil' }, hinweis: 'Eröffnet einen Fall oder Konflikt als Ausgangspunkt für Teamarbeit.' },
+    diagnose_kurz: { passung: 3, phasen: { 'Lernstand erheben': 'bedingt' }, hinweis: 'Nur mit klarer Frage und nachvollziehbaren Kriterien als Diagnoseaufgabe nutzbar.' },
+    diagnose_mittel: { passung: 3, phasen: { 'Lernstand erheben': 'bedingt' }, hinweis: 'Als gemeinsamer Ausgangsreiz für eine Erhebung möglich.' },
+    diagnose_lang: { passung: 4, phasen: { 'Nachweise sammeln': 'bedingt' }, hinweis: 'Trägt eine umfassende Evaluation kaum, allenfalls als Einstieg in eine Teilaufgabe.' },
+  },
 };
