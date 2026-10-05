@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, F = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht.",
   "properties": {
     "name": {
       "type": "string"
@@ -66,7 +66,7 @@
         "D",
         "D(A)",
         "A(D)",
-        "F",
+        "A(+D)",
         "A"
       ]
     },

@@ -20,7 +20,7 @@ const SCHEMA = {
   },
 };
 
-const OPTIONEN = { D: ['digital'], 'D(A)': ['digital', 'analog'], 'A(D)': ['analog', 'digital'], F: ['analog mit digitaler Unterstützung'], A: ['analog'] };
+const OPTIONEN = { D: ['digital'], 'D(A)': ['digital', 'analog'], 'A(D)': ['analog', 'digital'], 'A(+D)': ['analog mit digitaler Unterstützung'], A: ['analog'] };
 
 const ladeKataloge = () => Promise.all([
   base44.entities.MethodenKatalog.filter({ ist_aktiv: true }, 'reihenfolge', 200),
