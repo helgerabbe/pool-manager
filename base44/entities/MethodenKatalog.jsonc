@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent' sind Arbeitsgrundlagen f\u00fcr den Unterrichts- bzw. Grafikassistenten beim sp\u00e4teren Bau der Methode.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent' sind Arbeitsgrundlagen f\u00fcr den Unterrichts- bzw. Grafikassistenten. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' h\u00e4lt je Fach eine Beispielvorlage { thema, lehrer, schueler, erstellt_am } als HTML-Fragmente, die mit dem Grund-Design aus src/lib/stundenDesign.js angezeigt werden.",
   "properties": {
     "name": {
       "type": "string"
@@ -12,16 +12,13 @@
         "methode",
         "poolzeit"
       ],
-      "default": "methode",
-      "description": "'poolzeit' = digitale Aktivit\u00e4t aus dem Pool-Manager-Katalog, in der Galerie farbig gekennzeichnet."
+      "default": "methode"
     },
     "kurzbeschreibung": {
-      "type": "string",
-      "description": "Ein Satz: Was ist das?"
+      "type": "string"
     },
     "zweck_lernziele": {
-      "type": "string",
-      "description": "P\u00e4dagogischer Zweck und Lernziele."
+      "type": "string"
     },
     "ablauf": {
       "type": "string"
@@ -77,8 +74,7 @@
       "type": "string"
     },
     "varianten": {
-      "type": "string",
-      "description": "Umsetzungsvarianten (analog / hybrid / digital) mit Vor- und Nachteilen."
+      "type": "string"
     },
     "aufwand_analog": {
       "type": "string",
@@ -105,20 +101,16 @@
       "type": "string"
     },
     "beispiele": {
-      "type": "string",
-      "description": "Beispiele und Formulierungshilfen."
+      "type": "string"
     },
     "assistent_fragen": {
-      "type": "string",
-      "description": "Entscheidungsbaum: je Frage die Optionen und was daraus folgt."
+      "type": "string"
     },
     "pruefregeln": {
-      "type": "string",
-      "description": "Was der Assistent im Hintergrund pr\u00fcfen und anmahnen soll."
+      "type": "string"
     },
     "bauplan_rohtext": {
-      "type": "string",
-      "description": "Urspr\u00fcngliche freie Beschreibung der Lehrkraft, aus der der Bauplan strukturiert wurde."
+      "type": "string"
     },
     "gehoert_dazu": {
       "type": "array",
@@ -135,12 +127,16 @@
       "default": []
     },
     "info_unterrichtsassistent": {
-      "type": "string",
-      "description": "Was der Unterrichtsassistent inhaltlich leisten kann, was nicht, und was die Lehrkraft entscheidet."
+      "type": "string"
     },
     "info_grafikassistent": {
-      "type": "string",
-      "description": "Vorgaben f\u00fcr die grafische Aufbereitung: Lehrer-Display, Sch\u00fcler-Display, Interaktivit\u00e4t."
+      "type": "string"
+    },
+    "grafik_vorlagen": {
+      "type": "object",
+      "additionalProperties": true,
+      "default": {},
+      "description": "Je Fach: { thema, lehrer, schueler, erstellt_am }."
     },
     "bauplan_fertig": {
       "type": "boolean",

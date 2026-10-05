@@ -5,6 +5,7 @@ import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
 import BauplanUebersicht from './BauplanUebersicht';
 import AssistentenInfos from './AssistentenInfos';
+import GrafikVorlageDialog from './GrafikVorlageDialog';
 import StundenmodellRaster from './StundenmodellRaster';
 import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { toast } from 'sonner';
@@ -33,6 +34,7 @@ const FELDER = [
 export default function MethodeBauplanForm({ methode, onGespeichert }) {
   const [werte, setWerte] = React.useState(methode);
   const [speichert, setSpeichert] = React.useState(false);
+  const [vorlageOffen, setVorlageOffen] = React.useState(false);
   const setze = (k, v) => setWerte((w) => ({ ...w, [k]: v }));
   const phasen = werte.phasen || [];
 
@@ -101,6 +103,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
         </>
       )}
       <AssistentenInfos werte={werte} setze={setze} />
+      <GrafikVorlageDialog open={vorlageOffen} onOpenChange={setVorlageOffen} methode={methode} werte={werte} />
       <div className="flex flex-wrap gap-2">
         {eingabe ? (
           <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
@@ -111,7 +114,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
             <Pencil className="h-4 w-4" /> Beschreibung überarbeiten
           </Button>
         )}
-        <Button variant="outline" className="gap-2" onClick={() => toast.info('Die grafische Vorlage kommt in einem späteren Schritt.')}>
+        <Button variant="outline" className="gap-2" onClick={() => setVorlageOffen(true)}>
           <Palette className="h-4 w-4" /> Grafische Vorlage
         </Button>
         <Button className="gap-2" disabled={speichert || strukturiert} onClick={speichern}>
