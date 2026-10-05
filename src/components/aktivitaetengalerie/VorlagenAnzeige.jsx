@@ -8,7 +8,7 @@ export default function VorlagenAnzeige({ html, ansicht }) {
   const hoehe = ansicht === 'lehrer' ? 720 : 768;
   return (
     <div className="mx-auto w-full overflow-hidden rounded-xl border shadow-sm" style={{ maxWidth: ansicht === 'lehrer' ? 960 : 640, aspectRatio: `${breite} / ${hoehe}` }}>
-      <iframe title="Vorlage" srcDoc={doc} sandbox="" className="h-full w-full bg-background" />
+      <iframe title="Vorlage" srcDoc={doc} sandbox="allow-scripts" className="h-full w-full bg-background" />
     </div>
   );
 }
