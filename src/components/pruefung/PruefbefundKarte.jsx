@@ -19,6 +19,7 @@ import InhaltGesichtetButton from './InhaltGesichtetButton';
 import MbkAbweichungBanner from './MbkAbweichungBanner';
 import VorschlagBlock from './VorschlagBlock';
 import BaumeisterButton from '@/components/baumeister/BaumeisterButton';
+import BefundStellen from './BefundStellen';
 import BefundKlartext, { BefundDatum } from './BefundKlartext';
 
 const BEWUSST_PLACEHOLDER =
@@ -110,6 +111,10 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
             ? 'An das Moodle-Team zurückgemeldet.'
             : 'Noch nicht zurückgemeldet – geht mit dem nächsten „Eingearbeitet, bitte neu bauen" raus.'}
         </p>
+      )}
+
+      {befund.entscheidung === 'offen' && befund.ziel_typ !== 'systembaustein' && (
+        <BefundStellen befundId={befund.id} einheitId={einheitId} />
       )}
 
       <div className="flex items-center gap-2 flex-wrap pt-1">

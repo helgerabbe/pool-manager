@@ -33,6 +33,7 @@ export function htmlZuText(html) {
     .trim();
 }
 
+const istProjekt = (a) => a.anforderungsebene === '3 - Projekt';
 const istFreigegeben = (d) => d?.content_status === 'approved' && !!d?.released_at;
 // Bearbeitungssperre eines Kollegen: gilt 30 Minuten ab dem letzten Setzen.
 const SPERR_DAUER_MS = 30 * 60 * 1000;
@@ -70,7 +71,12 @@ export async function ladeStellen(base44, einheitId) {
           freigegeben: istFreigegeben(lp) || istFreigegeben(a),
           gesperrt_von: lp.is_locked ? sperreVon(lp.locked_by_email, lp.locked_at) : null,
           titel: k?.name || 'Aktivität',
-          ort: [tfTitel.get(lp.themenfeld_id), `Lernpaket „${lp.titel_des_pakets}"`, PHASEN_LABEL[a.phase] || a.phase]
+          ort: [
+            tfTitel.get(lp.themenfeld_id) && `Themenfeld „${tfTitel.get(lp.themenfeld_id)}"`,
+            `Lernpaket „${lp.titel_des_pakets}"`,
+            `Phase ${PHASEN_LABEL[a.phase] || a.phase}`,
+            `${aktive.filter((x) => x.phase === a.phase).indexOf(a) + 1}. Aktivität „${k?.name || 'Aktivität'}"`,
+          ]
             .filter(Boolean)
             .join(' · '),
           text: textAus(a.field_values || {}),
@@ -98,7 +104,8 @@ export async function ladeStellen(base44, einheitId) {
             freigegeben: istFreigegeben(a),
             gesperrt_von: sperreVon(a.locked_by, a.locked_at),
             titel: s.titel || a.titel || 'Offene Aufgabe',
-            ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`].filter(Boolean).join(' · '),
+            projekt: istProjekt(a),
+            ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`, `Schritt „${s.titel || 'offene Aufgabe'}"`].filter(Boolean).join(' · '),
             text: htmlZuText(s.offen.fragment),
             roh: { fragment: s.offen.fragment },
           });
@@ -117,6 +124,7 @@ export async function ladeStellen(base44, einheitId) {
         freigegeben: istFreigegeben(a),
         gesperrt_von: sperreVon(a.locked_by, a.locked_at),
         titel: a.titel || 'Aufgabe ohne Titel',
+        projekt: istProjekt(a),
         ort: [
           tfTitel.get(a.themenfeld_id) && `Themenfeld „${tfTitel.get(a.themenfeld_id)}"`,
           a.anforderungsebene === '3 - Projekt' || a.aufgabentyp_projekt ? 'Projektaufgaben' : 'Allgemeine Aufgaben',
@@ -146,6 +154,7 @@ export async function ladeStellen(base44, einheitId) {
         freigegeben: istFreigegeben(a),
         gesperrt_von: sperreVon(a.locked_by, a.locked_at),
         titel: `Schrittfolge „${a.titel || 'ohne Titel'}" (Schritt entfernen)`,
+        projekt: istProjekt(a),
         ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`].filter(Boolean).join(' · '),
         text: schritte.map((s) => `Schritt ${s.nr}: ${s.titel} – ${s.text}`).join('\n'),
         roh: { schritte },

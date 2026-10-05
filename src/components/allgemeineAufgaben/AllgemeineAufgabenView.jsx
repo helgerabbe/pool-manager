@@ -787,6 +787,16 @@ export default function AllgemeineAufgabenView({
     setSelectedAufgabeId(a.id);
     setSelectedThemenfeldId(null);
   };
+  // Deep-Link ?aufgabe=<id> (z. B. aus der Vollständigkeitsprüfung): Aufgabe direkt öffnen.
+  const deepLinkAufgabeId = new URLSearchParams(window.location.search).get('aufgabe');
+  useEffect(() => {
+    if (!deepLinkAufgabeId || selectedAufgabeId === deepLinkAufgabeId) return;
+    if (allgemeineAufgaben.some((a) => a.id === deepLinkAufgabeId)) {
+      setSelectedAufgabeId(deepLinkAufgabeId);
+      setSelectedThemenfeldId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkAufgabeId, allgemeineAufgaben.length]);
   const handleSelectThemenfeld = (tfId) => {
     setSelectedThemenfeldId(tfId);
     setSelectedAufgabeId(null);

@@ -311,6 +311,15 @@ export default function ProjektaufgabenView({
     enabled: !!einheitId && allLernziele.length > 0,
   });
 
+  // Deep-Link ?aufgabe=<id> (z. B. aus der Vollständigkeitsprüfung): Aufgabe direkt öffnen.
+  const deepLinkAufgabeId = new URLSearchParams(window.location.search).get('aufgabe');
+  useEffect(() => {
+    if (deepLinkAufgabeId && allgemeineAufgaben.some((a) => a.id === deepLinkAufgabeId)) {
+      setSelectedAufgabeId(deepLinkAufgabeId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkAufgabeId, allgemeineAufgaben.length]);
+
   // Delete-Mutation
   const deleteAufgabe = useMutation({
     mutationFn: (id) => deleteAllgemeineAufgabe(id),
