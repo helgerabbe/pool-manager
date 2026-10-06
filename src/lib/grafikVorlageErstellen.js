@@ -36,7 +36,11 @@ LEBENDIGE GESTALTUNG DER SCHÜLERANSICHT (Pflicht, mit eigenem <style> und <scri
 - Tiefe und Reiz: Farbverläufe aus den Farbvariablen, weiche Schatten, Ebenen, große, selbstbewusste Überschriften, abgerundete Formen. Ein Bild darf als großes Kopfbild mit Verlauf darüber wirken.
 - Echte Interaktion, wo die Methode es verlangt (Zuordnen, Sortieren, Auswählen, Schieberegler). Alles muss wirklich funktionieren.
 - Nicht ablenken: Animationen kurz (0,3–0,8 s), keine Dauerschleifen, kein Blinken. Respektiere prefers-reduced-motion.
-Farben über die Farbvariablen (var(--leit) usw.) und deren Abstufungen/Transparenzen, gern als Verläufe; keine grellen Neonfarben. Rundungen über var(--radius). Reines JavaScript, keine externen Bibliotheken, keine Netzwerkzugriffe.
+Farben über die Farbvariablen (var(--leit) usw.) und deren Abstufungen/Transparenzen, gern als Verläufe; keine grellen Neonfarben. Rundungen über var(--radius). GRAFIK-BIBLIOTHEKEN (erlaubt, nur diese, nur über genau diese Adressen per <script src> laden, sonst keine Netzwerkzugriffe):
+- three.js (3D-Körper drehen, aufklappen, Netze): <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> (globales THREE; eigene Maus-/Touch-Drehung schreiben, OrbitControls gibt es nicht)
+- JSXGraph (Mathe-Konstruktionen, Funktionen, Geometrie mit Schiebereglern): <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraph.css"><script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraphcore.js"></script> (globales JXG)
+- GSAP (weiche Animationen): <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script> (globales gsap)
+Setze eine Bibliothek ein, wenn sie dem Verstehen dient (z. B. Pyramide per Schieberegler flüssig zum Körpernetz aufklappen, Kreis abrollen, um Umfang und Radius zu zeigen). Bewegungen flüssig über requestAnimationFrame bzw. die Bibliothek, Schieberegler wirken sofort. Für einfache Seiten reicht reines CSS/JavaScript.
 
 BILDER: Nur echte Fotos, KEINE Comic-Figuren, keine Illustrationen, keine Cliparts, keine Emojis als Bildersatz.
 Wo ein Foto die Seite unterstützt oder verschönert (meist 1–2, höchstens 3), setze <img src="{{bild:ID}}" alt="..." style="object-fit:cover"> mit einer kurzen ID (z. B. kopf, bild1) und beschreibe das Foto in "bilder" auf Englisch (Motiv, Perspektive, Umgebung). Keine Personenporträts im Vordergrund, keine Schrift im Bild.`;
