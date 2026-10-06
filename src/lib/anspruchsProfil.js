@@ -163,4 +163,24 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Funktioniert nur, wenn die Schüler zuverlässig vorbereitet kommen. Das muss eingeübt werden. Für Unvorbereitete einen Plan haben, sonst zerfällt die Stunde.',
   },
+  'Galeriegang / Museumsrundgang': {
+    werte: { komplexitaet: 2, einuebung: 2, lerngruppe: 3, lehrkraft: 2, vorbereitung: 3, material: 3, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Einfach im Ablauf, aber nur wirksam mit klarem Beobachtungsauftrag. Ohne Kriterien wird der Rundgang zum Spaziergang. Zeiten pro Station fest vorgeben.',
+  },
+  'Marktplatz der Ideen': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 3, material: 3, steuerung: 4 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Lebendig, aber laut und schwer zu überblicken. Feste Rollen (Standbetreuer, Besucher) und Wechselzeiten geben Halt. Jüngere brauchen eine Besucherkarte mit Fragen.',
+  },
+  'Merksatz formulieren': {
+    werte: { komplexitaet: 3, einuebung: 2, lerngruppe: 1, lehrkraft: 2, vorbereitung: 1, material: 1, steuerung: 1 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Ohne Aufwand einsetzbar, aber das Verdichten fällt schwer. Jüngere brauchen Satzanfänge oder Schlüsselwörter. Merksätze gemeinsam vergleichen und verbessern.',
+  },
+  'Peer Instruction': {
+    werte: { komplexitaet: 2, einuebung: 3, lerngruppe: 2, lehrkraft: 4, vorbereitung: 4, material: 4, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Sehr wirksam, wenn die Konzeptfragen typische Fehlvorstellungen treffen. Die Lehrkraft muss spontan entscheiden, ob diskutiert oder erklärt wird.',
+  },
 };
