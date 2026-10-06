@@ -183,4 +183,24 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Sehr wirksam, wenn die Konzeptfragen typische Fehlvorstellungen treffen. Die Lehrkraft muss spontan entscheiden, ob diskutiert oder erklärt wird.',
   },
+  'Planspiel': {
+    werte: { komplexitaet: 5, einuebung: 3, lerngruppe: 4, lehrkraft: 5, vorbereitung: 5, material: 5, steuerung: 5 },
+    jahrgaenge: jg('nein', 'warnung', 'warnung', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Die anspruchsvollste Methode für alle Beteiligten: viel Material, klare Spielregeln und eine Lehrkraft als Spielleitung. Unter Klasse 8 nur als stark vereinfachtes Kurzspiel.',
+  },
+  'Rotierende Schreibkonferenz': {
+    werte: { komplexitaet: 3, einuebung: 4, lerngruppe: 3, lehrkraft: 2, vorbereitung: 2, material: 3, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Gelingt nur mit klaren Kriterien und respektvollem Ton. Die ersten Runden bringen oft nur Lob oder Rechtschreibung. Mit Kriterienkarte und einem Kriterium pro Runde beginnen.',
+  },
+  'Schneeball / Pyramidendiskussion': {
+    werte: { komplexitaet: 2, einuebung: 2, lerngruppe: 3, lehrkraft: 2, vorbereitung: 1, material: 1, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Einfach im Ablauf, aber jede Runde muss echtes Einigen verlangen, sonst wird nur addiert. Zeiten und Zahl der Ergebnisse pro Stufe klar vorgeben.',
+  },
+  'Schüler unterrichten': {
+    werte: { komplexitaet: 4, einuebung: 3, lerngruppe: 4, lehrkraft: 3, vorbereitung: 4, material: 3, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Sehr lernwirksam für die Unterrichtenden, riskant für die Zuhörenden. Die Lehrkraft muss Vorbereitung begleiten und Fehler danach ruhig korrigieren.',
+  },
 };
