@@ -138,4 +138,29 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Anspruchsvoll, weil die Beziehungen zwischen Begriffen benannt werden müssen. Erst an bekannten Inhalten üben. Jüngere arbeiten mit vorgegebenen Begriffen und Verbindungswörtern.',
   },
+  'Begriffe zuordnen': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 1, lehrkraft: 1, vorbereitung: 2, material: 3, steuerung: 1 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Läuft sofort und in jeder Klasse. Die Qualität hängt an gut gewählten Paaren: Ähnliche Begriffe machen die Übung anspruchsvoll, zu offensichtliche Paare langweilen.',
+  },
+  'Digitaler Kurztest': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 1, lehrkraft: 2, vorbereitung: 3, material: 4, steuerung: 1 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Für Schüler einfach, der Aufwand liegt in guten Fragen und funktionierenden Geräten. Aussagekräftig wird er erst, wenn die falschen Antworten typische Fehler abbilden.',
+  },
+  'Fallstudie': {
+    werte: { komplexitaet: 4, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 4, material: 5, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Steht und fällt mit einem authentischen, gut aufbereiteten Fall. Jüngere Klassen brauchen einen kurzen, alltagsnahen Fall und Leitfragen für jeden Schritt.',
+  },
+  'Fishbowl-Diskussion': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 4, lehrkraft: 3, vorbereitung: 2, material: 1, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Braucht eine Gruppe, die im Innenkreis offen spricht und im Außenkreis still beobachtet. Ohne Beobachtungsauftrag schaltet der Außenkreis ab.',
+  },
+  'Flipped Classroom': {
+    werte: { komplexitaet: 3, einuebung: 4, lerngruppe: 3, lehrkraft: 3, vorbereitung: 5, material: 5, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Funktioniert nur, wenn die Schüler zuverlässig vorbereitet kommen. Das muss eingeübt werden. Für Unvorbereitete einen Plan haben, sonst zerfällt die Stunde.',
+  },
 };
