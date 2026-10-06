@@ -8,6 +8,8 @@ import AssistentenInfos from './AssistentenInfos';
 import GrafikVorlageDialog from './GrafikVorlageDialog';
 import StundenmodellRaster from './StundenmodellRaster';
 import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
+import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
+import AnspruchsProfil from './AnspruchsProfil';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -77,6 +79,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
           <Switch checked={!!werte.bauplan_fertig} onCheckedChange={(v) => setze('bauplan_fertig', v)} /> Bauplan geprüft
         </label>
       </div>
+      {PROFIL_PROBE[methode.name] && <AnspruchsProfil profil={PROFIL_PROBE[methode.name]} />}
       {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} /> : <div className="space-y-2">
         <p className="text-sm font-medium">In welchen Phasen kommt sie vor?</p>
         <div className="flex flex-wrap gap-2">
