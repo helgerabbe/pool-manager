@@ -20,6 +20,8 @@ export const EIGNUNG = {
   nein: { label: 'Nicht geeignet', cls: 'bg-red-500' },
 };
 
+const jg = (...w) => Object.fromEntries(JAHRGAENGE.map((j, i) => [j, w[i]]));
+
 export const PROFIL_PROBE = {
   'Informierender Unterrichtseinstieg': {
     werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 1, lehrkraft: 1, vorbereitung: 2, material: 2, steuerung: 1 },
@@ -50,5 +52,55 @@ export const PROFIL_PROBE = {
     werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 4, lehrkraft: 3, vorbereitung: 4, material: 4, steuerung: 4 },
     jahrgaenge: { 5: 'warnung', 6: 'vereinfachen', 7: 'vereinfachen', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
     fazit: 'Anspruchsvoll für alle Beteiligten: gutes Material, eingespielte Teams und eine Lehrkraft, die den Prozess im Blick behält. Erst mit kleinen Teamaufgaben anbahnen.',
+  },
+  'Kartenabfrage': {
+    werte: { komplexitaet: 2, einuebung: 2, lerngruppe: 2, lehrkraft: 3, vorbereitung: 2, material: 2, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Einfach für die Schüler, die Arbeit liegt beim Clustern: Die Lehrkraft muss Karten zügig und nachvollziehbar ordnen. In Klasse 5 eine Karte pro Kind und klare Schreibregeln.',
+  },
+  'Vertieftes Üben im Team mit Ämtern': {
+    werte: { komplexitaet: 4, einuebung: 5, lerngruppe: 4, lehrkraft: 3, vorbereitung: 4, material: 4, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Die Ämter geben Halt, müssen aber mehrfach eingeübt werden, bis jedes Kind seine Rolle kennt. Dann läuft es ruhiger als ohne Ämter. Anfangs mit Rollenkarten arbeiten.',
+  },
+  'Positionslinie / Meinungsbarometer': {
+    werte: { komplexitaet: 2, einuebung: 1, lerngruppe: 3, lehrkraft: 2, vorbereitung: 1, material: 1, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Schnell aufgebaut und bewegt die Klasse. Schüler müssen sich offen positionieren, das braucht ein sicheres Klima. Die Begründung, nicht der Standort, ist der Kern.',
+  },
+  'Vier-Ecken-Methode': {
+    werte: { komplexitaet: 2, einuebung: 1, lerngruppe: 3, lehrkraft: 2, vorbereitung: 2, material: 2, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Leicht verständlich, aber Bewegung im Raum kann unruhig werden. Gute, wirklich unterschiedliche Antworten in den Ecken sind entscheidend. Gruppendruck („ich gehe zu meinen Freunden“) im Blick behalten.',
+  },
+  'Think-Pair-Share': {
+    werte: { komplexitaet: 2, einuebung: 3, lerngruppe: 2, lehrkraft: 2, vorbereitung: 1, material: 1, steuerung: 2 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Universell einsetzbar und wird mit Routine sehr wirksam. Die stille Denkphase muss konsequent eingehalten werden, sonst fällt sie weg. Zeiten klar ansagen.',
+  },
+  'Demonstration / Experiment vorführen': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 2, lehrkraft: 4, vorbereitung: 4, material: 5, steuerung: 2 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Für Schüler sehr zugänglich, für die Lehrkraft aufwendig: Aufbau, Probelauf und Sicherheit müssen sitzen. Ein misslungener Versuch ist nur mit Plan B zu retten.',
+  },
+  'Problemaufriss / Schätzfrage': {
+    werte: { komplexitaet: 2, einuebung: 1, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 3, steuerung: 2 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Weckt schnell Neugier, wenn die Frage gut gewählt ist. Für Jüngere braucht es greifbare Größen. Die Schätzungen sichtbar festhalten, damit später verglichen werden kann.',
+  },
+  'Wortwolke': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 3, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Technisch einfach, braucht aber funktionierende Geräte. Anonyme Eingaben können zu Albernheiten führen, deshalb Moderation einschalten oder Regeln vorher klären.',
+  },
+  'Mystery / Rätsel': {
+    werte: { komplexitaet: 4, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 5, material: 5, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Sehr motivierend, aber das Material entscheidet alles: Karten müssen exakt zusammenpassen. Jüngere Klassen brauchen weniger Karten und eine Strukturhilfe zum Ordnen.',
+  },
+  'Gedankenexperiment': {
+    werte: { komplexitaet: 4, einuebung: 2, lerngruppe: 3, lehrkraft: 4, vorbereitung: 2, material: 1, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Verlangt abstraktes Denken und eine Lehrkraft, die das Gespräch auf das Ziel lenkt. In unteren Jahrgängen nur mit sehr konkretem, alltagsnahem Szenario.',
   },
 };
