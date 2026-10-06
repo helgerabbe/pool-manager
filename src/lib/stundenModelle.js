@@ -181,6 +181,18 @@ export const EINORDNUNG_PROBE = {
     diagnose_mittel: { passung: 3, phasen: { 'Lernstand erheben': 'teil' }, hinweis: 'Mit Begründungsauftrag als Diagnoseaufgabe nutzbar.' },
     diagnose_lang: { passung: 4, phasen: { 'Nachweise sammeln': 'bedingt' }, hinweis: 'Allenfalls eine Teilaufgabe.' },
   },
+  'Wortwolke': {
+    induktiv: { passung: 3, phasen: { 'Vermutungen bilden': 'teil', 'Problem/Phänomen begegnen': 'bedingt' }, hinweis: 'Sammelt erste Ideen oder Vermutungen sichtbar. Für das eigentliche Erkunden zu oberflächlich.' },
+    deduktiv: { passung: 2, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'kern' }, hinweis: 'Macht Vorwissen und Begriffe der Klasse in Sekunden sichtbar, an die die Regel anknüpft.' },
+    uebung_kurz: { passung: 4, phasen: { 'Übungsfokus klären': 'bedingt' }, hinweis: 'Kostet Gerätezeit, ohne zum Üben beizutragen.' },
+    uebung_mittel: { passung: 4, phasen: { 'Nächste Schritte': 'bedingt' }, hinweis: 'Höchstens als kurze Abfrage „Was war schwierig?“ am Ende.' },
+    uebung_lang: { passung: 3, phasen: { 'Abschlussbilanz': 'teil' }, hinweis: 'Als schnelle Bilanz nach langer Übungszeit möglich.' },
+    wiederholung: { passung: 1, phasen: { 'Vorwissen reaktivieren': 'kern', 'Lücken bestimmen': 'teil' }, hinweis: 'Zeigt, welche Begriffe präsent sind und welche fehlen. Fehlende Kernbegriffe sind der Hinweis auf Lücken.' },
+    vertieft: { passung: 3, phasen: { 'Aufgabe & Ziel klären': 'bedingt', 'Transfer reflektieren': 'teil' }, hinweis: 'Zum Einstimmen oder als Abschlussreflexion, nicht für die Teamarbeit selbst.' },
+    diagnose_kurz: { passung: 2, phasen: { 'Lernstand erheben': 'kern' }, hinweis: 'Schnelles Stimmungs- oder Begriffsbild der ganzen Klasse, aber anonym und ohne Begründung.' },
+    diagnose_mittel: { passung: 3, phasen: { 'Lernstand erheben': 'teil' }, hinweis: 'Liefert ein Gesamtbild, keine Aussage über einzelne Schüler.' },
+    diagnose_lang: { passung: 4, phasen: { 'Nachweise sammeln': 'bedingt' }, hinweis: 'Für belastbare Nachweise zu grob.' },
+  },
   'Lehrervortrag / Input': {
     induktiv: { passung: 4, phasen: { 'Regel formulieren': 'bedingt' }, hinweis: 'Nimmt die Erkenntnis vorweg. Höchstens zum Bündeln der gefundenen Regel.' },
     deduktiv: { passung: 1, phasen: { 'Regel einführen': 'kern', 'Verstehen & klären': 'teil' }, hinweis: 'Kernmethode der Regeleinführung. Kurz halten und mit Beispielen verbinden.' },
