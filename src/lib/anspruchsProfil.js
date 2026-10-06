@@ -103,4 +103,39 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('warnung', 'warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Verlangt abstraktes Denken und eine Lehrkraft, die das Gespräch auf das Ziel lenkt. In unteren Jahrgängen nur mit sehr konkretem, alltagsnahem Szenario.',
   },
+  'Zwillingsfindung': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 2, lehrkraft: 1, vorbereitung: 3, material: 3, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Leicht verständlich, die Arbeit liegt im Vorbereiten passender Kartenpaare. Bei ungerader Schülerzahl einen Joker einplanen. Die kurze Unruhe beim Suchen klar begrenzen.',
+  },
+  'Objekt-Analyse': {
+    werte: { komplexitaet: 3, einuebung: 2, lerngruppe: 2, lehrkraft: 3, vorbereitung: 3, material: 4, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Gelingt mit einem aussagekräftigen Objekt und gezielten Leitfragen. Jüngere Schüler beschreiben gern, deuten aber kaum, deshalb Beobachten und Deuten klar trennen.',
+  },
+  'Lehrervortrag / Input': {
+    werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 2, lehrkraft: 3, vorbereitung: 3, material: 2, steuerung: 1 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Leicht planbar, aber nur wirksam, wenn er kurz, anschaulich und gut gegliedert ist. In Klasse 5 und 6 höchstens wenige Minuten am Stück und mit Bildern oder Beispielen.',
+  },
+  'Fragend-entwickelndes Unterrichtsgespräch': {
+    werte: { komplexitaet: 2, einuebung: 2, lerngruppe: 3, lehrkraft: 4, vorbereitung: 3, material: 1, steuerung: 4 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Wirkt einfach, ist aber für die Lehrkraft anspruchsvoll: gute Impulsfragen, Geduld und Lenkung ohne Abfragen. Schnell sprechen nur wenige, deshalb Denkzeit und breite Beteiligung sichern.',
+  },
+  'Insert-Methode': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 2, lehrkraft: 2, vorbereitung: 3, material: 3, steuerung: 2 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Braucht ein paar Durchgänge, bis die Zeichen sicher sitzen. Für Jüngere auf zwei Zeichen reduzieren (✓ und ?). Der Text muss zur Lesefähigkeit passen.',
+  },
+  'Textknacken / Markieren': {
+    werte: { komplexitaet: 2, einuebung: 3, lerngruppe: 1, lehrkraft: 2, vorbereitung: 2, material: 2, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Ruhige Einzelarbeit, die mit Übung immer besser wird. Ohne klare Regeln markieren Schüler zu viel. Anfangs eine Farbe und eine Leitfrage vorgeben.',
+  },
+  'Concept Mapping': {
+    werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 2, lehrkraft: 3, vorbereitung: 2, material: 2, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Anspruchsvoll, weil die Beziehungen zwischen Begriffen benannt werden müssen. Erst an bekannten Inhalten üben. Jüngere arbeiten mit vorgegebenen Begriffen und Verbindungswörtern.',
+  },
 };
