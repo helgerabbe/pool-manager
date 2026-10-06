@@ -43,7 +43,8 @@ Farben über die Farbvariablen (var(--leit) usw.) und deren Abstufungen/Transpar
 Setze eine Bibliothek ein, wenn sie dem Verstehen dient (z. B. Pyramide per Schieberegler flüssig zum Körpernetz aufklappen, Kreis abrollen, um Umfang und Radius zu zeigen). Bewegungen flüssig über requestAnimationFrame bzw. die Bibliothek, Schieberegler wirken sofort. Für einfache Seiten reicht reines CSS/JavaScript.
 
 BILDER: Nur echte Fotos, KEINE Comic-Figuren, keine Illustrationen, keine Cliparts, keine Emojis als Bildersatz.
-Wo ein Foto die Seite unterstützt oder verschönert (meist 1–2, höchstens 3), setze <img src="{{bild:ID}}" alt="..." style="object-fit:cover"> mit einer kurzen ID (z. B. kopf, bild1) und beschreibe das Foto in "bilder" auf Englisch (Motiv, Perspektive, Umgebung). Keine Personenporträts im Vordergrund, keine Schrift im Bild.`;
+Wo ein Foto die Seite unterstützt oder verschönert (meist 1–2, höchstens 3), setze <img src="{{bild:ID}}" alt="..." style="object-fit:cover"> mit einer kurzen ID (z. B. kopf, bild1) und beschreibe das Foto in "bilder" auf Englisch (Motiv, Perspektive, Umgebung). Keine Personenporträts im Vordergrund, keine Schrift im Bild.
+STIMMUNGSBILD: Zusätzlich darf die Schüleransicht (und dezent auch die Lehreransicht) ein ruhiges, schönes Naturfoto als Hintergrund oder Kopfbild bekommen, das zum Thema oder zur Stimmung passt (z. B. Wald, Meer, Himmel, Berge, Wiese). Setze es als background-image (url('{{bild:hintergrund}}'), background-size:cover) und lege einen halbtransparenten Farbverlauf oder eine helle Fläche darüber, damit Texte immer gut lesbar bleiben. Beschreibe es in "bilder" mit der ID "hintergrund" (weite Landschaft, viel ruhige Fläche, sanftes Licht).`;
 
   const res = await base44.integrations.Core.InvokeLLM({
     prompt,
