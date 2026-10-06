@@ -203,4 +203,24 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Sehr lernwirksam für die Unterrichtenden, riskant für die Zuhörenden. Die Lehrkraft muss Vorbereitung begleiten und Fehler danach ruhig korrigieren.',
   },
+  'WebQuest': {
+    werte: { komplexitaet: 4, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 5, material: 5, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Steht und fällt mit geprüften, altersgerechten Quellen und einem klaren Auftrag. Ohne Struktur surfen die Schüler ziellos. Jüngere brauchen wenige Links und einen Rechercheleitfaden.',
+  },
+  'World Café': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 3, material: 2, steuerung: 4 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Lebt von guten Leitfragen und verlässlichen Gastgebern an den Tischen. Ohne feste Wechselzeiten und Schreibauftrag wird geplaudert. Jüngere brauchen weniger Tische und kürzere Runden.',
+  },
+  'Zeitstrahl erstellen': {
+    werte: { komplexitaet: 2, einuebung: 2, lerngruppe: 1, lehrkraft: 2, vorbereitung: 2, material: 3, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Gut planbar und für alle zugänglich. Schwierig sind Maßstab und Abstände, deshalb anfangs eine Vorlage mit Skala vorgeben. Begründungen machen ihn aussagekräftig.',
+  },
+  'Arbeitsteilige Gruppenarbeit': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 4, material: 4, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Braucht gleichwertige Teilaufgaben und eine klare Zusammenführung, sonst kennt jede Gruppe nur ihren Teil. Ergebnisse müssen für alle gesichert werden.',
+  },
 };
