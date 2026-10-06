@@ -26,4 +26,29 @@ export const PROFIL_PROBE = {
     jahrgaenge: { 5: 'ja', 6: 'ja', 7: 'ja', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
     fazit: 'Funktioniert immer und sofort, auch ohne Vorerfahrung. In Klasse 5 und 6 kurz halten und den Ablauf zusätzlich sichtbar machen.',
   },
+  'Stummer Impuls': {
+    werte: { komplexitaet: 1, einuebung: 2, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 4, steuerung: 2 },
+    jahrgaenge: { 5: 'ja', 6: 'ja', 7: 'ja', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
+    fazit: 'Leicht einzusetzen, wird mit Routine besser. Steht und fällt mit einem wirklich treffenden Impuls. Jüngere Klassen brauchen danach eine klare Beobachtungsfrage.',
+  },
+  'Provokante These': {
+    werte: { komplexitaet: 3, einuebung: 2, lerngruppe: 4, lehrkraft: 3, vorbereitung: 2, material: 3, steuerung: 4 },
+    jahrgaenge: { 5: 'warnung', 6: 'warnung', 7: 'vereinfachen', 8: 'vereinfachen', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
+    fazit: 'Braucht eine Gruppe, die fair streiten kann, und eine Lehrkraft, die die Diskussion sicher lenkt. In Klasse 5 und 6 nur mit sehr greifbarer These und festen Gesprächsregeln.',
+  },
+  'Blitzlicht': {
+    werte: { komplexitaet: 1, einuebung: 2, lerngruppe: 3, lehrkraft: 1, vorbereitung: 1, material: 1, steuerung: 2 },
+    jahrgaenge: { 5: 'ja', 6: 'ja', 7: 'ja', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
+    fazit: 'Fast ohne Vorbereitung und überall einsetzbar. Ehrliche Antworten gibt es erst in einer Gruppe mit Vertrauen, sonst bleibt es bei „gut“. Als Ritual wirkt es am besten.',
+  },
+  'Brainstorming / Mindmap': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 2, steuerung: 3 },
+    jahrgaenge: { 5: 'vereinfachen', 6: 'vereinfachen', 7: 'ja', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
+    fazit: 'Muss ein paar Mal geübt werden, bis die Schüler sammeln und ordnen trennen und den Sinn verstehen. In Klasse 5 und 6 mit vorgegebenen Hauptästen beginnen.',
+  },
+  'Vertieftes Üben im Team': {
+    werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 4, lehrkraft: 3, vorbereitung: 4, material: 4, steuerung: 4 },
+    jahrgaenge: { 5: 'warnung', 6: 'vereinfachen', 7: 'vereinfachen', 8: 'ja', 9: 'ja', 10: 'ja', 11: 'ja', 12: 'ja', 13: 'ja' },
+    fazit: 'Anspruchsvoll für alle Beteiligten: gutes Material, eingespielte Teams und eine Lehrkraft, die den Prozess im Blick behält. Erst mit kleinen Teamaufgaben anbahnen.',
+  },
 };
