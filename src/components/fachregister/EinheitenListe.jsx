@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2, BookMarked } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 /** Einheiten eines Fachs und Jahrgangs im Fachregister. */
 export default function EinheitenListe({ einheiten, onLoeschen }) {
@@ -11,7 +12,7 @@ export default function EinheitenListe({ einheiten, onLoeschen }) {
       {einheiten.map((e) => (
         <li key={e.id} className="group flex items-center gap-3 rounded-xl border bg-card px-4 py-3 transition-shadow hover:shadow-sm">
           <BookMarked className="h-4 w-4 text-primary" />
-          <span className="flex-1 font-medium">{e.titel}</span>
+          <Link to={`/fachregister/${e.id}`} className="flex-1 font-medium hover:text-primary hover:underline">{e.titel}</Link>
           {(e.kurse || []).map((k) => <span key={k} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">{k}</span>)}
           <button onClick={() => window.confirm(`„${e.titel}“ löschen?`) && onLoeschen(e.id)}
             className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" aria-label="Löschen">

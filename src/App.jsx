@@ -32,6 +32,7 @@ const StundenplanerVorschau = lazyWithRetry(() => import('@/pages/StundenplanerV
 const EinheitViewManager = lazyWithRetry(() => import('@/components/workspace/EinheitViewManager'));
 const Aktivitaetengalerie = lazyWithRetry(() => import('@/pages/Aktivitaetengalerie'));
 const Fachregister = lazyWithRetry(() => import('@/pages/Fachregister'));
+const FachregisterEinheitDetail = lazyWithRetry(() => import('@/pages/FachregisterEinheitDetail'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const StundenPlayerLehrer = lazyWithRetry(() => import('@/pages/StundenPlayerLehrer'));
 const StundenEditor = lazyWithRetry(() => import('@/pages/StundenEditor'));
@@ -171,6 +172,7 @@ const AuthenticatedApp = () => {
           <Route path="/unterrichtsstunde/:id" element={<ErrorBoundary fallback="Unterrichtsstunde konnte nicht geladen werden."><UnterrichtsstundeDetail /></ErrorBoundary>} />
           <Route path="/aktivitaetengalerie" element={<ErrorBoundary fallback="Die Methodengalerie konnte nicht geladen werden."><Aktivitaetengalerie /></ErrorBoundary>} />
           <Route path="/fachregister" element={<ErrorBoundary fallback="Das Fachregister konnte nicht geladen werden."><ProtectedRoute component={Fachregister} requiredPermission="kannBenutzerVerwalten" redirectTo="/" /></ErrorBoundary>} />
+          <Route path="/fachregister/:id" element={<ErrorBoundary fallback="Die Einheit konnte nicht geladen werden."><ProtectedRoute component={FachregisterEinheitDetail} requiredPermission="kannBenutzerVerwalten" redirectTo="/" /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
           <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>
