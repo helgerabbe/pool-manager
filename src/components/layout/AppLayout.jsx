@@ -210,7 +210,7 @@ export default function AppLayout() {
               )}
 
               {permissions.kannBenutzerVerwalten && (
-                <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Aktivitätengalerie" isActive={isActive('/aktivitaetengalerie')} />
+                <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Methodengalerie" isActive={isActive('/aktivitaetengalerie')} />
               )}
 
               {/* Hilfe: Assistent (mit Dokumentation dahinter) */}

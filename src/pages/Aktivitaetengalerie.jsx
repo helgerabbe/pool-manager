@@ -30,7 +30,7 @@ export default function Aktivitaetengalerie() {
             className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahlId === 'konzeption' ? 'bg-muted font-semibold' : ''}`}>
             <BookOpen className="h-4 w-4 text-primary" /> Didaktische Konzeption
           </button>
-          <h1 className="font-display text-lg font-bold">Aktivitätengalerie</h1>
+          <h1 className="font-display text-lg font-bold">Methodengalerie</h1>
           <p className="text-xs text-muted-foreground">{fertig} von {galerie.length} Bauplänen geprüft</p>
           <StufenFilter stufe={stufe} setStufe={setStufe} />
           <div className="relative">

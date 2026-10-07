@@ -168,7 +168,7 @@ const AuthenticatedApp = () => {
           <Route path="/unterrichtsstunde/:id/start" element={<ErrorBoundary fallback="Die Stunde konnte nicht gestartet werden."><StundenPlayerLehrer /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id/editor" element={<ErrorBoundary fallback="Der Editor konnte nicht geladen werden."><StundenEditor /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id" element={<ErrorBoundary fallback="Unterrichtsstunde konnte nicht geladen werden."><UnterrichtsstundeDetail /></ErrorBoundary>} />
-          <Route path="/aktivitaetengalerie" element={<ErrorBoundary fallback="Die Aktivitätengalerie konnte nicht geladen werden."><Aktivitaetengalerie /></ErrorBoundary>} />
+          <Route path="/aktivitaetengalerie" element={<ErrorBoundary fallback="Die Methodengalerie konnte nicht geladen werden."><Aktivitaetengalerie /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
           <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>
