@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Aktivit\u00e4tengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher' (siehe src/lib/methodenFachbezug.js).",
   "properties": {
     "name": {
       "type": "string"
@@ -93,6 +93,23 @@
       "type": "boolean",
       "default": false,
       "description": "Einordnung unsicher, bitte pr\u00fcfen."
+    },
+    "fachbezug": {
+      "type": "string",
+      "enum": [
+        "fachgebunden",
+        "faechergruppe",
+        "uebergreifend"
+      ],
+      "description": "Fachgebunden = f\u00fcr ein Fach entwickelt, F\u00e4chergruppe = mehrere verwandte F\u00e4cher, \u00fcbergreifend = alle F\u00e4cher."
+    },
+    "faecher": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Besonders geeignete F\u00e4cher (bei fachgebunden/F\u00e4chergruppe)."
     },
     "digital_umsetzung": {
       "type": "string"

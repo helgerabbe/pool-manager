@@ -2,6 +2,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { STUFEN } from '@/lib/methodenStufen';
 import StufenFilter from '@/components/aktivitaetengalerie/StufenFilter';
+import FachFilter from '@/components/aktivitaetengalerie/FachFilter';
 import { Loader2, Search, CheckCircle2, Circle, BookOpen } from 'lucide-react';
 import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
@@ -18,7 +19,9 @@ export default function Aktivitaetengalerie() {
   });
   const [stufe, setStufe] = React.useState(null);
   const galerie = methoden.filter((m) => m.quelle !== 'poolzeit' && m.ist_aktiv !== false);
-  const liste = galerie.filter((m) => m.name.toLowerCase().includes(suche.toLowerCase()) && (!stufe || m.stufe === stufe));
+  const [fach, setFach] = React.useState(null);
+  const passtFach = (m) => !fach || m.fachbezug === 'uebergreifend' || (m.faecher || []).includes(fach);
+  const liste = galerie.filter((m) => m.name.toLowerCase().includes(suche.toLowerCase()) && (!stufe || m.stufe === stufe) && passtFach(m));
   const auswahl = galerie.find((m) => m.id === auswahlId) || liste[0];
   const fertig = galerie.filter((m) => m.bauplan_fertig).length;
 
@@ -33,6 +36,7 @@ export default function Aktivitaetengalerie() {
           <h1 className="font-display text-lg font-bold">Methodengalerie</h1>
           <p className="text-xs text-muted-foreground">{fertig} von {galerie.length} Bauplänen geprüft</p>
           <StufenFilter stufe={stufe} setStufe={setStufe} />
+          <FachFilter fach={fach} setFach={setFach} />
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suchen …" className="pl-8" />

@@ -12,6 +12,7 @@ import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
 import AnspruchsProfil from './AnspruchsProfil';
 import StufenAuswahl from './StufenAuswahl';
+import FachbezugAuswahl from './FachbezugAuswahl';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -63,7 +64,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
 
   const speichern = async () => {
     setSpeichert(true);
-    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'stufe', 'auch_kurzform', 'ausbaubar', 'stufe_pruefen', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_grafikassistent'].map((k) => [k, werte[k]]));
+    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'stufe', 'auch_kurzform', 'ausbaubar', 'stufe_pruefen', 'fachbezug', 'faecher', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_grafikassistent'].map((k) => [k, werte[k]]));
     await base44.entities.MethodenKatalog.update(methode.id, daten);
     setSpeichert(false);
     toast.success('Gespeichert.');
@@ -82,6 +83,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
         </label>
       </div>
       <StufenAuswahl werte={werte} setze={setze} />
+      <FachbezugAuswahl werte={werte} setze={setze} />
       {PROFIL_PROBE[methode.name] && <AnspruchsProfil profil={PROFIL_PROBE[methode.name]} />}
       {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} /> : <div className="space-y-2">
         <p className="text-sm font-medium">In welchen Phasen kommt sie vor?</p>
