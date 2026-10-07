@@ -1,5 +1,6 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { modusText } from '@/lib/methodenModus';
 import { Loader2, Search, CheckCircle2, Circle, BookOpen } from 'lucide-react';
 import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
@@ -41,7 +42,7 @@ export default function Aktivitaetengalerie() {
               {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
               <span className="flex-1 truncate">{m.name}</span>
               {m.quelle === 'poolzeit' && <span className="rounded bg-bundle-soft px-1.5 py-0.5 text-[10px] font-semibold text-bundle">Poolzeit</span>}
-              <span className="text-xs text-muted-foreground">{m.modus}</span>
+              <span className="text-xs text-muted-foreground">{modusText(m.modus)}</span>
             </button>
           ))}
         </div>
