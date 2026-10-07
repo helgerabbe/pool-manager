@@ -1,0 +1,61 @@
+{
+  "name": "FachregisterEinheit",
+  "type": "object",
+  "description": "INHALTLICHES FACHREGISTER (2026-10-07): Eine Einheit des fachlichen Wissensspeichers, gegliedert nach Fach (LookupFaecher.name) und Jahrgangsstufe 5-13. Grundlage f\u00fcr sp\u00e4tere Arbeitspl\u00e4ne, KC-Kompetenzen und Sachstruktur. Zun\u00e4chst nur f\u00fcr Admins.",
+  "properties": {
+    "fach": {
+      "type": "string"
+    },
+    "jahrgangsstufe": {
+      "type": "string",
+      "enum": [
+        "5",
+        "6",
+        "7",
+        "8",
+        "9",
+        "10",
+        "11",
+        "12",
+        "13"
+      ]
+    },
+    "titel": {
+      "type": "string"
+    },
+    "beschreibung": {
+      "type": "string"
+    },
+    "reihenfolge": {
+      "type": "number",
+      "default": 100
+    }
+  },
+  "required": [
+    "fach",
+    "jahrgangsstufe",
+    "titel"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
