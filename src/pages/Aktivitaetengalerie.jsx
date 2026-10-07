@@ -46,7 +46,7 @@ export default function Aktivitaetengalerie() {
               {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
               <span className="flex-1 truncate">{m.name}</span>
               {m.stufe_pruefen && <span className="text-xs text-orange-600">prüfen</span>}
-              {m.stufe && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STUFEN[m.stufe].cls}`}>Stufe {m.stufe}</span>}
+              {m.stufe && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STUFEN[m.stufe].cls}`} title={STUFEN[m.stufe].name}>{m.stufe}</span>}
             </button>
           ))}
         </div>
