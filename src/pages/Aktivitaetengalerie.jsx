@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { modusText } from '@/lib/methodenModus';
+import { STUFEN } from '@/lib/methodenStufen';
+import StufenFilter from '@/components/aktivitaetengalerie/StufenFilter';
 import { Loader2, Search, CheckCircle2, Circle, BookOpen } from 'lucide-react';
 import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
@@ -15,9 +16,11 @@ export default function Aktivitaetengalerie() {
     queryKey: ['methodenKatalog'],
     queryFn: () => base44.entities.MethodenKatalog.list('reihenfolge', 500),
   });
-  const liste = methoden.filter((m) => m.name.toLowerCase().includes(suche.toLowerCase()));
-  const auswahl = methoden.find((m) => m.id === auswahlId) || liste[0];
-  const fertig = methoden.filter((m) => m.bauplan_fertig).length;
+  const [stufe, setStufe] = React.useState(null);
+  const galerie = methoden.filter((m) => m.quelle !== 'poolzeit' && m.ist_aktiv !== false);
+  const liste = galerie.filter((m) => m.name.toLowerCase().includes(suche.toLowerCase()) && (!stufe || m.stufe === stufe));
+  const auswahl = galerie.find((m) => m.id === auswahlId) || liste[0];
+  const fertig = galerie.filter((m) => m.bauplan_fertig).length;
 
   return (
     <div className="flex h-full">
@@ -28,7 +31,8 @@ export default function Aktivitaetengalerie() {
             <BookOpen className="h-4 w-4 text-primary" /> Didaktische Konzeption
           </button>
           <h1 className="font-display text-lg font-bold">Aktivitätengalerie</h1>
-          <p className="text-xs text-muted-foreground">{fertig} von {methoden.length} Bauplänen geprüft</p>
+          <p className="text-xs text-muted-foreground">{fertig} von {galerie.length} Bauplänen geprüft</p>
+          <StufenFilter stufe={stufe} setStufe={setStufe} />
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suchen …" className="pl-8" />
@@ -41,8 +45,8 @@ export default function Aktivitaetengalerie() {
               className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahl?.id === m.id ? 'bg-muted font-semibold' : ''} ${m.quelle === 'poolzeit' ? 'border-l-4 border-bundle' : ''}`}>
               {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
               <span className="flex-1 truncate">{m.name}</span>
-              {m.quelle === 'poolzeit' && <span className="rounded bg-bundle-soft px-1.5 py-0.5 text-[10px] font-semibold text-bundle">Poolzeit</span>}
-              <span className="text-xs text-muted-foreground">{modusText(m.modus)}</span>
+              {m.stufe_pruefen && <span className="text-xs text-orange-600">prüfen</span>}
+              {m.stufe && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STUFEN[m.stufe].cls}`}>Stufe {m.stufe}</span>}
             </button>
           ))}
         </div>

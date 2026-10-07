@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung (fr\u00fcher 'F'), A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder und die \u00dcbersicht. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent' sind Arbeitsgrundlagen f\u00fcr den Unterrichts- bzw. Grafikassistenten. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' h\u00e4lt je Fach eine Beispielvorlage { thema, lehrer, schueler, erstellt_am } als HTML-Fragmente, die mit dem Grund-Design aus src/lib/stundenDesign.js angezeigt werden.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Aktivit\u00e4tengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher.",
   "properties": {
     "name": {
       "type": "string"
@@ -66,6 +66,33 @@
         "A(+D)",
         "A"
       ]
+    },
+    "stufe": {
+      "type": "integer",
+      "enum": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "description": "Komplexit\u00e4tsstufe des Methodenrasters."
+    },
+    "auch_kurzform": {
+      "type": "boolean",
+      "default": false,
+      "description": "L\u00e4sst sich eine Stufe kleiner durchf\u00fchren."
+    },
+    "ausbaubar": {
+      "type": "boolean",
+      "default": false,
+      "description": "L\u00e4sst sich eine Stufe gr\u00f6\u00dfer durchf\u00fchren."
+    },
+    "stufe_pruefen": {
+      "type": "boolean",
+      "default": false,
+      "description": "Einordnung unsicher, bitte pr\u00fcfen."
     },
     "digital_umsetzung": {
       "type": "string"
