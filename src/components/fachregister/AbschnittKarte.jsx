@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Pencil, Check } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -20,7 +21,7 @@ export default function AbschnittKarte({ abschnitt, wert, onChange }) {
       {bearbeiten ? (
         <Textarea value={wert || ''} onChange={(e) => onChange(e.target.value)} rows={14} className="font-mono text-sm" />
       ) : wert ? (
-        <div className="prose prose-sm max-w-none"><ReactMarkdown>{wert}</ReactMarkdown></div>
+        <div className="prose prose-sm max-w-none"><ReactMarkdown remarkPlugins={[remarkGfm]}>{wert}</ReactMarkdown></div>
       ) : (
         <p className="text-sm italic text-muted-foreground">Noch leer.</p>
       )}
