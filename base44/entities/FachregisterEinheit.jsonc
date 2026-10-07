@@ -1,7 +1,7 @@
 {
   "name": "FachregisterEinheit",
   "type": "object",
-  "description": "INHALTLICHES FACHREGISTER (2026-10-07): Eine Einheit des fachlichen Wissensspeichers, gegliedert nach Fach (LookupFaecher.name) und Jahrgangsstufe 5-13. Grundlage f\u00fcr sp\u00e4tere Arbeitspl\u00e4ne, KC-Kompetenzen und Sachstruktur. Zun\u00e4chst nur f\u00fcr Admins.",
+  "description": "INHALTLICHES FACHREGISTER (2026-10-07): Eine Einheit des fachlichen Wissensspeichers, gegliedert nach Fach (LookupFaecher.name) und Jahrgangsstufe 5-13. Grundlage f\u00fcr sp\u00e4tere Arbeitspl\u00e4ne, KC-Kompetenzen und Sachstruktur. 'kurse' = Kursniveaus laut Jahresarbeitsplan (z. B. Blick A, Blick O, G-Kurs, E-Kurs); leer = f\u00fcr alle. Zun\u00e4chst nur f\u00fcr Admins.",
   "properties": {
     "fach": {
       "type": "string"
@@ -22,6 +22,13 @@
     },
     "titel": {
       "type": "string"
+    },
+    "kurse": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
     },
     "beschreibung": {
       "type": "string"
