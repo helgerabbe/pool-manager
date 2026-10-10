@@ -5,7 +5,7 @@ import { Pencil, Check } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 
 /** Ein Abschnitt des Arbeitsplans: Anzeige als Markdown, Bearbeiten per Klick. */
-export default function AbschnittKarte({ abschnitt, wert, onChange }) {
+export default function AbschnittKarte({ abschnitt, wert, onChange, bearbeitbar = true }) {
   const [bearbeiten, setBearbeiten] = React.useState(false);
   return (
     <section className="rounded-xl border bg-card p-5">
@@ -14,9 +14,11 @@ export default function AbschnittKarte({ abschnitt, wert, onChange }) {
           <h3 className="font-display text-lg font-bold">{abschnitt.titel}</h3>
           <p className="text-xs text-muted-foreground">{abschnitt.hinweis}</p>
         </div>
-        <button onClick={() => setBearbeiten(!bearbeiten)} className="text-muted-foreground hover:text-primary" aria-label="Bearbeiten">
-          {bearbeiten ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
-        </button>
+        {bearbeitbar && (
+          <button onClick={() => setBearbeiten(!bearbeiten)} className="text-muted-foreground hover:text-primary" aria-label="Bearbeiten">
+            {bearbeiten ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+          </button>
+        )}
       </div>
       {bearbeiten ? (
         <Textarea value={wert || ''} onChange={(e) => onChange(e.target.value)} rows={14} className="font-mono text-sm" />

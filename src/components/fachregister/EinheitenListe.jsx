@@ -20,10 +20,12 @@ export default function EinheitenListe({ einheiten, onLoeschen }) {
             return <span className={`rounded px-2 py-0.5 text-xs ${cls}`} title="Befüllte Abschnitte">{n ? `${n}/${ABSCHNITTE.length} befüllt` : 'leer'}</span>;
           })()}
           {(e.kurse || []).map((k) => <span key={k} className="rounded bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">{k}</span>)}
-          <button onClick={() => window.confirm(`„${e.titel}“ löschen?`) && onLoeschen(e.id)}
-            className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" aria-label="Löschen">
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {onLoeschen && (
+            <button onClick={() => window.confirm(`„${e.titel}“ löschen?`) && onLoeschen(e.id)}
+              className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100" aria-label="Löschen">
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </li>
       ))}
     </ul>

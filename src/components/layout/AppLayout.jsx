@@ -212,9 +212,7 @@ export default function AppLayout() {
               {permissions.kannBenutzerVerwalten && (
                 <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Methodengalerie" isActive={isActive('/aktivitaetengalerie')} />
               )}
-              {permissions.kannBenutzerVerwalten && (
-                <NavIconLink to="/fachregister" icon={BookOpen} label="Fachregister" isActive={isActive('/fachregister')} />
-              )}
+              <NavIconLink to="/fachregister" icon={BookOpen} label="Fachregister" isActive={isActive('/fachregister')} />
 
               {/* Hilfe: Assistent (mit Dokumentation dahinter) */}
               <NavIconLink to="/docs" icon={LifeBuoy} label="Hilfe & Assistent" isActive={isActive('/docs')} />

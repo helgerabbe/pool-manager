@@ -2,6 +2,8 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useRBAC } from '@/hooks/useRBAC';
+import { ROLLEN } from '@/lib/rbac';
 import EinheitAnlegen from '@/components/fachregister/EinheitAnlegen';
 import EinheitenListe from '@/components/fachregister/EinheitenListe';
 
@@ -11,6 +13,7 @@ const JAHRGAENGE = ['5', '6', '7', '8', '9', '10', '11', '12', '13'];
 export default function Fachregister() {
   const [fach, setFach] = React.useState(null);
   const [jg, setJg] = React.useState('5');
+  const istAdmin = useRBAC().realRolle === ROLLEN.ADMIN;
   const { data: faecher = [], isLoading } = useQuery({
     queryKey: ['lookupFaecher'],
     queryFn: () => base44.entities.LookupFaecher.list(),
@@ -57,8 +60,8 @@ export default function Fachregister() {
             );
           })}
         </div>
-        <EinheitAnlegen onAnlegen={anlegen} />
-        <EinheitenListe einheiten={imJahrgang} onLoeschen={loeschen} />
+        {istAdmin && <EinheitAnlegen onAnlegen={anlegen} />}
+        <EinheitenListe einheiten={imJahrgang} onLoeschen={istAdmin ? loeschen : null} />
       </section>
     </div>
   );
