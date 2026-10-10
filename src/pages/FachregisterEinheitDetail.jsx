@@ -74,7 +74,13 @@ export default function FachregisterEinheitDetail() {
             onErgebnis={(neu) => setWerte((w) => ({ ...w, ...neu }))} />
         </details>
       )}
-      {ABSCHNITTE.map((a) => <AbschnittKarte key={a.key} abschnitt={a} wert={werte[a.key]} bearbeitbar={darf} onChange={(v) => setze(a.key, v)} />)}
+      {ABSCHNITTE.map((a) => <AbschnittKarte key={a.key} abschnitt={a} wert={werte[a.key]} bearbeitbar={darf} onChange={(v) => setze(a.key, v)}
+        onFertig={async () => {
+          await speichereServer(id, { [a.key]: werte[a.key] || '' });
+          const frisch = await base44.entities.FachregisterEinheit.get(id);
+          setze(a.key, frisch[a.key]);
+          toast.success('Abschnitt gespeichert.');
+        }} />)}
     </div>
   );
 }
