@@ -57,8 +57,9 @@ export default function FachregisterEinheitDetail() {
         )}
       </div>
       {darf && (
-        <>
-          <div className="space-y-3 rounded-xl border bg-muted/40 p-4">
+        <details className="rounded-xl border bg-muted/40 p-4">
+          <summary className="cursor-pointer font-semibold">Einheit bearbeiten (Lehrwerk, Recherche, KI-Überarbeitung)</summary>
+          <div className="mt-3 space-y-3">
             <LehrwerkUpload dateien={werte.lehrwerk_dateien} onChange={dateienAendern('lehrwerk_dateien')} />
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" className="gap-2" disabled={!!laeuft || !werte.lehrwerk_dateien?.length} onClick={() => ki('entwurf')}>
@@ -71,7 +72,7 @@ export default function FachregisterEinheitDetail() {
           </div>
           <KiUeberarbeitung einheit={werte} gesperrt={!!laeuft} onMaterialien={dateienAendern('zusatz_materialien')}
             onErgebnis={(neu) => setWerte((w) => ({ ...w, ...neu }))} />
-        </>
+        </details>
       )}
       {ABSCHNITTE.map((a) => <AbschnittKarte key={a.key} abschnitt={a} wert={werte[a.key]} bearbeitbar={darf} onChange={(v) => setze(a.key, v)} />)}
     </div>
