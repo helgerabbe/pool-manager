@@ -1,7 +1,7 @@
 {
   "name": "FachregisterEinheit",
   "type": "object",
-  "description": "INHALTLICHES FACHREGISTER (2026-10-07): Eine Einheit des fachlichen Wissensspeichers (schuleigener Arbeitsplan), gegliedert nach Fach und Jahrgang. 'kurse' = Kursniveaus laut Jahresarbeitsplan (Blick A = G-Kurs mit additiven E-Inhalten, Blick O = E-Kurs mit Reduktion fuer G). Sechs Abschnitte als Markdown: sachanalyse, inhalte, lernziele, kc_bezuege, fachsprache, didaktik (Ideen- und Wissensspeicher, auch fuer den Planungshelfer), material (Lehrwerksverweise). 'lehrwerk_dateien' = privat hochgeladene Lehrwerksseiten.",
+  "description": "INHALTLICHES FACHREGISTER (2026-10-07): Eine Einheit des fachlichen Wissensspeichers (schuleigener Arbeitsplan), gegliedert nach Fach und Jahrgang. 'kurse' = Kursniveaus laut Jahresarbeitsplan. Sechs Abschnitte als Markdown. 'lehrwerk_dateien' = privat hochgeladene Lehrwerksseiten. ZUGRIFF (2026-10-10): Lesen alle Lehrkraefte (nicht Schueler); Bearbeiten Admin und Fachschaftsleitung des Fachs ueber die Funktion fachregisterSpeichern. 'zusatz_materialien' = Materialien der Fachschaftsleitung fuer die KI-Ueberarbeitung.",
   "properties": {
     "fach": {
       "type": "string"
@@ -69,6 +69,21 @@
         }
       }
     },
+    "zusatz_materialien": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "file_uri": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "reihenfolge": {
       "type": "number",
       "default": 100
@@ -81,9 +96,18 @@
   ],
   "rls": {
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
     },
     "create": {
       "user_condition": {
