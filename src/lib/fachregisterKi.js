@@ -26,6 +26,25 @@ Grundlage sind die beigefügten Lehrwerksseiten (Inhaltsverzeichnis, Merkseiten,
   });
 }
 
+const ALLE = [...KEYS.slice(0, 5), 'didaktik', 'material'];
+
+/** Überarbeitet die Abschnitte nach Anweisung der Fachschaftsleitung (mit Zusatzmaterialien). */
+export async function ueberarbeiten(einheit, anweisung) {
+  const file_urls = await signiert(einheit.zusatz_materialien);
+  const bestand = ALLE.map((k) => `### ${k}\n${einheit[k] || '(leer)'}`).join('\n\n');
+  const res = await base44.integrations.Core.InvokeLLM({
+    prompt: `Du bist Fachdidaktiker und überarbeitest einen schuleigenen Arbeitsplan.\n${kontext(einheit)}
+Bisheriger Stand der Abschnitte (Markdown):\n${bestand}
+
+ANWEISUNG DER FACHSCHAFTSLEITUNG:\n${anweisung}
+${file_urls.length ? 'Berücksichtige die beigefügten Materialien ausdrücklich.' : ''}
+Setze die Anweisung um und behalte alles Bewährte bei. Gib für JEDEN Abschnitt den vollständigen neuen Text als Markdown zurück (unveränderte Abschnitte unverändert). Tabellen als Markdown-Tabellen. Grundlage bleibt das Kerncurriculum Niedersachsen.`,
+    file_urls: file_urls.length ? file_urls : undefined,
+    response_json_schema: { type: 'object', properties: Object.fromEntries(ALLE.map((k) => [k, { type: 'string' }])) },
+  });
+  return Object.fromEntries(ALLE.filter((k) => res[k]).map((k) => [k, res[k]]));
+}
+
 /** Didaktische Hinweise per Internetrecherche (Stolpersteine, Zugänge, Tipps). */
 export async function didaktikRecherche(einheit) {
   const res = await base44.integrations.Core.InvokeLLM({

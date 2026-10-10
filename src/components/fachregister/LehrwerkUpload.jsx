@@ -3,7 +3,7 @@ import { Upload, Loader2, FileImage } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 /** Lehrwerksseiten hochladen (privat). */
-export default function LehrwerkUpload({ dateien = [], onChange }) {
+export default function LehrwerkUpload({ dateien = [], onChange, label = 'Lehrwerksseiten hochladen' }) {
   const [laedt, setLaedt] = React.useState(false);
   const hochladen = async (e) => {
     const files = [...e.target.files];
@@ -25,7 +25,7 @@ export default function LehrwerkUpload({ dateien = [], onChange }) {
         </span>
       ))}
       <label className="flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-sm hover:bg-muted">
-        {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Lehrwerksseiten hochladen
+        {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {label}
         <input type="file" multiple accept="image/*,application/pdf" className="hidden" onChange={hochladen} disabled={laedt} />
       </label>
     </div>
