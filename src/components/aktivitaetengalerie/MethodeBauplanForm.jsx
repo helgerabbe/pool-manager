@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, Save, Sparkles, FileText, Pencil, Palette } from 'lucide-react';
 import BauplanKompakt from './BauplanKompakt';
 import { modusText } from '@/lib/methodenModus';
+import { urheberText } from '@/lib/methodenUrheber';
 import KategorieBadges from '@/components/aktivitaetengalerie/KategorieBadges';
 import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
@@ -76,6 +77,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
     <div className="mx-auto max-w-5xl space-y-5 p-6">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
+          {urheberText(methode.name) && <p className="text-xs font-semibold uppercase tracking-wide text-accent">{urheberText(methode.name)}</p>}
           <h2 className="inline-block rounded-xl bg-primary px-4 py-2 font-display text-2xl font-bold text-primary-foreground">{methode.name}</h2>
           <p className="text-sm text-muted-foreground">{modusText(methode.modus)}</p>
           <KategorieBadges name={methode.name} />
