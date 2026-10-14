@@ -14,6 +14,7 @@ import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
 import AnspruchsProfil from './AnspruchsProfil';
 import StufenAuswahl from './StufenAuswahl';
+import EinsatzEmpfehlung from './EinsatzEmpfehlung';
 import FachbezugAuswahl from './FachbezugAuswahl';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
@@ -89,6 +90,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
       <StufenAuswahl werte={werte} setze={setze} />
       <FachbezugAuswahl werte={werte} setze={setze} />
       {PROFIL_PROBE[methode.name] && <AnspruchsProfil profil={PROFIL_PROBE[methode.name]} />}
+      <EinsatzEmpfehlung name={methode.name} />
       {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} /> : <div className="space-y-2">
         <p className="text-sm font-medium">In welchen Phasen kommt sie vor?</p>
         <div className="flex flex-wrap gap-2">
