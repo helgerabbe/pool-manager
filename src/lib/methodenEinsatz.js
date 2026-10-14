@@ -8,7 +8,10 @@ export const EINSATZ_STUFEN = {
 };
 
 // Probe: die ersten zehn Methoden aus „Einstieg & Aktivierung“.
+import { EINSATZ_ERGAENZUNG } from '@/lib/methodenEinsatzErgaenzung';
+
 export const EINSATZ_PROBE = {
+  ...EINSATZ_ERGAENZUNG,
   'Stummer Impuls': { stufe: 1, begruendung: 'Ein Bild oder Gegenstand genügt, die Schüler kennen das Vorgehen sofort.' },
   'Provokante These': { stufe: 1, begruendung: 'Eine These an der Tafel reicht; die Gesprächsführung trägt die Methode.' },
   'Problemaufriss / Schätzfrage': { stufe: 2, begruendung: 'Als regelmäßige „Schätzfrage der Woche“ ein starkes Ritual mit kaum Vorbereitung.' },
