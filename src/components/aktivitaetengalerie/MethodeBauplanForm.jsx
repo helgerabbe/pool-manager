@@ -34,6 +34,7 @@ const FELDER = [
   ['analog_umsetzung', 'Analoge Umsetzung', 'Wie läuft die Methode ohne Geräte, welches Material braucht es?'],
   ['varianten', 'Varianten', 'Analog, hybrid, digital – je Variante Ablauf, Vor- und Nachteile.'],
   ['beispiele', 'Beispiele & Formulierungshilfen', 'Gute und schlechte Beispiele, Satzanfänge, Musterformulierungen.'],
+  ['stolpersteine', 'Typische Stolpersteine', 'Worauf muss man besonders achten, damit die Methode nicht schiefgeht? Je Punkt eine Zeile.'],
   ['assistent_fragen', 'Entscheidungsbaum des Assistenten', 'Je Frage: die Optionen und was der Assistent daraufhin tut.'],
   ['pruefregeln', 'Prüfregeln für den Assistenten', 'Was der Assistent im Hintergrund prüfen oder anmahnen soll (z. B. Zeit).'],
 ];

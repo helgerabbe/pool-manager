@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher' (siehe src/lib/methodenFachbezug.js).",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher' (siehe src/lib/methodenFachbezug.js). STOLPERSTEINE (2026-10-14): 'stolpersteine' = Erfahrungswerte, woran die Methode typischerweise scheitert.",
   "properties": {
     "name": {
       "type": "string"
@@ -146,6 +146,10 @@
     },
     "beispiele": {
       "type": "string"
+    },
+    "stolpersteine": {
+      "type": "string",
+      "description": "Typische Stolpersteine: worauf die Lehrkraft besonders achten muss, damit die Methode nicht scheitert. Je Punkt eine Zeile."
     },
     "assistent_fragen": {
       "type": "string"
