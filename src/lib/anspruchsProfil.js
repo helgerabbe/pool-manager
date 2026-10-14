@@ -25,9 +25,11 @@ export const EIGNUNG = {
 const jg = (...w) => Object.fromEntries(JAHRGAENGE.map((j, i) => [j, w[i]]));
 
 import { PROFIL_ERGAENZUNG } from '@/lib/anspruchsProfilErgaenzung';
+import { PROFIL_ERGAENZUNG_2 } from '@/lib/anspruchsProfilErgaenzung2';
 
 export const PROFIL_PROBE = {
   ...PROFIL_ERGAENZUNG,
+  ...PROFIL_ERGAENZUNG_2,
   'Informierender Unterrichtseinstieg': {
     werte: { komplexitaet: 1, einuebung: 1, lerngruppe: 1, lehrkraft: 1, vorbereitung: 2, material: 2, steuerung: 1 },
     jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),

@@ -26,8 +26,10 @@ export const BEITRAG = { kern: 'Kernbeitrag', teil: 'Teilbeitrag', bedingt: 'Bed
 // Probe-Einordnung, Schlüssel = Methodenname. phasen: { Phasenname: beitrag }
 import { EINORDNUNG_ERGAENZUNG } from '@/lib/stundenModelleErgaenzung';
 import { EINORDNUNG_ERGAENZUNG_2 } from '@/lib/stundenModelleErgaenzung2';
+import { EINORDNUNG_ERGAENZUNG_3 } from '@/lib/stundenModelleErgaenzung3';
 
 export const EINORDNUNG_PROBE = {
+  ...EINORDNUNG_ERGAENZUNG_3,
   ...EINORDNUNG_ERGAENZUNG,
   ...EINORDNUNG_ERGAENZUNG_2,
   'Informierender Unterrichtseinstieg': {
