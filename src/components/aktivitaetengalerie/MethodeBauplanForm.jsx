@@ -2,6 +2,7 @@ import React from 'react';
 import { Loader2, Save, Sparkles, FileText, Pencil, Palette } from 'lucide-react';
 import BauplanKompakt from './BauplanKompakt';
 import { modusText } from '@/lib/methodenModus';
+import KategorieBadges from '@/components/aktivitaetengalerie/KategorieBadges';
 import BauplanRohEingabe from './BauplanRohEingabe';
 import { strukturiereBauplan } from '@/lib/bauplanStrukturieren';
 import BauplanUebersicht from './BauplanUebersicht';
@@ -77,6 +78,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
         <div className="space-y-2">
           <h2 className="inline-block rounded-xl bg-primary px-4 py-2 font-display text-2xl font-bold text-primary-foreground">{methode.name}</h2>
           <p className="text-sm text-muted-foreground">{modusText(methode.modus)}</p>
+          <KategorieBadges name={methode.name} />
         </div>
         <label className="flex items-center gap-2 text-sm">
           <Switch checked={!!werte.bauplan_fertig} onCheckedChange={(v) => setze('bauplan_fertig', v)} /> Bauplan geprüft

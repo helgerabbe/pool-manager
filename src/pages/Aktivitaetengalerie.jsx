@@ -1,9 +1,9 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { STUFEN } from '@/lib/methodenStufen';
+import GalerieListe from '@/components/aktivitaetengalerie/GalerieListe';
 import StufenFilter from '@/components/aktivitaetengalerie/StufenFilter';
 import FachFilter from '@/components/aktivitaetengalerie/FachFilter';
-import { Loader2, Search, CheckCircle2, Circle, BookOpen } from 'lucide-react';
+import { Loader2, Search, BookOpen } from 'lucide-react';
 import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
@@ -44,15 +44,7 @@ export default function Aktivitaetengalerie() {
         </div>
         <div className="flex-1 overflow-y-auto p-2">
           {isLoading && <Loader2 className="m-4 h-5 w-5 animate-spin" />}
-          {liste.map((m) => (
-            <button key={m.id} onClick={() => setAuswahlId(m.id)}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahl?.id === m.id ? 'bg-muted font-semibold' : ''} ${m.quelle === 'poolzeit' ? 'border-l-4 border-bundle' : ''}`}>
-              {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
-              <span className="flex-1 truncate">{m.name}</span>
-              {m.stufe_pruefen && <span className="text-xs text-orange-600">prüfen</span>}
-              {m.stufe && <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${STUFEN[m.stufe].cls}`} title={STUFEN[m.stufe].name}>{m.stufe}</span>}
-            </button>
-          ))}
+          <GalerieListe liste={liste} auswahlId={auswahl?.id} onWahl={setAuswahlId} />
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
