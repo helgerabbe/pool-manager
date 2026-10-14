@@ -24,7 +24,10 @@ export const PASSUNG = {
 export const BEITRAG = { kern: 'Kernbeitrag', teil: 'Teilbeitrag', bedingt: 'Bedingt' };
 
 // Probe-Einordnung, Schlüssel = Methodenname. phasen: { Phasenname: beitrag }
+import { EINORDNUNG_ERGAENZUNG } from '@/lib/stundenModelleErgaenzung';
+
 export const EINORDNUNG_PROBE = {
+  ...EINORDNUNG_ERGAENZUNG,
   'Informierender Unterrichtseinstieg': {
     induktiv: { passung: 3, phasen: { 'Problem/Phänomen begegnen': 'bedingt' }, hinweis: 'Nur den Ablauf erklären, die Erkenntnis nicht vorwegnehmen. Der Überraschungsmoment hat Vorrang.' },
     deduktiv: { passung: 2, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'kern' }, hinweis: 'Ziel, Regel und Ablauf einordnen.' },
