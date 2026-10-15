@@ -1,7 +1,6 @@
 import React from 'react';
 import { Package, ListChecks, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FASSUNGEN } from '@/lib/stundenplanerPrototypDaten';
 
 const Block = ({ icon: Icon, titel, children }) => (
   <div className="rounded-xl border bg-card p-4">
@@ -11,11 +10,11 @@ const Block = ({ icon: Icon, titel, children }) => (
 );
 
 /** Schritt 4: Was brauche ich, damit das morgen gut läuft? */
-export default function ProtoVorbereitung({ aktiv, onZurueck, onWeiter }) {
-  const v = FASSUNGEN[aktiv].vorbereitung;
+export default function ProtoVorbereitung({ entwurf, onZurueck, onWeiter }) {
+  const v = entwurf.vorbereitung;
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">So läuft „{FASSUNGEN[aktiv].name}“ morgen gut:</p>
+      <p className="text-sm text-muted-foreground">So läuft „{entwurf.name}“ morgen gut:</p>
       <Block icon={Package} titel="Material">
         <ul className="list-disc space-y-1 pl-5 text-sm">{v.material.map((m) => <li key={m}>{m}</li>)}</ul>
       </Block>
