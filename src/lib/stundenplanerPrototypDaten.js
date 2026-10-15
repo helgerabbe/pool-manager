@@ -39,6 +39,24 @@ export const ANALYSE_NEU = {
   sachanalyse: ANALYSE.sachanalyse,
 };
 
+// Vorschlag zum Stundentyp (Schlüssel aus STUNDEN_MODELLE, src/lib/stundenModelle.js)
+export const STUNDENTYP = {
+  vorschlag: 'induktiv',
+  begruendung: 'Die Schüler sollen die Kernaussage selbst am Text entdecken – nicht vorgesagt bekommen. Das spricht für eine induktive Erarbeitung.',
+  alternativen: [
+    { key: 'deduktiv', wann: 'Wenn es schneller gehen soll: Du gibst die Deutung vor, die Schüler belegen sie.' },
+    { key: 'vertieft', wann: 'Wenn die Deutung schon steht und die Schüler etwas daraus gestalten sollen.' },
+    { key: 'uebung_mittel', wann: 'Wenn der Text schon besprochen ist und das Belegen geübt werden soll.' },
+  ],
+};
+
+export const MODELL_ERKLAERUNG = {
+  induktiv: 'Vom Beispiel zur Regel: Die Schüler stoßen auf etwas Rätselhaftes, beobachten, vermuten und finden die Erkenntnis selbst. Du lenkst, verrätst aber nichts vorab.',
+  deduktiv: 'Von der Regel zum Beispiel: Du erklärst zuerst, worum es geht. Danach wenden die Schüler das Gelernte an – erst mit Hilfe, dann selbstständig.',
+  vertieft: 'Die Grundlagen sind da. Die Schüler arbeiten an einer anspruchsvolleren Aufgabe und erstellen ein Produkt, das sie vergleichen und vorstellen.',
+  uebung_mittel: 'Nichts Neues wird erarbeitet. Die Schüler üben selbstständig, bekommen eine Rückmeldung und wissen am Ende, wo sie stehen.',
+};
+
 export const ZIELE = {
   haupt: 'Die Schüler erklären, warum die Frau die Lüge ihres Mannes deckt, und belegen ihre Deutung am Text.',
   alternativen: [
@@ -65,10 +83,13 @@ export const FASSUNGEN = {
   standard: {
     name: 'Standardstunde', kurz: 'Bewährt und gut machbar', aufwand: 1,
     phasen: [
-      p('Einstieg', 5, 'Kurze Wiederholung: Worum ging es in „Das Brot“? Zwei Schüler fassen zusammen.', 'Plenum'),
-      p('Erarbeitung', 15, 'Arbeitsblatt: Die Küchenszene markieren – Was sagt die Frau, was denkt sie?', 'Einzelarbeit'),
-      p('Sicherung', 15, 'Ergebnisse vergleichen, Tafelbild „Gesagtes und Gemeintes“ gemeinsam füllen.', 'Plenum'),
-      p('Abschluss', 5, 'Ein Satz ins Heft: Warum lügt die Frau?', 'Einzelarbeit'),
+      p('Problem/Phänomen begegnen', 5, 'Zitat an der Tafel: „Ich dachte, hier wäre was.“ – Wer sagt das, und stimmt das?', 'Plenum'),
+      p('Beobachten & erkunden', 10, 'Arbeitsblatt: Die Küchenszene markieren – Was sagt die Frau, was denkt sie?', 'Einzelarbeit'),
+      p('Vermutungen bilden', 5, 'Mit dem Nachbarn: Warum lügt die Frau? Eine Vermutung notieren.', 'Partnerarbeit'),
+      p('Vermutungen prüfen', 8, 'Vermutungen an der Tafel sammeln und am Text prüfen: Wo steht ein Beleg?', 'Plenum'),
+      p('Regel formulieren', 5, 'Gemeinsam festhalten: In der Kurzgeschichte ist das Verschwiegene wichtiger als das Gesagte.', 'Plenum'),
+      p('Anwenden & sichern', 5, 'Ein Satz ins Heft: Warum lügt die Frau? Mit Textbeleg.', 'Einzelarbeit'),
+      p('Rückblick Erkenntnisweg', 2, 'Kurz: Wie sind wir heute auf die Deutung gekommen?', 'Plenum'),
     ],
     vorbereitung: {
       material: ['Arbeitsblatt Küchenszene (30 Kopien)', 'Tafelbild-Skizze vorab notieren'],
@@ -80,10 +101,13 @@ export const FASSUNGEN = {
     name: 'Mit kleinem Kniff', kurz: 'Ein neuer Einstieg zum Ausprobieren', aufwand: 2,
     hinweis: 'Neu: Stummer Impuls statt Wiederholung.',
     phasen: [
-      p('Einstieg', 7, 'Stummer Impuls: Ein Foto eines Brotkorbs um Mitternacht an der Tafel – ohne Worte. Schüler äußern Vermutungen.', 'Plenum', true),
-      p('Erarbeitung', 15, 'Arbeitsblatt: Die Küchenszene markieren – Was sagt die Frau, was denkt sie?', 'Einzelarbeit'),
-      p('Sicherung', 13, 'Ergebnisse vergleichen, Tafelbild „Gesagtes und Gemeintes“ gemeinsam füllen.', 'Plenum'),
-      p('Abschluss', 5, 'Zurück zum Foto: Was wissen wir jetzt über das Bild?', 'Plenum', true),
+      p('Problem/Phänomen begegnen', 6, 'Stummer Impuls: Foto eines Brotkorbs um Mitternacht an der Tafel – ohne Worte. Schüler äußern Vermutungen.', 'Plenum', true),
+      p('Beobachten & erkunden', 10, 'Arbeitsblatt: Die Küchenszene markieren – Was sagt die Frau, was denkt sie?', 'Einzelarbeit'),
+      p('Vermutungen bilden', 4, 'Mit dem Nachbarn: Warum lügt die Frau? Eine Vermutung notieren.', 'Partnerarbeit'),
+      p('Vermutungen prüfen', 8, 'Vermutungen an der Tafel sammeln und am Text prüfen.', 'Plenum'),
+      p('Regel formulieren', 5, 'Gemeinsam festhalten: Das Verschwiegene ist wichtiger als das Gesagte.', 'Plenum'),
+      p('Anwenden & sichern', 5, 'Zurück zum Foto: Was wissen wir jetzt über das Bild?', 'Plenum', true),
+      p('Rückblick Erkenntnisweg', 2, 'Kurz: Wie sind wir heute auf die Deutung gekommen?', 'Plenum'),
     ],
     vorbereitung: {
       material: ['Foto für den stummen Impuls (Beamer oder Ausdruck)', 'Arbeitsblatt Küchenszene (30 Kopien)'],

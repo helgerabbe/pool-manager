@@ -7,7 +7,7 @@ import FassungenLeiste from './FassungenLeiste';
 import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
-export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, onWeiter }) {
+export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const hinzu = (neu) => {
     setLaedt(true);
@@ -25,6 +25,7 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
       <FassungenLeiste entwuerfe={entwuerfe} aktiv={aktiv} setAktiv={setAktiv} laedt={laedt}
         onErzeugen={(k) => hinzu(alsEntwurf(FASSUNGEN[k], { vorlage: k }))} onNochEine={nochEine} />
       <div>
+        <p className="text-xs text-muted-foreground">Aufbau nach: {modellName}</p>
         <p className="text-sm font-semibold">{e.kurz}</p>
         {e.hinweis && <p className="text-xs text-accent">{e.hinweis}</p>}
         {e.impuls && <p className="text-xs text-muted-foreground">Dein Impuls: „{e.impuls}“</p>}
