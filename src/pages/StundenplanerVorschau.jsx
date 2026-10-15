@@ -1,122 +1,54 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
-import SchrittLeiste from '@/components/stundenplaner/SchrittLeiste';
-import StartWeiche from '@/components/stundenplaner/StartWeiche';
-import RahmenKlaeren from '@/components/stundenplaner/RahmenKlaeren';
-import PlausibilitaetsPruefung from '@/components/stundenplaner/PlausibilitaetsPruefung';
-import Grobentwurf from '@/components/stundenplaner/Grobentwurf';
-import Feinplanung from '@/components/stundenplaner/Feinplanung';
-import { pruefeRahmen } from '@/lib/stundenPruefung';
-import { erstelleGrobentwurf } from '@/lib/stundenGrobentwurf';
-import { zielMinuten } from '@/lib/stundenKontext';
-import { erstelleFeinplanung, planePhaseNeu } from '@/lib/stundenFeinplanung';
-import { toast } from 'sonner';
-import { legeStundeAn } from '@/lib/stundeAnlegen';
+import ProtoStart from '@/components/stundenplanerPrototyp/ProtoStart';
+import ProtoKlaeren from '@/components/stundenplanerPrototyp/ProtoKlaeren';
+import ProtoEntwurf from '@/components/stundenplanerPrototyp/ProtoEntwurf';
+import ProtoVorbereitung from '@/components/stundenplanerPrototyp/ProtoVorbereitung';
+import ProtoUmsetzung from '@/components/stundenplanerPrototyp/ProtoUmsetzung';
+import { FASSUNGEN } from '@/lib/stundenplanerPrototypDaten';
 
-/** Klickbare Vorschau des Stundenplaners – echter Verlauf, Beispielinhalte, keine KI. */
+const SCHRITTE = ['Stunde wählen', 'Klären', 'Entwurf', 'Vorbereitung', 'Umsetzung'];
+
+/** PROTOTYP (2026-10-15): geführter Stundenplaner, klickbar mit Beispieldaten, ohne KI und Speicherung. */
 export default function StundenplanerVorschau() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [schritt, setSchritt] = React.useState(0);
-  const [abschnitt, setAbschnitt] = React.useState(null);
-  const [rahmen, setRahmen] = React.useState({ zeit: 'Einzelstunde (40 Min.)' });
-  const [pruefung, setPruefung] = React.useState(null);
-  const [prueftGerade, setPrueftGerade] = React.useState(false);
-  const [wahl, setWahl] = React.useState({});
-  const { data: planung, isLoading } = useQuery({
-    queryKey: ['unterrichtsPlanungStatus', id],
-    queryFn: async () => (await base44.entities.UnterrichtsPlanung.filter({ unterrichtseinheit_id: id }))[0] || null,
-  });
+  const [wahl, setWahl] = React.useState(null);
+  const [minuten, setMinuten] = React.useState(40);
+  const [entwuerfe, setEntwuerfe] = React.useState(null);
+  const [aktiv, setAktiv] = React.useState('standard');
+  const [routine, setRoutine] = React.useState('');
 
-  const [entwurf, setEntwurf] = React.useState(null);
-  const [entwirftGerade, setEntwirftGerade] = React.useState(false);
-  const entwerfen = async (wunsch, internet) => {
-    setSchritt(3); setEntwirftGerade(true);
-    const bisher = wunsch || internet ? entwurf : null;
-    if (!bisher) setEntwurf(null);
-    try {
-      setEntwurf(await erstelleGrobentwurf({ ctx: { planung, abschnitt, rahmen, vorherige }, pruefung, wahl, bisher, wunsch, internet }));
-    } catch (e) {
-      toast.error('Der Grobentwurf konnte nicht erstellt werden. Bitte versuche es erneut.');
-      if (!bisher) setSchritt(2);
-    } finally {
-      setEntwirftGerade(false);
-    }
-  };
-  const [plan, setPlan] = React.useState(null);
-  const [plantGerade, setPlantGerade] = React.useState(false);
-  const [neuPlanIndex, setNeuPlanIndex] = React.useState(null);
-  const ctx = () => ({ planung, abschnitt, rahmen, vorherige });
-  const feinPlanen = async (internet = false) => {
-    setSchritt(4); setPlantGerade(true);
-    if (!internet) setPlan(null);
-    try {
-      const neu = await erstelleFeinplanung({ ctx: ctx(), entwurf, internet });
-      setPlan(internet && plan ? { phasen: plan.phasen, materialien: [...plan.materialien, ...neu.materialien.filter((m) => m.herkunft === 'internet')] } : neu);
-    } catch (e) {
-      toast.error('Die Feinplanung konnte nicht erstellt werden. Bitte versuche es erneut.');
-      if (!internet) setSchritt(3);
-    } finally {
-      setPlantGerade(false);
-    }
-  };
-  const phaseNeu = async (index, wunsch) => {
-    setNeuPlanIndex(index);
-    try {
-      const neu = await planePhaseNeu({ ctx: ctx(), plan, index, wunsch });
-      setPlan((p) => ({ ...p, phasen: p.phasen.map((x, j) => (j === index ? neu : x)) }));
-    } catch (e) {
-      toast.error('Die Phase konnte nicht neu geplant werden.');
-    } finally {
-      setNeuPlanIndex(null);
-    }
-  };
-  const [legtAn, setLegtAn] = React.useState(false);
-  const anlegen = async () => {
-    setLegtAn(true);
-    try {
-      const stundeId = await legeStundeAn({ unterrichtseinheitId: id, abschnitt, plan });
-      toast.success('Die Stunde wurde angelegt.');
-      navigate(`/unterrichtsstunde/${stundeId}/editor`);
-    } catch (e) {
-      toast.error('Die Stunde konnte nicht angelegt werden.');
-      setLegtAn(false);
-    }
-  };
-  const vorherige = (planung?.verlauf || []).slice(0, abschnitt?.index ?? 0).filter((s) => s.gewichtung !== 'raus');
-  const pruefen = async () => {
-    setSchritt(2); setPruefung(null); setWahl({}); setPrueftGerade(true);
-    try {
-      setPruefung(await pruefeRahmen({ planung, abschnitt, rahmen, vorherige }));
-    } catch (e) {
-      toast.error('Die Prüfung ist fehlgeschlagen. Bitte versuche es erneut.');
-      setSchritt(1);
-    } finally {
-      setPrueftGerade(false);
-    }
+  const entwerfen = () => {
+    setSchritt(2); setEntwuerfe(null);
+    setTimeout(() => setEntwuerfe({ standard: FASSUNGEN.standard.phasen.map((x) => ({ ...x })) }), 1200);
   };
 
   return (
     <div className="h-full overflow-y-auto">
-      <div className="mx-auto max-w-3xl space-y-5 p-6">
-        <button onClick={() => (window.history.length > 1 ? navigate(-1) : navigate(`/unterrichtseinheit/${id}/struktur`))} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
+      <div className="mx-auto max-w-3xl space-y-6 p-6">
+        <button onClick={() => navigate(`/unterrichtseinheit/${id}/struktur`)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
-          <p className="text-xs text-accent">Am Ende legst du die Stunde an und gestaltest sie im Editor weiter.</p>
+          <p className="text-xs text-accent">Prototyp mit Beispielinhalten – nichts wird gespeichert.</p>
         </div>
-        <SchrittLeiste aktiv={schritt} onWahl={setSchritt} />
-        <section className="rounded-xl border bg-card/50 p-5">
-          {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
-          {!isLoading && schritt === 0 && (
-            <StartWeiche verlauf={planung?.verlauf} onWahl={(s, i) => { setAbschnitt({ ...s, index: i }); setSchritt(1); }} />
-          )}
-          {schritt === 1 && abschnitt && <RahmenKlaeren abschnitt={abschnitt} vorherige={vorherige} rahmen={rahmen} setRahmen={setRahmen} onWeiter={pruefen} />}
-          {schritt === 2 && <PlausibilitaetsPruefung pruefung={pruefung} laedt={prueftGerade} wahl={wahl} setWahl={setWahl} onErneut={pruefen} onWeiter={() => entwerfen()} />}
-          {schritt === 3 && <Grobentwurf entwurf={entwurf} laedt={entwirftGerade} ziel={abschnitt ? zielMinuten(rahmen, abschnitt) : 40} onAendern={entwerfen} onWeiter={() => feinPlanen()} />}
-          {schritt === 4 && <Feinplanung plan={plan} laedt={plantGerade} neuPlanIndex={neuPlanIndex} setPlan={setPlan} onNeuPlanen={phaseNeu} onInternet={() => feinPlanen(true)} onAnlegen={anlegen} legtAn={legtAn} />}
+        <div className="flex gap-1">
+          {SCHRITTE.map((s, i) => (
+            <button key={s} disabled={i > schritt || (i >= 2 && !entwuerfe)} onClick={() => setSchritt(i)} className="flex-1 text-left disabled:cursor-default">
+              <div className={`h-1 rounded-full ${i <= schritt ? 'bg-primary' : 'bg-muted'}`} />
+              <p className={`mt-1 text-[11px] ${i === schritt ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{s}</p>
+            </button>
+          ))}
+        </div>
+        <section className="rounded-2xl border bg-card/50 p-6">
+          {schritt === 0 && <ProtoStart wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} onWeiter={() => setSchritt(1)} />}
+          {schritt === 1 && <ProtoKlaeren onFertig={entwerfen} />}
+          {schritt === 2 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
+          {schritt === 2 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} onWeiter={() => setSchritt(3)} />}
+          {schritt === 3 && <ProtoVorbereitung aktiv={aktiv} onZurueck={() => setSchritt(2)} onWeiter={() => setSchritt(4)} />}
+          {schritt === 4 && <ProtoUmsetzung phasen={entwuerfe[aktiv]} />}
         </section>
       </div>
     </div>
