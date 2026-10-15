@@ -22,6 +22,11 @@ export default function PhasenKarte({ phase, onAendern }) {
             {bearbeiten ? <Check className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
           </button>
         </div>
+        {phase.deckt?.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+            Deckt ab: {phase.deckt.map((d) => <span key={d} className="rounded-full px-2 py-0.5 ring-1 ring-border">{d}</span>)}
+          </div>
+        )}
         {bearbeiten ? <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} /> : <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>}
       </div>
     </div>

@@ -22,6 +22,10 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
   const aendern = (i, text) => setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, phasen: x.phasen.map((p, j) => (j === i ? { ...p, aktivitaet: text } : p)) })));
   return (
     <div className="space-y-5">
+      <div className="rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
+        Das ist dein <span className="font-semibold text-foreground">Grobentwurf</span> nach eurem Standardmodell – er soll zu 70–80 % passen.
+        Kleinigkeiten ändern, Phasen weglassen oder zusammenfassen, digital oder analog: Das machst du später in Ruhe in der Feinplanung.
+      </div>
       <FassungenLeiste entwuerfe={entwuerfe} aktiv={aktiv} setAktiv={setAktiv} laedt={laedt}
         onErzeugen={(k) => hinzu(alsEntwurf(FASSUNGEN[k], { vorlage: k }))} onNochEine={nochEine} />
       <div>
@@ -39,6 +43,11 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
           </React.Fragment>
         ))}
       </div>
+      {(e.entfaellt || []).map((x) => (
+        <div key={x.phase} className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+          <span className="font-medium line-through">{x.phase}</span> entfällt hier: {x.grund}
+        </div>
+      ))}
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">Gibt es eine feste Routine in deinem Unterricht? (optional)</p>
         <Input value={routine} onChange={(ev) => setRoutine(ev.target.value)} placeholder="z. B. Begrüßung und Wochenplan-Check, 3 Min." />

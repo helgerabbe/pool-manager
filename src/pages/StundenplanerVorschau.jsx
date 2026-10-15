@@ -7,12 +7,12 @@ import ProtoStundenziel from '@/components/stundenplanerPrototyp/ProtoStundenzie
 import ProtoLerngruppe from '@/components/stundenplanerPrototyp/ProtoLerngruppe';
 import ProtoEntwurf from '@/components/stundenplanerPrototyp/ProtoEntwurf';
 import ProtoVorbereitung from '@/components/stundenplanerPrototyp/ProtoVorbereitung';
-import ProtoUmsetzung from '@/components/stundenplanerPrototyp/ProtoUmsetzung';
+import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import ProtoStundentyp from '@/components/stundenplanerPrototyp/ProtoStundentyp';
 import { FASSUNGEN, ZIELE, STUNDENTYP, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 
-const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Vorbereitung', 'Umsetzung'];
+const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Vorbereitung'];
 
 // Standardentwurf: Beispiel liegt für „induktiv“ vor, sonst Platzhalter aus den Modellphasen.
 const standardFuer = (key, minuten) => {
@@ -69,7 +69,7 @@ export default function StundenplanerVorschau() {
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={STUNDEN_MODELLE.find((m) => m.key === modell).name} onWeiter={() => geheZu(6)} />}
           {schritt === 6 && <ProtoVorbereitung entwurf={entwuerfe[aktiv]} onZurueck={() => setSchritt(5)} onWeiter={() => geheZu(7)} />}
-          {schritt === 7 && <ProtoUmsetzung phasen={entwuerfe[aktiv].phasen} />}
+          {schritt === 7 && <ProtoAbschluss name={entwuerfe[aktiv].name} onZurueck={() => setSchritt(6)} />}
         </section>
       </div>
     </div>

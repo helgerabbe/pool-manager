@@ -1,4 +1,5 @@
 import React from 'react';
+import { ChevronDown, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
@@ -10,16 +11,31 @@ const Regler = ({ titel, links, rechts, wert, setWert }) => (
   </div>
 );
 
-/** Schritt 4: Lerngruppe – bewusst nur zwei einfache Regler. */
+/** Schritt 5: Lerngruppe – Standard ist „normale Klasse“, genauere Einordnung nur bei Bedarf. */
 export default function ProtoLerngruppe({ gruppe, setGruppe, onWeiter }) {
+  const [genauer, setGenauer] = React.useState(false);
+  const standard = gruppe.fit === 3 && gruppe.stark === 3;
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Wie schätzt du die Klasse ein, wenn du diese Stunde hältst? Ein Bauchgefühl reicht.</p>
-      <Regler titel="Wie fit ist die Klasse in dieser Stunde?" links="Erschöpft, unruhig" rechts="Wach, konzentriert"
-        wert={gruppe.fit} setWert={(v) => setGruppe({ ...gruppe, fit: v })} />
-      <Regler titel="Wie leistungsstark ist die Lerngruppe?" links="Braucht viel Unterstützung" rechts="Sehr selbstständig"
-        wert={gruppe.stark} setWert={(v) => setGruppe({ ...gruppe, stark: v })} />
-      <Button onClick={onWeiter}>Ersten Entwurf erstellen</Button>
+      <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <Users className="h-5 w-5 shrink-0 text-primary" />
+        <div>
+          <p className="text-sm font-semibold">{standard ? 'Ich plane für eine ganz normale Klasse' : 'Ich plane mit deiner Einschätzung'}</p>
+          <p className="text-sm text-muted-foreground">{standard ? 'Durchschnittlich leistungsstark, normal aufnahmefähig. Das reicht für einen guten Entwurf.' : 'Der Entwurf berücksichtigt, wie fit und selbstständig die Klasse ist.'}</p>
+        </div>
+      </div>
+      <button className="flex items-center gap-1 text-xs text-primary" onClick={() => setGenauer(!genauer)}>
+        <ChevronDown className={`h-3 w-3 transition-transform ${genauer ? 'rotate-180' : ''}`} /> Genauer einordnen (optional)
+      </button>
+      {genauer && (
+        <div className="space-y-3">
+          <Regler titel="Wie fit ist die Klasse in dieser Stunde?" links="Erschöpft, unruhig" rechts="Wach, konzentriert"
+            wert={gruppe.fit} setWert={(v) => setGruppe({ ...gruppe, fit: v })} />
+          <Regler titel="Wie leistungsstark ist die Lerngruppe?" links="Braucht viel Unterstützung" rechts="Sehr selbstständig"
+            wert={gruppe.stark} setWert={(v) => setGruppe({ ...gruppe, stark: v })} />
+        </div>
+      )}
+      <Button onClick={onWeiter}>{standard ? 'Mach einfach – Entwurf erstellen' : 'Ersten Entwurf erstellen'}</Button>
     </div>
   );
 }

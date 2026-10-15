@@ -67,7 +67,8 @@ export const ZIELE = {
   neu: 'Die Schüler deuten die Schlussgeste der Frau als Antwort auf die Lüge.',
 };
 
-const p = (name, minuten, aktivitaet, sozialform, neu = false) => ({ name, minuten, aktivitaet, sozialform, neu });
+// deckt = Phasen des Stundenmodells, die diese Methode abdeckt (leer = Phase heißt wie die Modellphase).
+const p = (name, minuten, aktivitaet, sozialform, neu = false, deckt = []) => ({ name, minuten, aktivitaet, sozialform, neu, deckt });
 
 const VORB_AUFWENDIG = {
   material: ['Rollenkarten für 6 Gruppen', 'Foto für den Impuls', 'Platz im Raum für das Standbild'],
@@ -121,11 +122,13 @@ export const FASSUNGEN = {
   aufwendig: {
     name: 'Abwechslungsreiche Alternative', kurz: 'Mehr Aktivität, mehr Vorbereitung', aufwand: 3,
     hinweis: 'Neu: Rollenkarten und Standbild.',
+    entfaellt: [{ phase: 'Anwenden & sichern', grund: 'Wird nicht eigens gebraucht – das Standbild ist bereits die Anwendung.' }],
     phasen: [
-      p('Einstieg', 5, 'Stummer Impuls mit Foto, Vermutungen sammeln.', 'Plenum', true),
-      p('Erarbeitung', 15, 'Gruppen erhalten Rollenkarten (Frau / Mann) und schreiben einen inneren Monolog.', 'Gruppenarbeit', true),
-      p('Präsentation', 12, 'Zwei Gruppen stellen ein Standbild der Küchenszene, andere sprechen die Gedanken.', 'Plenum', true),
-      p('Sicherung', 8, 'Gemeinsam: Was verrät das Standbild über die Kernaussage?', 'Plenum'),
+      p('Problem/Phänomen begegnen', 5, 'Stummer Impuls mit Foto, Vermutungen sammeln.', 'Plenum', true),
+      p('Rollenkarten: innerer Monolog', 13, 'Gruppen erhalten Rollenkarten (Frau / Mann) und schreiben, was die Figur in der Küche denkt.', 'Gruppenarbeit', true, ['Beobachten & erkunden', 'Vermutungen bilden']),
+      p('Standbild', 12, 'Zwei Gruppen stellen die Küchenszene als Standbild, andere sprechen die Gedanken. Passt das zum Text?', 'Plenum', true, ['Vermutungen prüfen', 'Anwenden & sichern']),
+      p('Regel formulieren', 7, 'Gemeinsam: Was verrät das Standbild über die Kernaussage? Tafelsatz festhalten.', 'Plenum'),
+      p('Rückblick Erkenntnisweg', 3, 'Kurz: Was hat uns das Standbild gezeigt, was der Text nicht ausspricht?', 'Plenum'),
     ],
     vorbereitung: VORB_AUFWENDIG,
   },
@@ -134,29 +137,31 @@ export const FASSUNGEN = {
 // Weitere Ideen für „Noch eine Idee“ – werden der Reihe nach vergeben.
 export const IDEEN_POOL = [
   {
-    name: 'Szenische Lesung', kurz: 'Den Dialog mit verteilten Rollen erleben', aufwand: 2,
-    hinweis: 'Neu: Lesung mit verteilten Rollen und Pausen.',
+    name: 'Reziprokes Lesen', kurz: 'Eine Methode trägt fast die ganze Erarbeitung', aufwand: 2,
+    hinweis: 'Neu: Reziprokes Lesen deckt vier Phasen des Modells in einer Methode ab.',
     phasen: [
-      p('Einstieg', 5, 'Kurze Wiederholung: Worum ging es in „Das Brot“?', 'Plenum'),
-      p('Erarbeitung', 15, 'Paare üben die Küchenszene als szenische Lesung – Pausen und Blicke sind ausdrücklich erlaubt.', 'Partnerarbeit', true),
-      p('Präsentation', 10, 'Zwei Paare lesen vor; die Klasse achtet: Wo wird es still, und warum?', 'Plenum', true),
-      p('Sicherung', 10, 'Tafelbild „Gesagtes und Gemeintes“ aus den Beobachtungen füllen.', 'Plenum'),
+      p('Problem/Phänomen begegnen', 5, 'Zitat an der Tafel: „Ich dachte, hier wäre was.“ – Wer sagt das, und stimmt das?', 'Plenum'),
+      p('Reziprokes Lesen', 25, 'Vierergruppen mit Rollen (Fragensteller, Zusammenfasser, Klärer, Vorhersager) erschließen die Küchenszene abschnittsweise und einigen sich auf eine Deutung.', 'Gruppenarbeit', true, ['Beobachten & erkunden', 'Vermutungen bilden', 'Vermutungen prüfen', 'Regel formulieren']),
+      p('Anwenden & sichern', 8, 'Gruppen stellen ihre Deutung in einem Satz vor, die Klasse wählt den treffendsten für die Tafel.', 'Plenum'),
+      p('Rückblick Erkenntnisweg', 2, 'Welche Rolle hat euch am meisten geholfen?', 'Plenum'),
     ],
     vorbereitung: {
-      material: ['Textauszug Küchenszene mit Sprecherrollen markiert'],
-      vorher: ['Zwei mutige Paare vorab ansprechen'],
-      stolpersteine: [{ problem: 'Die Lesung wird heruntergeleiert.', tipp: 'Vorher eine Zeile selbst langsam und mit Pause vorlesen.' }],
+      material: ['Rollenkarten Reziprokes Lesen (8 Sätze)', 'Text in vier Abschnitte geteilt'],
+      vorher: ['Vierergruppen einteilen', 'Rollen einmal kurz vorab erklären oder an die Tafel schreiben'],
+      stolpersteine: [{ problem: 'Gruppen kennen die Rollen nicht.', tipp: 'Erste Runde gemeinsam im Plenum vormachen.' }],
     },
   },
   {
     name: 'Produktionsorientiert', kurz: 'Schreiben aus der Sicht einer Figur', aufwand: 3,
     hinweis: 'Neu: Tagebucheintrag der Frau als Schreibauftrag.',
     phasen: [
-      p('Einstieg', 5, 'Leitfrage an der Tafel: Was denkt die Frau, als sie die Krümel sieht?', 'Plenum', true),
-      p('Erarbeitung', 18, 'Tagebucheintrag der Frau am nächsten Morgen schreiben.', 'Einzelarbeit', true),
-      p('Austausch', 10, 'Lesekonferenz in Dreiergruppen: Welcher Eintrag trifft die Frau am besten?', 'Gruppenarbeit', true),
-      p('Sicherung', 7, 'Zwei Einträge vorlesen, Bezug zur Kernaussage herstellen.', 'Plenum'),
+      p('Problem/Phänomen begegnen', 5, 'Leitfrage an der Tafel: Was denkt die Frau, als sie die Krümel sieht?', 'Plenum', true),
+      p('Tagebucheintrag schreiben', 15, 'Tagebucheintrag der Frau am nächsten Morgen schreiben.', 'Einzelarbeit', true, ['Beobachten & erkunden', 'Vermutungen bilden']),
+      p('Lesekonferenz', 10, 'Dreiergruppen: Welcher Eintrag trifft die Frau am besten – und wo steht das im Text?', 'Gruppenarbeit', true, ['Vermutungen prüfen']),
+      p('Regel formulieren', 7, 'Zwei Einträge vorlesen, gemeinsam die Kernaussage festhalten.', 'Plenum', false, ['Regel formulieren', 'Anwenden & sichern']),
+      p('Rückblick Erkenntnisweg', 3, 'Was hat das Schreiben gezeigt, was beim Lesen verborgen blieb?', 'Plenum'),
     ],
+    entfaellt: [],
     vorbereitung: VORB_AUFWENDIG,
   },
 ];
