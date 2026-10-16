@@ -3,11 +3,12 @@ import { Lightbulb, Wand2, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import KorrekturFeld from './KorrekturFeld';
 import MethodeWaehlen from './MethodeWaehlen';
+import PassendeMethoden from './PassendeMethoden';
 
 const Aufwand = ({ n }) => <span className="text-accent">{'●'.repeat(n)}<span className="opacity-30">{'●'.repeat(3 - n)}</span></span>;
 
 /** Alle Entwürfe nebeneinander; neue Varianten kommen dazu, alte bleiben erhalten. */
-export default function FassungenLeiste({ entwuerfe, aktiv, setAktiv, laedt, onErzeugen, onNochEine, onMethode }) {
+export default function FassungenLeiste({ entwuerfe, aktiv, setAktiv, laedt, onErzeugen, onNochEine, onMethode, modellKey, varianteKey }) {
   const hat = (k) => entwuerfe.some((e) => e.vorlage === k);
   return (
     <div className="space-y-3">
@@ -24,6 +25,7 @@ export default function FassungenLeiste({ entwuerfe, aktiv, setAktiv, laedt, onE
       <div className="flex flex-wrap items-start gap-2">
         {!hat('kniff') && <Button size="sm" variant="outline" disabled={laedt} onClick={() => onErzeugen('kniff')}><Lightbulb /> Eine kleine neue Idee ausprobieren</Button>}
         {!hat('aufwendig') && <Button size="sm" variant="outline" disabled={laedt} onClick={() => onErzeugen('aufwendig')}><Wand2 /> Abwechslungsreichere Alternative entwickeln</Button>}
+        <PassendeMethoden modellKey={modellKey} varianteKey={varianteKey} onWahl={onMethode} />
         <MethodeWaehlen onWahl={onMethode} />
         {entwuerfe.length > 1 && (
           <KorrekturFeld knopf={<><Plus className="h-4 w-4" /> Noch eine Idee</>} neuText="Neuen Vorschlag erstellen"

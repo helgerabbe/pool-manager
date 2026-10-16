@@ -112,6 +112,7 @@ export default function StundenplanerVorschau() {
           {schritt === 4 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
+            varianteKey={{ induktiv: `induktiv_${induktivVariante}`, deduktiv: `deduktiv_${deduktivVariante}`, vertieft: `vertieft_${vertieftVariante}`, wiederholung: `wiederholung_${wiederholungVariante}` }[modell]}
             pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
               warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
             onKiAendern={kiAendern} onWeiter={() => geheZu(6)} />}
