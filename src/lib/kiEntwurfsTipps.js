@@ -11,7 +11,12 @@ const SCHEMA = {
         type: 'object',
         properties: {
           phase: { type: 'number', description: 'Index der Phase (0-basiert) oder -1 für die ganze Stunde.' },
+          art: { type: 'string', enum: ['feinschliff', 'herangehensweise', 'grosser_wurf', 'achtung'] },
           titel: { type: 'string' },
+          vorher: { type: 'string', description: 'Was jetzt geplant ist (kurz).' },
+          nachher: { type: 'string', description: 'Wie es nach der Änderung aussähe (kurz).' },
+          hintergrund: { type: 'string', description: 'Didaktische Begründung, 1-2 Sätze.' },
+          aufwand: { type: 'string', description: 'Vorbereitungsaufwand in wenigen Worten.' },
           text: { type: 'string' },
           aenderung: { type: 'string', description: 'Konkreter Änderungsauftrag an den Entwurf, falls die Lehrkraft zustimmt.' },
         },
@@ -23,7 +28,7 @@ const SCHEMA = {
 export async function kiEntwurfsTipps({ assistent, fach, jahrgang, modell, varianteKey, entwurf }) {
   const phasen = entwurf.phasen.map((p, i) => {
     const alt = phasenAlternativen(p, modell.key, varianteKey).slice(0, 4).map((a) => a.name);
-    return `${i}. ${p.name} (${p.minuten} Min., ${p.sozialform}): ${p.aktivitaet}${alt.length ? ` | passende Methoden laut Raster: ${alt.join(', ')}` : ''}`;
+    return `${i}. ${p.name} (${p.minuten} Min., ${p.sozialform}${p.methode ? `, Methode: ${p.methode}` : ''}): ${p.aktivitaet}${alt.length ? ` | passende Methoden laut Raster: ${alt.join(', ')}` : ''}`;
   }).join('\n');
   const prompt = `Du bist ein erfahrener Fachdidaktiker und schaust einer Lehrkraft über die Schulter. Fach ${fach}, Jahrgang ${jahrgang}, Gesamtschule.
 Stundenmodell: ${modell.name}. Grobentwurf:
@@ -31,6 +36,8 @@ ${phasen}
 
 Gib 2 bis 4 kurze Hinweise, die den Entwurf lebendiger oder stimmiger machen könnten. Höchstens EINER davon betrifft die ganze Stunde (phase = -1, z. B. aktiver aufbauen, ruhiger, mehr Kooperation). Die übrigen zeigen auf eine konkrete Phase und schlagen bevorzugt eine der dort genannten Methoden vor.
 Keine Kritik um der Kritik willen: nur Hinweise, die wirklich etwas bringen. Ton: kollegial, du-Form, ein bis zwei Sätze. Titel höchstens 5 Wörter.
+Ordne jeden Hinweis einer "art" zu: feinschliff = gleiche Methode, kleine Stellschraube; herangehensweise = gleiche Funktion, andere Methode; grosser_wurf = Phase oder Stunde grundlegend anders anlegen; achtung = typischer Stolperstein der gewählten Methode (dann "aenderung" leer lassen, falls nichts umzubauen ist). Mische die Arten sinnvoll, höchstens ein grosser_wurf.
+Fülle vorher/nachher, hintergrund und aufwand knapp aus – sie stehen zum Aufklappen bereit.
 "aenderung" ist ein klarer Auftrag, wie der Entwurf umgebaut wird, wenn die Lehrkraft zustimmt; das Stundenmodell bleibt erhalten.`;
   const r = await kiAufruf(assistent, prompt, SCHEMA);
   return (r.tipps || []).slice(0, 4).map((t) => ({ ...t, phase: Number.isInteger(t.phase) && t.phase < entwurf.phasen.length ? t.phase : -1 }));

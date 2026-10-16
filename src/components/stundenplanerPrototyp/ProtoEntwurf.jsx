@@ -1,6 +1,7 @@
 import React from 'react';
 import { Repeat, Coffee, Loader2 } from 'lucide-react';
 import TippBlase from './TippBlase';
+import TippLegende from './TippLegende';
 import useEntwurfsTipps from '@/hooks/useEntwurfsTipps';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,6 +59,7 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
       </div>
       <div className="space-y-2">
         {routine.trim() && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Repeat className="h-4 w-4" /> Feste Routine: {routine}</div>}
+        {tipps.length > 0 && <TippLegende />}
         {tippsLaedt && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Der Assistent schaut sich deinen Entwurf an …</p>}
         {tipps.filter((t) => t.phase === -1).map((t, k) => (
           <div key={`g${k}`} className="lg:ml-auto lg:w-1/3"><TippBlase tipp={t} onAnnehmen={tippAnnehmen} onVerwerfen={verwerfen} /></div>

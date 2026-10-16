@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import MethodenPlakette from './MethodenPlakette';
 
 /** Eine Phase des Grobentwurfs – Änderungen laufen über die KI, veränderte Phasen farbig markiert. */
 export default function PhasenKarte({ phase, children }) {
@@ -13,13 +14,19 @@ export default function PhasenKarte({ phase, children }) {
         <p className="text-sm font-semibold">{phase.name} <span className="font-normal text-muted-foreground">· {phase.sozialform}</span>
           {phase.neu && <span className="ml-2 inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground"><Sparkles className="h-3 w-3" /> verändert</span>}
         </p>
+        <MethodenPlakette phase={phase} />
         {phase.deckt?.length > 0 && (
           <div className="flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
             Deckt ab: {phase.deckt.map((d) => <span key={d} className="rounded-full px-2 py-0.5 ring-1 ring-border">{d}</span>)}
           </div>
         )}
         <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>
-        {phase.begruendung && <p className="text-xs italic text-muted-foreground">Warum so: {phase.begruendung}</p>}
+        {phase.begruendung && (
+          <details className="text-xs text-muted-foreground">
+            <summary className="cursor-pointer font-medium text-primary">Warum so?</summary>
+            <p className="mt-1 italic">{phase.begruendung}</p>
+          </details>
+        )}
         {children}
       </div>
     </div>
