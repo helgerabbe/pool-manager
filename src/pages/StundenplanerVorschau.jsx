@@ -13,6 +13,7 @@ import { FASSUNGEN, ZIELE, STUNDENTYP, alsEntwurf } from '@/lib/stundenplanerPro
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import { kiGrobentwurf } from '@/lib/kiGrobentwurf';
+import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 
 const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Fertig'];
 
@@ -28,6 +29,7 @@ const standardFuer = (key, minuten) => {
 export default function StundenplanerVorschau() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { data: kontext, isLoading } = useStundenplanerKontext(id);
   const [schritt, setSchritt] = React.useState(0);
   const [erreicht, setErreicht] = React.useState(0);
   const [wahl, setWahl] = React.useState(null);
@@ -52,10 +54,13 @@ export default function StundenplanerVorschau() {
 
   const geheZu = (s) => { setSchritt(s); setErreicht((e) => Math.max(e, s)); };
   const netto = minuten - (pause && minuten > 45 ? 5 : 0);
-  const kiAendern = (bisher, aenderung) => kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch', assistent, bisher, aenderung });
+  const einheit = kontext?.einheit;
+  const basis = () => ({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: einheit.jahrgangsstufe, fach: einheit.fach, assistent,
+    stunde: { einheit: einheit.titel, ...(wahl === 'frei' ? {} : wahl) } });
+  const kiAendern = (bisher, aenderung) => kiGrobentwurf({ ...basis(), bisher, aenderung });
   const entwerfen = () => {
     geheZu(5); setEntwuerfe(null); setAktiv(0);
-    kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch', assistent })
+    kiGrobentwurf(basis())
       .then((e) => setEntwuerfe([e]))
       .catch(() => setEntwuerfe([{ ...standardFuer(modell, minuten), hinweis: 'Der KI-Entwurf ist fehlgeschlagen – hier das Beispiel.' }]));
   };
@@ -66,6 +71,7 @@ export default function StundenplanerVorschau() {
         <button onClick={() => navigate(`/unterrichtseinheit/${id}/struktur`)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
+          {kontext && <p className="text-sm text-muted-foreground">{kontext.einheit.titel} · {kontext.einheit.fach} · Jg. {kontext.einheit.jahrgangsstufe}</p>}
           <p className="text-xs text-accent">Prototyp mit Beispielinhalten – nichts wird gespeichert.</p>
           <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             Mit welchem Assistenten möchtest du arbeiten?
@@ -84,7 +90,8 @@ export default function StundenplanerVorschau() {
           ))}
         </div>
         <section className="rounded-2xl border bg-card/50 p-6">
-          {schritt === 0 && <ProtoStart wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
+          {schritt === 0 && isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
+          {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
           {schritt === 1 && <ProtoInhaltsanalyse onWeiter={() => geheZu(2)} />}
           {schritt === 2 && <ProtoStundentyp modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
           {schritt === 3 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onWeiter={() => geheZu(4)} />}
@@ -92,7 +99,7 @@ export default function StundenplanerVorschau() {
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
             pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
-              warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe, jahrgang: '9' })} />}
+              warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
             onKiAendern={kiAendern} onWeiter={() => geheZu(6)} />}
           {schritt === 6 && <ProtoAbschluss name={entwuerfe[aktiv].name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
