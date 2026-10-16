@@ -9,3 +9,13 @@ export const DEDUKTIVE_VARIANTEN = [
   { key: 'kompakt', name: 'Kompakt-deduktiv', kurz: 'Knappe Einführung der Regel, ein Beispiel, dann viel Übungszeit.',
     phasen: ['Regel knapp einführen', 'Ein Beispiel', 'Anwenden & üben'] },
 ];
+
+const PROMPTS = {
+  darbietend: 'Klassisch darbietend: Die Lehrkraft führt die Regel ein und erklärt sie an 1–2 Musterbeispielen, dann angeleitete und selbstständige Anwendung.',
+  loesungsbeispiel: 'Lösungsbeispiel-gestützt: Regel mit vollständig gelösten Beispielen; Schüler erklären die Beispiele, dann teilweise gelöste Aufgaben mit abnehmender Hilfe (Fading), dann eigene Aufgaben.',
+  material: 'Material-gestützt: Die Schüler erschließen die Regel selbst aus Merkkasten, Text oder Erklärvideo, gleichen im Paar ab, kurze Klärung im Plenum, dann Anwendung.',
+  kompakt: 'Kompakt-deduktiv: Regel knapp einführen, ein Beispiel, dann eine lange Übungsphase. Ca. 3 Phasen.',
+};
+DEDUKTIVE_VARIANTEN.forEach((v) => { v.prompt = PROMPTS[v.key]; });
+
+export const deduktivVariante = (key) => DEDUKTIVE_VARIANTEN.find((v) => v.key === key);

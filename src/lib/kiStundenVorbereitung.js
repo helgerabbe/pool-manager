@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 import { kiAnfrage } from '@/lib/kiAnfrage';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
+import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 
 /** Ruft je nach gewähltem Assistenten die Plattform-KI oder Anthropic auf. */
 export const kiAufruf = (assistent, prompt, response_json_schema) => (assistent === 'anthropic'
@@ -41,7 +42,10 @@ ${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}`).join
 - "alternativen": 3 andere sinnvolle Modelle, je mit "wann": ein Satz, wann dieses Modell besser wäre.
 - "variante": Falls induktiv erarbeitet wird, welche Variante passt am besten?
 ${INDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
-- "variante_begruendung": ein einfacher Satz, warum diese Variante hier passt.`, {
+- "variante_begruendung": ein einfacher Satz, warum diese Variante hier passt.
+- "deduktiv_variante": Falls deduktiv erarbeitet wird, welche Variante passt am besten?
+${DEDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
+- "deduktiv_begruendung": ein einfacher Satz, warum diese Variante hier passt.`, {
     type: 'object',
     properties: {
       vorschlag: { type: 'string', enum: keys },
@@ -49,8 +53,10 @@ ${INDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
       alternativen: { type: 'array', items: { type: 'object', properties: { key: { type: 'string', enum: keys }, wann: { type: 'string' } }, required: ['key', 'wann'] } },
       variante: { type: 'string', enum: INDUKTIVE_VARIANTEN.map((v) => v.key) },
       variante_begruendung: { type: 'string' },
+      deduktiv_variante: { type: 'string', enum: DEDUKTIVE_VARIANTEN.map((v) => v.key) },
+      deduktiv_begruendung: { type: 'string' },
     },
-    required: ['vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung'],
+    required: ['vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung', 'deduktiv_variante', 'deduktiv_begruendung'],
   });
 }
 

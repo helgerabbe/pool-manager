@@ -39,6 +39,7 @@ export default function StundenplanerVorschau() {
   const [modell, setModell] = React.useState(STUNDENTYP.vorschlag);
   const [typ, setTyp] = React.useState(null);
   const [induktivVariante, setInduktivVariante] = React.useState('gelenkt');
+  const [deduktivVariante, setDeduktivVariante] = React.useState('darbietend');
   const [ziel, setZiel] = React.useState({ haupt: '', teil: [], alternativen: [], vonKi: true });
   const [analyse, setAnalyse] = React.useState(null);
   const [gruppe, setGruppe] = React.useState({ fit: 3, stark: 3 });
@@ -60,11 +61,11 @@ export default function StundenplanerVorschau() {
   const netto = minuten - (pause && minuten > 45 ? 5 : 0);
   const einheit = kontext?.einheit;
   const basis = () => ({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: einheit.jahrgangsstufe, fach: einheit.fach, assistent,
-    stunde: { einheit: einheit.titel, ...(wahl === 'frei' ? {} : wahl) }, analyse, induktivVariante });
+    stunde: { einheit: einheit.titel, ...(wahl === 'frei' ? {} : wahl) }, analyse, induktivVariante, deduktivVariante });
   const analyseErstellen = (korrektur) => kiInhaltsanalyse({ ...basis(), bisher: analyse, korrektur }).then((a) => {
     setAnalyse(a); setTyp(null); setZiel({ haupt: '', teil: [], alternativen: [], vonKi: true });
   });
-  const typErstellen = () => kiStundentyp({ ...basis(), modelle: STUNDEN_MODELLE }).then((t) => { setTyp(t); setModell(t.vorschlag); setInduktivVariante(t.variante); });
+  const typErstellen = () => kiStundentyp({ ...basis(), modelle: STUNDEN_MODELLE }).then((t) => { setTyp(t); setModell(t.vorschlag); setInduktivVariante(t.variante); setDeduktivVariante(t.deduktiv_variante); });
   const zielErstellen = (korrektur) => kiStundenziel({ ...basis(), bisher: ziel.haupt, korrektur }).then((z) => {
     setZiel((alt) => ({ haupt: z.haupt, teil: [], vonKi: true, alternativen: alt.haupt ? [alt.haupt, ...z.alternativen] : z.alternativen }));
   });
@@ -104,7 +105,7 @@ export default function StundenplanerVorschau() {
           {schritt === 0 && isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
           {schritt === 1 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(2)} />}
-          {schritt === 2 && <ProtoStundentyp typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
+          {schritt === 2 && <ProtoStundentyp typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
           {schritt === 3 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={() => geheZu(4)} />}
           {schritt === 4 && <ProtoLerngruppe gruppe={gruppe} setGruppe={setGruppe} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
