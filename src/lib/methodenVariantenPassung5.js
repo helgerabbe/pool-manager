@@ -5,6 +5,56 @@ const K = ['induktiv_offen', 'induktiv_gelenkt', 'induktiv_gestuft', 'induktiv_k
 const v = (...werte) => Object.fromEntries(K.map((k, i) => [k, werte[i]]));
 
 export const VARIANTEN_PASSUNG_5 = {
+  'Storyline': v(
+    [2, 'Die Geschichte wirft Fragen auf, die selbst geklärt werden.'], [2, 'Schlüsselfragen lenken die Episoden.'], [3, 'Episoden als Stufen.'], [5, 'Über mehrere Stunden angelegt.'],
+    [5, 'Widerspricht der Darbietung.'], [4, 'Kaum Bezug.'], [3, 'Material in die Geschichte eingebettet.'], [5, 'Zu aufwendig.'],
+    [1, 'Probleme der Geschichte im Team lösen.'], [1, 'Figuren, Orte und Produkte gestalten.'], [2, 'Fragen der Geschichte untersuchen.'], [2, 'Sichtweisen der Figuren.'],
+    [5, 'Zu aufwendig.'], [4, 'Höchstens als Abschlussepisode.']),
+  'Projektarbeit': v(
+    [3, 'Offene Fragen, aber wenig gemeinsame Regelbildung.'], [4, 'Zu wenig Lenkung.'], [3, 'Meilensteine als Stufen.'], [5, 'Über mehrere Stunden angelegt.'],
+    [5, 'Kein Bezug.'], [4, 'Kaum Bezug.'], [3, 'Material als Grundlage.'], [5, 'Kein Bezug.'],
+    [1, 'Reales Problem im Team lösen.'], [1, 'Produkt steht im Zentrum.'], [1, 'Eigene Untersuchungen.'], [2, 'Perspektiven im Projekt.'],
+    [5, 'Kein Bezug.'], [4, 'Nur als Anwendung der Einheit.']),
+  'Polya-Schema': v(
+    [3, 'Strukturiert eigenes Problemlösen.'], [2, 'Vier Schritte lenken den Weg.'], [1, 'Die Schritte sind die Stufen.'], [3, 'Mit einer Aufgabe möglich.'],
+    [3, 'Vorgehen nach Einführung anwenden.'], [1, 'Lösungsbeispiel entlang der Schritte.'], [3, 'Material mit Strategiehilfe.'], [3, 'Kurze Anwendung.'],
+    [1, 'Kernwerkzeug für Problemaufgaben.'], [4, 'Wenig Bezug.'], [2, 'Untersuchung planen.'], [5, 'Kein Bezug.'],
+    [3, 'Strategie erneut anwenden.'], [2, 'Problemlösestrategie festigen.']),
+  'Impuls-Lesen': v(
+    [3, 'Impulse öffnen eigene Deutungen.'], [2, 'Gelenkte Impulse zum Text.'], [2, 'Impulse als Stufen.'], [3, 'Mit wenigen Impulsen.'],
+    [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [1, 'Material gezielt erschließen.'], [3, 'Kurzer Text.'],
+    [3, 'Fallmaterial erschließen.'], [4, 'Wenig Bezug.'], [3, 'Quellen auswerten.'], [3, 'Positionen im Text finden.'],
+    [3, 'Bekannten Text neu lesen.'], [3, 'Kerntext erneut erschließen.']),
+  'Lotus-Diagramm': v(
+    [3, 'Ideen um eine Kernfrage entfalten.'], [3, 'Vorgegebene Unterthemen lenken.'], [2, 'Felder nacheinander füllen.'], [4, 'Braucht Zeit.'],
+    [3, 'Neues Thema gliedern.'], [5, 'Kein Bezug.'], [2, 'Material strukturieren.'], [4, 'Zu aufwendig.'],
+    [2, 'Lösungsideen systematisch entfalten.'], [2, 'Ideen für das Produkt.'], [3, 'Untersuchungsfragen gliedern.'], [3, 'Aspekte sammeln.'],
+    [3, 'Zu aufwendig für kurz.'], [1, 'Gliedert die Einheit in Teilthemen.']),
+  'Cornell-Methode': v(
+    [5, 'Kein Entdeckungsformat.'], [4, 'Kaum Bezug.'], [3, 'Stichwortspalte als Lernhilfe.'], [4, 'Kaum Bezug.'],
+    [1, 'Strukturierte Mitschrift zum Vortrag.'], [3, 'Beispiel mitschreiben.'], [2, 'Material strukturiert festhalten.'], [3, 'Kurze Mitschrift.'],
+    [4, 'Kaum Bezug.'], [5, 'Kein Bezug.'], [3, 'Beobachtungen notieren.'], [4, 'Kaum Bezug.'],
+    [2, 'Mit Stichwortspalte abfragen.'], [1, 'Notizen als Lernmaterial nutzen.']),
+  'PQ4R / SQ3R': v(
+    [5, 'Kein Entdeckungsformat.'], [4, 'Kaum Bezug.'], [2, 'Feste Leseschritte als Stütze.'], [4, 'Zu aufwendig.'],
+    [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [1, 'Sachtexte selbstständig erschließen.'], [5, 'Zu aufwendig.'],
+    [3, 'Fallmaterial erschließen.'], [4, 'Kaum Bezug.'], [3, 'Quellen gründlich lesen.'], [4, 'Kaum Bezug.'],
+    [4, 'Zu aufwendig.'], [2, 'Lerntexte gezielt wiederholen.']),
+  'Bestimmungsarbeit': v(
+    [3, 'Merkmale selbst erkunden.'], [1, 'Mit Schlüssel gelenkt zur Ordnung.'], [2, 'Schrittweise bestimmen.'], [3, 'Mit wenigen Objekten.'],
+    [3, 'Eingeführte Merkmale anwenden.'], [2, 'Musterbestimmung als Beispiel.'], [2, 'Bestimmungsschlüssel als Material.'], [3, 'Kurz möglich.'],
+    [3, 'Unbekanntes bestimmen.'], [3, 'Eigenen Schlüssel erstellen.'], [1, 'Untersuchen und ordnen.'], [5, 'Kein Bezug.'],
+    [2, 'Merkmale erneut anwenden.'], [2, 'Ordnungssystem festigen.']),
+  'Black-Box-Experiment': v(
+    [1, 'Unbekanntes Innenleben erschließen.'], [2, 'Gelenkte Tests.'], [3, 'Hinweise als Stufen.'], [3, 'Mit einfacher Box.'],
+    [5, 'Widerspricht der Methode.'], [5, 'Kein Bezug.'], [4, 'Kaum Bezug.'], [5, 'Kein Bezug.'],
+    [2, 'Rätsel im Team lösen.'], [3, 'Modell als Produkt.'], [1, 'Hypothesen experimentell prüfen.'], [5, 'Kein Bezug.'],
+    [5, 'Kein Bezug.'], [4, 'Höchstens als Transfer.']),
+  'Karikatur- / Quellenanalyse': v(
+    [3, 'Eigene Deutung der Quelle.'], [2, 'Analyseschritte lenken.'], [2, 'Schritte als Stufen.'], [3, 'Mit kurzer Quelle.'],
+    [3, 'Methode nach Einführung anwenden.'], [2, 'Musteranalyse als Beispiel.'], [1, 'Quelle als Material erschließen.'], [3, 'Kurze Analyse.'],
+    [3, 'Quelle als Fall.'], [3, 'Eigene Karikatur gestalten.'], [2, 'Quellen untersuchen.'], [1, 'Absicht und Standpunkt erkennen.'],
+    [3, 'Bekannte Quelle erneut deuten.'], [2, 'Transfer an neuer Quelle.']),
   'Reziprokes Lesen': v(
     [4, 'Erschließung statt Entdeckung.'], [3, 'Die Rollen lenken das Lesen.'], [2, 'Rollenkarten als Stütze.'], [4, 'Braucht mehr Zeit.'],
     [4, 'Kaum Bezug zur Darbietung.'], [4, 'Kaum Bezug.'], [1, 'Material gemeinsam und gründlich erschließen.'], [5, 'Zu aufwendig.'],
