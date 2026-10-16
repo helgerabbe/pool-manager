@@ -7,7 +7,7 @@ import FassungenLeiste from './FassungenLeiste';
 import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
-export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, onWeiter }) {
+export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, pruefung, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const hinzu = (neu) => {
     setLaedt(true);
@@ -48,11 +48,12 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
           <span className="font-medium line-through">{x.phase}</span> entfällt hier: {x.grund}
         </div>
       ))}
+      {pruefung}
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">Gibt es eine feste Routine in deinem Unterricht? (optional)</p>
         <Input value={routine} onChange={(ev) => setRoutine(ev.target.value)} placeholder="z. B. Begrüßung und Wochenplan-Check, 3 Min." />
       </div>
-      <Button onClick={onWeiter}>Mit „{e.name}“ weitermachen</Button>
+      <Button onClick={onWeiter}>„{e.name}“ als Grobentwurf übernehmen</Button>
     </div>
   );
 }
