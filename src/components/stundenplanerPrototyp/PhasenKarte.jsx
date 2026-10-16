@@ -28,6 +28,7 @@ export default function PhasenKarte({ phase, onAendern }) {
           </div>
         )}
         {bearbeiten ? <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={3} /> : <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>}
+        {phase.begruendung && <p className="text-xs italic text-muted-foreground">Warum so: {phase.begruendung}</p>}
       </div>
     </div>
   );

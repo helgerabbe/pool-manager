@@ -12,6 +12,7 @@ import ProtoStundentyp from '@/components/stundenplanerPrototyp/ProtoStundentyp'
 import { FASSUNGEN, ZIELE, STUNDENTYP, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
+import { kiGrobentwurf } from '@/lib/kiGrobentwurf';
 
 const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Fertig'];
 
@@ -50,7 +51,10 @@ export default function StundenplanerVorschau() {
   const geheZu = (s) => { setSchritt(s); setErreicht((e) => Math.max(e, s)); };
   const entwerfen = () => {
     geheZu(5); setEntwuerfe(null); setAktiv(0);
-    setTimeout(() => setEntwuerfe([standardFuer(modell, minuten)]), 1200);
+    const netto = minuten - (pause && minuten > 45 ? 5 : 0);
+    kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch' })
+      .then((e) => setEntwuerfe([e]))
+      .catch(() => setEntwuerfe([{ ...standardFuer(modell, minuten), hinweis: 'Der KI-Entwurf ist fehlgeschlagen – hier das Beispiel.' }]));
   };
 
   return (
