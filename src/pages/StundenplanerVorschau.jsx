@@ -14,7 +14,7 @@ import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import { kiGrobentwurf } from '@/lib/kiGrobentwurf';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
-import { kiInhaltsanalyse, kiStundenziel } from '@/lib/kiStundenVorbereitung';
+import { kiInhaltsanalyse, kiStundenziel, kiStundentyp } from '@/lib/kiStundenVorbereitung';
 
 const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Fertig'];
 
@@ -37,6 +37,7 @@ export default function StundenplanerVorschau() {
   const [minuten, setMinuten] = React.useState(40);
   const [pause, setPause] = React.useState(false);
   const [modell, setModell] = React.useState(STUNDENTYP.vorschlag);
+  const [typ, setTyp] = React.useState(null);
   const [ziel, setZiel] = React.useState({ haupt: '', teil: [], alternativen: [], vonKi: true });
   const [analyse, setAnalyse] = React.useState(null);
   const [gruppe, setGruppe] = React.useState({ fit: 3, stark: 3 });
@@ -50,7 +51,7 @@ export default function StundenplanerVorschau() {
   const annahmen = [
     gruppe.fit === 3 && gruppe.stark === 3 && 'Standard-Lerngruppe („Mach einfach“) – mittleres Arbeitstempo, normale Selbstständigkeit.',
     ziel.vonKi && 'Stundenziel vom Assistenten formuliert und übernommen.',
-    modell === STUNDENTYP.vorschlag && `Vorgeschlagener Stundentyp „${aktModell.name}“ übernommen.`,
+    modell === typ?.vorschlag && `Vorgeschlagener Stundentyp „${aktModell.name}“ übernommen.`,
     !routine.trim() && 'Keine feste Routine eingeplant.',
   ].filter(Boolean);
 
@@ -60,8 +61,9 @@ export default function StundenplanerVorschau() {
   const basis = () => ({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: einheit.jahrgangsstufe, fach: einheit.fach, assistent,
     stunde: { einheit: einheit.titel, ...(wahl === 'frei' ? {} : wahl) }, analyse });
   const analyseErstellen = (korrektur) => kiInhaltsanalyse({ ...basis(), bisher: analyse, korrektur }).then((a) => {
-    setAnalyse(a); setZiel({ haupt: '', teil: [], alternativen: [], vonKi: true });
+    setAnalyse(a); setTyp(null); setZiel({ haupt: '', teil: [], alternativen: [], vonKi: true });
   });
+  const typErstellen = () => kiStundentyp({ ...basis(), modelle: STUNDEN_MODELLE }).then((t) => { setTyp(t); setModell(t.vorschlag); });
   const zielErstellen = (korrektur) => kiStundenziel({ ...basis(), bisher: ziel.haupt, korrektur }).then((z) => {
     setZiel((alt) => ({ haupt: z.haupt, teil: [], vonKi: true, alternativen: alt.haupt ? [alt.haupt, ...z.alternativen] : z.alternativen }));
   });
@@ -101,7 +103,7 @@ export default function StundenplanerVorschau() {
           {schritt === 0 && isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
           {schritt === 1 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(2)} />}
-          {schritt === 2 && <ProtoStundentyp modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
+          {schritt === 2 && <ProtoStundentyp typ={typ} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
           {schritt === 3 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={() => geheZu(4)} />}
           {schritt === 4 && <ProtoLerngruppe gruppe={gruppe} setGruppe={setGruppe} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}

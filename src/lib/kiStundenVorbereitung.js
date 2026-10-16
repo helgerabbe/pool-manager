@@ -25,6 +25,29 @@ ${stundeText(k)}
   });
 }
 
+/** Stundentyp: passendes Stundenmodell + Begründung + 3 Alternativen mit „Wann“. */
+export async function kiStundentyp({ assistent, analyse, modelle, ...k }) {
+  const keys = modelle.map((m) => m.key);
+  return kiAufruf(assistent, `Du bist erfahrener Fachdidaktiker. Wähle den passenden Stundentyp für diese Stunde.
+${stundeText(k)}
+Inhaltsanalyse: ${analyse.aspekte.join(' ')}
+
+Verfügbare Stundenmodelle (key: Name – Phasen):
+${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}`).join('\n')}
+
+- "vorschlag": key des am besten passenden Modells.
+- "begruendung": 1–2 einfache Sätze für die Lehrkraft, warum dieser Aufbau hier passt.
+- "alternativen": 3 andere sinnvolle Modelle, je mit "wann": ein Satz, wann dieses Modell besser wäre.`, {
+    type: 'object',
+    properties: {
+      vorschlag: { type: 'string', enum: keys },
+      begruendung: { type: 'string' },
+      alternativen: { type: 'array', items: { type: 'object', properties: { key: { type: 'string', enum: keys }, wann: { type: 'string' } }, required: ['key', 'wann'] } },
+    },
+    required: ['vorschlag', 'begruendung', 'alternativen'],
+  });
+}
+
 /** Stundenziel: ein überprüfbares Hauptziel + 3 Alternativen. */
 export async function kiStundenziel({ assistent, analyse, bisher, korrektur, ...k }) {
   return kiAufruf(assistent, `Du bist erfahrener Fachdidaktiker. Formuliere das Stundenziel für diese Stunde.
