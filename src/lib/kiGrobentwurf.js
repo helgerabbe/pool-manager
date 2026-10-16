@@ -34,7 +34,7 @@ const methodenText = (liste, jahrgang) => liste.map((m) => [
 ].filter(Boolean).join('\n')).join('\n');
 
 /** Erstellt einen stimmigen Grobentwurf im Format der Prototyp-Fassungen. */
-export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44' }) {
+export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44', bisher, aenderung }) {
   const { items } = await base44.entities.MethodenKatalog.filter({ ist_aktiv: true, quelle: 'methode' }, { limit: 200, fields: FELDER });
   const prompt = `Du bist ein erfahrener Fachdidaktiker (${fach}, Gesamtschule, heterogene Lerngruppen) und planst einen GROBENTWURF einer Unterrichtsstunde.
 
@@ -55,7 +55,12 @@ Regeln:
 - Aktivität: 1–2 konkrete Sätze zum Inhalt. Keine Materialausarbeitung.
 - Begründung: ein kurzer Satz, warum Zeit und Methode passen.
 - "hinweise" NUR, wenn sich die Vorgaben nicht stimmig umsetzen lassen (z. B. zu wenig Zeit für das Modell). Sonst leer.
-- "kurz": eine Zeile, was diese Stunde ausmacht.`;
+- "kurz": eine Zeile, was diese Stunde ausmacht.${bisher ? `
+
+ÜBERARBEITUNG: Das ist der bisherige Entwurf:
+${JSON.stringify(bisher.phasen.map(({ name, minuten, aktivitaet, sozialform, methode }) => ({ name, minuten, aktivitaet, sozialform, methode })))}
+Änderungswunsch der Lehrkraft: "${aenderung}"
+Setze den Wunsch um und lass den Rest möglichst unverändert. Wenn der Wunsch gegen die Regeln verstößt (z. B. Mindestdauer, Kernphasen, Zeitsumme), setze ihn so weit wie möglich um und erkläre das in "hinweise".` : ''}`;
   const r = assistent === 'anthropic'
     ? await kiAnfrage({ prompt, response_json_schema: SCHEMA })
     : await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: SCHEMA });

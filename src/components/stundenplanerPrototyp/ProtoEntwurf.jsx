@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PhasenKarte from './PhasenKarte';
 import FassungenLeiste from './FassungenLeiste';
+import KiAenderungsFeld from './KiAenderungsFeld';
 import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 import { fassungMitMethode } from '@/lib/stundenEntwurfsRegeln';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
-export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, pruefung, onWeiter }) {
+export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, pruefung, onKiAendern, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const hinzu = (neu) => {
     setLaedt(true);
@@ -20,7 +21,10 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
     hinzu(alsEntwurf(v, { vorlage: 'idee', name: zahl >= IDEEN_POOL.length ? `${v.name} (${zahl + 1})` : v.name, impuls }));
   };
   const e = entwuerfe[aktiv];
-  const aendern = (i, text) => setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, phasen: x.phasen.map((p, j) => (j === i ? { ...p, aktivitaet: text } : p)) })));
+  const kiAendern = async (wunsch) => {
+    const neu = await onKiAendern(e, wunsch);
+    setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, kurz: neu.kurz, hinweis: neu.hinweis, phasen: neu.phasen })));
+  };
   return (
     <div className="space-y-5">
       <div className="rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
@@ -41,7 +45,7 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
         {e.phasen.map((ph, i) => (
           <React.Fragment key={`${aktiv}-${i}`}>
             {pause && i === Math.floor(e.phasen.length / 2) && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Coffee className="h-4 w-4" /> 5 Min. Pause</div>}
-            <PhasenKarte phase={ph} onAendern={(t) => aendern(i, t)} />
+            <PhasenKarte phase={ph} />
           </React.Fragment>
         ))}
       </div>
@@ -50,6 +54,7 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
           <span className="font-medium line-through">{x.phase}</span> entfällt hier: {x.grund}
         </div>
       ))}
+      <KiAenderungsFeld key={aktiv} onAendern={kiAendern} />
       {pruefung}
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">Gibt es eine feste Routine in deinem Unterricht? (optional)</p>

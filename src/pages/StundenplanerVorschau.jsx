@@ -51,9 +51,10 @@ export default function StundenplanerVorschau() {
   ].filter(Boolean);
 
   const geheZu = (s) => { setSchritt(s); setErreicht((e) => Math.max(e, s)); };
+  const netto = minuten - (pause && minuten > 45 ? 5 : 0);
+  const kiAendern = (bisher, aenderung) => kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch', assistent, bisher, aenderung });
   const entwerfen = () => {
     geheZu(5); setEntwuerfe(null); setAktiv(0);
-    const netto = minuten - (pause && minuten > 45 ? 5 : 0);
     kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch', assistent })
       .then((e) => setEntwuerfe([e]))
       .catch(() => setEntwuerfe([{ ...standardFuer(modell, minuten), hinweis: 'Der KI-Entwurf ist fehlgeschlagen – hier das Beispiel.' }]));
@@ -92,7 +93,7 @@ export default function StundenplanerVorschau() {
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
             pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
               warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe, jahrgang: '9' })} />}
-            onWeiter={() => geheZu(6)} />}
+            onKiAendern={kiAendern} onWeiter={() => geheZu(6)} />}
           {schritt === 6 && <ProtoAbschluss name={entwuerfe[aktiv].name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
       </div>
