@@ -4,7 +4,7 @@ import TippBlase from './TippBlase';
 import TippLegende from './TippLegende';
 import useEntwurfsTipps from '@/hooks/useEntwurfsTipps';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import RitualBaustein from './RitualBaustein';
 import PhasenKarte from './PhasenKarte';
 import PhasenAlternativen from './PhasenAlternativen';
 import KiAenderungsFeld from './KiAenderungsFeld';
@@ -44,7 +44,7 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
         {e.impuls && <p className="text-xs text-muted-foreground">Dein Impuls: „{e.impuls}“</p>}
       </div>
       <div className="space-y-2">
-        {routine.trim() && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Repeat className="h-4 w-4" /> Feste Routine: {routine}</div>}
+        <RitualBaustein routine={routine} setRoutine={setRoutine} />
         {tipps.length > 0 && <TippLegende />}
         {tippsLaedt && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Der Assistent schaut sich deinen Entwurf an …</p>}
         {tipps.filter((t) => t.phase === -1).map((t, k) => (
@@ -77,10 +77,6 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
         </div>
       </div>
       {pruefung}
-      <div className="space-y-1">
-        <p className="text-xs text-muted-foreground">Gibt es eine feste Routine in deinem Unterricht? (optional)</p>
-        <Input value={routine} onChange={(ev) => setRoutine(ev.target.value)} placeholder="z. B. Begrüßung und Wochenplan-Check, 3 Min." />
-      </div>
       <Button onClick={onWeiter}>Sieht gut aus – Entwurf übernehmen</Button>
     </div>
   );
