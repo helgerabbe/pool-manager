@@ -6,6 +6,7 @@ import ProtoInhaltsanalyse from '@/components/stundenplanerPrototyp/ProtoInhalts
 import ProtoStundenziel from '@/components/stundenplanerPrototyp/ProtoStundenziel';
 import ProtoLerngruppe from '@/components/stundenplanerPrototyp/ProtoLerngruppe';
 import ProtoEntwurf from '@/components/stundenplanerPrototyp/ProtoEntwurf';
+import { kiEntwurfsTipps } from '@/lib/kiEntwurfsTipps';
 import GrobentwurfPruefung from '@/components/stundenplanerPrototyp/GrobentwurfPruefung';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import ProtoStundentyp from '@/components/stundenplanerPrototyp/ProtoStundentyp';
@@ -115,7 +116,8 @@ export default function StundenplanerVorschau() {
             varianteKey={{ induktiv: `induktiv_${induktivVariante}`, deduktiv: `deduktiv_${deduktivVariante}`, vertieft: `vertieft_${vertieftVariante}`, wiederholung: `wiederholung_${wiederholungVariante}` }[modell]}
             pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
               warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
-            onKiAendern={kiAendern} onWeiter={() => geheZu(6)} />}
+            onKiAendern={kiAendern}
+            onTippsLaden={(entwurf) => kiEntwurfsTipps({ ...basis(), varianteKey: { induktiv: `induktiv_${induktivVariante}`, deduktiv: `deduktiv_${deduktivVariante}`, vertieft: `vertieft_${vertieftVariante}`, wiederholung: `wiederholung_${wiederholungVariante}` }[modell], entwurf })} onWeiter={() => geheZu(6)} />}
           {schritt === 6 && <ProtoAbschluss name={entwuerfe[aktiv].name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
       </div>

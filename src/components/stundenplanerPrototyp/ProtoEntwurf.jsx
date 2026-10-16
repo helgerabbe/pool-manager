@@ -1,5 +1,7 @@
 import React from 'react';
-import { Repeat, Coffee } from 'lucide-react';
+import { Repeat, Coffee, Loader2 } from 'lucide-react';
+import TippBlase from './TippBlase';
+import useEntwurfsTipps from '@/hooks/useEntwurfsTipps';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PhasenKarte from './PhasenKarte';
@@ -10,7 +12,7 @@ import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDa
 import { fassungMitMethode } from '@/lib/stundenEntwurfsRegeln';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
-export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, varianteKey, pruefung, onKiAendern, onWeiter }) {
+export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, varianteKey, pruefung, onKiAendern, onTippsLaden, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const hinzu = (neu) => {
     setLaedt(true);
@@ -26,6 +28,8 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
     const neu = await onKiAendern(e, wunsch);
     setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, kurz: neu.kurz, hinweis: neu.hinweis, phasen: neu.phasen })));
   };
+  const { tipps, laedt: tippsLaedt, verwerfen } = useEntwurfsTipps(e, onTippsLaden);
+  const tippAnnehmen = (t) => kiAendern(t.aenderung || t.text);
   // Methode in EINE Phase einsetzen. Der Standardentwurf bleibt erhalten: dort entsteht eine angepasste Fassung.
   const methodeEinsetzen = (i, m) => {
     const phasen = e.phasen.map((p, k) => (k !== i ? p : { ...p, aktivitaet: `${m.name}: ${m.kurzbeschreibung || ''}`, methode: m.name, methode_dauer_min: m.dauer_min, neu: true }));
@@ -54,12 +58,21 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
       </div>
       <div className="space-y-2">
         {routine.trim() && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Repeat className="h-4 w-4" /> Feste Routine: {routine}</div>}
+        {tippsLaedt && <p className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Der Assistent schaut sich deinen Entwurf an …</p>}
+        {tipps.filter((t) => t.phase === -1).map((t, k) => (
+          <div key={`g${k}`} className="lg:ml-auto lg:w-1/3"><TippBlase tipp={t} onAnnehmen={tippAnnehmen} onVerwerfen={verwerfen} /></div>
+        ))}
         {e.phasen.map((ph, i) => (
           <React.Fragment key={`${aktiv}-${i}`}>
             {pause && i === Math.floor(e.phasen.length / 2) && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Coffee className="h-4 w-4" /> 5 Min. Pause</div>}
-            <PhasenKarte phase={ph}>
-              <PhasenAlternativen phase={ph} modellKey={modellKey} varianteKey={varianteKey} onEinsetzen={(m) => methodeEinsetzen(i, m)} />
-            </PhasenKarte>
+            <div className="grid gap-3 lg:grid-cols-[2fr_1fr]">
+              <PhasenKarte phase={ph}>
+                <PhasenAlternativen phase={ph} modellKey={modellKey} varianteKey={varianteKey} onEinsetzen={(m) => methodeEinsetzen(i, m)} />
+              </PhasenKarte>
+              <div className="space-y-2">
+                {tipps.filter((t) => t.phase === i).map((t, k) => <TippBlase key={k} tipp={t} zeigtAufPhase onAnnehmen={tippAnnehmen} onVerwerfen={verwerfen} />)}
+              </div>
+            </div>
           </React.Fragment>
         ))}
       </div>
