@@ -14,7 +14,7 @@ export default function KonzeptionBeispiel({ modellKey, phasen, modellName }) {
       <div className="flex flex-wrap items-center gap-1 text-xs">
         <span className="text-muted-foreground">Beispiel:</span>
         {beispiele.map((x) => (
-          <button key={x.fach} onClick={() => setOffen(x.fach)} className="rounded-full border px-2 py-0.5 hover:bg-muted">{x.fach}</button>
+          <button key={x.fach} onClick={() => setOffen(x.fach)} className="rounded-full border px-2 py-0.5 hover:bg-muted">{x.fach === 'Naturwissenschaften' ? 'NAT' : x.fach}</button>
         ))}
       </div>
       <Dialog open={!!b} onOpenChange={(o) => !o && setOffen(null)}>
