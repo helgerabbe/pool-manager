@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PhasenKarte from './PhasenKarte';
 import FassungenLeiste from './FassungenLeiste';
+import PhasenAlternativen from './PhasenAlternativen';
 import KiAenderungsFeld from './KiAenderungsFeld';
 import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 import { fassungMitMethode } from '@/lib/stundenEntwurfsRegeln';
@@ -24,6 +25,16 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
   const kiAendern = async (wunsch) => {
     const neu = await onKiAendern(e, wunsch);
     setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, kurz: neu.kurz, hinweis: neu.hinweis, phasen: neu.phasen })));
+  };
+  // Methode in EINE Phase einsetzen. Der Standardentwurf bleibt erhalten: dort entsteht eine angepasste Fassung.
+  const methodeEinsetzen = (i, m) => {
+    const phasen = e.phasen.map((p, k) => (k !== i ? p : { ...p, aktivitaet: `${m.name}: ${m.kurzbeschreibung || ''}`, methode: m.name, methode_dauer_min: m.dauer_min, neu: true }));
+    if (aktiv === 0) {
+      setEntwuerfe((all) => [...all, { ...e, phasen, name: 'Angepasster Entwurf', vorlage: 'angepasst', kurz: e.kurz }]);
+      setAktiv(entwuerfe.length);
+    } else {
+      setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, phasen })));
+    }
   };
   return (
     <div className="space-y-5">
@@ -46,7 +57,9 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
         {e.phasen.map((ph, i) => (
           <React.Fragment key={`${aktiv}-${i}`}>
             {pause && i === Math.floor(e.phasen.length / 2) && <div className="flex items-center gap-2 rounded-xl border border-dashed p-3 text-sm text-muted-foreground"><Coffee className="h-4 w-4" /> 5 Min. Pause</div>}
-            <PhasenKarte phase={ph} />
+            <PhasenKarte phase={ph}>
+              <PhasenAlternativen phase={ph} modellKey={modellKey} varianteKey={varianteKey} onEinsetzen={(m) => methodeEinsetzen(i, m)} />
+            </PhasenKarte>
           </React.Fragment>
         ))}
       </div>

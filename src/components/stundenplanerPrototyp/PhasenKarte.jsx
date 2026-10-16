@@ -2,7 +2,7 @@ import React from 'react';
 import { Sparkles } from 'lucide-react';
 
 /** Eine Phase des Grobentwurfs – Änderungen laufen über die KI, veränderte Phasen farbig markiert. */
-export default function PhasenKarte({ phase }) {
+export default function PhasenKarte({ phase, children }) {
   return (
     <div className={`flex gap-4 rounded-xl border p-4 ${phase.neu ? 'border-accent/60 bg-accent/5' : 'bg-card'}`}>
       <div className="w-16 shrink-0 text-center">
@@ -20,6 +20,7 @@ export default function PhasenKarte({ phase }) {
         )}
         <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>
         {phase.begruendung && <p className="text-xs italic text-muted-foreground">Warum so: {phase.begruendung}</p>}
+        {children}
       </div>
     </div>
   );
