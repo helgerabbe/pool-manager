@@ -16,7 +16,7 @@ import { kiGrobentwurf } from '@/lib/kiGrobentwurf';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { kiInhaltsanalyse, kiStundenziel, kiStundentyp } from '@/lib/kiStundenVorbereitung';
 
-const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Fertig'];
+const SCHRITTE = ['Stunde', 'Inhalt', 'Lerngruppe', 'Stundentyp', 'Ziel', 'Entwurf', 'Fertig'];
 
 // Standardentwurf: Beispiel liegt für „induktiv“ vor, sonst Platzhalter aus den Modellphasen.
 const standardFuer = (key, minuten) => {
@@ -105,9 +105,9 @@ export default function StundenplanerVorschau() {
           {schritt === 0 && isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
           {schritt === 1 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(2)} />}
-          {schritt === 2 && <ProtoStundentyp typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(3)} />}
-          {schritt === 3 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={() => geheZu(4)} />}
-          {schritt === 4 && <ProtoLerngruppe gruppe={gruppe} setGruppe={setGruppe} onWeiter={entwerfen} />}
+          {schritt === 2 && <ProtoLerngruppe gruppe={gruppe} setGruppe={(g) => { setGruppe(g); setTyp(null); }} onWeiter={() => geheZu(3)} />}
+          {schritt === 3 && <ProtoStundentyp typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(4)} />}
+          {schritt === 4 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
             pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
