@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import PhasenKarte from './PhasenKarte';
 import FassungenLeiste from './FassungenLeiste';
 import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
+import { fassungMitMethode } from '@/lib/stundenEntwurfsRegeln';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
-export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, pruefung, onWeiter }) {
+export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, pruefung, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const hinzu = (neu) => {
     setLaedt(true);
@@ -27,7 +28,8 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
         Kleinigkeiten ändern, Phasen weglassen oder zusammenfassen, digital oder analog: Das machst du später in Ruhe in der Feinplanung.
       </div>
       <FassungenLeiste entwuerfe={entwuerfe} aktiv={aktiv} setAktiv={setAktiv} laedt={laedt}
-        onErzeugen={(k) => hinzu(alsEntwurf(FASSUNGEN[k], { vorlage: k }))} onNochEine={nochEine} />
+        onErzeugen={(k) => hinzu(alsEntwurf(FASSUNGEN[k], { vorlage: k }))} onNochEine={nochEine}
+        onMethode={(m) => hinzu(fassungMitMethode(alsEntwurf(entwuerfe[0]), m, modellKey))} />
       <div>
         <p className="text-xs text-muted-foreground">Aufbau nach: {modellName}</p>
         <p className="text-sm font-semibold">{e.kurz}</p>

@@ -11,6 +11,7 @@ import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import ProtoStundentyp from '@/components/stundenplanerPrototyp/ProtoStundentyp';
 import { FASSUNGEN, ZIELE, STUNDENTYP, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
+import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 
 const SCHRITTE = ['Stunde', 'Inhalt', 'Stundentyp', 'Ziel', 'Lerngruppe', 'Entwurf', 'Fertig'];
 
@@ -75,8 +76,9 @@ export default function StundenplanerVorschau() {
           {schritt === 3 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onWeiter={() => geheZu(4)} />}
           {schritt === 4 && <ProtoLerngruppe gruppe={gruppe} setGruppe={setGruppe} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
-          {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name}
-            pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen} />}
+          {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
+            pruefung={<GrobentwurfPruefung entwurf={entwuerfe[aktiv]} modellPhasen={aktModell.phasen} minuten={minuten - (pause && minuten > 45 ? 5 : 0)} ziel={ziel.haupt} annahmen={annahmen}
+              warnungen={entwurfsWarnungen({ entwurf: entwuerfe[aktiv], modellKey: modell, gruppe })} />}
             onWeiter={() => geheZu(6)} />}
           {schritt === 6 && <ProtoAbschluss name={entwuerfe[aktiv].name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
