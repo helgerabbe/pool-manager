@@ -1,5 +1,6 @@
 // Entwurfsregeln des Stundenplaners (2026-10-16). Alles sind Warnungen – die Lehrkraft kann immer überstimmen.
 import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
+import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
 
 // Kern jedes Stundenmodells: diese Phasen dürfen nicht ersatzlos entfallen.
 export const KERNPHASEN = {
@@ -18,7 +19,7 @@ export const KERNPHASEN = {
 const MIN_PHASE = 4;
 
 /** Deutliche Warnungen zum Entwurf (Kern, unrealistische Zeit, Methode passt nicht). */
-export function entwurfsWarnungen({ entwurf, modellKey, gruppe }) {
+export function entwurfsWarnungen({ entwurf, modellKey, gruppe, jahrgang }) {
   const w = [];
   const vorhanden = new Set(entwurf.phasen.flatMap((p) => [p.name, ...(p.deckt || [])]));
   const kernFehlt = (KERNPHASEN[modellKey] || []).filter((k) => !vorhanden.has(k));
@@ -29,6 +30,9 @@ export function entwurfsWarnungen({ entwurf, modellKey, gruppe }) {
   if (m) {
     const schwach = gruppe.fit <= 2 || gruppe.stark <= 2;
     if (m.stufe >= 4 && schwach) w.push(`„${m.name}“ ist eine komplexe Methode (Stufe ${m.stufe}), deine Lerngruppe arbeitet aber eher langsam oder braucht viel Anleitung.`);
+    const eignung = PROFIL_PROBE[m.name]?.jahrgaenge?.[jahrgang];
+    if (eignung === 'nein') w.push(`„${m.name}“ ist für Jahrgang ${jahrgang} nicht geeignet.`);
+    if (eignung === 'warnung') w.push(`„${m.name}“ ist für Jahrgang ${jahrgang} grenzwertig – nur mit einer bereits geübten Klasse einsetzen.`);
     const passung = EINORDNUNG_PROBE[m.name]?.[modellKey]?.passung;
     if (passung >= 4) w.push(`„${m.name}“ passt laut Einordnung eher nicht zu diesem Stundentyp.`);
   }
