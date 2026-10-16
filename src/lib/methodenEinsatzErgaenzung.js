@@ -46,5 +46,10 @@ export const EINSATZ_ERGAENZUNG = {
   'KAWA': { stufe: 1, begruendung: 'Ein Wort genügt, ohne Vorbereitung einsetzbar.' },
   'Bildervergleich': { stufe: 3, begruendung: 'Die Bildauswahl kostet Zeit, ist aber allein gut zu leisten.' },
   'Freewriting': { stufe: 2, begruendung: 'Wird mit Wiederholung leichter; als regelmäßiges Schreibritual sehr wirksam.' },
+  'Lautes Denken': { stufe: 1, begruendung: 'Die Lehrkraft macht eine Aufgabe laut denkend vor; kein Material nötig.' },
+  'Sandwich-Methode': { stufe: 3, begruendung: 'Der Wechsel aus Input und Verarbeitung will geplant sein, ist aber allein gut umsetzbar.' },
+  'Ausblick durch die Lehrkraft': { stufe: 2, begruendung: 'Als fester Stundenabschluss wird er schnell zur hilfreichen Routine.' },
+  'Hausaufgabe erklären': { stufe: 2, begruendung: 'Ein festes Ritual am Stundenende verhindert Missverständnisse und Zeitnot.' },
+  'Tafelbild gemeinsam entwickeln': { stufe: 3, begruendung: 'Die Zielstruktur muss vorab geplant sein; allein gut vorzubereiten.' },
   'Arbeitsteilige Gruppenarbeit': { stufe: 3, begruendung: 'Unterschiedliches Material je Gruppe kostet Zeit, ist aber allein gut zu stemmen.' },
 };
