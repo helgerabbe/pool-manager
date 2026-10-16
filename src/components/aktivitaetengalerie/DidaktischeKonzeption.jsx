@@ -6,6 +6,8 @@ import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
 import VariantenKriterien from './VariantenKriterien';
+import KonzeptionBeispiel from './KonzeptionBeispiel';
+import { KONZEPTION_BLOECKE } from '@/lib/konzeptionBloecke';
 
 const BEDEUTUNG = {
   induktiv: 'Die Schüler entdecken eine Regel selbst: vom Phänomen über Vermutungen und deren Prüfung bis zur Formulierung. Braucht viel Zeit, schafft aber tiefes Verständnis.',
@@ -32,19 +34,13 @@ export default function DidaktischeKonzeption() {
         <p><strong>Modelle sind Bausteine, keine starren Stunden.</strong> Die Modelle sind als Unterrichtsstunden gedacht. In der Praxis kommen aber oft zwei in einer Stunde vor, zum Beispiel eine deduktive Erarbeitung zu Beginn, auf die rasch eine kurze individuelle Übung folgt.</p>
         <p className="flex gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><strong>Hauptkriterium ist die Zeit.</strong> Manche Methoden brauchen deutlich länger als andere. Wir prüfen deshalb zuerst, was in der verfügbaren Zeit überhaupt möglich ist, und erst danach, was inhaltlich am besten passt.</span></p>
       </div>
-      <VariantenKriterien />
-      <div className="rounded-xl border bg-card p-4 text-sm space-y-2">
-        <h3 className="font-semibold">Individuelle Übungen: Steuerung statt nur Dauer</h3>
-        <p className="text-muted-foreground">Individuelle Übungen sind kooperationsoffen: Man darf kurz mit dem Nachbarn schauen, es ist aber keine feste Partnerarbeit. Jeder gibt ein Einzelergebnis ab.</p>
-        <p className="text-muted-foreground">Unterschieden werden sie danach, wer steuert und wer kontrolliert. Die Kontrolle wandert dabei von der Lehrkraft zu den Schülern: <strong>kurz</strong> = gemeinsam kontrolliert, <strong>mittel</strong> = über bereitgestellte Lösungen, <strong>lang</strong> = Selbstkontrolle.</p>
-      </div>
-      <div className="rounded-xl border bg-card p-4 text-sm space-y-2">
-        <h3 className="font-semibold">Diagnosen: Wofür wird das Ergebnis genutzt?</h3>
-        <p className="text-muted-foreground"><strong>Wiederholung</strong> unterscheidet sich von der Übung: Geübt wird Neues, wiederholt wird bereits Gelerntes. Die Selbsteinschätzung in der umfassenden Wiederholung ist ein Wegweiser für die Schüler, keine Diagnose für die Lehrkraft.</p>
-        <p className="text-muted-foreground">Diagnosen unterscheiden sich vor allem darin, wer mit dem Ergebnis weiterarbeitet: <strong>kurz</strong> = die Lehrkraft steuert damit die nächste Stunde, <strong>mittel</strong> = jeder Schüler erhält eine Rückmeldung und nächste Schritte, <strong>lang</strong> = die Lehrkraft plant damit Förderung, Gruppen oder den weiteren Verlauf.</p>
-      </div>
+      {KONZEPTION_BLOECKE.map((block) => (
+        <section key={block.titel} className="space-y-3 border-t pt-6">
+          <h3 className="font-display text-xl font-bold">{block.titel}</h3>
+          <p className="text-sm text-muted-foreground">{block.einleitung}</p>
+          {block.titel === 'Erarbeitung' && <VariantenKriterien />}
       <div className="grid gap-4 md:grid-cols-2">
-        {STUNDEN_MODELLE.flatMap((m) => {
+        {STUNDEN_MODELLE.filter((m) => block.modelle.includes(m.key)).flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
           if (m.key === 'wiederholung') return WIEDERHOLUNG_VARIANTEN.map((v) => ({ key: `wiederholung_${v.key}`, name: `Wiederholung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'vertieft') return VERTIEFTE_VARIANTEN.map((v) => ({ key: `vertieft_${v.key}`, name: `Vertiefte Übung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
@@ -59,9 +55,12 @@ export default function DidaktischeKonzeption() {
                 <li key={p} className="flex gap-2"><span className="w-5 shrink-0 text-xs font-semibold text-primary">{i + 1}.</span>{p}</li>
               ))}
             </ol>
+            <KonzeptionBeispiel modellKey={m.key} phasen={m.phasen} />
           </div>
         ))}
       </div>
+        </section>
+      ))}
     </div>
   );
 }
