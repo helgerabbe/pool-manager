@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 import VariantenKriterien from './VariantenKriterien';
 
 const BEDEUTUNG = {
@@ -43,6 +44,7 @@ export default function DidaktischeKonzeption() {
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
+          if (m.key === 'vertieft') return VERTIEFTE_VARIANTEN.map((v) => ({ key: `vertieft_${v.key}`, name: `Vertiefte Übung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'deduktiv') return DEDUKTIVE_VARIANTEN.map((v) => ({ key: `deduktiv_${v.key}`, name: `Deduktiv: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           return [m];
         }).map((m) => (

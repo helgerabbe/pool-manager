@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import ModellKarte from './ModellKarte';
 import InduktivVarianten from './InduktivVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 
 /** Schritt 3: Welche Art von Stunde ist das? KI-Vorschlag aus den didaktischen Grundmodellen. */
 const STUFE = { 1: 'sehr niedrig', 2: 'eher niedrig', 3: 'normal', 4: 'eher hoch', 5: 'sehr hoch' };
 
-export default function ProtoStundentyp({ gruppe, typ, modell, setModell, variante, setVariante, dVariante, setDVariante, onErstellen, onWeiter }) {
+export default function ProtoStundentyp({ gruppe, typ, modell, setModell, variante, setVariante, dVariante, setDVariante, vVariante, setVVariante, onErstellen, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState(false);
   const erstellen = () => { setLaedt(true); setFehler(false); onErstellen().catch(() => setFehler(true)).finally(() => setLaedt(false)); };
@@ -24,6 +25,7 @@ export default function ProtoStundentyp({ gruppe, typ, modell, setModell, varian
       {gruppe && <p className="text-xs text-muted-foreground">Berücksichtigte Lerngruppe: Arbeitstempo {STUFE[gruppe.fit]}, Selbstständigkeit {STUFE[gruppe.stark]}.</p>}
       {modell === 'induktiv' && <InduktivVarianten wert={variante} setWert={setVariante} empfehlung={typ.variante} begruendung={typ.variante_begruendung} />}
       {modell === 'deduktiv' && <InduktivVarianten varianten={DEDUKTIVE_VARIANTEN} frage="Wie soll die Regel vermittelt werden?" wert={dVariante} setWert={setDVariante} empfehlung={typ.deduktiv_variante} begruendung={typ.deduktiv_begruendung} />}
+      {modell === 'vertieft' && <InduktivVarianten varianten={VERTIEFTE_VARIANTEN} frage="Was soll das Team am Ende erarbeiten?" wert={vVariante} setWert={setVVariante} empfehlung={typ.vertieft_variante} begruendung={typ.vertieft_begruendung} />}
       <p className="text-sm text-muted-foreground">Ist das in deinem Sinne – oder soll der Schwerpunkt woanders liegen?</p>
       <div className="space-y-2">
         {andere.map((a) => (

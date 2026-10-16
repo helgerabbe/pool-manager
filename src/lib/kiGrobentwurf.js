@@ -3,6 +3,7 @@
 import { base44 } from '@/api/base44Client';
 import { variante } from '@/lib/induktiveVarianten';
 import { deduktivVariante } from '@/lib/deduktiveVarianten';
+import { vertiefteVariante } from '@/lib/vertiefteVarianten';
 import { kiAnfrage } from '@/lib/kiAnfrage';
 import { ANALYSE } from '@/lib/stundenplanerPrototypDaten';
 import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
@@ -36,7 +37,7 @@ const methodenText = (liste, jahrgang) => liste.map((m) => [
 ].filter(Boolean).join('\n')).join('\n');
 
 /** Erstellt einen stimmigen Grobentwurf im Format der Prototyp-Fassungen. */
-export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44', bisher, aenderung, stunde, analyse, induktivVariante, deduktivVariante: dVariante }) {
+export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44', bisher, aenderung, stunde, analyse, induktivVariante, deduktivVariante: dVariante, vertieftVariante: vVariante }) {
   const { items } = await base44.entities.MethodenKatalog.filter({ ist_aktiv: true, quelle: 'methode' }, { limit: 200, fields: FELDER });
   const prompt = `Du bist ein erfahrener Fachdidaktiker (${fach}, Gesamtschule, heterogene Lerngruppen) und planst einen GROBENTWURF einer Unterrichtsstunde.
 
@@ -49,7 +50,9 @@ Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5 (
 Verfügbare Netto-Zeit: ${minuten} Minuten
 Stundenmodell: ${modell.name} mit den Phasen: ${modell.phasen.join(' → ')}${modell.beschreibung ? `\nKennzeichen: ${modell.beschreibung}` : ''}${modell.key.startsWith('uebung_') ? ' Kooperationsoffen: kurzer Austausch mit dem Nachbarn erlaubt, jeder gibt ein Einzelergebnis ab.' : ''}${modell.key === 'induktiv' && variante(induktivVariante) ? `
 Variante der induktiven Erarbeitung: ${variante(induktivVariante).prompt}
-Die Modellphasen sind dabei nur ein Gerüst: Passe Anzahl, Umfang und Lenkung der Phasen an diese Variante an (Phasennamen dürfen dafür angepasst werden) und mache die Vorgehensweise in den Aktivitäten sichtbar.` : ''}${modell.key === 'deduktiv' && deduktivVariante(dVariante) ? `
+Die Modellphasen sind dabei nur ein Gerüst: Passe Anzahl, Umfang und Lenkung der Phasen an diese Variante an (Phasennamen dürfen dafür angepasst werden) und mache die Vorgehensweise in den Aktivitäten sichtbar.` : ''}${modell.key === 'vertieft' && vertiefteVariante(vVariante) ? `
+Form der vertieften Übung (Teamarbeit mit gemeinsamem Ergebnis, Vorwissen anwenden): ${vertiefteVariante(vVariante).prompt}
+Die Modellphasen sind dabei nur ein Gerüst: Passe die Phasen an diese Form an (Phasennamen dürfen angepasst werden). Vergleich der Teamergebnisse und Reflexion bleiben immer erhalten.` : ''}${modell.key === 'deduktiv' && deduktivVariante(dVariante) ? `
 Variante der deduktiven Erarbeitung: ${deduktivVariante(dVariante).prompt}
 Die Modellphasen sind dabei nur ein Gerüst: Passe Anzahl, Umfang und Lenkung der Phasen an diese Variante an (Phasennamen dürfen dafür angepasst werden) und mache die Vorgehensweise in den Aktivitäten sichtbar.` : ''}
 

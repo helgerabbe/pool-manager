@@ -2,6 +2,7 @@ import { base44 } from '@/api/base44Client';
 import { kiAnfrage } from '@/lib/kiAnfrage';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 import { kriterienPrompt } from '@/lib/variantenKriterien';
 
 /** Ruft je nach gewähltem Assistenten die Plattform-KI oder Anthropic auf. */
@@ -48,6 +49,9 @@ ${INDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
 - "deduktiv_variante": Falls deduktiv erarbeitet wird, welche Variante passt am besten?
 ${DEDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
 - "deduktiv_begruendung": ein einfacher Satz, warum diese Variante hier passt.
+- "vertieft_variante": Falls eine vertiefte Übung (Teamarbeit, Wissen anwenden) geplant wird, welche Form passt am besten?
+${VERTIEFTE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
+- "vertieft_begruendung": ein einfacher Satz, warum diese Form hier passt.
 
 Lerngruppe: Arbeitstempo ${k.gruppe?.fit ?? 3}/5, Selbstständigkeit ${k.gruppe?.stark ?? 3}/5 (3 = normal). Netto-Zeit: ${k.minuten} Minuten.
 ${kriterienPrompt()}`, {
@@ -60,8 +64,10 @@ ${kriterienPrompt()}`, {
       variante_begruendung: { type: 'string' },
       deduktiv_variante: { type: 'string', enum: DEDUKTIVE_VARIANTEN.map((v) => v.key) },
       deduktiv_begruendung: { type: 'string' },
+      vertieft_variante: { type: 'string', enum: VERTIEFTE_VARIANTEN.map((v) => v.key) },
+      vertieft_begruendung: { type: 'string' },
     },
-    required: ['vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung', 'deduktiv_variante', 'deduktiv_begruendung'],
+    required: ['vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung', 'deduktiv_variante', 'deduktiv_begruendung', 'vertieft_variante', 'vertieft_begruendung'],
   });
 }
 
