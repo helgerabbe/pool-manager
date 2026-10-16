@@ -17,7 +17,7 @@ import { kiGrobentwurf } from '@/lib/kiGrobentwurf';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { kiInhaltsanalyse, kiStundenziel, kiStundentyp } from '@/lib/kiStundenVorbereitung';
 
-const SCHRITTE = ['Stunde', 'Inhalt', 'Lerngruppe', 'Stundentyp', 'Ziel', 'Entwurf', 'Fertig'];
+const SCHRITTE = ['Stunde', 'Ziel', 'Inhalt', 'Lerngruppe', 'Stundentyp', 'Entwurf', 'Fertig'];
 
 // Standardentwurf: Beispiel liegt für „induktiv“ vor, sonst Platzhalter aus den Modellphasen.
 const standardFuer = (key, minuten) => {
@@ -66,7 +66,7 @@ export default function StundenplanerVorschau() {
   const basis = () => ({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: einheit.jahrgangsstufe, fach: einheit.fach, assistent,
     stunde: { einheit: einheit.titel, ...(wahl === 'frei' ? {} : wahl) }, analyse, induktivVariante, deduktivVariante, vertieftVariante, wiederholungVariante });
   const analyseErstellen = (korrektur) => kiInhaltsanalyse({ ...basis(), bisher: analyse, korrektur }).then((a) => {
-    setAnalyse(a); setTyp(null); setZiel({ haupt: '', teil: [], alternativen: [], vonKi: true });
+    setAnalyse(a); setTyp(null);
   });
   const typErstellen = () => kiStundentyp({ ...basis(), modelle: STUNDEN_MODELLE }).then((t) => { setTyp(t); setModell(t.vorschlag); setInduktivVariante(t.variante); setDeduktivVariante(t.deduktiv_variante); setVertieftVariante(t.vertieft_variante); setWiederholungVariante(t.wiederholung_variante); });
   const zielErstellen = (korrektur) => kiStundenziel({ ...basis(), bisher: ziel.haupt, korrektur }).then((z) => {
@@ -107,10 +107,10 @@ export default function StundenplanerVorschau() {
         <section className="rounded-2xl border bg-card/50 p-6">
           {schritt === 0 && isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
-          {schritt === 1 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(2)} />}
-          {schritt === 2 && <ProtoLerngruppe gruppe={gruppe} setGruppe={(g) => { setGruppe(g); setTyp(null); }} onWeiter={() => geheZu(3)} />}
-          {schritt === 3 && <ProtoStundentyp gruppe={gruppe} typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} vVariante={vertieftVariante} setVVariante={setVertieftVariante} wVariante={wiederholungVariante} setWVariante={setWiederholungVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(4)} />}
-          {schritt === 4 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={entwerfen} />}
+          {schritt === 1 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={() => geheZu(2)} />}
+          {schritt === 2 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(3)} />}
+          {schritt === 3 && <ProtoLerngruppe gruppe={gruppe} setGruppe={(g) => { setGruppe(g); setTyp(null); }} onWeiter={() => geheZu(4)} />}
+          {schritt === 4 && <ProtoStundentyp gruppe={gruppe} typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} vVariante={vertieftVariante} setVVariante={setVertieftVariante} wVariante={wiederholungVariante} setWVariante={setWiederholungVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}
             varianteKey={{ induktiv: `induktiv_${induktivVariante}`, deduktiv: `deduktiv_${deduktivVariante}`, vertieft: `vertieft_${vertieftVariante}`, wiederholung: `wiederholung_${wiederholungVariante}` }[modell]}

@@ -36,7 +36,7 @@ export default function ProtoStundentyp({ gruppe, typ, modell, setModell, varian
           </ModellKarte>
         ))}
       </div>
-      <Button onClick={onWeiter}>Passt so – weiter zum Stundenziel</Button>
+      <Button onClick={onWeiter}>Passt so – Entwurf erstellen</Button>
     </div>
   );
 }

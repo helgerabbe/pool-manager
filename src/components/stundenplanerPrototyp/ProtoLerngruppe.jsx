@@ -35,7 +35,7 @@ export default function ProtoLerngruppe({ gruppe, setGruppe, onWeiter }) {
             wert={gruppe.stark} setWert={(v) => setGruppe({ ...gruppe, stark: v })} />
         </div>
       )}
-      <Button onClick={onWeiter}>{standard ? 'Mach einfach – Entwurf erstellen' : 'Ersten Entwurf erstellen'}</Button>
+      <Button onClick={onWeiter}>{standard ? 'Mach einfach – weiter' : 'Weiter zum Stundentyp'}</Button>
     </div>
   );
 }
