@@ -5,6 +5,41 @@ const K = ['induktiv_offen', 'induktiv_gelenkt', 'induktiv_gestuft', 'induktiv_k
 const v = (...werte) => Object.fromEntries(K.map((k, i) => [k, werte[i]]));
 
 export const VARIANTEN_PASSUNG_5 = {
+  'Modellbau und Modellkritik': v(
+    [2, 'Eigenes Modell als Erklärungsversuch.'], [2, 'Modell gelenkt prüfen.'], [3, 'Bauschritte als Stufen.'], [4, 'Braucht Zeit.'],
+    [3, 'Eingeführtes Modell nachbauen.'], [3, 'Mustermodell als Beispiel.'], [3, 'Modell aus Material entwickeln.'], [5, 'Zu aufwendig.'],
+    [2, 'Modell als Lösungsansatz.'], [1, 'Modell als Teamprodukt.'], [1, 'Modell testen und kritisieren.'], [4, 'Kaum Bezug.'],
+    [5, 'Zu aufwendig.'], [3, 'Modell der Einheit überprüfen.']),
+  'Argumentationsmap': v(
+    [4, 'Kaum Entdeckung.'], [3, 'Argumente gelenkt ordnen.'], [2, 'Schrittweise ergänzen.'], [4, 'Braucht Zeit.'],
+    [3, 'Argumentationsstruktur anwenden.'], [2, 'Muster-Map als Beispiel.'], [2, 'Argumente aus Material ordnen.'], [4, 'Zu aufwendig.'],
+    [2, 'Entscheidung begründen.'], [2, 'Map als Produkt.'], [4, 'Kaum Bezug.'], [1, 'Pro und Contra strukturiert abwägen.'],
+    [3, 'Argumente erneut ordnen.'], [2, 'Streitfragen der Einheit ordnen.']),
+  'Denkhüte (Sechs Hüte)': v(
+    [3, 'Fragen aus mehreren Blickwinkeln.'], [3, 'Hüte lenken das Denken.'], [3, 'Hüte nacheinander.'], [4, 'Braucht Zeit.'],
+    [5, 'Kein Bezug.'], [5, 'Kein Bezug.'], [3, 'Material aus verschiedenen Blickwinkeln.'], [5, 'Kein Bezug.'],
+    [2, 'Problem allseitig betrachten.'], [3, 'Ideen prüfen.'], [4, 'Kaum Bezug.'], [1, 'Perspektiven gezielt einnehmen.'],
+    [5, 'Kein Bezug.'], [3, 'Thema rückblickend bewerten.']),
+  'Walt-Disney-Methode': v(
+    [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [5, 'Kein Bezug.'],
+    [5, 'Kein Bezug.'], [5, 'Kein Bezug.'], [4, 'Kaum Bezug.'], [5, 'Kein Bezug.'],
+    [2, 'Lösungsideen entwickeln und prüfen.'], [1, 'Träumen, planen, kritisieren für ein Produkt.'], [4, 'Kaum Bezug.'], [2, 'Drei Rollen als Perspektiven.'],
+    [5, 'Kein Bezug.'], [4, 'Kaum Bezug.']),
+  'Zukunftswerkstatt': v(
+    [3, 'Problem selbst erschließen.'], [4, 'Zu offen.'], [4, 'Kaum Stufung.'], [5, 'Zu aufwendig.'],
+    [5, 'Kein Bezug.'], [5, 'Kein Bezug.'], [4, 'Kaum Bezug.'], [5, 'Kein Bezug.'],
+    [1, 'Kritik, Utopie, Umsetzung für ein reales Problem.'], [2, 'Zukunftsentwurf als Produkt.'], [3, 'Ist-Zustand untersuchen.'], [2, 'Wünsche und Interessen abwägen.'],
+    [5, 'Kein Bezug.'], [4, 'Kaum Bezug.']),
+  'Perspektivwechsel': v(
+    [3, 'Neue Sicht öffnet Fragen.'], [2, 'Gelenkte Rollenwahl.'], [3, 'Rollenkarten als Stütze.'], [3, 'Kurz möglich.'],
+    [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [2, 'Material aus einer Rolle lesen.'], [4, 'Kaum Bezug.'],
+    [2, 'Fall aus mehreren Sichten.'], [3, 'Text aus anderer Sicht.'], [4, 'Kaum Bezug.'], [1, 'Kern der perspektivischen Variante.'],
+    [3, 'Thema aus anderer Sicht wiederholen.'], [3, 'Als Transfer.']),
+  'Planspiel': v(
+    [3, 'Zusammenhänge im Spiel erleben.'], [4, 'Zu offen.'], [4, 'Kaum Stufung.'], [5, 'Zu aufwendig.'],
+    [5, 'Kein Bezug.'], [5, 'Kein Bezug.'], [3, 'Rollenmaterial als Grundlage.'], [5, 'Kein Bezug.'],
+    [1, 'Komplexe Entscheidungslage lösen.'], [3, 'Kaum Produkt.'], [3, 'Wirkungen erproben.'], [1, 'Interessen vertreten und aushandeln.'],
+    [5, 'Kein Bezug.'], [3, 'Als Anwendung der Einheit.']),
   'Storyline': v(
     [2, 'Die Geschichte wirft Fragen auf, die selbst geklärt werden.'], [2, 'Schlüsselfragen lenken die Episoden.'], [3, 'Episoden als Stufen.'], [5, 'Über mehrere Stunden angelegt.'],
     [5, 'Widerspricht der Darbietung.'], [4, 'Kaum Bezug.'], [3, 'Material in die Geschichte eingebettet.'], [5, 'Zu aufwendig.'],
