@@ -4,6 +4,7 @@ import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
+import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
 import VariantenKriterien from './VariantenKriterien';
 
 const BEDEUTUNG = {
@@ -39,11 +40,13 @@ export default function DidaktischeKonzeption() {
       </div>
       <div className="rounded-xl border bg-card p-4 text-sm space-y-2">
         <h3 className="font-semibold">Diagnosen: Wofür wird das Ergebnis genutzt?</h3>
+        <p className="text-muted-foreground"><strong>Wiederholung</strong> unterscheidet sich von der Übung: Geübt wird Neues, wiederholt wird bereits Gelerntes. Die Selbsteinschätzung in der umfassenden Wiederholung ist ein Wegweiser für die Schüler, keine Diagnose für die Lehrkraft.</p>
         <p className="text-muted-foreground">Diagnosen unterscheiden sich vor allem darin, wer mit dem Ergebnis weiterarbeitet: <strong>kurz</strong> = die Lehrkraft steuert damit die nächste Stunde, <strong>mittel</strong> = jeder Schüler erhält eine Rückmeldung und nächste Schritte, <strong>lang</strong> = die Lehrkraft plant damit Förderung, Gruppen oder den weiteren Verlauf.</p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
+          if (m.key === 'wiederholung') return WIEDERHOLUNG_VARIANTEN.map((v) => ({ key: `wiederholung_${v.key}`, name: `Wiederholung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'vertieft') return VERTIEFTE_VARIANTEN.map((v) => ({ key: `vertieft_${v.key}`, name: `Vertiefte Übung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'deduktiv') return DEDUKTIVE_VARIANTEN.map((v) => ({ key: `deduktiv_${v.key}`, name: `Deduktiv: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           return [m];

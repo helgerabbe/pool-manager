@@ -3,6 +3,7 @@ import { kiAnfrage } from '@/lib/kiAnfrage';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
+import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
 import { kriterienPrompt } from '@/lib/variantenKriterien';
 
 /** Ruft je nach gewähltem Assistenten die Plattform-KI oder Anthropic auf. */
@@ -52,6 +53,9 @@ ${DEDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
 - "vertieft_variante": Falls eine vertiefte Übung (Teamarbeit, Wissen anwenden) geplant wird, welche Form passt am besten?
 ${VERTIEFTE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
 - "vertieft_begruendung": ein einfacher Satz, warum diese Form hier passt.
+- "wiederholung_variante": Falls wiederholt wird (bereits Gelerntes, nicht Neues üben), welche Form passt?
+${WIEDERHOLUNG_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
+- "wiederholung_begruendung": ein einfacher Satz, warum diese Form hier passt.
 
 Lerngruppe: Arbeitstempo ${k.gruppe?.fit ?? 3}/5, Selbstständigkeit ${k.gruppe?.stark ?? 3}/5 (3 = normal). Netto-Zeit: ${k.minuten} Minuten.
 ${kriterienPrompt()}`, {
@@ -66,8 +70,10 @@ ${kriterienPrompt()}`, {
       deduktiv_begruendung: { type: 'string' },
       vertieft_variante: { type: 'string', enum: VERTIEFTE_VARIANTEN.map((v) => v.key) },
       vertieft_begruendung: { type: 'string' },
+      wiederholung_variante: { type: 'string', enum: WIEDERHOLUNG_VARIANTEN.map((v) => v.key) },
+      wiederholung_begruendung: { type: 'string' },
     },
-    required: ['vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung', 'deduktiv_variante', 'deduktiv_begruendung', 'vertieft_variante', 'vertieft_begruendung'],
+    required: ['wiederholung_variante', 'wiederholung_begruendung', 'vorschlag', 'begruendung', 'alternativen', 'variante', 'variante_begruendung', 'deduktiv_variante', 'deduktiv_begruendung', 'vertieft_variante', 'vertieft_begruendung'],
   });
 }
 
