@@ -1,6 +1,7 @@
 // KI-Grobentwurf (2026-10-16): Der Experte im Hintergrund plant die Stunde stimmig –
 // mit dem Methodenwissen aus dem MethodenKatalog (Dauer, Stolpersteine, Prüfregeln, Stufe).
 import { base44 } from '@/api/base44Client';
+import { kiAnfrage } from '@/lib/kiAnfrage';
 import { ANALYSE } from '@/lib/stundenplanerPrototypDaten';
 import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
 
@@ -33,7 +34,7 @@ const methodenText = (liste, jahrgang) => liste.map((m) => [
 ].filter(Boolean).join('\n')).join('\n');
 
 /** Erstellt einen stimmigen Grobentwurf im Format der Prototyp-Fassungen. */
-export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach }) {
+export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44' }) {
   const { items } = await base44.entities.MethodenKatalog.filter({ ist_aktiv: true, quelle: 'methode' }, { limit: 200, fields: FELDER });
   const prompt = `Du bist ein erfahrener Fachdidaktiker (${fach}, Gesamtschule, heterogene Lerngruppen) und planst einen GROBENTWURF einer Unterrichtsstunde.
 
@@ -55,7 +56,9 @@ Regeln:
 - Begründung: ein kurzer Satz, warum Zeit und Methode passen.
 - "hinweise" NUR, wenn sich die Vorgaben nicht stimmig umsetzen lassen (z. B. zu wenig Zeit für das Modell). Sonst leer.
 - "kurz": eine Zeile, was diese Stunde ausmacht.`;
-  const r = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: SCHEMA });
+  const r = assistent === 'anthropic'
+    ? await kiAnfrage({ prompt, response_json_schema: SCHEMA })
+    : await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: SCHEMA });
   const nachName = Object.fromEntries(items.map((m) => [m.name, m]));
   return {
     name: 'Standardstunde', aufwand: 1, vorlage: 'standard', kurz: r.kurz,

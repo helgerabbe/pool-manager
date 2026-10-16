@@ -39,6 +39,8 @@ export default function StundenplanerVorschau() {
   const [entwuerfe, setEntwuerfe] = React.useState(null);
   const [aktiv, setAktiv] = React.useState(0);
   const [routine, setRoutine] = React.useState('');
+  const [assistent, setAssistent] = React.useState(() => localStorage.getItem('stundenplaner_assistent') || 'base44');
+  const assistentWaehlen = (a) => { setAssistent(a); localStorage.setItem('stundenplaner_assistent', a); };
 
   const aktModell = STUNDEN_MODELLE.find((m) => m.key === modell);
   const annahmen = [
@@ -52,7 +54,7 @@ export default function StundenplanerVorschau() {
   const entwerfen = () => {
     geheZu(5); setEntwuerfe(null); setAktiv(0);
     const netto = minuten - (pause && minuten > 45 ? 5 : 0);
-    kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch' })
+    kiGrobentwurf({ modell: aktModell, minuten: netto, ziel, gruppe, jahrgang: '9', fach: 'Deutsch', assistent })
       .then((e) => setEntwuerfe([e]))
       .catch(() => setEntwuerfe([{ ...standardFuer(modell, minuten), hinweis: 'Der KI-Entwurf ist fehlgeschlagen – hier das Beispiel.' }]));
   };
@@ -64,6 +66,13 @@ export default function StundenplanerVorschau() {
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
           <p className="text-xs text-accent">Prototyp mit Beispielinhalten – nichts wird gespeichert.</p>
+          <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            Mit welchem Assistenten möchtest du arbeiten?
+            <select value={assistent} onChange={(ev) => assistentWaehlen(ev.target.value)} className="rounded-md border bg-card px-2 py-1 text-foreground">
+              <option value="base44">Plattform-KI (Base44)</option>
+              <option value="anthropic">Anthropic (Claude, eigener Schlüssel)</option>
+            </select>
+          </label>
         </div>
         <div className="flex gap-1">
           {SCHRITTE.map((s, i) => (
