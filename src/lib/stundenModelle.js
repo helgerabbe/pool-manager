@@ -9,9 +9,10 @@ export const STUNDEN_MODELLE = [
   { key: 'uebung_lang', name: 'Individuelle Übung · lang (selbst organisiert)', beschreibung: 'Über mehrere Stunden mit Aufgabenplan; die Schüler bestimmen Reihenfolge, Tempo und teils die Auswahl. Kontrolle im Wesentlichen als Selbstkontrolle, ergänzt um Abgabe oder Kontrollpunkte bei der Lehrkraft und eine Lernbilanz.', phasen: ['Arbeitsplan & Orientierung', 'Längere Übungszeit', 'Kontrolle & Korrektur', 'Abschlussbilanz'] },
   { key: 'wiederholung', name: 'Wiederholung', phasen: ['Vorwissen reaktivieren', 'Lücken bestimmen', 'Wiederholen & üben', 'Sicherheit überprüfen', 'Weiterführende Aufgabe', 'Abschlussreflexion'] },
   { key: 'vertieft', name: 'Vertiefte Übung', phasen: ['Aufgabe & Ziel klären', 'Problem erschließen', 'Lösungsideen entwickeln', 'Produkt erstellen', 'Vergleichen & präsentieren', 'Transfer reflektieren'] },
-  { key: 'diagnose_kurz', name: 'Diagnose · kurz', phasen: ['Anlass & Kriterien klären', 'Lernstand erheben', 'Rückmelden / einordnen'] },
-  { key: 'diagnose_mittel', name: 'Diagnose · mittel', phasen: ['Kriterien transparent machen', 'Lernstand erheben', 'Auswerten', 'Nächste Schritte'] },
-  { key: 'diagnose_lang', name: 'Diagnose · lang', phasen: ['Ziel & Kriterien klären', 'Nachweise sammeln', 'Auswerten', 'Konsequenzen festlegen'] },
+  // Diagnosen (2026-10-16): unterschieden nach Nutzung des Ergebnisses und Auswertung, nicht nur nach Dauer.
+  { key: 'diagnose_kurz', name: 'Diagnose · kurz (Steuerung für die Lehrkraft)', beschreibung: 'Schnelle Momentaufnahme, z. B. Exit-Ticket, Ampelabfrage oder Kurzquiz. Das Ergebnis dient der Lehrkraft, um die nächste Stunde zu steuern. Auswertung durch die Lehrkraft auf einen Blick, Rückmeldung an die Klasse nur grob.', phasen: ['Anlass & Kriterien klären', 'Lernstand erheben', 'Rückmelden / einordnen'] },
+  { key: 'diagnose_mittel', name: 'Diagnose · mittel (Rückmeldung an die Schüler)', beschreibung: 'Kriteriengeleitete Erhebung, bei der jeder Schüler erfährt, wo er steht. Transparente Kriterien, Selbsteinschätzung und Abgleich mit Lösung oder Kompetenzraster. Das Ergebnis führt zu individuellen nächsten Schritten (z. B. passende Übungen).', phasen: ['Kriterien transparent machen', 'Lernstand erheben', 'Auswerten', 'Nächste Schritte'] },
+  { key: 'diagnose_lang', name: 'Diagnose · lang (Grundlage für Planung)', beschreibung: 'Umfassende Diagnose mit mehreren Nachweisen (z. B. Test, Produkt, Beobachtung). Die Lehrkraft wertet gründlich aus; das Ergebnis begründet Entscheidungen über Förderung, Gruppierung oder den weiteren Verlauf der Einheit.', phasen: ['Ziel & Kriterien klären', 'Nachweise sammeln', 'Auswerten', 'Konsequenzen festlegen'] },
 ];
 
 // 1 = passt hervorragend … 5 = passt nicht

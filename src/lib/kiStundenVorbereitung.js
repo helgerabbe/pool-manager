@@ -37,7 +37,7 @@ Inhaltsanalyse: ${analyse.aspekte.join(' ')}
 
 Verfügbare Stundenmodelle (key: Name – Phasen):
 ${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}${m.beschreibung ? `\n  ${m.beschreibung}` : ''}`).join('\n')}
-Individuelle Übungen sind kooperationsoffen (kurzer Austausch mit dem Nachbarn erlaubt), jeder gibt aber ein Einzelergebnis ab. Unterscheide sie nach Steuerung und Kontrolle, nicht nur nach der Zeit.
+Individuelle Übungen sind kooperationsoffen (kurzer Austausch mit dem Nachbarn erlaubt), jeder gibt aber ein Einzelergebnis ab. Unterscheide sie nach Steuerung und Kontrolle, nicht nur nach der Zeit. Diagnosen unterscheide danach, wofür das Ergebnis genutzt wird (Steuerung durch die Lehrkraft, Rückmeldung an die Schüler, Grundlage für Planung).
 
 - "vorschlag": key des am besten passenden Modells.
 - "begruendung": 1–2 einfache Sätze für die Lehrkraft, warum dieser Aufbau hier passt, mit ausdrücklichem Bezug auf die Lerngruppe (Arbeitstempo, Selbstständigkeit).

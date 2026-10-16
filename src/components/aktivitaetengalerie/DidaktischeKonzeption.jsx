@@ -36,6 +36,10 @@ export default function DidaktischeKonzeption() {
         <p className="text-muted-foreground">Individuelle Übungen sind kooperationsoffen: Man darf kurz mit dem Nachbarn schauen, es ist aber keine feste Partnerarbeit. Jeder gibt ein Einzelergebnis ab.</p>
         <p className="text-muted-foreground">Unterschieden werden sie danach, wer steuert und wer kontrolliert. Die Kontrolle wandert dabei von der Lehrkraft zu den Schülern: <strong>kurz</strong> = gemeinsam kontrolliert, <strong>mittel</strong> = über bereitgestellte Lösungen, <strong>lang</strong> = Selbstkontrolle.</p>
       </div>
+      <div className="rounded-xl border bg-card p-4 text-sm space-y-2">
+        <h3 className="font-semibold">Diagnosen: Wofür wird das Ergebnis genutzt?</h3>
+        <p className="text-muted-foreground">Diagnosen unterscheiden sich vor allem darin, wer mit dem Ergebnis weiterarbeitet: <strong>kurz</strong> = die Lehrkraft steuert damit die nächste Stunde, <strong>mittel</strong> = jeder Schüler erhält eine Rückmeldung und nächste Schritte, <strong>lang</strong> = die Lehrkraft plant damit Förderung, Gruppen oder den weiteren Verlauf.</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));

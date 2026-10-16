@@ -47,7 +47,7 @@ Stundenziel: ${ziel.haupt}${ziel.teil?.length ? `\nTeilziele: ${ziel.teil.join('
 Jahrgang: ${jahrgang}
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5 (3 = normal)
 Verfügbare Netto-Zeit: ${minuten} Minuten
-Stundenmodell: ${modell.name} mit den Phasen: ${modell.phasen.join(' → ')}${modell.beschreibung ? `\nKennzeichen: ${modell.beschreibung} Kooperationsoffen: kurzer Austausch mit dem Nachbarn erlaubt, jeder gibt ein Einzelergebnis ab.` : ''}${modell.key === 'induktiv' && variante(induktivVariante) ? `
+Stundenmodell: ${modell.name} mit den Phasen: ${modell.phasen.join(' → ')}${modell.beschreibung ? `\nKennzeichen: ${modell.beschreibung}` : ''}${modell.key.startsWith('uebung_') ? ' Kooperationsoffen: kurzer Austausch mit dem Nachbarn erlaubt, jeder gibt ein Einzelergebnis ab.' : ''}${modell.key === 'induktiv' && variante(induktivVariante) ? `
 Variante der induktiven Erarbeitung: ${variante(induktivVariante).prompt}
 Die Modellphasen sind dabei nur ein Gerüst: Passe Anzahl, Umfang und Lenkung der Phasen an diese Variante an (Phasennamen dürfen dafür angepasst werden) und mache die Vorgehensweise in den Aktivitäten sichtbar.` : ''}${modell.key === 'deduktiv' && deduktivVariante(dVariante) ? `
 Variante der deduktiven Erarbeitung: ${deduktivVariante(dVariante).prompt}
