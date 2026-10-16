@@ -1,10 +1,11 @@
 import React from 'react';
 import { STUNDEN_MODELLE, PASSUNG, BEITRAG } from '@/lib/stundenModelle';
+import VariantenPassung from './VariantenPassung';
 
 const BEITRAG_CLS = { kern: 'bg-primary text-primary-foreground', teil: 'bg-primary/15 text-primary', bedingt: 'border border-dashed border-primary/50 text-primary' };
 
 /** Raster: Passung je Stundenmodell + abgedeckte Phasen. */
-export default function StundenmodellRaster({ einordnung }) {
+export default function StundenmodellRaster({ einordnung, varianten }) {
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium">In welchen Stundenmodellen passt sie, und welche Phasen deckt sie ab?</p>
@@ -27,6 +28,7 @@ export default function StundenmodellRaster({ einordnung }) {
                   })}
                 </div>
                 {e.hinweis && <p className="text-xs text-muted-foreground">{e.hinweis}</p>}
+                <VariantenPassung modellKey={m.key} varianten={varianten} />
               </div>
             </div>
           );

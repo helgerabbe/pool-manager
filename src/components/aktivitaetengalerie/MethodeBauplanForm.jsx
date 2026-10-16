@@ -10,6 +10,7 @@ import BauplanUebersicht from './BauplanUebersicht';
 import AssistentenInfos from './AssistentenInfos';
 import GrafikVorlageDialog from './GrafikVorlageDialog';
 import StundenmodellRaster from './StundenmodellRaster';
+import { VARIANTEN_PASSUNG } from '@/lib/methodenVariantenPassung';
 import { EINORDNUNG_PROBE } from '@/lib/stundenModelle';
 import { PROFIL_PROBE } from '@/lib/anspruchsProfil';
 import AnspruchsProfil from './AnspruchsProfil';
@@ -92,7 +93,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
       <FachbezugAuswahl werte={werte} setze={setze} />
       {PROFIL_PROBE[methode.name] && <AnspruchsProfil profil={PROFIL_PROBE[methode.name]} />}
       <EinsatzEmpfehlung name={methode.name} />
-      {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} /> : <div className="space-y-2">
+      {EINORDNUNG_PROBE[methode.name] ? <StundenmodellRaster einordnung={EINORDNUNG_PROBE[methode.name]} varianten={VARIANTEN_PASSUNG[methode.name]} /> : <div className="space-y-2">
         <p className="text-sm font-medium">In welchen Phasen kommt sie vor?</p>
         <div className="flex flex-wrap gap-2">
           {PHASEN.map(([k, l]) => (
