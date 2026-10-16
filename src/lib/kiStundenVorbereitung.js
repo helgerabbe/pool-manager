@@ -36,7 +36,8 @@ ${stundeText(k)}
 Inhaltsanalyse: ${analyse.aspekte.join(' ')}
 
 Verfügbare Stundenmodelle (key: Name – Phasen):
-${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}`).join('\n')}
+${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}${m.beschreibung ? `\n  ${m.beschreibung}` : ''}`).join('\n')}
+Individuelle Übungen sind kooperationsoffen (kurzer Austausch mit dem Nachbarn erlaubt), jeder gibt aber ein Einzelergebnis ab. Unterscheide sie nach Steuerung und Kontrolle, nicht nur nach der Zeit.
 
 - "vorschlag": key des am besten passenden Modells.
 - "begruendung": 1–2 einfache Sätze für die Lehrkraft, warum dieser Aufbau hier passt, mit ausdrücklichem Bezug auf die Lerngruppe (Arbeitstempo, Selbstständigkeit).

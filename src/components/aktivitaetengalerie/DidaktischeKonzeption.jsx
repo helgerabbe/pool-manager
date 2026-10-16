@@ -31,6 +31,11 @@ export default function DidaktischeKonzeption() {
         <p className="flex gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><strong>Hauptkriterium ist die Zeit.</strong> Manche Methoden brauchen deutlich länger als andere. Wir prüfen deshalb zuerst, was in der verfügbaren Zeit überhaupt möglich ist, und erst danach, was inhaltlich am besten passt.</span></p>
       </div>
       <VariantenKriterien />
+      <div className="rounded-xl border bg-card p-4 text-sm space-y-2">
+        <h3 className="font-semibold">Individuelle Übungen: Steuerung statt nur Dauer</h3>
+        <p className="text-muted-foreground">Individuelle Übungen sind kooperationsoffen: Man darf kurz mit dem Nachbarn schauen, es ist aber keine feste Partnerarbeit. Jeder gibt ein Einzelergebnis ab.</p>
+        <p className="text-muted-foreground">Unterschieden werden sie danach, wer steuert und wer kontrolliert. Die Kontrolle wandert dabei von der Lehrkraft zu den Schülern: <strong>kurz</strong> = gemeinsam kontrolliert, <strong>mittel</strong> = über bereitgestellte Lösungen, <strong>lang</strong> = Selbstkontrolle.</p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
@@ -39,7 +44,7 @@ export default function DidaktischeKonzeption() {
         }).map((m) => (
           <div key={m.key} className="space-y-2 rounded-xl border bg-card p-4">
             <h3 className="font-semibold">{m.name}</h3>
-            <p className="text-sm text-muted-foreground">{m.bedeutung || BEDEUTUNG[m.key]}</p>
+            <p className="text-sm text-muted-foreground">{m.bedeutung || m.beschreibung || BEDEUTUNG[m.key]}</p>
             <ol className="space-y-1 text-sm">
               {m.phasen.map((p, i) => (
                 <li key={p} className="flex gap-2"><span className="w-5 shrink-0 text-xs font-semibold text-primary">{i + 1}.</span>{p}</li>
