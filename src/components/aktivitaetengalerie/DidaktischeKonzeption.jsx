@@ -3,6 +3,7 @@ import { Clock } from 'lucide-react';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import VariantenKriterien from './VariantenKriterien';
 
 const BEDEUTUNG = {
   induktiv: 'Die Schüler entdecken eine Regel selbst: vom Phänomen über Vermutungen und deren Prüfung bis zur Formulierung. Braucht viel Zeit, schafft aber tiefes Verständnis.',
@@ -29,6 +30,7 @@ export default function DidaktischeKonzeption() {
         <p><strong>Modelle sind Bausteine, keine starren Stunden.</strong> Die Modelle sind als Unterrichtsstunden gedacht. In der Praxis kommen aber oft zwei in einer Stunde vor, zum Beispiel eine deduktive Erarbeitung zu Beginn, auf die rasch eine kurze individuelle Übung folgt.</p>
         <p className="flex gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><strong>Hauptkriterium ist die Zeit.</strong> Manche Methoden brauchen deutlich länger als andere. Wir prüfen deshalb zuerst, was in der verfügbaren Zeit überhaupt möglich ist, und erst danach, was inhaltlich am besten passt.</span></p>
       </div>
+      <VariantenKriterien />
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));

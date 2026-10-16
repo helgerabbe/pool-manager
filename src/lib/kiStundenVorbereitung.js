@@ -2,6 +2,7 @@ import { base44 } from '@/api/base44Client';
 import { kiAnfrage } from '@/lib/kiAnfrage';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import { kriterienPrompt } from '@/lib/variantenKriterien';
 
 /** Ruft je nach gewähltem Assistenten die Plattform-KI oder Anthropic auf. */
 export const kiAufruf = (assistent, prompt, response_json_schema) => (assistent === 'anthropic'
@@ -45,7 +46,10 @@ ${INDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
 - "variante_begruendung": ein einfacher Satz, warum diese Variante hier passt.
 - "deduktiv_variante": Falls deduktiv erarbeitet wird, welche Variante passt am besten?
 ${DEDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
-- "deduktiv_begruendung": ein einfacher Satz, warum diese Variante hier passt.`, {
+- "deduktiv_begruendung": ein einfacher Satz, warum diese Variante hier passt.
+
+Lerngruppe: Arbeitstempo ${k.gruppe?.fit ?? 3}/5, Selbstständigkeit ${k.gruppe?.stark ?? 3}/5 (3 = normal). Netto-Zeit: ${k.minuten} Minuten.
+${kriterienPrompt()}`, {
     type: 'object',
     properties: {
       vorschlag: { type: 'string', enum: keys },
