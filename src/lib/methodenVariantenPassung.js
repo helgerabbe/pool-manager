@@ -2,8 +2,10 @@
 // Schlüssel: <modell>_<variante>, Wert: [passung 1–5, Hinweis].
 import { VARIANTEN_PASSUNG_2 } from '@/lib/methodenVariantenPassung2';
 import { VARIANTEN_PASSUNG_3 } from '@/lib/methodenVariantenPassung3';
+import { VARIANTEN_PASSUNG_4 } from '@/lib/methodenVariantenPassung4';
 
 export const VARIANTEN_PASSUNG = {
+  ...VARIANTEN_PASSUNG_4,
   ...VARIANTEN_PASSUNG_3,
   ...VARIANTEN_PASSUNG_2,
   'Brain Dump': {
