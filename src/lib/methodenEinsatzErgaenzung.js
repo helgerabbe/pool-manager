@@ -52,4 +52,5 @@ export const EINSATZ_ERGAENZUNG = {
   'Hausaufgabe erklären': { stufe: 2, begruendung: 'Ein festes Ritual am Stundenende verhindert Missverständnisse und Zeitnot.' },
   'Tafelbild gemeinsam entwickeln': { stufe: 3, begruendung: 'Die Zielstruktur muss vorab geplant sein; allein gut vorzubereiten.' },
   'Arbeitsteilige Gruppenarbeit': { stufe: 3, begruendung: 'Unterschiedliches Material je Gruppe kostet Zeit, ist aber allein gut zu stemmen.' },
+  'Literarisches Unterrichtsgespräch': { stufe: 4, begruendung: 'Die Gruppe muss das Gesprächsritual erst lernen; die Lehrkraft braucht Übung darin, nicht zu lenken.' },
 };

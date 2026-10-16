@@ -139,6 +139,7 @@ const Z = {
   'Talkshow': 'austausch produkte',
   'Expertenbefragung': 'austausch erarbeitung',
   'Sokratisches Gespräch': 'austausch erarbeitung',
+  'Literarisches Unterrichtsgespräch': 'austausch erarbeitung',
   'Heißer Stuhl': 'austausch',
   'Dilemma-Diskussion': 'austausch erarbeitung',
   'Fiktives Interview': 'austausch produkte',

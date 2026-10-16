@@ -42,6 +42,11 @@ export const PROFIL_ERGAENZUNG_2 = {
     'Hängt ganz an der Bildauswahl. Gezielte Beobachtungsaufträge verhindern, dass es bei oberflächlichen Unterschieden bleibt.'),
   'Freewriting': p(2, 3, 2, 1, 1, 1, 2, jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     'Ununterbrochenes Schreiben fällt vielen anfangs schwer. Kurze Zeiten, ein Satzanfang und die Zusicherung, dass nichts bewertet wird, machen den Einstieg leicht.'),
+  'Literarisches Unterrichtsgespräch': {
+    werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 4, lehrkraft: 5, vorbereitung: 2, material: 1, steuerung: 4 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Steht und fällt mit der Textauswahl und der Zurückhaltung der Lehrkraft. Das Ritual mit festen Runden muss mehrfach geübt werden. In den Jahrgängen 5 und 6 kurze Texte und eine kürzere Gesprächsphase wählen.',
+  },
   'Lautes Denken': {
     werte: { komplexitaet: 3, einuebung: 4, lerngruppe: 3, lehrkraft: 3, vorbereitung: 2, material: 1, steuerung: 3 },
     jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja'),

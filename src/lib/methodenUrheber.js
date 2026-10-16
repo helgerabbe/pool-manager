@@ -10,6 +10,7 @@ export const URHEBER = {
   'Reziprokes Lesen': E('Annemarie Palincsar und Ann Brown', 1984),
   'Lerntempoduett': E('Diethelm Wahl'),
   'Sandwich-Methode': E('Diethelm Wahl'),
+  'Literarisches Unterrichtsgespräch': E('Gerhard Härle und Marcus Steinbrenner'),
   'Concept Mapping': E('Joseph D. Novak', 1972),
   'Brainstorming / Mindmap': B('Alex F. Osborn (Brainstorming) und Tony Buzan (Mindmap)'),
   'Denkhüte (Sechs Hüte)': E('Edward de Bono', 1985),

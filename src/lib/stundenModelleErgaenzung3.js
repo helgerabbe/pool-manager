@@ -52,6 +52,18 @@ export const EINORDNUNG_ERGAENZUNG_3 = {
   'KAWA': aktivierung({}),
   'Bildervergleich': problem({ induktiv: 'Unterschiede und Gemeinsamkeiten führen zu Beobachtungen und Vermutungen.', vertieft: 'Gemeinsamer Ausgangsfall für die Teamarbeit.' }),
   'Freewriting': aktivierung({ wiederholung: 'Freies Schreiben ruft Vorwissen ungefiltert ab.' }),
+  'Literarisches Unterrichtsgespräch': {
+    induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Beobachten & erkunden': 'kern', 'Vermutungen bilden': 'kern', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Der Text ist das Phänomen; Deutungen entstehen gemeinsam im Gespräch.' },
+    deduktiv: { passung: 5, phasen: {}, hinweis: 'Eine vorgegebene Deutung widerspricht der Methode.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_lang: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    wiederholung: { passung: 4, phasen: { 'Vorwissen reaktivieren': 'bedingt' }, hinweis: 'Höchstens zum erneuten Lesen eines Schlüsseltextes.' },
+    vertieft: { passung: 3, phasen: { 'Problem erschließen': 'teil', 'Transfer reflektieren': 'teil' }, hinweis: 'Kann eine Teamaufgabe zum Text eröffnen.' },
+    diagnose_kurz: { passung: 4, phasen: { 'Lernstand erheben': 'bedingt' }, hinweis: 'Die Lehrkraft hört Lesarten, bewertet aber nicht.' },
+    diagnose_mittel: { passung: 5, phasen: {}, hinweis: 'Bewertung widerspricht dem Gesprächsritual.' },
+    diagnose_lang: { passung: 5, phasen: {}, hinweis: 'Trägt keine Diagnose.' },
+  },
   'Lautes Denken': {
     induktiv: { passung: 3, phasen: { 'Vermutungen prüfen': 'teil', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Schüler denken beim Prüfen laut; die Lehrkraft darf die Erkenntnis nicht vormachen.' },
     deduktiv: { passung: 1, phasen: { 'Verstehen & klären': 'kern', 'Angeleitetes Anwenden': 'kern' }, hinweis: 'Die Lehrkraft macht das Vorgehen laut denkend vor, dann wenden die Schüler es im Tandem an.' },
