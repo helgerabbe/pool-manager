@@ -6,7 +6,9 @@ import InduktivVarianten from './InduktivVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 
 /** Schritt 3: Welche Art von Stunde ist das? KI-Vorschlag aus den didaktischen Grundmodellen. */
-export default function ProtoStundentyp({ typ, modell, setModell, variante, setVariante, dVariante, setDVariante, onErstellen, onWeiter }) {
+const STUFE = { 1: 'sehr niedrig', 2: 'eher niedrig', 3: 'normal', 4: 'eher hoch', 5: 'sehr hoch' };
+
+export default function ProtoStundentyp({ gruppe, typ, modell, setModell, variante, setVariante, dVariante, setDVariante, onErstellen, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState(false);
   const erstellen = () => { setLaedt(true); setFehler(false); onErstellen().catch(() => setFehler(true)).finally(() => setLaedt(false)); };
@@ -19,6 +21,7 @@ export default function ProtoStundentyp({ typ, modell, setModell, variante, setV
     <div className="space-y-4">
       <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary"><Compass className="h-4 w-4" /> {vorschlag ? 'So würde ich die Stunde anlegen' : 'Deine Wahl'}</p>
       <ModellKarte modellKey={modell} hervorgehoben text={vorschlag ? typ.begruendung : 'Der Entwurf folgt diesem Aufbau.'} />
+      {gruppe && <p className="text-xs text-muted-foreground">Berücksichtigte Lerngruppe: Arbeitstempo {STUFE[gruppe.fit]}, Selbstständigkeit {STUFE[gruppe.stark]}.</p>}
       {modell === 'induktiv' && <InduktivVarianten wert={variante} setWert={setVariante} empfehlung={typ.variante} begruendung={typ.variante_begruendung} />}
       {modell === 'deduktiv' && <InduktivVarianten varianten={DEDUKTIVE_VARIANTEN} frage="Wie soll die Regel vermittelt werden?" wert={dVariante} setWert={setDVariante} empfehlung={typ.deduktiv_variante} begruendung={typ.deduktiv_begruendung} />}
       <p className="text-sm text-muted-foreground">Ist das in deinem Sinne – oder soll der Schwerpunkt woanders liegen?</p>

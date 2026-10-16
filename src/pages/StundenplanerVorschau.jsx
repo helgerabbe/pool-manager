@@ -106,7 +106,7 @@ export default function StundenplanerVorschau() {
           {schritt === 0 && kontext && <ProtoStart verlauf={kontext.verlauf} wahl={wahl} setWahl={setWahl} minuten={minuten} setMinuten={setMinuten} pause={pause} setPause={setPause} onWeiter={() => geheZu(1)} />}
           {schritt === 1 && <ProtoInhaltsanalyse analyse={analyse} onErstellen={analyseErstellen} onWeiter={() => geheZu(2)} />}
           {schritt === 2 && <ProtoLerngruppe gruppe={gruppe} setGruppe={(g) => { setGruppe(g); setTyp(null); }} onWeiter={() => geheZu(3)} />}
-          {schritt === 3 && <ProtoStundentyp typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(4)} />}
+          {schritt === 3 && <ProtoStundentyp gruppe={gruppe} typ={typ} variante={induktivVariante} setVariante={setInduktivVariante} dVariante={deduktivVariante} setDVariante={setDeduktivVariante} onErstellen={typErstellen} modell={modell} setModell={setModell} onWeiter={() => geheZu(4)} />}
           {schritt === 4 && <ProtoStundenziel ziel={ziel} setZiel={setZiel} onErstellen={zielErstellen} onWeiter={entwerfen} />}
           {schritt === 5 && !entwuerfe && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich erstelle einen gut machbaren Standardentwurf …</p>}
           {schritt === 5 && entwuerfe && <ProtoEntwurf entwuerfe={entwuerfe} setEntwuerfe={setEntwuerfe} aktiv={aktiv} setAktiv={setAktiv} routine={routine} setRoutine={setRoutine} pause={pause && minuten > 45} modellName={aktModell.name} modellKey={modell}

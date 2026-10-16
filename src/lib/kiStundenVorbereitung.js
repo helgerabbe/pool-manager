@@ -39,7 +39,7 @@ Verfügbare Stundenmodelle (key: Name – Phasen):
 ${modelle.map((m) => `- ${m.key}: ${m.name} – ${m.phasen.join(' → ')}`).join('\n')}
 
 - "vorschlag": key des am besten passenden Modells.
-- "begruendung": 1–2 einfache Sätze für die Lehrkraft, warum dieser Aufbau hier passt.
+- "begruendung": 1–2 einfache Sätze für die Lehrkraft, warum dieser Aufbau hier passt, mit ausdrücklichem Bezug auf die Lerngruppe (Arbeitstempo, Selbstständigkeit).
 - "alternativen": 3 andere sinnvolle Modelle, je mit "wann": ein Satz, wann dieses Modell besser wäre.
 - "variante": Falls induktiv erarbeitet wird, welche Variante passt am besten?
 ${INDUKTIVE_VARIANTEN.map((v) => `  - ${v.key}: ${v.prompt}`).join('\n')}
