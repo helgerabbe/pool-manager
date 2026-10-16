@@ -5,6 +5,56 @@ const K = ['induktiv_offen', 'induktiv_gelenkt', 'induktiv_gestuft', 'induktiv_k
 const v = (...werte) => Object.fromEntries(K.map((k, i) => [k, werte[i]]));
 
 export const VARIANTEN_PASSUNG_5 = {
+  'Reziprokes Lesen': v(
+    [4, 'Erschließung statt Entdeckung.'], [3, 'Die Rollen lenken das Lesen.'], [2, 'Rollenkarten als Stütze.'], [4, 'Braucht mehr Zeit.'],
+    [4, 'Kaum Bezug zur Darbietung.'], [4, 'Kaum Bezug.'], [1, 'Material gemeinsam und gründlich erschließen.'], [5, 'Zu aufwendig.'],
+    [3, 'Fallmaterial im Team erschließen.'], [4, 'Wenig Bezug zum Produkt.'], [2, 'Quellen gemeinsam auswerten.'], [3, 'Positionen im Text klären.'],
+    [4, 'Zu aufwendig.'], [3, 'Kerntext erneut erschließen.']),
+  'Gruppenpuzzle (Jigsaw)': v(
+    [4, 'Arbeitsteilung erschwert gemeinsames Entdecken.'], [3, 'Expertengruppen prüfen Teilaspekte.'], [3, 'Experten helfen einander.'], [5, 'Zu aufwendig.'],
+    [4, 'Ersetzt die Darbietung durch Schüler.'], [3, 'Jede Gruppe erklärt ein Beispiel.'], [1, 'Material arbeitsteilig erschließen und vermitteln.'], [5, 'Zu aufwendig.'],
+    [2, 'Teilwissen für den Fall zusammenführen.'], [3, 'Produkt aus Teilbeiträgen.'], [2, 'Teilfragen untersuchen.'], [1, 'Jede Gruppe vertritt eine Position.'],
+    [5, 'Zu aufwendig.'], [2, 'Teilthemen der Einheit wiederholen.']),
+  'Arbeitsteilige Gruppenarbeit': v(
+    [3, 'Gruppen erkunden verschiedene Beispiele.'], [2, 'Vergleich der Gruppenergebnisse führt zur Regel.'], [3, 'Material je Gruppe gestuft.'], [4, 'Zu aufwendig.'],
+    [4, 'Kaum Bezug.'], [3, 'Verschiedene Beispiele je Gruppe.'], [1, 'Material arbeitsteilig auswerten.'], [5, 'Zu aufwendig.'],
+    [2, 'Teilprobleme lösen.'], [2, 'Teilprodukte zusammenführen.'], [1, 'Verschiedene Untersuchungen parallel.'], [2, 'Gruppen bearbeiten je eine Perspektive.'],
+    [4, 'Zu aufwendig.'], [2, 'Themen der Einheit aufteilen.']),
+  'Stationenlernen / Lernzirkel': v(
+    [3, 'Stationen bieten verschiedene Phänomene.'], [3, 'Aufträge lenken die Erkundung.'], [2, 'Hilfen an jeder Station.'], [5, 'Zu aufwendig.'],
+    [4, 'Kaum Bezug.'], [3, 'Lösungsbeispiele an den Stationen.'], [2, 'Material in Stationen erschließen.'], [5, 'Zu aufwendig.'],
+    [3, 'Teilprobleme an Stationen.'], [3, 'Station als Produktwerkstatt.'], [2, 'Versuchsstationen.'], [3, 'Je Station eine Perspektive.'],
+    [4, 'Zu aufwendig.'], [1, 'Ideal für umfassende Wiederholung mit Wahl.']),
+  'WebQuest': v(
+    [3, 'Recherche kann Entdeckung tragen.'], [3, 'Gelenkte Quellen und Fragen.'], [2, 'Aufgaben in Stufen.'], [5, 'Zu aufwendig.'],
+    [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [1, 'Quellen gezielt erschließen.'], [5, 'Zu aufwendig.'],
+    [2, 'Recherche zur Lösung eines Problems.'], [2, 'Rechercheergebnis als Produkt.'], [1, 'Gelenkte Untersuchung im Netz.'], [2, 'Positionen recherchieren.'],
+    [5, 'Zu aufwendig.'], [3, 'Als Vertiefungsrecherche.']),
+  'Zeitstrahl erstellen': v(
+    [3, 'Zusammenhänge in der Abfolge entdecken.'], [2, 'Gelenktes Ordnen zeigt Entwicklung.'], [2, 'Ereignisse nacheinander ergänzen.'], [2, 'Schnell umsetzbar.'],
+    [3, 'Sichert eingeführte Abfolgen.'], [4, 'Kaum Bezug.'], [2, 'Daten aus Material ordnen.'], [3, 'Mit wenigen Daten möglich.'],
+    [3, 'Ordnet den Fall zeitlich.'], [2, 'Zeitleiste als Teamprodukt.'], [3, 'Entwicklungen untersuchen.'], [3, 'Sichtweisen im Zeitverlauf.'],
+    [2, 'Abfolge schnell wiederholen.'], [1, 'Ordnet die ganze Einheit.']),
+  'Think-Pair-Share': v(
+    [2, 'Eigene Vermutungen, dann Austausch.'], [1, 'Vermuten, prüfen, teilen in klaren Schritten.'], [2, 'Partner als Hilfe.'], [1, 'Schnell und strukturiert.'],
+    [2, 'Verarbeitung nach dem Input.'], [2, 'Lösungsbeispiel erst allein, dann zu zweit erklären.'], [2, 'Material erst allein, dann im Austausch.'], [1, 'Kurze Verarbeitung.'],
+    [3, 'Ideen vor der Teamarbeit sammeln.'], [3, 'Ideen sammeln.'], [3, 'Vorgehen planen.'], [2, 'Eigene Position bilden, dann abgleichen.'],
+    [1, 'Schnelles Reaktivieren mit Austausch.'], [2, 'Lücken im Austausch erkennen.']),
+  'Placemat': v(
+    [2, 'Eigene Ideen, dann gemeinsamer Kern.'], [2, 'Zu einer Leitfrage zusammenführen.'], [3, 'Wenig Stufung.'], [3, 'Kostet etwas Zeit.'],
+    [3, 'Verarbeitung nach Input.'], [4, 'Kaum Bezug.'], [2, 'Materialergebnisse bündeln.'], [4, 'Zu aufwendig.'],
+    [2, 'Lösungsideen sammeln und einigen.'], [2, 'Konzept für das Produkt.'], [3, 'Vorgehen abstimmen.'], [2, 'Positionen sammeln und abgleichen.'],
+    [2, 'Vorwissen in der Gruppe bündeln.'], [2, 'Zentrale Inhalte gemeinsam sammeln.']),
+  'Expertenrunde': v(
+    [4, 'Kein Entdeckungsformat.'], [3, 'Experten erklären Teilergebnisse.'], [3, 'Experten als Hilfe.'], [5, 'Zu aufwendig.'],
+    [3, 'Schüler statt Lehrkraft erklären.'], [3, 'Experten erklären Beispiele.'], [1, 'Material erschließen und weitergeben.'], [5, 'Zu aufwendig.'],
+    [2, 'Fachwissen für den Fall bündeln.'], [3, 'Beiträge zum Produkt.'], [2, 'Ergebnisse vermitteln.'], [2, 'Positionen vertreten.'],
+    [4, 'Zu aufwendig.'], [2, 'Experten wiederholen Teilthemen.']),
+  'Freiarbeit': v(
+    [3, 'Eigene Wege, aber wenig gemeinsame Regelbildung.'], [4, 'Zu wenig Lenkung.'], [3, 'Selbstgewählte Hilfen.'], [5, 'Braucht viel Zeit.'],
+    [5, 'Widerspricht der Darbietung.'], [3, 'Lösungsbeispiele als Selbstlernmaterial.'], [2, 'Material frei wählen und bearbeiten.'], [5, 'Zu aufwendig.'],
+    [3, 'Selbstgewählte Probleme.'], [2, 'Eigene Produkte.'], [2, 'Eigene Untersuchungen.'], [3, 'Eigene Themenwahl.'],
+    [4, 'Zu offen.'], [1, 'Individuelle Wiederholung nach Bedarf.']),
   'Fragend-entwickelndes Unterrichtsgespräch': v(
     [4, 'Lenkt zu stark für offenes Entdecken.'], [1, 'Leitfragen führen Schritt für Schritt zur Regel.'], [2, 'Fragen als gestufte Impulse.'], [1, 'Schnellster Weg zur gemeinsamen Erkenntnis.'],
     [2, 'Klärt die eingeführte Regel im Gespräch.'], [2, 'Das Lösungsbeispiel wird gemeinsam besprochen.'], [2, 'Sicherung nach der Materialarbeit.'], [1, 'Kurz und gut steuerbar.'],

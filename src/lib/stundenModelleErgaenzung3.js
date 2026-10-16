@@ -112,6 +112,18 @@ export const EINORDNUNG_ERGAENZUNG_3 = {
     diagnose_mittel: { passung: 3, phasen: { 'Lernstand erheben': 'teil' }, hinweis: 'Mit Kriterienraster auswertbar.' },
     diagnose_lang: { passung: 2, phasen: { 'Nachweise sammeln': 'kern' }, hinweis: 'Guter Nachweis für Schreibkompetenz.' },
   },
+  'Freiarbeit': {
+    induktiv: e(4, {}, 'Zu wenig gemeinsame Regelbildung.'),
+    deduktiv: e(4, {}, 'Widerspricht dem gelenkten Aufbau.'),
+    uebung_kurz: e(5, {}, 'Braucht viel Zeit.'),
+    uebung_mittel: e(3, { 'Individuelle Arbeitsphase': 'kern' }, 'Möglich als freie Übungszeit.'),
+    uebung_lang: e(1, { 'Längere Übungszeit': 'kern', 'Kontrolle & Korrektur': 'teil' }, 'Klassisches Format: eigener Plan, Selbstkontrolle, Bilanz.'),
+    wiederholung: e(2, { 'Lücken schließen': 'kern' }, 'Individuell an den eigenen Lücken arbeiten.'),
+    vertieft: e(3, { 'Produkt erstellen': 'teil' }, 'Eigene Produkte möglich.'),
+    diagnose_kurz: e(5, {}, 'Kein Diagnoseformat.'),
+    diagnose_mittel: e(4, {}, 'Nur über Arbeitspläne.'),
+    diagnose_lang: e(3, { 'Nachweise sammeln': 'teil' }, 'Arbeitsergebnisse als Nachweise.'),
+  },
   'Literarisches Unterrichtsgespräch': {
     induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Beobachten & erkunden': 'kern', 'Vermutungen bilden': 'kern', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Der Text ist das Phänomen; Deutungen entstehen gemeinsam im Gespräch.' },
     deduktiv: { passung: 5, phasen: {}, hinweis: 'Eine vorgegebene Deutung widerspricht der Methode.' },

@@ -67,6 +67,8 @@ export const PROFIL_ERGAENZUNG_2 = {
     jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Steht und fällt mit klaren Kriterien und einem Vergleich der Wirkung am Ende. Gattungswechsel erst ab der Mittelstufe.',
   },
+  'Freiarbeit': p(4, 5, 5, 4, 5, 5, 4, jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    'Gelingt nur mit klaren Regeln, Selbstkontrolle und einem gut sortierten Materialpool. Schwächere Lerngruppen brauchen Arbeitspläne und enge Begleitung.'),
   'Literarisches Unterrichtsgespräch': {
     werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 4, lehrkraft: 5, vorbereitung: 2, material: 1, steuerung: 4 },
     jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
