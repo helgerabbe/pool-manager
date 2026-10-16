@@ -21,7 +21,7 @@ export default function ProtoLerngruppe({ gruppe, setGruppe, onWeiter }) {
         <Users className="h-5 w-5 shrink-0 text-primary" />
         <div>
           <p className="text-sm font-semibold">{standard ? 'Ich plane für eine ganz normale Klasse' : 'Ich plane mit deiner Einschätzung'}</p>
-          <p className="text-sm text-muted-foreground">{standard ? 'Durchschnittlich leistungsstark, normal aufnahmefähig. Das reicht für einen guten Entwurf.' : 'Der Entwurf berücksichtigt, wie fit und selbstständig die Klasse ist.'}</p>
+          <p className="text-sm text-muted-foreground">{standard ? 'Mittleres Arbeitstempo, normale Selbstständigkeit. Das reicht für einen guten Entwurf.' : 'Der Entwurf berücksichtigt Arbeitstempo und Selbstständigkeit der Klasse.'}</p>
         </div>
       </div>
       <button className="flex items-center gap-1 text-xs text-primary" onClick={() => setGenauer(!genauer)}>
@@ -29,9 +29,9 @@ export default function ProtoLerngruppe({ gruppe, setGruppe, onWeiter }) {
       </button>
       {genauer && (
         <div className="space-y-3">
-          <Regler titel="Wie fit ist die Klasse in dieser Stunde?" links="Erschöpft, unruhig" rechts="Wach, konzentriert"
+          <Regler titel="Wie ist das Arbeitstempo der Klasse?" links="Eher langsam" rechts="Eher schnell"
             wert={gruppe.fit} setWert={(v) => setGruppe({ ...gruppe, fit: v })} />
-          <Regler titel="Wie leistungsstark ist die Lerngruppe?" links="Braucht viel Unterstützung" rechts="Sehr selbstständig"
+          <Regler titel="Wie selbstständig arbeitet die Klasse?" links="Braucht viel Anleitung" rechts="Sehr selbstständig"
             wert={gruppe.stark} setWert={(v) => setGruppe({ ...gruppe, stark: v })} />
         </div>
       )}

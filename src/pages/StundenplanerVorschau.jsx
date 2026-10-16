@@ -40,7 +40,8 @@ export default function StundenplanerVorschau() {
 
   const aktModell = STUNDEN_MODELLE.find((m) => m.key === modell);
   const annahmen = [
-    gruppe.fit === 3 && gruppe.stark === 3 && 'Standard-Lerngruppe („Mach einfach“) – keine besondere Leistungsstreuung angenommen.',
+    gruppe.fit === 3 && gruppe.stark === 3 && 'Standard-Lerngruppe („Mach einfach“) – mittleres Arbeitstempo, normale Selbstständigkeit.',
+    ziel.haupt === ZIELE.haupt && 'Stundenziel vom Assistenten formuliert und übernommen.',
     modell === STUNDENTYP.vorschlag && `Vorgeschlagener Stundentyp „${aktModell.name}“ übernommen.`,
     !routine.trim() && 'Keine feste Routine eingeplant.',
   ].filter(Boolean);
