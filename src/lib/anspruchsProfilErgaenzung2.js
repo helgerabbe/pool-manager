@@ -42,6 +42,31 @@ export const PROFIL_ERGAENZUNG_2 = {
     'Hängt ganz an der Bildauswahl. Gezielte Beobachtungsaufträge verhindern, dass es bei oberflächlichen Unterschieden bleibt.'),
   'Freewriting': p(2, 3, 2, 1, 1, 1, 2, jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     'Ununterbrochenes Schreiben fällt vielen anfangs schwer. Kurze Zeiten, ein Satzanfang und die Zusicherung, dass nichts bewertet wird, machen den Einstieg leicht.'),
+  'Innerer Monolog / Leerstellen füllen': {
+    werte: { komplexitaet: 3, einuebung: 2, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 1, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Gelingt mit einer klaren Leerstelle und dem Hinweis: Gedanken, keine Handlung. Satzanfänge helfen in den unteren Jahrgängen.',
+  },
+  'Antizipierendes Lesen': {
+    werte: { komplexitaet: 2, einuebung: 1, lerngruppe: 2, lehrkraft: 2, vorbereitung: 2, material: 2, steuerung: 3 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Einfach und wirksam, wenn Vermutungen begründet werden müssen. Abschnitte nur einzeln ausgeben.',
+  },
+  'Rollenbiografie / Figurensteckbrief': {
+    werte: { komplexitaet: 2, einuebung: 1, lerngruppe: 2, lehrkraft: 1, vorbereitung: 1, material: 1, steuerung: 2 },
+    jahrgaenge: jg('ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Leicht einsetzbar. Wichtig ist, Belegtes vom Erfundenen zu trennen, sonst entfernt sich die Figur vom Text.',
+  },
+  'Figurenkonstellation legen': {
+    werte: { komplexitaet: 3, einuebung: 2, lerngruppe: 3, lehrkraft: 2, vorbereitung: 2, material: 2, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Die Anordnung muss begründet werden, sonst bleibt es Kartenlegen. Bei vielen Figuren auf die Hauptfiguren beschränken.',
+  },
+  'Umschreiben und Weiterschreiben': {
+    werte: { komplexitaet: 4, einuebung: 3, lerngruppe: 3, lehrkraft: 3, vorbereitung: 3, material: 1, steuerung: 3 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Steht und fällt mit klaren Kriterien und einem Vergleich der Wirkung am Ende. Gattungswechsel erst ab der Mittelstufe.',
+  },
   'Literarisches Unterrichtsgespräch': {
     werte: { komplexitaet: 4, einuebung: 4, lerngruppe: 4, lehrkraft: 5, vorbereitung: 2, material: 1, steuerung: 4 },
     jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
