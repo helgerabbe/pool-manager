@@ -10,4 +10,12 @@ export const INDUKTIVE_VARIANTEN = [
     prompt: 'Kompakt-induktiv: wenige gut gewählte Beispiele, ein gezielter Vergleich, gemeinsame Formulierung, kurze Anwendung. Phasen zusammenfassen (ca. 3–4 Phasen), die Erkenntnisarbeit der Schüler aber nicht streichen.' },
 ];
 
+// Typische Phasenfolge je Variante (für die Didaktische Konzeption).
+export const VARIANTEN_PHASEN = {
+  offen: ['Problem/Phänomen begegnen', 'Frei beobachten & erkunden', 'Vermutungen bilden', 'Vermutungen selbst prüfen', 'Regel formulieren', 'Anwenden & sichern', 'Rückblick Erkenntnisweg'],
+  gelenkt: ['Problem/Phänomen begegnen', 'Beobachten mit Leitfragen', 'Vermutungen bilden & prüfen', 'Regel formulieren', 'Anwenden & sichern'],
+  gestuft: ['Material erzeugen oder erhalten', 'Impuls 1 & Material untersuchen', 'Impuls 2 & neu sortieren', 'Regel formulieren', 'Anwenden & sichern'],
+  kompakt: ['Wenige Beispiele vergleichen', 'Regel gemeinsam formulieren', 'Kurz anwenden'],
+};
+
 export const variante = (key) => INDUKTIVE_VARIANTEN.find((v) => v.key === key);

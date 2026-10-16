@@ -1,6 +1,7 @@
 import React from 'react';
 import { Clock } from 'lucide-react';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
+import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten';
 
 const BEDEUTUNG = {
   induktiv: 'Die Schüler entdecken eine Regel selbst: vom Phänomen über Vermutungen und deren Prüfung bis zur Formulierung. Braucht viel Zeit, schafft aber tiefes Verständnis.',
@@ -28,10 +29,11 @@ export default function DidaktischeKonzeption() {
         <p className="flex gap-2"><Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><strong>Hauptkriterium ist die Zeit.</strong> Manche Methoden brauchen deutlich länger als andere. Wir prüfen deshalb zuerst, was in der verfügbaren Zeit überhaupt möglich ist, und erst danach, was inhaltlich am besten passt.</span></p>
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        {STUNDEN_MODELLE.map((m) => (
+        {STUNDEN_MODELLE.flatMap((m) => (m.key !== 'induktiv' ? [m] : INDUKTIVE_VARIANTEN.map((v) => (
+          { key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] })))).map((m) => (
           <div key={m.key} className="space-y-2 rounded-xl border bg-card p-4">
             <h3 className="font-semibold">{m.name}</h3>
-            <p className="text-sm text-muted-foreground">{BEDEUTUNG[m.key]}</p>
+            <p className="text-sm text-muted-foreground">{m.bedeutung || BEDEUTUNG[m.key]}</p>
             <ol className="space-y-1 text-sm">
               {m.phasen.map((p, i) => (
                 <li key={p} className="flex gap-2"><span className="w-5 shrink-0 text-xs font-semibold text-primary">{i + 1}.</span>{p}</li>
