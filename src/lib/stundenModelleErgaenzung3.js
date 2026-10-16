@@ -52,4 +52,16 @@ export const EINORDNUNG_ERGAENZUNG_3 = {
   'KAWA': aktivierung({}),
   'Bildervergleich': problem({ induktiv: 'Unterschiede und Gemeinsamkeiten führen zu Beobachtungen und Vermutungen.', vertieft: 'Gemeinsamer Ausgangsfall für die Teamarbeit.' }),
   'Freewriting': aktivierung({ wiederholung: 'Freies Schreiben ruft Vorwissen ungefiltert ab.' }),
+  'Lautes Denken': {
+    induktiv: { passung: 3, phasen: { 'Vermutungen prüfen': 'teil', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Schüler denken beim Prüfen laut; die Lehrkraft darf die Erkenntnis nicht vormachen.' },
+    deduktiv: { passung: 1, phasen: { 'Verstehen & klären': 'kern', 'Angeleitetes Anwenden': 'kern' }, hinweis: 'Die Lehrkraft macht das Vorgehen laut denkend vor, dann wenden die Schüler es im Tandem an.' },
+    uebung_kurz: { passung: 3, phasen: { 'Individuell üben': 'teil' }, hinweis: 'Für kurze Übungen meist zu aufwendig.' },
+    uebung_mittel: { passung: 2, phasen: { 'Individuelle Arbeitsphase': 'kern', 'Rückmeldung / Selbstkontrolle': 'teil' }, hinweis: 'Tandems lösen anspruchsvolle Aufgaben laut denkend, der Partner beobachtet.' },
+    uebung_lang: { passung: 3, phasen: { 'Längere Übungszeit': 'teil' }, hinweis: 'Als eine Station mit Prozessbeobachtung.' },
+    wiederholung: { passung: 3, phasen: { 'Lücken bestimmen': 'teil' }, hinweis: 'Zeigt, an welcher Stelle das Vorgehen hakt.' },
+    vertieft: { passung: 3, phasen: { 'Lösungsideen entwickeln': 'teil', 'Transfer reflektieren': 'teil' }, hinweis: 'Macht Lösungsstrategien im Team sichtbar.' },
+    diagnose_kurz: { passung: 3, phasen: { 'Lernstand erheben': 'teil' }, hinweis: 'Einzelne Schüler denken laut, die Lehrkraft hört Denkwege.' },
+    diagnose_mittel: { passung: 2, phasen: { 'Lernstand erheben': 'kern', 'Auswerten': 'teil' }, hinweis: 'Denkprozesse mit Beobachtungsbogen erfassen.' },
+    diagnose_lang: { passung: 3, phasen: { 'Nachweise sammeln': 'teil' }, hinweis: 'Aufgenommene Denkprotokolle als Nachweis.' },
+  },
 };

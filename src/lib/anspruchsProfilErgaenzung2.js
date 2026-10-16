@@ -42,4 +42,9 @@ export const PROFIL_ERGAENZUNG_2 = {
     'Hängt ganz an der Bildauswahl. Gezielte Beobachtungsaufträge verhindern, dass es bei oberflächlichen Unterschieden bleibt.'),
   'Freewriting': p(2, 3, 2, 1, 1, 1, 2, jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     'Ununterbrochenes Schreiben fällt vielen anfangs schwer. Kurze Zeiten, ein Satzanfang und die Zusicherung, dass nichts bewertet wird, machen den Einstieg leicht.'),
+  'Lautes Denken': {
+    werte: { komplexitaet: 3, einuebung: 4, lerngruppe: 3, lehrkraft: 3, vorbereitung: 2, material: 1, steuerung: 3 },
+    jahrgaenge: jg('warnung', 'vereinfachen', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Wirkt erst, wenn die Lehrkraft es mehrfach vormacht. Viele Schüler erklären sonst nachträglich statt laut zu denken. Kontrollfragen auf Karten und klare Rollen im Tandem helfen, gerade in den unteren Jahrgängen.',
+  },
 };
