@@ -1,4 +1,5 @@
 import React from 'react';
+import { Presentation, Users } from 'lucide-react';
 import { KONZEPTION_BEISPIELE } from '@/lib/konzeptionBeispiele';
 
 /** Fachbeispiele zu einem Stundenmodell: ein Klick auf das Fach zeigt die Beispielstunde kompakt. */
@@ -23,8 +24,16 @@ export default function KonzeptionBeispiel({ modellKey, phasen }) {
           {b.phasen.map((p, i) => (
             <div key={i}>
               <p className="font-medium text-primary">{i + 1}. {phasen[i]}</p>
-              <p><span className="text-muted-foreground">Lehrkraft:</span> {p.lehrer}</p>
-              <p><span className="text-muted-foreground">Schüler:</span> {p.schueler}</p>
+              <div className="mt-1 grid gap-1 sm:grid-cols-2">
+                <div className="rounded-md border-l-4 border-primary bg-primary/10 p-2">
+                  <p className="flex items-center gap-1 font-semibold text-primary"><Presentation className="h-3 w-3" /> Lehrkraft</p>
+                  <p>{p.lehrer}</p>
+                </div>
+                <div className="rounded-md border-l-4 border-accent bg-accent/10 p-2">
+                  <p className="flex items-center gap-1 font-semibold text-accent"><Users className="h-3 w-3" /> Schüler</p>
+                  <p>{p.schueler}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
