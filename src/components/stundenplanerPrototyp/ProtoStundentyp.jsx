@@ -2,9 +2,10 @@ import React from 'react';
 import { Compass, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ModellKarte from './ModellKarte';
+import InduktivVarianten from './InduktivVarianten';
 
 /** Schritt 3: Welche Art von Stunde ist das? KI-Vorschlag aus den didaktischen Grundmodellen. */
-export default function ProtoStundentyp({ typ, modell, setModell, onErstellen, onWeiter }) {
+export default function ProtoStundentyp({ typ, modell, setModell, variante, setVariante, onErstellen, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState(false);
   const erstellen = () => { setLaedt(true); setFehler(false); onErstellen().catch(() => setFehler(true)).finally(() => setLaedt(false)); };
@@ -17,6 +18,7 @@ export default function ProtoStundentyp({ typ, modell, setModell, onErstellen, o
     <div className="space-y-4">
       <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary"><Compass className="h-4 w-4" /> {vorschlag ? 'So würde ich die Stunde anlegen' : 'Deine Wahl'}</p>
       <ModellKarte modellKey={modell} hervorgehoben text={vorschlag ? typ.begruendung : 'Der Entwurf folgt diesem Aufbau.'} />
+      {modell === 'induktiv' && <InduktivVarianten wert={variante} setWert={setVariante} empfehlung={typ.variante} begruendung={typ.variante_begruendung} />}
       <p className="text-sm text-muted-foreground">Ist das in deinem Sinne – oder soll der Schwerpunkt woanders liegen?</p>
       <div className="space-y-2">
         {andere.map((a) => (
