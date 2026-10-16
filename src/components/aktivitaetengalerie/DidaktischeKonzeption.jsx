@@ -55,7 +55,7 @@ export default function DidaktischeKonzeption() {
                 <li key={p} className="flex gap-2"><span className="w-5 shrink-0 text-xs font-semibold text-primary">{i + 1}.</span>{p}</li>
               ))}
             </ol>
-            <KonzeptionBeispiel modellKey={m.key} phasen={m.phasen} />
+            <KonzeptionBeispiel modellKey={m.key} phasen={m.phasen} modellName={m.name} />
           </div>
         ))}
       </div>
