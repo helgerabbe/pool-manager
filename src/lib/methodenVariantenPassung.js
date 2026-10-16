@@ -3,8 +3,10 @@
 import { VARIANTEN_PASSUNG_2 } from '@/lib/methodenVariantenPassung2';
 import { VARIANTEN_PASSUNG_3 } from '@/lib/methodenVariantenPassung3';
 import { VARIANTEN_PASSUNG_4 } from '@/lib/methodenVariantenPassung4';
+import { VARIANTEN_PASSUNG_5 } from '@/lib/methodenVariantenPassung5';
 
 export const VARIANTEN_PASSUNG = {
+  ...VARIANTEN_PASSUNG_5,
   ...VARIANTEN_PASSUNG_4,
   ...VARIANTEN_PASSUNG_3,
   ...VARIANTEN_PASSUNG_2,

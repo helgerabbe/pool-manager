@@ -52,6 +52,8 @@ export const EINSATZ_ERGAENZUNG = {
   'Hausaufgabe erklären': { stufe: 2, begruendung: 'Ein festes Ritual am Stundenende verhindert Missverständnisse und Zeitnot.' },
   'Tafelbild gemeinsam entwickeln': { stufe: 3, begruendung: 'Die Zielstruktur muss vorab geplant sein; allein gut vorzubereiten.' },
   'Arbeitsteilige Gruppenarbeit': { stufe: 3, begruendung: 'Unterschiedliches Material je Gruppe kostet Zeit, ist aber allein gut zu stemmen.' },
+  'Strukturlegetechnik': { stufe: 3, begruendung: 'Begriffskarten müssen vorbereitet werden; einmal erstellt, oft wiederverwendbar.' },
+  'Schülerexperiment': { stufe: 4, begruendung: 'Material, Sicherheit und Aufbau verlangen Vorbereitung, oft mit Fachraum und Kollegium abgestimmt.' },
   'Innerer Monolog / Leerstellen füllen': { stufe: 2, begruendung: 'Nur eine gut gewählte Textstelle nötig; mit wenigen Durchgängen Routine.' },
   'Antizipierendes Lesen': { stufe: 2, begruendung: 'Text muss vorab in Abschnitte geteilt werden, sonst kein Aufwand.' },
   'Rollenbiografie / Figurensteckbrief': { stufe: 1, begruendung: 'Leitfragen genügen; sofort einsetzbar.' },
