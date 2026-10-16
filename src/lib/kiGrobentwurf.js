@@ -34,12 +34,13 @@ const methodenText = (liste, jahrgang) => liste.map((m) => [
 ].filter(Boolean).join('\n')).join('\n');
 
 /** Erstellt einen stimmigen Grobentwurf im Format der Prototyp-Fassungen. */
-export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44', bisher, aenderung, stunde }) {
+export async function kiGrobentwurf({ modell, minuten, ziel, gruppe, jahrgang, fach, assistent = 'base44', bisher, aenderung, stunde, analyse }) {
   const { items } = await base44.entities.MethodenKatalog.filter({ ist_aktiv: true, quelle: 'methode' }, { limit: 200, fields: FELDER });
   const prompt = `Du bist ein erfahrener Fachdidaktiker (${fach}, Gesamtschule, heterogene Lerngruppen) und planst einen GROBENTWURF einer Unterrichtsstunde.
 
 ${stunde ? `Unterrichtseinheit: ${stunde.einheit}
-Geplante Stunde: ${stunde.titel || 'freie Stunde'}${stunde.lernziel ? `\nLernziel laut Einheitenverlauf: ${stunde.lernziel}` : ''}${stunde.inhalte?.length ? `\nInhalte: ${stunde.inhalte.join('; ')}` : ''}${stunde.vorschlag ? `\nIdee aus dem Verlauf: ${stunde.vorschlag}` : ''}` : `Inhaltsanalyse: ${JSON.stringify(ANALYSE)}`}
+Geplante Stunde: ${stunde.titel || 'freie Stunde'}${stunde.lernziel ? `\nLernziel laut Einheitenverlauf: ${stunde.lernziel}` : ''}${stunde.inhalte?.length ? `\nInhalte: ${stunde.inhalte.join('; ')}` : ''}${stunde.vorschlag ? `\nIdee aus dem Verlauf: ${stunde.vorschlag}` : ''}` : ''}
+Inhaltsanalyse: ${JSON.stringify(analyse || ANALYSE)}
 Stundenziel: ${ziel.haupt}${ziel.teil?.length ? `\nTeilziele: ${ziel.teil.join('; ')}` : ''}
 Jahrgang: ${jahrgang}
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5 (3 = normal)

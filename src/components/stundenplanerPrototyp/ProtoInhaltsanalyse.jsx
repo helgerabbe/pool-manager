@@ -1,30 +1,24 @@
 import React from 'react';
 import { Loader2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import AssistentFrage from './AssistentFrage';
 import KorrekturFeld from './KorrekturFeld';
-import { ANALYSE_FRAGEN, ANALYSE, ANALYSE_NEU } from '@/lib/stundenplanerPrototypDaten';
 
-/** Schritt 2: Inhaltsanalyse – Rückfragen, dann 3–4 Kernaspekte, ausführliche Sachanalyse aufklappbar. */
-export default function ProtoInhaltsanalyse({ onWeiter }) {
-  const [i, setI] = React.useState(0);
-  const [antworten, setAntworten] = React.useState([]);
-  const [analyse, setAnalyse] = React.useState(null);
+/** Schritt 2: KI-Inhaltsanalyse – 3–4 Kernaspekte, ausführliche Sachanalyse aufklappbar. */
+export default function ProtoInhaltsanalyse({ analyse, onErstellen, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
+  const [fehler, setFehler] = React.useState(false);
   const [lang, setLang] = React.useState(false);
-  const erstellen = (daten) => { setLaedt(true); setAnalyse(null); setTimeout(() => { setAnalyse(daten); setLaedt(false); }, 1300); };
-  const antworte = (a) => {
-    setAntworten([...antworten, { frage: ANALYSE_FRAGEN[i].frage, antwort: a }]);
-    if (i + 1 < ANALYSE_FRAGEN.length) setI(i + 1); else erstellen(ANALYSE);
+  const erstellen = (korrektur) => {
+    setLaedt(true); setFehler(false);
+    onErstellen(korrektur).catch(() => setFehler(true)).finally(() => setLaedt(false));
   };
-  const fragenOffen = !analyse && !laedt;
+  React.useEffect(() => { if (!analyse) erstellen(); }, []);
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Bevor wir planen, kläre ich mit dir, worum es inhaltlich in dieser Stunde geht. Dafür brauche ich noch kurz ein paar Informationen.</p>
-      {antworten.map((a, k) => <p key={k} className="text-xs text-muted-foreground"><span className="font-medium">{a.frage}</span> → {a.antwort}</p>)}
-      {fragenOffen && <AssistentFrage key={i} frage={ANALYSE_FRAGEN[i]} onAntwort={antworte} />}
+      <p className="text-sm text-muted-foreground">Bevor wir planen, kläre ich mit dir, worum es inhaltlich in dieser Stunde geht.</p>
       {laedt && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich mache kurz die Inhaltsanalyse, damit wir uns einig sind, was drankommen soll …</p>}
-      {analyse && (
+      {fehler && <div className="space-y-2"><p className="text-sm text-destructive">Die Inhaltsanalyse hat nicht geklappt.</p><Button size="sm" onClick={() => erstellen()}>Noch einmal versuchen</Button></div>}
+      {analyse && !laedt && (
         <div className="space-y-4">
           <div className="rounded-xl border bg-card p-4">
             <p className="text-sm font-semibold">Darum geht es in der Stunde</p>
@@ -37,7 +31,7 @@ export default function ProtoInhaltsanalyse({ onWeiter }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <Button onClick={onWeiter}>Passt so – weiter</Button>
-            <KorrekturFeld knopf="Nein, das ist anders" platzhalter="Was soll anders sein? Worum geht es eigentlich?" neuText="Sachanalyse neu" onNeu={() => erstellen(ANALYSE_NEU)} />
+            <KorrekturFeld knopf="Nein, das ist anders" platzhalter="Was soll anders sein? Worum geht es eigentlich?" neuText="Sachanalyse neu" onNeu={erstellen} />
           </div>
         </div>
       )}
