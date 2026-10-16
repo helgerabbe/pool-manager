@@ -121,4 +121,108 @@ export const KONZEPTION_BEISPIELE = {
       { lehrer: 'Fragt: „Warum schwimmt ein Stahlschiff?“', schueler: 'Erklären es kurz.' },
     ] },
   ],
+  deduktiv_darbietend: [
+    { fach: 'Mathematik', thema: 'Satz des Pythagoras', idee: 'Die Lehrkraft nennt den Satz, erklärt ihn an Beispielen, dann wird geübt.', phasen: [
+      { lehrer: 'Schreibt a² + b² = c² an und erklärt Katheten und Hypotenuse.', schueler: 'Hören zu und übertragen den Merksatz ins Heft.' },
+      { lehrer: 'Rechnet das 3-4-5-Dreieck und die Leiter-Aufgabe vor.', schueler: 'Verfolgen die Rechnung und schreiben mit.' },
+      { lehrer: 'Fragt: „Welche Seite ist c? Wann gilt der Satz?“', schueler: 'Beantworten die Fragen und zeigen die Hypotenuse.' },
+      { lehrer: 'Rechnet eine Aufgabe gemeinsam mit der Klasse.', schueler: 'Nennen die einzelnen Schritte.' },
+      { lehrer: 'Gibt ein Aufgabenblatt.', schueler: 'Rechnen allein Seitenlängen aus.' },
+    ] },
+    { fach: 'Deutsch', thema: 'Großschreibung von Nominalisierungen', idee: 'Regel nennen, an Sätzen zeigen, dann anwenden.', phasen: [
+      { lehrer: 'Nennt die Regel: Begleiter davor → groß.', schueler: 'Schreiben den Merksatz ab.' },
+      { lehrer: 'Zeigt drei Sätze und markiert die Begleiter.', schueler: 'Verfolgen die Markierungen.' },
+      { lehrer: 'Fragt nach Begleitern (das, beim, zum …).', schueler: 'Nennen Beispiele.' },
+      { lehrer: 'Bearbeitet zwei Sätze gemeinsam.', schueler: 'Entscheiden mit: groß oder klein?' },
+      { lehrer: 'Gibt einen Übungstext.', schueler: 'Korrigieren ihn allein.' },
+    ] },
+    { fach: 'Englisch', thema: 'Simple Past regelmäßiger Verben', idee: 'Regel mit -ed einführen, an Beispielen erklären, üben.', phasen: [
+      { lehrer: 'Erklärt: Grundform + -ed, mit Sonderfällen.', schueler: 'Notieren die Regel.' },
+      { lehrer: 'Zeigt play – played, stop – stopped, try – tried.', schueler: 'Schreiben die Beispiele ab.' },
+      { lehrer: 'Fragt: „What about live?“', schueler: 'Wenden die Sonderregel an.' },
+      { lehrer: 'Bildet mit der Klasse Sätze.', schueler: 'Ergänzen die Verbformen.' },
+      { lehrer: 'Gibt ein Arbeitsblatt.', schueler: 'Füllen Lücken allein aus.' },
+    ] },
+    { fach: 'Naturwissenschaften', thema: 'Schwimmen und Sinken', idee: 'Die Regel zur Dichte wird erklärt und an Gegenständen angewendet.', phasen: [
+      { lehrer: 'Erklärt: Leichter als Wasser bei gleichem Volumen → schwimmt.', schueler: 'Notieren die Regel.' },
+      { lehrer: 'Zeigt es an Holz, Stein und Knetschiff.', schueler: 'Beobachten die Vorführung.' },
+      { lehrer: 'Fragt: „Warum schwimmt das Knetschiff?“', schueler: 'Erklären mit der Regel.' },
+      { lehrer: 'Sagt Gegenstände gemeinsam voraus.', schueler: 'Begründen ihre Vorhersage.' },
+      { lehrer: 'Gibt eine Liste mit Gegenständen.', schueler: 'Sagen allein voraus und prüfen es.' },
+    ] },
+  ],
+  deduktiv_loesungsbeispiel: [
+    { fach: 'Mathematik', thema: 'Satz des Pythagoras', idee: 'Ein vollständig gelöstes Beispiel, dann werden die Hilfen weniger.', phasen: [
+      { lehrer: 'Gibt den Satz mit der fertig gerechneten Leiter-Aufgabe.', schueler: 'Lesen Regel und Lösung.' },
+      { lehrer: 'Fragt: „Warum steht hier die 5 als c?“', schueler: 'Erklären sich gegenseitig jeden Rechenschritt.' },
+      { lehrer: 'Gibt Aufgaben, bei denen nur der letzte Schritt fehlt, dann zwei.', schueler: 'Ergänzen die fehlenden Schritte.' },
+      { lehrer: 'Gibt Aufgaben ohne Hilfe.', schueler: 'Rechnen vollständig allein.' },
+    ] },
+    { fach: 'Deutsch', thema: 'Großschreibung von Nominalisierungen', idee: 'Ein vorgemachter Prüfweg wird nach und nach selbst angewendet.', phasen: [
+      { lehrer: 'Zeigt einen Satz mit dem Prüfweg: Wort finden → Begleiter suchen → entscheiden.', schueler: 'Lesen den Prüfweg.' },
+      { lehrer: 'Fragt: „Warum ist ‚Laufen‘ hier groß?“', schueler: 'Erklären den Prüfweg mit eigenen Worten.' },
+      { lehrer: 'Gibt Sätze mit teilweise vorgegebenem Prüfweg.', schueler: 'Ergänzen die fehlenden Schritte.' },
+      { lehrer: 'Gibt einen Text ohne Hilfe.', schueler: 'Korrigieren allein.' },
+    ] },
+    { fach: 'Englisch', thema: 'Simple Past regelmäßiger Verben', idee: 'Ein fertiger Mustersatz zeigt den Weg zur Verbform.', phasen: [
+      { lehrer: 'Zeigt einen Mustersatz mit Schritten: Grundform → Endung prüfen → -ed.', schueler: 'Lesen das Beispiel.' },
+      { lehrer: 'Fragt: „Why stopped with double p?“', schueler: 'Erklären die Schritte im Paar.' },
+      { lehrer: 'Gibt Sätze mit teilweise gebildeten Formen.', schueler: 'Vervollständigen sie.' },
+      { lehrer: 'Gibt freie Schreibaufgabe.', schueler: 'Schreiben eigene Sätze.' },
+    ] },
+    { fach: 'Naturwissenschaften', thema: 'Schwimmen und Sinken', idee: 'Ein durchgerechneter Dichtevergleich dient als Vorlage.', phasen: [
+      { lehrer: 'Zeigt den gelösten Vergleich: Holzwürfel und Wasser gleichen Volumens wiegen.', schueler: 'Lesen das Beispiel.' },
+      { lehrer: 'Fragt: „Warum vergleicht man gleiche Volumen?“', schueler: 'Erklären den Gedankengang.' },
+      { lehrer: 'Gibt halb gelöste Vergleiche.', schueler: 'Ergänzen die Entscheidung.' },
+      { lehrer: 'Gibt neue Gegenstände.', schueler: 'Entscheiden allein und begründen.' },
+    ] },
+  ],
+  deduktiv_material: [
+    { fach: 'Mathematik', thema: 'Satz des Pythagoras', idee: 'Die Schüler erarbeiten den Satz aus einem Erklärvideo.', phasen: [
+      { lehrer: 'Gibt ein Erklärvideo und einen Merkkasten mit Leitfragen.', schueler: 'Schauen das Video und füllen den Merkkasten aus.' },
+      { lehrer: 'Lässt Paare vergleichen.', schueler: 'Erklären sich den Satz gegenseitig an einer Skizze.' },
+      { lehrer: 'Klärt offene Fragen kurz im Plenum.', schueler: 'Stellen ihre Fragen.' },
+      { lehrer: 'Gibt die Leiter-Aufgabe und weitere Aufgaben.', schueler: 'Rechnen allein.' },
+    ] },
+    { fach: 'Deutsch', thema: 'Großschreibung von Nominalisierungen', idee: 'Ein Merkkasten im Buch liefert die Regel.', phasen: [
+      { lehrer: 'Verweist auf den Merkkasten im Lehrwerk.', schueler: 'Lesen und notieren die Regel mit Beispielen.' },
+      { lehrer: 'Lässt Paare vergleichen.', schueler: 'Prüfen, ob beide die Regel gleich verstehen.' },
+      { lehrer: 'Klärt Unklarheiten kurz.', schueler: 'Fragen nach.' },
+      { lehrer: 'Gibt Übungssätze.', schueler: 'Wenden die Regel an.' },
+    ] },
+    { fach: 'Englisch', thema: 'Simple Past regelmäßiger Verben', idee: 'Die Grammatikseite im Buch wird selbst erschlossen.', phasen: [
+      { lehrer: 'Gibt die Grammar-Box und ein Kurzvideo.', schueler: 'Lesen und notieren die Regel.' },
+      { lehrer: 'Lässt Paare vergleichen.', schueler: 'Erklären sich die Sonderfälle.' },
+      { lehrer: 'Klärt Fragen im Plenum.', schueler: 'Stellen Fragen.' },
+      { lehrer: 'Gibt Übungen.', schueler: 'Bilden Sätze im Simple Past.' },
+    ] },
+    { fach: 'Naturwissenschaften', thema: 'Schwimmen und Sinken', idee: 'Ein Sachtext erklärt die Dichte.', phasen: [
+      { lehrer: 'Gibt einen kurzen Sachtext mit Abbildungen.', schueler: 'Lesen und markieren die Regel.' },
+      { lehrer: 'Lässt Paare vergleichen.', schueler: 'Erklären sich die Regel am Knetschiff.' },
+      { lehrer: 'Klärt Fragen.', schueler: 'Fragen nach.' },
+      { lehrer: 'Gibt Gegenstände zum Vorhersagen.', schueler: 'Sagen voraus und testen.' },
+    ] },
+  ],
+  deduktiv_kompakt: [
+    { fach: 'Mathematik', thema: 'Satz des Pythagoras', idee: 'Kurz erklärt, einmal gezeigt, dann viel üben.', phasen: [
+      { lehrer: 'Nennt den Satz in zwei Minuten.', schueler: 'Notieren den Merksatz.' },
+      { lehrer: 'Rechnet die Leiter-Aufgabe vor.', schueler: 'Schreiben mit.' },
+      { lehrer: 'Gibt ein Übungsblatt mit steigender Schwierigkeit.', schueler: 'Üben die restliche Zeit.' },
+    ] },
+    { fach: 'Deutsch', thema: 'Großschreibung von Nominalisierungen', idee: 'Regel, ein Beispiel, Übungstext.', phasen: [
+      { lehrer: 'Nennt die Regel.', schueler: 'Notieren sie.' },
+      { lehrer: 'Zeigt „Das Laufen macht Spaß“.', schueler: 'Finden den Begleiter.' },
+      { lehrer: 'Gibt Übungstexte.', schueler: 'Korrigieren und üben.' },
+    ] },
+    { fach: 'Englisch', thema: 'Simple Past regelmäßiger Verben', idee: 'Regel, ein Beispiel, viele Übungen.', phasen: [
+      { lehrer: 'Nennt die -ed-Regel.', schueler: 'Notieren sie.' },
+      { lehrer: 'Zeigt „I played football“.', schueler: 'Sprechen nach.' },
+      { lehrer: 'Gibt Übungen.', schueler: 'Bilden viele Sätze.' },
+    ] },
+    { fach: 'Naturwissenschaften', thema: 'Schwimmen und Sinken', idee: 'Regel, ein Versuch, viele Vorhersagen.', phasen: [
+      { lehrer: 'Nennt die Dichte-Regel.', schueler: 'Notieren sie.' },
+      { lehrer: 'Zeigt Holz und Stein im Wasser.', schueler: 'Erklären mit der Regel.' },
+      { lehrer: 'Gibt eine Liste mit Gegenständen.', schueler: 'Sagen voraus und begründen.' },
+    ] },
+  ],
 };
