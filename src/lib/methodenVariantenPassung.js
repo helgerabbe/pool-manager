@@ -1,8 +1,10 @@
 // Passung je Variante der Stundenmodelle (2026-10-16), Teil 1: Einstieg & Aktivierung ab „Brain Dump“.
 // Schlüssel: <modell>_<variante>, Wert: [passung 1–5, Hinweis].
 import { VARIANTEN_PASSUNG_2 } from '@/lib/methodenVariantenPassung2';
+import { VARIANTEN_PASSUNG_3 } from '@/lib/methodenVariantenPassung3';
 
 export const VARIANTEN_PASSUNG = {
+  ...VARIANTEN_PASSUNG_3,
   ...VARIANTEN_PASSUNG_2,
   'Brain Dump': {
     induktiv_offen: [4, 'Sammelt Vorwissen, die offene Erkundung braucht aber ein Phänomen.'],
