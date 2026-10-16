@@ -6,24 +6,13 @@ import useEntwurfsTipps from '@/hooks/useEntwurfsTipps';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PhasenKarte from './PhasenKarte';
-import FassungenLeiste from './FassungenLeiste';
 import PhasenAlternativen from './PhasenAlternativen';
 import KiAenderungsFeld from './KiAenderungsFeld';
-import { FASSUNGEN, IDEEN_POOL, alsEntwurf } from '@/lib/stundenplanerPrototypDaten';
-import { fassungMitMethode } from '@/lib/stundenEntwurfsRegeln';
+import MethodeWaehlen from './MethodeWaehlen';
 
 /** Schritt 5: Grobentwurf mit parallelen Fassungen (Standard bleibt immer erhalten). */
 export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv, routine, setRoutine, pause, modellName, modellKey, varianteKey, pruefung, onKiAendern, onTippsLaden, onWeiter }) {
-  const [laedt, setLaedt] = React.useState(false);
-  const hinzu = (neu) => {
-    setLaedt(true);
-    setTimeout(() => { setEntwuerfe((e) => [...e, neu]); setAktiv(entwuerfe.length); setLaedt(false); }, 1200);
-  };
-  const nochEine = (impuls) => {
-    const zahl = entwuerfe.filter((e) => e.vorlage === 'idee').length;
-    const v = IDEEN_POOL[zahl % IDEEN_POOL.length];
-    hinzu(alsEntwurf(v, { vorlage: 'idee', name: zahl >= IDEEN_POOL.length ? `${v.name} (${zahl + 1})` : v.name, impuls }));
-  };
+  const [methodeLaedt, setMethodeLaedt] = React.useState(false);
   const e = entwuerfe[aktiv];
   const kiAendern = async (wunsch) => {
     const neu = await onKiAendern(e, wunsch);
@@ -31,26 +20,23 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
   };
   const { tipps, laedt: tippsLaedt, verwerfen } = useEntwurfsTipps(e, onTippsLaden);
   const tippAnnehmen = (t) => kiAendern(t.aenderung || t.text);
-  // Methode in EINE Phase einsetzen. Der Standardentwurf bleibt erhalten: dort entsteht eine angepasste Fassung.
+  // Methode in EINE Phase einsetzen – direkt im Entwurf, an dem gearbeitet wird.
   const methodeEinsetzen = (i, m) => {
     const phasen = e.phasen.map((p, k) => (k !== i ? p : { ...p, aktivitaet: `${m.name}: ${m.kurzbeschreibung || ''}`, methode: m.name, methode_dauer_min: m.dauer_min, neu: true }));
-    if (aktiv === 0) {
-      setEntwuerfe((all) => [...all, { ...e, phasen, name: 'Angepasster Entwurf', vorlage: 'angepasst', kurz: e.kurz }]);
-      setAktiv(entwuerfe.length);
-    } else {
-      setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, phasen })));
-    }
+    setEntwuerfe((all) => all.map((x, k) => (k !== aktiv ? x : { ...x, phasen })));
+  };
+  // Bestimmte Methode auf jeden Fall einbauen: die KI sucht die passende Stelle.
+  const methodeEinbauen = async (m) => {
+    setMethodeLaedt(true);
+    await kiAendern(`Baue die Methode „${m.name}“ auf jeden Fall an einer passenden Stelle ein (${m.kurzbeschreibung || ''}). Passe die übrigen Phasen und Zeiten stimmig an.`);
+    setMethodeLaedt(false);
   };
   return (
     <div className="space-y-5">
       <div className="rounded-xl bg-muted/40 p-3 text-sm text-muted-foreground">
-        Das ist dein <span className="font-semibold text-foreground">Grobentwurf</span> nach eurem Standardmodell – er soll zu 70–80 % passen.
-        Kleinigkeiten ändern, Phasen weglassen oder zusammenfassen, digital oder analog: Das machst du später in Ruhe in der Feinplanung.
+        Das ist <span className="font-semibold text-foreground">dein Entwurf</span>, an dem du jetzt weiterarbeitest. Der Assistent macht dir rechts ein paar Vorschläge –
+        nimm an, was dir gefällt. Feinheiten wie digital oder analog klärst du später in der Feinplanung.
       </div>
-      <FassungenLeiste entwuerfe={entwuerfe} aktiv={aktiv} setAktiv={setAktiv} laedt={laedt}
-        onErzeugen={(k) => hinzu(alsEntwurf(FASSUNGEN[k], { vorlage: k }))} onNochEine={nochEine}
-        modellKey={modellKey} varianteKey={varianteKey}
-        onMethode={(m) => hinzu(fassungMitMethode(alsEntwurf(entwuerfe[0]), m, modellKey))} />
       <div>
         <p className="text-xs text-muted-foreground">Aufbau nach: {modellName}</p>
         <p className="text-sm font-semibold">{e.kurz}</p>
@@ -83,13 +69,19 @@ export default function ProtoEntwurf({ entwuerfe, setEntwuerfe, aktiv, setAktiv,
           <span className="font-medium line-through">{x.phase}</span> entfällt hier: {x.grund}
         </div>
       ))}
-      <KiAenderungsFeld key={aktiv} onAendern={kiAendern} />
+      <div className="space-y-2">
+        <KiAenderungsFeld key={aktiv} onAendern={kiAendern} />
+        <div className="flex flex-wrap items-center gap-2">
+          <MethodeWaehlen onWahl={methodeEinbauen} />
+          {methodeLaedt && <span className="flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Ich baue die Methode ein …</span>}
+        </div>
+      </div>
       {pruefung}
       <div className="space-y-1">
         <p className="text-xs text-muted-foreground">Gibt es eine feste Routine in deinem Unterricht? (optional)</p>
         <Input value={routine} onChange={(ev) => setRoutine(ev.target.value)} placeholder="z. B. Begrüßung und Wochenplan-Check, 3 Min." />
       </div>
-      <Button onClick={onWeiter}>„{e.name}“ als Grobentwurf übernehmen</Button>
+      <Button onClick={onWeiter}>Sieht gut aus – Entwurf übernehmen</Button>
     </div>
   );
 }
