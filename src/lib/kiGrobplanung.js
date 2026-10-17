@@ -22,7 +22,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
   minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
   ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
-  anker.vorwissen?.trim() && `Das haben die Schüler schon gemacht: ${anker.vorwissen.trim()}`,
+  anker.vorwissen?.trim() && `Lernausgangslage (das haben die Schüler schon gemacht): ${anker.vorwissen.trim()}`,
   anker.materialien.length > 0 && `Material der Lehrkraft: ${anker.materialien.map((m) => m.name).join(', ')} (lesbare Dateien sind angehängt)`,
   anker.richtung && `Gewählte inhaltliche Richtung: ${anker.richtung}`,
 ].filter(Boolean).join('\n');
@@ -82,7 +82,7 @@ export async function kiGrobverlauf({ vorgaben, bisher, aenderung, ...k }) {
 ${kontextText(k)}
 Grobes Stundenziel: ${ziel.haupt || 'noch offen – leite ein sinnvolles Ziel aus dem Thema ab'}
 Stundentyp: ${stundentypName(ziel.stundentyp) && ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen – wähle passend'}
-Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5 (3 = normal)
+Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistungsvermögen ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 

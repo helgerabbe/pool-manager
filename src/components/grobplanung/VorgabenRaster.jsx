@@ -14,14 +14,15 @@ import { ankerVorhanden, stundentypName } from '@/lib/kiGrobplanung';
 export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVorschlag }) {
   const [offen, setOffen] = React.useState(null);
   const a = v.anker;
-  const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3;
+  const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3 && (v.gruppe.leistung ?? 3) === 3;
+  const gruppeStand = [normal ? 'Normale Lerngruppe (Standard)' : `Tempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5 · Leistung ${v.gruppe.leistung ?? 3}/5`, a.vorwissen?.trim() && 'Lernausgangslage angegeben'].filter(Boolean).join(' · ');
   const C = [
     { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
       hinweis: 'Worum geht es in der Stunde? Hier kannst du das Thema ausschärfen oder ergänzen. Materialien findest du im Bereich „Materialien“.', editor: <AnkerFelder verlauf={verlauf} anker={a} setAnker={setze('anker')} ohneMaterial /> },
     { key: 'ziel', icon: Target, titel: 'Stundenziel', rand: 'border-l-primary', gesetzt: !!v.ziel.haupt, stand: [stundentypName(v.ziel.stundentyp) && v.ziel.stundentyp && stundentypName(v.ziel.stundentyp), v.ziel.haupt].filter(Boolean).join(' · ') || 'Noch offen – ich schlage dir eine Richtung vor',
       hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
-    { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal, stand: normal ? 'Normale Lerngruppe (Standard)' : `Arbeitstempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5`,
-      hinweis: 'Wie arbeitet die Klasse?', editor: <LerngruppeEditor gruppe={v.gruppe} setGruppe={setze('gruppe')} /> },
+    { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal || !!a.vorwissen?.trim(), stand: gruppeStand,
+      hinweis: 'Wie arbeitet die Klasse, und worauf können wir aufbauen?', editor: <LerngruppeEditor gruppe={v.gruppe} setGruppe={setze('gruppe')} vorwissen={a.vorwissen} setVorwissen={(t) => setze('anker')((x) => ({ ...x, vorwissen: t }))} /> },
     { key: 'methode', icon: Shapes, titel: 'Methodenwunsch', rand: 'border-l-chart-4', gesetzt: !!v.methode, stand: v.methode ? `${v.methode.name} – wird möglichst verwendet` : 'Keine besondere Methode gewählt',
       hinweis: 'Hast du eine methodische Idee? Beschreib sie, und wir suchen die passende Methode. Sie wird dann in der Stunde eingebaut.', editor: <MethodenSuche wahl={v.methode} setWahl={setze('methode')} assistent={assistent} ideePlatzhalter="z. B. Die Schüler sollen ihre Ergebnisse an Stationen im Raum präsentieren." /> },
     { key: 'ritual', icon: Repeat, titel: 'Rituale', rand: 'border-l-chart-5', gesetzt: !!v.ritual, stand: v.ritual ? v.ritual.name : 'Kein festes Ritual',

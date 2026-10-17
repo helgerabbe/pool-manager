@@ -19,7 +19,7 @@ const SCHRITTE = ['Fundament', 'Grobplanung', 'Verbessern (optional)', 'Feinplan
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
-  gruppe: { fit: 3, stark: 3 }, methode: null, ritual: null,
+  gruppe: { fit: 3, stark: 3, leistung: 3 }, methode: null, ritual: null,
 };
 
 /** PROTOTYP (2026-10-17): Stundenplanung in vier Schritten, Schritt 1 = Grobplanung mit Vorgaben-Containern. Nichts wird gespeichert. */
@@ -46,7 +46,7 @@ export default function StundenplanerVorschau() {
   const aendern = (wunsch) => generieren(entwurf, wunsch).then(setEntwurf);
   const modell = STUNDEN_MODELLE.find((m) => m.key === entwurf?.modell) || STUNDEN_MODELLE[0];
   const annahmen = [
-    v.gruppe.fit === 3 && v.gruppe.stark === 3 && 'Normale Lerngruppe angenommen.',
+    v.gruppe.fit === 3 && v.gruppe.stark === 3 && v.gruppe.leistung === 3 && 'Normale Lerngruppe angenommen.',
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);

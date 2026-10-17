@@ -68,10 +68,6 @@ export default function AnkerFelder({ verlauf, anker, setAnker, ohneMaterial = f
           </Moeglichkeit>
         </>
       )}
-      <div className="space-y-2 pt-3">
-        <p className="text-sm font-semibold">Das haben die Schüler schon gemacht <span className="font-normal text-muted-foreground">(optional)</span></p>
-        <FreitextMitSprache value={anker.vorwissen} onChange={(t) => setAnker((a) => ({ ...a, vorwissen: t }))} rows={2} placeholder="z. B. Letzte Stunde: Aufbau eines Arguments kennengelernt" />
-      </div>
     </div>
   );
 }
