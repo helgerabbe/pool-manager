@@ -49,6 +49,7 @@ export default function AnkerFelder({ verlauf, anker, setAnker }) {
       </Moeglichkeit>
       <Und />
       <Moeglichkeit nr={3} titel="Material hochladen" erledigt={anker.materialien.length > 0}>
+        <p className="text-xs text-muted-foreground">Du kannst mehrere Dateien auf einmal hochladen. Es muss nicht alles sein: Weitere Materialien kannst du später in der Grobplanung im Bereich „Materialien“ ergänzen.</p>
         <MaterialUpload materialien={anker.materialien} onChange={(m) => setAnker((a) => ({ ...a, materialien: m }))} />
       </Moeglichkeit>
       <div className="space-y-2 pt-3">
