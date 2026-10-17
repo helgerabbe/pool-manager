@@ -55,10 +55,11 @@ Prüfe, ob klar genug ist, worum es inhaltlich in dieser EINEN Stunde gehen soll
 export const kiGrobThema = ({ bisher, korrektur, ...k }) => kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Formuliere das THEMA dieser einen Unterrichtsstunde in EINEM klaren, verständlichen Satz in Lehrersprache – kein Stundentitel, sondern was inhaltlich passiert und was die Schüler machen.
 ${kontextText(k)}
 
-- "thema": ein Satz, beginnend mit "In dieser Stunde beschäftigen wir uns damit, …". Kurz, ohne Fachjargon, keine Ziel-Formulierung.${korrektur ? `\n\nBisherige Formulierung: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {
+- "thema": ein Satz, beginnend mit "In dieser Stunde beschäftigen wir uns damit, …". Kurz, ohne Fachjargon, keine Ziel-Formulierung.
+- "inhalt_frage": Entscheide, ob für dieses Thema noch ein KONKRETER Inhalt offen ist (z. B. welcher Text gelesen, welche Streitfrage diskutiert, an welchem Beispiel gearbeitet wird). Wenn ja: EINE kurze, freundliche Frage in Wir-Form, genau auf dieses Thema zugeschnitten, mit dem Zusatz, dass es auch okay ist, wenn es noch nicht klar ist. Wenn der Inhalt schon klar ist oder bei diesem Thema keine Rolle spielt: leerer String.${korrektur ? `\n\nBisherige Formulierung: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {
   type: 'object',
-  properties: { thema: { type: 'string' } },
-  required: ['thema'],
+  properties: { thema: { type: 'string' }, inhalt_frage: { type: 'string' } },
+  required: ['thema', 'inhalt_frage'],
 }, k.anker.materialien);
 
 /** Grobe Zielrichtung: „Am Ende der Stunde können/haben die Schüler …“ */

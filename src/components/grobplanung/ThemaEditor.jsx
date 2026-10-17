@@ -13,7 +13,7 @@ export default function ThemaEditor({ anker, setAnker, onVorschlag }) {
   const neu = (korrektur) => {
     setLaedt(true); setFehler(false);
     onVorschlag(anker.thema || '', korrektur)
-      .then((r) => { setThema(r.thema); setWunsch(''); })
+      .then((r) => { setAnker((a) => ({ ...a, thema: r.thema, inhaltFrage: r.inhalt_frage || '' })); setWunsch(''); })
       .catch(() => setFehler(true)).finally(() => setLaedt(false));
   };
   React.useEffect(() => { if (!anker.thema) neu(); }, []);
@@ -32,14 +32,16 @@ export default function ThemaEditor({ anker, setAnker, onVorschlag }) {
         <FreitextMitSprache value={wunsch} onChange={setWunsch} rows={2} placeholder="Konkretisieren, z. B. „Bitte mehr in Richtung Alltagsbeispiele.“" />
         <Button size="sm" variant="outline" disabled={!wunsch.trim() || laedt} onClick={() => neu(wunsch.trim())}>Thema anpassen</Button>
       </div>
-      <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+      {!laedt && (anker.inhaltFrage || anker.inhalt?.trim()) && <>
+      {anker.inhaltFrage && <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-        <p className="text-sm text-muted-foreground">Weißt du schon, an welchem Text, Beispiel oder an welcher Streitfrage ihr arbeitet? Dann schreib es hier hin. Wenn nicht, ist das völlig in Ordnung, dann mache ich dir später Vorschläge.</p>
-      </div>
+        <p className="text-sm text-muted-foreground">{anker.inhaltFrage}</p>
+      </div>}
       <div className="space-y-2 rounded-xl border border-accent/40 bg-accent/5 p-4">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-accent"><BookOpen className="h-4 w-4" /> Konkreter Inhalt (falls schon klar)</p>
         <FreitextMitSprache value={anker.inhalt || ''} onChange={(t) => setAnker((a) => ({ ...a, inhalt: t }))} rows={2} placeholder="z. B. Streitfrage „Sollen Handys an Schulen verboten werden?“ oder die Kurzgeschichte „Das Brot“" />
       </div>
+      </>}
     </div>
   );
 }
