@@ -5,7 +5,7 @@ import AnkerFelder from './AnkerFelder';
 import DauerWahl from './DauerWahl';
 import { ankerVorhanden } from '@/lib/kiGrobplanung';
 
-const SCHULFORMEN = ['Integrierte Gesamtschule', 'Kooperative Gesamtschule', 'Gymnasium', 'Realschule', 'Oberschule', 'Hauptschule', 'Förderschule'];
+const SCHULFORMEN = ['Integrierte Gesamtschule', 'Gymnasium', 'Realschule', 'Oberschule', 'Hauptschule', 'Förderschule'];
 
 /** Einstieg: Fundament der Planung – Kontext automatisch, inhaltlicher Anker ist die einzige Pflicht. */
 export default function FundamentStart({ einheit, verlauf, anker, setAnker, dauer, onPruefen, onWeiter }) {
