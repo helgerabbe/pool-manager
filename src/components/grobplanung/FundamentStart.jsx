@@ -5,6 +5,8 @@ import AnkerFelder from './AnkerFelder';
 import DauerWahl from './DauerWahl';
 import { ankerVorhanden } from '@/lib/kiGrobplanung';
 
+const SCHULFORMEN = ['Integrierte Gesamtschule', 'Kooperative Gesamtschule', 'Gymnasium', 'Realschule', 'Oberschule', 'Hauptschule', 'Förderschule'];
+
 /** Einstieg: Fundament der Planung – Kontext automatisch, inhaltlicher Anker ist die einzige Pflicht. */
 export default function FundamentStart({ einheit, verlauf, anker, setAnker, dauer, onPruefen, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
@@ -24,7 +26,13 @@ export default function FundamentStart({ einheit, verlauf, anker, setAnker, daue
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
         <div className="text-sm">
           <p className="font-semibold">Du möchtest eine neue Stunde planen.</p>
-          <p className="text-muted-foreground">Damit ich gut planen kann, brauche ich ein Fundament. Fach, Jahrgang und Einheit kenne ich schon: <span className="font-medium text-foreground">{einheit.fach} · Jg. {einheit.jahrgangsstufe} · {einheit.titel}</span> (Niedersachsen). Sag mir jetzt noch, worum es in der Stunde gehen soll.</p>
+          <p className="text-muted-foreground">Damit wir gut planen können, brauchen wir ein Fundament. Fach, Jahrgang und Einheit kennen wir schon: <span className="font-medium text-foreground">{einheit.fach} · Jg. {einheit.jahrgangsstufe} · {einheit.titel}</span> (Niedersachsen). Jetzt fehlen noch die Schulform und worum es in der Stunde gehen soll.</p>
+          <label className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="font-medium">Schulform:</span>
+            <select value={anker.schulform} onChange={(e) => setAnker((a) => ({ ...a, schulform: e.target.value }))} className="rounded-md border bg-card px-2 py-1">
+              {SCHULFORMEN.map((s) => <option key={s}>{s}</option>)}
+            </select>
+          </label>
         </div>
       </div>
       <DauerWahl {...dauer} />

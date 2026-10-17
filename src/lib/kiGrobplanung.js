@@ -17,7 +17,7 @@ export const stundentypName = (key) => STUNDENTYPEN.find((t) => t.key === key)?.
 export const ankerVorhanden = (a) => a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
 
 const kontextText = ({ einheit, anker, minuten }) => [
-  `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, Gesamtschule in Niedersachsen`,
+  `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
   `Unterrichtseinheit: ${einheit.titel}`,
   `Verfügbare Zeit: ${minuten} Minuten`,
   ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),

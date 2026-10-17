@@ -15,9 +15,9 @@ import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobverlauf } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Grobplanung', 'Verbessern (optional)', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament', 'Grobplanung', 'Verbessern (optional)', 'Feinplanung', 'Aufbereitung'];
 const START = {
-  anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '' },
+  anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
   gruppe: { fit: 3, stark: 3 }, methode: null, ritual: null,
 };
@@ -49,7 +49,7 @@ export default function StundenplanerVorschau() {
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
-  const stufe = { start: 0, grob: 0, verbessern: 1, fertig: 2 }[phase];
+  const stufe = { start: 0, grob: 1, verbessern: 2, fertig: 3 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
