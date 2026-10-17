@@ -75,8 +75,9 @@ ${kontextText(k)}
 }, k.anker.materialien);
 
 /** Grobe Zielrichtung: „Am Ende der Stunde können/haben die Schüler …“ */
-export const kiGrobZiel = ({ stundentyp, bisher, korrektur, ...k }) => kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Formuliere die GROBE Zielrichtung einer Stunde – verständliche Lehrersprache, keine perfekte Operatoren-Formulierung.
+export const kiGrobZiel = ({ stundentyp, bisher, korrektur, vorgaben, ...k }) => kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Formuliere die GROBE Zielrichtung einer Stunde – verständliche Lehrersprache, keine perfekte Operatoren-Formulierung.
 ${kontextText(k)}${stundentyp ? `\nStundentyp: ${stundentypName(stundentyp)}` : ''}
+${vorgaben && wirksameGrundstruktur(vorgaben.grundstruktur, vorgaben.anker?.abschnitte?.find((s) => s.modell)) ? `${grundstrukturText(vorgaben)}\nRichte das Ziel genau auf diese Grundstruktur aus (z. B. Erschließung = belegte Deutung, Präsentation = Ergebnisse vorstellen und Rückmeldung, Urteil = begründetes Urteil).` : 'Die Grundstruktur ist offen: Formuliere das Ziel so, dass es zu mehreren Grundstrukturen passt.'}
 
 - "haupt": ein KURZER, bewusst allgemein gehaltener Satz (höchstens ca. 12 Wörter), beginnend mit "Am Ende der Stunde können die Schüler …" oder "Am Ende der Stunde haben die Schüler …". Nur die Kernhandlung nennen, KEINE Details, Bedingungen, Kontexte oder Beispiele. Gut: "Am Ende der Stunde können die Schüler eine begründete Behauptung formulieren." Zu genau: "… zu einer strittigen Alltagsfrage eine klare eigene Position finden und diese als begründete Behauptung formulieren."
 - "alternativen": 2–3 andere sinnvolle Akzente in derselben kurzen, allgemeinen Form.${korrektur ? `\n\nBisheriger Vorschlag: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {

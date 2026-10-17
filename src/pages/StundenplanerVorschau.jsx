@@ -89,7 +89,7 @@ export default function StundenplanerVorschau() {
                 <Sparkles className="h-5 w-5 shrink-0 text-primary" />
                 <p className="text-sm text-muted-foreground">Das sind deine Vorgaben. Nur das Thema ist Pflicht, alles andere ist optional oder hat einen Standard. Klick auf einen Bereich, um ihn zu bearbeiten.</p>
               </div>
-              <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur })}
+              <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur, vorgaben: v })}
                 onThemaVorschlag={(bisher, korrektur) => kiGrobThema({ ...k(), bisher, korrektur })} />
               <Button variant={punkte.length ? 'outline' : 'default'} disabled={!ankerVorhanden(v.anker) || laedt} onClick={vorgabenErstellen}>
                 {laedt && !punkte.length ? <Loader2 className="animate-spin" /> : <Sparkles />} {punkte.length ? 'Vorgaben neu zusammenstellen' : 'Worauf achten wir in der Stunde?'}
