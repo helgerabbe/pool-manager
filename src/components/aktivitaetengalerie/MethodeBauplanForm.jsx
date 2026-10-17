@@ -78,10 +78,12 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 p-6">
-      <div className="sticky -top-6 z-20 -mx-6 -mt-6 flex items-start justify-between gap-4 border-b bg-background/95 px-6 py-3 backdrop-blur">
+      <div className="sticky -top-6 z-20 -mx-6 -mt-6 border-b bg-background/95 px-6 py-2 backdrop-blur">
+        <h2 className="inline-block rounded-lg bg-primary px-3 py-1 font-display text-lg font-bold text-primary-foreground">{methode.name}</h2>
+      </div>
+      <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
           {urheberText(methode.name) && <p className="text-xs font-semibold uppercase tracking-wide text-accent">{urheberText(methode.name)}</p>}
-          <h2 className="inline-block rounded-xl bg-primary px-4 py-2 font-display text-2xl font-bold text-primary-foreground">{methode.name}</h2>
           <p className="text-sm text-muted-foreground">{modusText(methode.modus)}</p>
           <KategorieBadges name={methode.name} />
         </div>
