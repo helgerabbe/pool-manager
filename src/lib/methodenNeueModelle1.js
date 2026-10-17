@@ -1,5 +1,7 @@
 // Passung für die neuen Stundentypen (2026-10-17), Teil 1: Einstieg & Aktivierung, die ersten zehn Methoden.
 // Je Methode und Modell: [passung 1–5, 'Phase:beitrag|Phase:beitrag', Hinweis, [Varianten-Passungen als [wert, Hinweis] in Listenreihenfolge]].
+import { NEUE_DATEN_2 } from '@/lib/methodenNeueModelle2';
+
 const VARIANTEN = {
   praesentation: ['vortragend', 'ausstellend', 'austauschend', 'bewertend'],
   einstieg: ['problemorientiert', 'vorwissen', 'ueberblick', 'mitplanend'],
@@ -85,7 +87,7 @@ const phasen = (s) => Object.fromEntries((s ? s.split('|') : []).map((x) => x.sp
 
 export const NEUE_EINORDNUNG_1 = {};
 export const NEUE_VARIANTEN_1 = {};
-Object.entries(D).forEach(([name, modelle]) => {
+Object.entries({ ...D, ...NEUE_DATEN_2 }).forEach(([name, modelle]) => {
   NEUE_EINORDNUNG_1[name] = {};
   NEUE_VARIANTEN_1[name] = {};
   Object.entries(modelle).forEach(([m, [passung, ph, hinweis, varianten]]) => {
