@@ -30,8 +30,8 @@ export default function ZielEditor({ ziel, setZiel, onVorschlag }) {
           {STUNDENTYPEN.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
         </select>
       </label>
-      <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary"><Target className="h-4 w-4" /> Grobe Zielrichtung</p>
+      <div className="space-y-2 rounded-xl border border-chart-3/40 bg-chart-3/10 p-4">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-chart-3"><Target className="h-4 w-4" /> Grobe Zielrichtung</p>
         {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Textarea rows={2} value={ziel.haupt} onChange={(e) => setZiel((z) => ({ ...z, haupt: e.target.value, vonKi: false }))} className="bg-card" />}
         {fehler && <p className="text-xs text-destructive">Kein Vorschlag möglich. <button className="underline" onClick={() => neu()}>Noch einmal</button></p>}
       </div>
