@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import StundenmodellVorschlag, { ModellPlakette } from '@/components/unterrichtsplanung/StundenmodellVorschlag';
 
 const SCHWERPUNKTE = {
   erarbeitung: { label: 'Erarbeitung', farbe: 'bg-primary/10 text-primary' },
@@ -20,6 +21,7 @@ export default function VerlaufAbschnitt({ abschnitt: s, index, kopfZusatz, chil
         <button type="button" onClick={() => setOffen(!offen)} className="flex flex-1 flex-wrap items-center gap-2 text-left">
           <span className="text-sm font-bold text-muted-foreground">{index + 1}.</span>
           <span className="text-sm font-semibold">{s.titel}</span>
+          <ModellPlakette abschnitt={s} />
           {sp && <span className={cn('rounded px-1.5 py-0.5 text-[11px] font-semibold', sp.farbe)}>{sp.label}</span>}
         </button>
         {kopfZusatz}
@@ -31,6 +33,7 @@ export default function VerlaufAbschnitt({ abschnitt: s, index, kopfZusatz, chil
         <div className="space-y-1 border-t px-3 pb-3 pt-2">
           <p className="text-xs text-foreground/80">{s.lernziel}</p>
           <p className="text-xs text-muted-foreground">{s.vorschlag}</p>
+          <StundenmodellVorschlag abschnitt={s} />
           {children}
         </div>
       )}
