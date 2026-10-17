@@ -1,5 +1,6 @@
 import React from 'react';
-import { Clock, Users } from 'lucide-react';
+import { Clock, Info } from 'lucide-react';
+import WahlHilfe from './WahlHilfe';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
@@ -43,8 +44,8 @@ export default function DidaktischeKonzeption() {
         <section key={block.titel} className="space-y-3 border-t pt-6">
           <h3 className="font-display text-xl font-bold">{block.titel}</h3>
           <p className="text-sm text-muted-foreground">{block.einleitung}</p>
-          {block.erklaerung && <div className="flex gap-2 rounded-xl border border-accent/40 bg-accent/10 p-4 text-sm"><Users className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span>{block.erklaerung}</span></div>}
-          {block.titel === 'Erarbeitung' && <VariantenKriterien />}
+          {block.erklaerung && <div className="flex gap-2 rounded-xl border border-accent/40 bg-accent/10 p-4 text-sm"><Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" /><span><strong>Was genau ist das?</strong> {block.erklaerung}</span></div>}
+          <WahlHilfe titel={block.titel} />
       <div className="grid gap-4 md:grid-cols-2">
         {STUNDEN_MODELLE.filter((m) => block.modelle.includes(m.key)).flatMap((m) => {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
