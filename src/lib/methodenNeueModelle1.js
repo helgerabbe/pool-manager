@@ -2,6 +2,7 @@
 // Je Methode und Modell: [passung 1–5, 'Phase:beitrag|Phase:beitrag', Hinweis, [Varianten-Passungen als [wert, Hinweis] in Listenreihenfolge]].
 import { NEUE_DATEN_2 } from '@/lib/methodenNeueModelle2';
 import { NEUE_DATEN_3 } from '@/lib/methodenNeueModelle3';
+import { NEUE_DATEN_4 } from '@/lib/methodenNeueModelle4';
 
 const VARIANTEN = {
   praesentation: ['vortragend', 'ausstellend', 'austauschend', 'bewertend'],
@@ -88,7 +89,7 @@ const phasen = (s) => Object.fromEntries((s ? s.split('|') : []).map((x) => x.sp
 
 export const NEUE_EINORDNUNG_1 = {};
 export const NEUE_VARIANTEN_1 = {};
-Object.entries({ ...D, ...NEUE_DATEN_2, ...NEUE_DATEN_3 }).forEach(([name, modelle]) => {
+Object.entries({ ...D, ...NEUE_DATEN_2, ...NEUE_DATEN_3, ...NEUE_DATEN_4 }).forEach(([name, modelle]) => {
   NEUE_EINORDNUNG_1[name] = {};
   NEUE_VARIANTEN_1[name] = {};
   Object.entries(modelle).forEach(([m, [passung, ph, hinweis, varianten]]) => {

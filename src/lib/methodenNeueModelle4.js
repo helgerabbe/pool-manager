@@ -1,0 +1,81 @@
+// Passung für die neuen Stundentypen (2026-10-17), Teil 4: Einstieg & Aktivierung, Methoden 31–41.
+// Format wie methodenNeueModelle1.js: [passung, 'Phase:beitrag|…', Hinweis, [[wert, Hinweis] je Variante]].
+export const NEUE_DATEN_4 = {
+  'Total Physical Response (TPR)': {
+    praesentation: [5, '', 'Passt nicht.', [[5, 'Passt nicht.'], [5, 'Passt nicht.'], [5, 'Passt nicht.'], [5, 'Passt nicht.']]],
+    einstieg: [3, 'Impuls & Neugier:teil|Vorwissen & Fragen:teil', 'Bewegter Auftakt, vor allem im Fremdsprachenunterricht.', [[4, 'Kaum Bezug.'], [2, 'Wortschatz bewegt abrufen.'], [3, 'Neue Wörter vorab erleben.'], [4, 'Kaum Bezug.']]],
+    gestaltung: [3, 'Gestalten:teil', 'Bewegung als Ausdrucksmittel im darstellenden Spiel.', [[4, 'Kaum Bezug.'], [5, 'Passt nicht.'], [2, 'Bewegung als Spielmittel.'], [4, 'Kaum Bezug.']]],
+    erschliessung: [4, 'Genaue Arbeit am Gegenstand:bedingt', 'Höchstens, um Textstellen körperlich nachzuvollziehen.', [[3, 'Text in Bewegung umsetzen.'], [5, 'Passt nicht.'], [3, 'Musik in Bewegung.'], [5, 'Passt nicht.'], [3, 'Szenisch deuten.']]],
+    urteil: [5, '', 'Passt nicht.', [[5, 'Passt nicht.'], [5, 'Passt nicht.'], [5, 'Passt nicht.'], [5, 'Passt nicht.']]],
+  },
+  'Punktabfrage': {
+    praesentation: [2, 'Rückmeldung:kern', 'Klebepunkte zeigen schnell, was überzeugt hat.', [[3, 'Punkte für Vorträge.'], [1, 'Punkte am Plakat.'], [3, 'Nach den Runden.'], [2, 'Punkte je Kriterium.']]],
+    einstieg: [2, 'Ziele klären:kern|Vorwissen & Fragen:teil', 'Schwerpunkte und Interessen der Klasse gewichten.', [[4, 'Kaum Bezug.'], [2, 'Wie gut kenne ich mich aus?'], [3, 'Themen der Einheit gewichten.'], [1, 'Klasse wählt Schwerpunkte.']]],
+    gestaltung: [3, 'Rückmeldung & Überarbeitung:teil', 'Gelungene Produkte oder Ideen markieren.', [[3, 'Ideen gewichten.'], [2, 'Punkte für Bilder.'], [3, 'Lieblingsszene wählen.'], [3, 'Konzept wählen.']]],
+    erschliessung: [3, 'Deutungshypothesen:teil', 'Welche Deutung überzeugt am meisten?', [[3, 'Deutungen gewichten.'], [3, 'Glaubwürdigkeit einschätzen.'], [3, 'Wirkung markieren.'], [2, 'Vergleichsurteil.'], [4, 'Kaum Bezug.']]],
+    urteil: [2, 'Erste Positionen:teil|Auseinandersetzung mit Argumenten:teil', 'Argumente oder Positionen sichtbar gewichten.', [[2, 'Haltung markieren.'], [1, 'Argumente gewichten.'], [3, 'Lager zählen.'], [2, 'Option wählen.']]],
+  },
+  'Schreibgespräch': {
+    praesentation: [3, 'Rückmeldung:teil', 'Schriftliche Kommentare zu Präsentationen.', [[3, 'Schriftliches Feedback.'], [2, 'Kommentare am Plakat.'], [3, 'Fragen notieren.'], [3, 'Begründete Bewertung.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Stilles Gespräch zu einem Impuls, alle beteiligen sich.', [[2, 'Gedanken zum Problem.'], [1, 'Vorwissen schriftlich.'], [4, 'Kaum Überblick.'], [2, 'Fragen für die Planung.']]],
+    gestaltung: [2, 'Rückmeldung & Überarbeitung:kern', 'Schriftliche Rückmeldung auf Entwürfe.', [[1, 'Kommentare zum Text.'], [3, 'Kommentare zum Bild.'], [3, 'Kaum Bezug.'], [3, 'Konzept kommentieren.']]],
+    erschliessung: [1, 'Erste Eindrücke & Fragen:kern|Deutungshypothesen:teil', 'Gemeinsam schriftlich um eine Deutung ringen.', [[1, 'Deutungen im Gespräch.'], [2, 'Einschätzungen sammeln.'], [2, 'Wirkung besprechen.'], [3, 'Vergleich besprechen.'], [3, 'Produktideen.']]],
+    urteil: [1, 'Erste Positionen:teil|Auseinandersetzung mit Argumenten:kern', 'Stille Auseinandersetzung, jeder antwortet auf Argumente.', [[2, 'Haltung schriftlich.'], [1, 'Argumente aufeinander beziehen.'], [2, 'Stiller Streit.'], [2, 'Optionen besprechen.']]],
+  },
+  'Rotierendes Partnergespräch': {
+    praesentation: [2, 'Präsentieren:teil|Rückmeldung:teil', 'Ergebnisse in wechselnden Paaren vorstellen.', [[3, 'Kurzvortrag mehrfach.'], [3, 'Kaum Bezug.'], [1, 'Das ist genau diese Form.'], [3, 'Gegenseitig bewerten.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Mehrere kurze Gespräche aktivieren Vorwissen.', [[3, 'Lösungsideen austauschen.'], [1, 'Vorwissen in Runden.'], [4, 'Kaum Überblick.'], [2, 'Interessen austauschen.']]],
+    gestaltung: [2, 'Rückmeldung & Überarbeitung:kern', 'Entwurf mehrfach vorstellen und Rückmeldung holen.', [[2, 'Text vorlesen.'], [2, 'Bild zeigen.'], [3, 'Szene erklären.'], [2, 'Konzept vorstellen.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Eindrücke in wechselnden Paaren austauschen.', [[3, 'Leseeindrücke.'], [3, 'Einschätzungen.'], [3, 'Wirkung.'], [3, 'Vergleich.'], [3, 'Ideen.']]],
+    urteil: [1, 'Auseinandersetzung mit Argumenten:kern', 'Mit wechselnden Partnern Positionen austauschen und schärfen.', [[2, 'Haltung erklären.'], [1, 'Argumente prüfen.'], [1, 'Pro und Contra im Wechsel.'], [2, 'Optionen besprechen.']]],
+  },
+  'Freewriting': {
+    praesentation: [4, 'Reflexion:bedingt', 'Höchstens als freie Reflexion am Ende.', [[4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Freies Schreiben zeigt, was jeder mitbringt.', [[3, 'Gedanken zum Problem.'], [1, 'Vorwissen ungefiltert.'], [4, 'Kaum Überblick.'], [3, 'Wünsche notieren.']]],
+    gestaltung: [1, 'Ideen & Planung:kern', 'Klassische Schreibtechnik zur Ideenfindung.', [[1, 'Das ist genau dieser Einstieg.'], [3, 'Ideen fürs Bild.'], [3, 'Figuren erfinden.'], [3, 'Ideen sammeln.']]],
+    erschliessung: [2, 'Erste Eindrücke & Fragen:kern', 'Leseeindrücke frei festhalten.', [[1, 'Nach dem Lesen frei schreiben.'], [3, 'Eindruck der Quelle.'], [2, 'Wirkung des Werks.'], [3, 'Zu beiden schreiben.'], [2, 'Rohfassung fürs Produkt.']]],
+    urteil: [3, 'Erste Positionen:teil', 'Erste Gedanken zur Frage frei notieren.', [[2, 'Haltung finden.'], [3, 'Gedanken sammeln.'], [3, 'Vorbereitung.'], [3, 'Gedanken zum Fall.']]],
+  },
+  'Anonymer Hut': {
+    praesentation: [3, 'Rückmeldung:teil', 'Anonyme Fragen an die Vortragenden.', [[2, 'Anonyme Fragen.'], [3, 'Fragen zum Plakat.'], [3, 'Kaum Bezug.'], [3, 'Anonyme Einschätzung.']]],
+    einstieg: [1, 'Vorwissen & Fragen:kern', 'Ehrliche Fragen und Unsicherheiten, ohne Bloßstellung.', [[3, 'Vermutungen sammeln.'], [1, 'Ehrlicher Vorwissensstand.'], [3, 'Erwartungen sammeln.'], [1, 'Fragen steuern die Planung.']]],
+    gestaltung: [4, '', 'Kaum Bezug.', [[3, 'Schreibimpulse ziehen.'], [4, 'Kaum Bezug.'], [3, 'Rollen ziehen.'], [4, 'Kaum Bezug.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Anonyme Fragen an den Gegenstand sammeln.', [[3, 'Fragen zum Text.'], [3, 'Fragen zur Quelle.'], [3, 'Fragen zum Werk.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+    urteil: [2, 'Erste Positionen:kern', 'Ehrliche Meinungen zu heiklen Fragen sammeln.', [[1, 'Ehrliche Haltung.'], [2, 'Argumente sammeln.'], [3, 'Positionen ziehen.'], [3, 'Stimmen zum Fall.']]],
+  },
+  'Sprechmühle': {
+    praesentation: [3, 'Präsentieren:teil', 'Kurze Ergebnisse in wechselnden Paaren mitteilen.', [[4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [2, 'Bewegter Austausch.'], [4, 'Kaum Bezug.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Bewegter, lockerer Austausch zum neuen Thema.', [[3, 'Ideen austauschen.'], [1, 'Vorwissen in Runden.'], [4, 'Kaum Überblick.'], [3, 'Interessen austauschen.']]],
+    gestaltung: [3, 'Ideen & Planung:teil', 'Ideen kurz mit vielen Partnern teilen.', [[3, 'Ideen teilen.'], [3, 'Ideen teilen.'], [2, 'Aufwärmen fürs Spiel.'], [3, 'Ideen teilen.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Erste Eindrücke mit wechselnden Partnern.', [[3, 'Leseeindrücke.'], [3, 'Einschätzungen.'], [3, 'Wirkung.'], [3, 'Vergleich.'], [4, 'Kaum Bezug.']]],
+    urteil: [2, 'Erste Positionen:teil|Auseinandersetzung mit Argumenten:teil', 'Haltungen schnell mit vielen austauschen.', [[2, 'Haltung erklären.'], [2, 'Argumente hören.'], [2, 'Aufwärmen für die Debatte.'], [3, 'Meinungen zum Fall.']]],
+  },
+  'Brainwriting': {
+    praesentation: [4, '', 'Kaum Bezug.', [[4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+    einstieg: [2, 'Vorwissen & Fragen:teil|Ziele klären:teil', 'Ideen schriftlich weiterentwickeln, z. B. Fragen an die Einheit.', [[2, 'Lösungsideen weiterführen.'], [2, 'Vorwissen ergänzen.'], [4, 'Kaum Überblick.'], [2, 'Ideen für die Planung.']]],
+    gestaltung: [1, 'Ideen & Planung:kern', 'Ideen anderer aufgreifen und weiterentwickeln.', [[1, 'Schreibideen weiterentwickeln.'], [2, 'Bildideen.'], [2, 'Szenenideen.'], [1, 'Konzeptideen.']]],
+    erschliessung: [3, 'Deutungshypothesen:teil', 'Deutungsideen schriftlich weiterführen.', [[2, 'Deutungen weiterführen.'], [3, 'Einschätzungen ergänzen.'], [3, 'Wirkung ergänzen.'], [3, 'Vergleich ergänzen.'], [2, 'Produktideen.']]],
+    urteil: [2, 'Auseinandersetzung mit Argumenten:kern', 'Argumente sammeln und ergänzen.', [[3, 'Gründe sammeln.'], [1, 'Argumente ergänzen.'], [3, 'Argumente für Rollen.'], [2, 'Lösungen sammeln.']]],
+  },
+  'ABC-Methode': {
+    praesentation: [3, 'Ergebnisse bündeln:teil', 'Begriffe aus den Präsentationen von A bis Z sichern.', [[3, 'Begriffe sammeln.'], [3, 'Nach dem Rundgang.'], [3, 'Nach den Runden.'], [4, 'Kaum Bezug.']]],
+    einstieg: [1, 'Vorwissen & Fragen:kern', 'Zu jedem Buchstaben ein Begriff: zeigt Vorwissen in Breite.', [[4, 'Kaum Bezug.'], [1, 'Das ist genau diese Form.'], [2, 'Begriffe als Vorschau.'], [3, 'Lücken zeigen Schwerpunkte.']]],
+    gestaltung: [3, 'Ideen & Planung:teil', 'Wortmaterial als Grundlage, z. B. für ein ABC-Gedicht.', [[2, 'ABC-Gedicht.'], [3, 'Bildideen.'], [4, 'Kaum Bezug.'], [3, 'Begriffe sammeln.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Eindrücke oder Motive alphabetisch sammeln.', [[3, 'Motive sammeln.'], [3, 'Begriffe der Quelle.'], [3, 'Eindrücke sammeln.'], [4, 'Kaum Bezug.'], [3, 'Wortmaterial.']]],
+    urteil: [4, 'Auseinandersetzung mit Argumenten:bedingt', 'Höchstens zum Sammeln von Stichworten.', [[4, 'Kaum Bezug.'], [3, 'Stichworte sammeln.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+  },
+  'KAWA': {
+    praesentation: [4, 'Reflexion:bedingt', 'Höchstens: Kernbegriff aus der Präsentation.', [[3, 'Kernbegriff des Vortrags.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Assoziationen zu den Buchstaben eines Schlüsselworts.', [[3, 'Assoziationen zum Problem.'], [1, 'Vorwissen zum Schlüsselwort.'], [3, 'Schlüsselwort der Einheit.'], [3, 'Interessen sichtbar.']]],
+    gestaltung: [2, 'Ideen & Planung:teil|Gestalten:teil', 'Wortmaterial, z. B. als Akrostichon.', [[1, 'Akrostichon schreiben.'], [3, 'Ideen fürs Bild.'], [4, 'Kaum Bezug.'], [3, 'Begriffe sammeln.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Assoziationen zu einem Schlüsselwort des Gegenstands.', [[2, 'Schlüsselwort des Textes.'], [3, 'Schlüsselbegriff der Quelle.'], [3, 'Titel des Werks.'], [4, 'Kaum Bezug.'], [3, 'Wortmaterial.']]],
+    urteil: [4, '', 'Kaum Bezug.', [[4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.'], [4, 'Kaum Bezug.']]],
+  },
+  'Cluster': {
+    praesentation: [3, 'Ergebnisse bündeln:teil', 'Ergebnisse um einen Kernbegriff ordnen.', [[3, 'Kernaussagen.'], [3, 'Rundgang bündeln.'], [3, 'Runden bündeln.'], [4, 'Kaum Bezug.']]],
+    einstieg: [2, 'Vorwissen & Fragen:kern', 'Assoziatives Netz macht Vorwissen und Bezüge sichtbar.', [[3, 'Assoziationen zum Problem.'], [1, 'Vorwissen als Netz.'], [2, 'Netz als Überblick.'], [3, 'Interessen sichtbar.']]],
+    gestaltung: [1, 'Ideen & Planung:kern', 'Klassische Technik der Ideenfindung vor dem Schreiben.', [[1, 'Vor dem Schreiben.'], [2, 'Bildideen.'], [3, 'Szenenideen.'], [2, 'Inhalte planen.']]],
+    erschliessung: [3, 'Erste Eindrücke & Fragen:teil', 'Erste Assoziationen zum Gegenstand ordnen.', [[3, 'Leseeindrücke.'], [3, 'Kontextwissen.'], [2, 'Wirkung des Werks.'], [3, 'Zu beiden.'], [2, 'Ideen fürs Produkt.']]],
+    urteil: [3, 'Auseinandersetzung mit Argumenten:teil', 'Gedanken zur Frage sammeln, noch ohne Gewichtung.', [[3, 'Gedanken zur Haltung.'], [3, 'Argumente sammeln.'], [3, 'Vorbereitung.'], [3, 'Aspekte des Falls.']]],
+  },
+};
