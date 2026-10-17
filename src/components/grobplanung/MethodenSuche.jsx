@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, Loader2, Wand2, X, Check } from 'lucide-react';
+import { Search, Loader2, Wand2, X, Check, Sparkles } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import { kiMethodenFinden } from '@/lib/kiGrobplanung';
 
 /** Methode (oder Ritual) suchen, per Idee/Spracheingabe finden lassen oder – bei Ritualen – frei beschreiben. */
-export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, ideePlatzhalter }) {
+export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, ideePlatzhalter, hinweis }) {
   const [suche, setSuche] = React.useState('');
   const [treffer, setTreffer] = React.useState([]);
   const [idee, setIdee] = React.useState('');
@@ -26,6 +26,12 @@ export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, 
   );
   return (
     <div className="space-y-4">
+      {hinweis && (
+        <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+          <Sparkles className="h-5 w-5 shrink-0 text-primary" />
+          <p className="text-sm text-muted-foreground">{hinweis}</p>
+        </div>
+      )}
       {wahl && (
         <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
           <Check className="mt-0.5 h-4 w-4 text-primary" />
@@ -43,7 +49,9 @@ export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, 
         <FreitextMitSprache value={idee} onChange={setIdee} rows={2} placeholder={ideePlatzhalter} />
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" disabled={!idee.trim() || laedt} onClick={finden}>{laedt ? <Loader2 className="animate-spin" /> : <Wand2 />} Passende finden</Button>
-          {eigenErlaubt && <Button size="sm" variant="ghost" disabled={!idee.trim()} onClick={() => setWahl({ name: idee.trim(), eigen: true })}>Als eigenes Ritual übernehmen</Button>}
+          {eigenErlaubt
+            ? <Button size="sm" variant="ghost" disabled={!idee.trim()} onClick={() => setWahl({ name: idee.trim(), eigen: true })}>Als eigenes Ritual übernehmen</Button>
+            : <Button size="sm" variant="ghost" disabled={!idee.trim()} onClick={() => setWahl({ name: 'Methodische Idee', kurzbeschreibung: idee.trim(), idee: true })}>Erst mal nur als Idee übernehmen</Button>}
         </div>
         {kiTreffer && (kiTreffer.length ? <><p className="text-xs text-muted-foreground">Meinst du eine davon?</p>{kiTreffer.map((m) => <Treffer key={m.id} m={m} />)}</> : <p className="text-xs text-muted-foreground">Dazu habe ich im Katalog nichts gefunden.</p>)}
       </div>
