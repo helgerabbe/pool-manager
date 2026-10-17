@@ -1,8 +1,6 @@
 import React from 'react';
 import { STUNDEN_MODELLE, PASSUNG, BEITRAG } from '@/lib/stundenModelle';
-import VariantenPassung, { VARIANTEN_LISTEN } from './VariantenPassung';
-
-const BEITRAG_CLS = { kern: 'bg-primary text-primary-foreground', teil: 'bg-primary/15 text-primary', bedingt: 'border border-dashed border-primary/50 text-primary' };
+import VariantenPassung, { VARIANTEN_LISTEN, BEITRAG_CLS } from './VariantenPassung';
 
 const GRUPPEN = { uebung_: 'Individuelle Übung', diagnose_: 'Diagnose' };
 const gruppeVon = (key) => Object.keys(GRUPPEN).find((g) => key.startsWith(g));
@@ -49,12 +47,8 @@ export default function StundenmodellRaster({ einordnung, varianten }) {
           <div key={z.variantenVon.key} className="border-b p-3 last:border-b-0 text-sm">
             <p className="mb-2 font-semibold">{z.variantenVon.name}</p>
             <div className="space-y-2 border-l-2 border-primary/20 pl-3">
-              <div className="grid grid-cols-[185px_150px_1fr] gap-3">
-                <span className="text-xs font-medium">Insgesamt</span>
-                <PassungBadge e={eintrag(z.variantenVon)} />
-                <ModellInhalt m={z.variantenVon} e={eintrag(z.variantenVon)} />
-              </div>
-              <VariantenPassung modellKey={z.variantenVon.key} varianten={varianten} />
+              {eintrag(z.variantenVon).hinweis && <p className="text-xs"><span className="font-medium">Insgesamt: </span><span className="text-muted-foreground">{eintrag(z.variantenVon).hinweis}</span></p>}
+              <VariantenPassung modell={z.variantenVon} eintrag={eintrag(z.variantenVon)} varianten={varianten} />
             </div>
           </div>
         ) : z.modell ? (
