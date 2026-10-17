@@ -96,6 +96,7 @@ ${kontextText(k)}
 Grobes Stundenziel: ${ziel.haupt || 'noch offen – leite ein sinnvolles Ziel aus dem Thema ab'}
 Stundentyp: ${stundentypName(ziel.stundentyp) && ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen – wähle passend'}
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistungsvermögen ${gruppe.leistung ?? 3}/5 (3 = normal)
+${vorgaben.punkte?.length ? `Didaktisch-methodische Vorgaben (von der Lehrkraft bestätigt, unbedingt berücksichtigen):\n${vorgaben.punkte.map((p) => `- [${GEWICHTE[p.gewicht]}] ${p.text}`).join('\n')}` : ''}
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 
@@ -107,6 +108,7 @@ Regeln:
 - Wähle das passende Stundenmodell ("modell") und folge seinen Phasen sinnvoll.
 - Je Phase: "lehrer" = was die Lehrkraft tut, "schueler" = was die Schüler tun (je 1–2 konkrete Sätze), "sozialform" (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), "methode" falls genutzt, "details" = 1–2 Sätze Hintergrund (warum so, worauf achten).
 - "minuten" grob schätzen; ${k.minuten ? `die Summe ergibt ${k.minuten}.` : 'die Summe ergibt 45 oder 90 – entscheide, was das Vorhaben realistisch braucht, und nenne die Wahl samt kurzer Begründung in "hinweise".'} Die Lehrkraft sieht die Zeiten erst in der Feinplanung.
+- Es geht NUR um den methodischen Ablauf: noch nicht festlegen, ob digital oder analog, keine konkreten Arbeitsmaterialien, keine ausformulierten Arbeitsaufträge.
 - "kurz": eine Zeile, was diese Stunde ausmacht. "hinweise" nur, wenn sich Vorgaben nicht stimmig umsetzen lassen.${bisher ? `
 
 ÜBERARBEITUNG – bisheriger Entwurf:
@@ -117,4 +119,39 @@ ${JSON.stringify(bisher.phasen.map(({ name, lehrer, schueler, sozialform, method
     name: 'Grobentwurf', kurz: r.kurz, modell: r.modell, hinweis: (r.hinweise || []).join(' '),
     phasen: (r.phasen || []).map((p) => ({ ...p, aktivitaet: p.schueler, begruendung: p.details, deckt: [] })),
   };
+}
+
+export const GEWICHTE = { unverzichtbar: 'Unverzichtbar', wichtig: 'Wichtig', beachten: 'Nehme ich mit' };
+
+/** Didaktisch-methodische Vorgaben: Worauf achtet der Assistent beim Bau der Stunde? */
+export async function kiPlanungsVorgaben({ vorgaben, ...k }) {
+  const { ziel, gruppe, methode, ritual } = vorgaben;
+  const r = await kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Bevor du eine Stunde baust, fasst du in Wir-Form zusammen, worauf du bei der Gestaltung besonders achten wirst.
+${kontextText(k)}
+Grobes Stundenziel: ${ziel.haupt || 'noch offen'}
+Stundentyp: ${ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen'}
+Lerngruppe: Tempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistung ${gruppe.leistung ?? 3}/5 (3 = normal)
+${methode ? `Methodenwunsch: ${methode.name || methode.kurzbeschreibung}` : ''}
+${ritual ? `Ritual: ${ritual.name}` : ''}
+
+Gib 4–7 "punkte", je ein kurzer, verständlicher Satz (keine Methodennamen erfinden, nichts zu digital/analog oder Materialien) mit "gewicht":
+- "unverzichtbar" = ohne das verfehlt die Stunde ihr Ziel (z. B. der Kern des Stundentyps)
+- "wichtig" = ausdrücklicher Wunsch der Lehrkraft oder zentral für die Lerngruppe
+- "beachten" = nehme ich in die Überlegungen mit`, {
+    type: 'object',
+    properties: { punkte: { type: 'array', items: { type: 'object', properties: { text: { type: 'string' }, gewicht: { type: 'string', enum: Object.keys(GEWICHTE) } } } } },
+    required: ['punkte'],
+  }, k.anker.materialien);
+  return r.punkte || [];
+}
+
+/** Überarbeitet nur EINE Phase des Ablaufs, der Rest bleibt unverändert. */
+export async function kiPhaseAendern({ entwurf, index, wunsch, ...k }) {
+  const p = await kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Überarbeite NUR die Phase ${index + 1} dieses Stundenablaufs.
+${kontextText(k)}
+Ganzer Ablauf: ${JSON.stringify(entwurf.phasen.map(({ name, schueler, sozialform, methode, minuten }) => ({ name, schueler, sozialform, methode, minuten })))}
+Wunsch der Lehrkraft für Phase ${index + 1}: "${wunsch}"
+Nur methodischer Ablauf, noch nicht digital/analog, keine konkreten Materialien. Die Dauer ("minuten") möglichst ähnlich halten. Felder: name, minuten, lehrer, schueler, sozialform, methode, details.`, PHASE, k.anker.materialien);
+  const phasen = entwurf.phasen.map((alt, i) => (i === index ? { ...p, aktivitaet: p.schueler, begruendung: p.details, deckt: [], neu: true } : { ...alt, neu: false }));
+  return { ...entwurf, phasen };
 }

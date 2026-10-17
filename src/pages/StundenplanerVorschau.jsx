@@ -4,18 +4,16 @@ import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FundamentStart from '@/components/grobplanung/FundamentStart';
 import VorgabenRaster from '@/components/grobplanung/VorgabenRaster';
-import GenerierenButton from '@/components/grobplanung/GenerierenButton';
-import GrobentwurfBereich from '@/components/grobplanung/GrobentwurfBereich';
-import ProtoEntwurf from '@/components/stundenplanerPrototyp/ProtoEntwurf';
+import VorgabenListe from '@/components/grobplanung/VorgabenListe';
+import MethodischeGestaltung from '@/components/methodik/MethodischeGestaltung';
 import GrobentwurfPruefung from '@/components/stundenplanerPrototyp/GrobentwurfPruefung';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
-import { kiEntwurfsTipps } from '@/lib/kiEntwurfsTipps';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
-import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf } from '@/lib/kiGrobplanung';
+import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Fundament', 'Grobplanung', 'Verbessern (optional)', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament', 'Grobplanung', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
@@ -42,15 +40,18 @@ export default function StundenplanerVorschau() {
   const summe = (entwurf?.phasen || []).reduce((s, p) => s + (p.minuten || 0), 0);
   const k = () => ({ assistent, einheit, anker: v.anker, minuten: netto });
   const generieren = (bisher, aenderung) => kiGrobverlauf({ ...k(), vorgaben: v, bisher, aenderung });
-  const planen = () => { setLaedt(true); setFehler(''); generieren().then(setEntwurf).catch(() => setFehler('Der Entwurf konnte nicht erstellt werden. Bitte noch einmal versuchen.')).finally(() => setLaedt(false)); };
-  const aendern = (wunsch) => generieren(entwurf, wunsch).then(setEntwurf);
+  const [punkte, setPunkte] = React.useState([]);
+  const lauf = (p, ok) => { setLaedt(true); setFehler(''); p.then(ok).catch(() => setFehler('Das hat nicht geklappt. Bitte noch einmal versuchen.')).finally(() => setLaedt(false)); };
+  const vorgabenErstellen = () => lauf(kiPlanungsVorgaben({ ...k(), vorgaben: v }), setPunkte);
+  const bauen = () => lauf(kiGrobverlauf({ ...k(), vorgaben: { ...v, punkte } }), (e) => { setEntwurf(e); setPhase('methodik'); });
+  const phaseAendern = (index, wunsch) => kiPhaseAendern({ ...k(), entwurf, index, wunsch }).then(setEntwurf);
   const modell = STUNDEN_MODELLE.find((m) => m.key === entwurf?.modell) || STUNDEN_MODELLE[0];
   const annahmen = [
     v.gruppe.fit === 3 && v.gruppe.stark === 3 && v.gruppe.leistung === 3 && 'Normale Lerngruppe angenommen.',
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
-  const stufe = { start: 0, grob: 1, verbessern: 2, fertig: 3 }[phase];
+  const stufe = { start: 0, grob: 1, methodik: 2, fertig: 3 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -90,31 +91,19 @@ export default function StundenplanerVorschau() {
               </div>
               <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur })}
                 onThemaVorschlag={(bisher, korrektur) => kiGrobThema({ ...k(), bisher, korrektur })} />
-              <GenerierenButton hatEntwurf={!!entwurf} bereit={ankerVorhanden(v.anker)} laedt={laedt} onGenerieren={planen} />
+              <Button variant={punkte.length ? 'outline' : 'default'} disabled={!ankerVorhanden(v.anker) || laedt} onClick={vorgabenErstellen}>
+                {laedt && !punkte.length ? <Loader2 className="animate-spin" /> : <Sparkles />} {punkte.length ? 'Vorgaben neu zusammenstellen' : 'Worauf achten wir in der Stunde?'}
+              </Button>
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
-              {entwurf && !laedt && <GrobentwurfBereich entwurf={entwurf} onAendern={aendern} onWeiter={() => setPhase('verbessern')} />}
+              {punkte.length > 0 && <VorgabenListe punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />}
             </>
           )}
-          {phase === 'verbessern' && (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/30 bg-primary/5 p-4">
-                <p className="text-sm">Möchtest du, dass wir gemeinsam überlegen, wie man die Stunde noch verbessern kann? Das ist optional.</p>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => setPhase('grob')}>Zurück zur Grobplanung</Button>
-                  <Button size="sm" onClick={() => setPhase('fertig')}>Überspringen</Button>
-                </div>
-              </div>
-              <ProtoEntwurf entwuerfe={[entwurf]} setEntwuerfe={(fn) => setEntwurf((e) => fn([e])[0])} aktiv={0} setAktiv={() => {}}
-                routine={v.ritual?.name || ''} setRoutine={(t) => setze('ritual')(t ? { name: t, eigen: true } : null)} pause={pause && minuten > 45}
-                modellName={modell.name} modellKey={modell.key}
+          {phase === 'methodik' && entwurf && (
+            <MethodischeGestaltung entwurf={entwurf} onPhaseAendern={phaseAendern} onZurueck={() => setPhase('grob')} onWeiter={() => setPhase('fertig')}
                 pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
                   onVorschlag={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was der Hinweis bedeutet, was du geändert hast und warum.`)}
                   onUebernehmen={setEntwurf}
-                  warnungen={entwurfsWarnungen({ entwurf, modellKey: modell.key, gruppe: v.gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
-                onKiAendern={(bisher, wunsch) => generieren(bisher, wunsch)}
-                onTippsLaden={(e) => kiEntwurfsTipps({ assistent, fach: einheit.fach, jahrgang: einheit.jahrgangsstufe, modell, entwurf: e })}
-                onWeiter={() => setPhase('fertig')} />
-            </>
+                  warnungen={entwurfsWarnungen({ entwurf, modellKey: modell.key, gruppe: v.gruppe, jahrgang: einheit?.jahrgangsstufe })} />} />
           )}
           {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
