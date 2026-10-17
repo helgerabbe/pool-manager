@@ -20,7 +20,7 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
     { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: a.thema || [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
       hinweis: 'Worum geht es in dieser Stunde? Materialien findest du im Bereich „Materialien“.', editor: <ThemaEditor anker={a} setAnker={setze('anker')} onVorschlag={onThemaVorschlag} /> },
     { key: 'ziel', icon: Target, titel: 'Stundenziel', rand: 'border-l-primary', gesetzt: !!v.ziel.haupt, stand: [stundentypName(v.ziel.stundentyp) && v.ziel.stundentyp && stundentypName(v.ziel.stundentyp), v.ziel.haupt].filter(Boolean).join(' · ') || 'Noch offen – ich schlage dir eine Richtung vor',
-      hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
+      hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', ohneUntertitel: true, editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
     { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal || !!a.vorwissen?.trim(), stand: gruppeStand,
       hinweis: 'Wie arbeitet die Klasse, und worauf können wir aufbauen?', editor: <LerngruppeEditor gruppe={v.gruppe} setGruppe={setze('gruppe')} vorwissen={a.vorwissen} setVorwissen={(t) => setze('anker')((x) => ({ ...x, vorwissen: t }))} /> },
     { key: 'methode', icon: Shapes, titel: 'Methodenwunsch', rand: 'border-l-chart-4', gesetzt: !!v.methode, stand: v.methode ? (v.methode.idee ? `Idee: ${v.methode.kurzbeschreibung}` : `${v.methode.name} – wird möglichst verwendet`) : 'Keine besondere Methode gewählt',
@@ -40,7 +40,7 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
       <Dialog open={!!akt} onOpenChange={(o) => !o && setOffen(null)}>
         {akt && (
           <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
-            <DialogHeader><DialogTitle>{akt.titel}</DialogTitle><DialogDescription>{akt.hinweis}</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>{akt.titel}</DialogTitle><DialogDescription className={akt.ohneUntertitel ? 'sr-only' : ''}>{akt.hinweis}</DialogDescription></DialogHeader>
             {akt.editor}
             <Button onClick={() => setOffen(null)}>Fertig</Button>
           </DialogContent>
