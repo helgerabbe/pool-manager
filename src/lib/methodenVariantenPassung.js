@@ -171,3 +171,7 @@ export const VARIANTEN_PASSUNG = {
     wiederholung_umfassend: [2, 'Zeigt, wer sich wo sicher fühlt, und bildet Gruppen.'],
   },
 };
+
+// Neue Stundentypen (2026-10-17) ergänzen.
+import { NEUE_VARIANTEN_1 } from '@/lib/methodenNeueModelle1';
+Object.entries(NEUE_VARIANTEN_1).forEach(([n, e]) => { VARIANTEN_PASSUNG[n] = { ...VARIANTEN_PASSUNG[n], ...e }; });

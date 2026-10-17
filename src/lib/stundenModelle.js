@@ -653,3 +653,7 @@ export const EINORDNUNG_PROBE = {
     diagnose_lang: { passung: 5, phasen: {}, hinweis: 'Trägt keine Diagnose.' },
   },
 };
+
+// Neue Stundentypen (2026-10-17) ergänzen.
+import { NEUE_EINORDNUNG_1 } from '@/lib/methodenNeueModelle1';
+Object.entries(NEUE_EINORDNUNG_1).forEach(([n, e]) => { EINORDNUNG_PROBE[n] = { ...EINORDNUNG_PROBE[n], ...e }; });
