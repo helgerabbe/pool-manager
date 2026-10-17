@@ -17,7 +17,7 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
   const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3;
   const C = [
     { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
-      hinweis: 'Worum geht es in der Stunde? Thema aus der Einheit, eigene Beschreibung oder Material.', editor: <AnkerFelder verlauf={verlauf} anker={a} setAnker={setze('anker')} /> },
+      hinweis: 'Worum geht es in der Stunde? Hier kannst du das Thema ausschärfen oder ergänzen. Materialien findest du im Bereich „Materialien“.', editor: <AnkerFelder verlauf={verlauf} anker={a} setAnker={setze('anker')} ohneMaterial /> },
     { key: 'ziel', icon: Target, titel: 'Stundenziel', rand: 'border-l-primary', gesetzt: !!v.ziel.haupt, stand: [stundentypName(v.ziel.stundentyp) && v.ziel.stundentyp && stundentypName(v.ziel.stundentyp), v.ziel.haupt].filter(Boolean).join(' · ') || 'Noch offen – ich schlage dir eine Richtung vor',
       hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
     { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal, stand: normal ? 'Normale Lerngruppe (Standard)' : `Arbeitstempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5`,

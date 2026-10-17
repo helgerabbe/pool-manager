@@ -18,7 +18,7 @@ const Moeglichkeit = ({ nr, titel, erledigt, children }) => (
 const Und = () => <p className="text-center text-xs font-semibold uppercase tracking-wide text-muted-foreground">und / oder</p>;
 
 /** Inhaltlicher Anker: drei Möglichkeiten (Thema, Beschreibung, Material) – einzeln oder kombiniert. */
-export default function AnkerFelder({ verlauf, anker, setAnker }) {
+export default function AnkerFelder({ verlauf, anker, setAnker, ohneMaterial = false }) {
   const an = (s) => anker.abschnitte.some((x) => x.titel === s.titel);
   const [offen, setOffen] = React.useState(false);
   const umschalten = (s) => {
@@ -59,11 +59,15 @@ export default function AnkerFelder({ verlauf, anker, setAnker }) {
       <Moeglichkeit nr={2} titel="Beschreiben, worum es gehen soll" erledigt={!!anker.text.trim()}>
         <FreitextMitSprache value={anker.text} onChange={(t) => setAnker((a) => ({ ...a, text: t }))} rows={3} placeholder="Tippen oder einsprechen, z. B. Die Schüler sollen am Text erkennen, warum manche Argumente überzeugender sind als andere." />
       </Moeglichkeit>
-      <Und />
-      <Moeglichkeit nr={3} titel="Material hochladen" erledigt={anker.materialien.length > 0}>
-        <p className="text-xs text-muted-foreground">Du kannst mehrere Dateien auf einmal hochladen. Es muss nicht alles sein: Weitere Materialien kannst du später in der Grobplanung im Bereich „Materialien“ ergänzen.</p>
-        <MaterialUpload materialien={anker.materialien} onChange={(m) => setAnker((a) => ({ ...a, materialien: m }))} />
-      </Moeglichkeit>
+      {!ohneMaterial && (
+        <>
+          <Und />
+          <Moeglichkeit nr={3} titel="Material hochladen" erledigt={anker.materialien.length > 0}>
+            <p className="text-xs text-muted-foreground">Du kannst mehrere Dateien auf einmal hochladen. Es muss nicht alles sein: Weitere Materialien kannst du später in der Grobplanung im Bereich „Materialien“ ergänzen.</p>
+            <MaterialUpload materialien={anker.materialien} onChange={(m) => setAnker((a) => ({ ...a, materialien: m }))} />
+          </Moeglichkeit>
+        </>
+      )}
       <div className="space-y-2 pt-3">
         <p className="text-sm font-semibold">Das haben die Schüler schon gemacht <span className="font-normal text-muted-foreground">(optional)</span></p>
         <FreitextMitSprache value={anker.vorwissen} onChange={(t) => setAnker((a) => ({ ...a, vorwissen: t }))} rows={2} placeholder="z. B. Letzte Stunde: Aufbau eines Arguments kennengelernt" />
