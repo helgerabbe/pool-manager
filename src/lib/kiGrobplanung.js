@@ -14,7 +14,7 @@ export const STUNDENTYPEN = [
 ];
 export const stundentypName = (key) => STUNDENTYPEN.find((t) => t.key === key)?.name;
 
-export const ankerVorhanden = (a) => a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
+export const ankerVorhanden = (a) => !!a.thema?.trim() || a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
 
 const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
@@ -22,6 +22,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
   minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
   ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
+  anker.thema?.trim() && `Thema der Stunde (gemeinsam festgehalten): ${anker.thema.trim()}`,
   anker.vorwissen?.trim() && `Lernausgangslage (das haben die Schüler schon gemacht): ${anker.vorwissen.trim()}`,
   anker.materialien.length > 0 && `Material der Lehrkraft: ${anker.materialien.map((m) => m.name).join(', ')} (lesbare Dateien sind angehängt)`,
   anker.richtung && `Gewählte inhaltliche Richtung: ${anker.richtung}`,
@@ -47,6 +48,16 @@ Prüfe, ob klar genug ist, worum es inhaltlich in dieser EINEN Stunde gehen soll
   type: 'object',
   properties: { ausreichend: { type: 'boolean' }, zusammenfassung: { type: 'string' }, rueckfrage: { type: 'string' }, optionen: { type: 'array', items: { type: 'string' } } },
   required: ['ausreichend'],
+}, k.anker.materialien);
+
+/** Thema der Stunde in einem klaren Satz: „In dieser Stunde beschäftigen wir uns damit, …“ */
+export const kiGrobThema = ({ bisher, korrektur, ...k }) => kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Formuliere das THEMA dieser einen Unterrichtsstunde in EINEM klaren, verständlichen Satz in Lehrersprache – kein Stundentitel, sondern was inhaltlich passiert und was die Schüler machen.
+${kontextText(k)}
+
+- "thema": ein Satz, beginnend mit "In dieser Stunde beschäftigen wir uns damit, …". Kurz, ohne Fachjargon, keine Ziel-Formulierung.${korrektur ? `\n\nBisherige Formulierung: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {
+  type: 'object',
+  properties: { thema: { type: 'string' } },
+  required: ['thema'],
 }, k.anker.materialien);
 
 /** Grobe Zielrichtung: „Am Ende der Stunde können/haben die Schüler …“ */

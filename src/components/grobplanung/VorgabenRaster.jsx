@@ -3,7 +3,7 @@ import { BookOpen, Target, Users, Shapes, Repeat, Paperclip } from 'lucide-react
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import ContainerKarte from './ContainerKarte';
-import AnkerFelder from './AnkerFelder';
+import ThemaEditor from './ThemaEditor';
 import ZielEditor from './ZielEditor';
 import LerngruppeEditor from './LerngruppeEditor';
 import MethodenSuche from './MethodenSuche';
@@ -11,14 +11,14 @@ import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
 import { ankerVorhanden, stundentypName } from '@/lib/kiGrobplanung';
 
 /** Sechs Vorgaben-Container; ein Klick öffnet den jeweiligen Bereich im Dialog. */
-export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVorschlag }) {
+export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVorschlag, onThemaVorschlag }) {
   const [offen, setOffen] = React.useState(null);
   const a = v.anker;
   const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3 && (v.gruppe.leistung ?? 3) === 3;
   const gruppeStand = [normal ? 'Normale Lerngruppe (Standard)' : `Tempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5 · Leistung ${v.gruppe.leistung ?? 3}/5`, a.vorwissen?.trim() && 'Lernausgangslage angegeben'].filter(Boolean).join(' · ');
   const C = [
-    { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
-      hinweis: 'Worum geht es in der Stunde? Hier kannst du das Thema ausschärfen oder ergänzen. Materialien findest du im Bereich „Materialien“.', editor: <AnkerFelder verlauf={verlauf} anker={a} setAnker={setze('anker')} ohneMaterial /> },
+    { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: a.thema || [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
+      hinweis: 'Worum geht es in dieser Stunde? Materialien findest du im Bereich „Materialien“.', editor: <ThemaEditor anker={a} setAnker={setze('anker')} onVorschlag={onThemaVorschlag} /> },
     { key: 'ziel', icon: Target, titel: 'Stundenziel', rand: 'border-l-primary', gesetzt: !!v.ziel.haupt, stand: [stundentypName(v.ziel.stundentyp) && v.ziel.stundentyp && stundentypName(v.ziel.stundentyp), v.ziel.haupt].filter(Boolean).join(' · ') || 'Noch offen – ich schlage dir eine Richtung vor',
       hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
     { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal || !!a.vorwissen?.trim(), stand: gruppeStand,

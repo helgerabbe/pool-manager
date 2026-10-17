@@ -13,7 +13,7 @@ import { kiEntwurfsTipps } from '@/lib/kiEntwurfsTipps';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
-import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobverlauf } from '@/lib/kiGrobplanung';
+import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf } from '@/lib/kiGrobplanung';
 
 const SCHRITTE = ['Fundament', 'Grobplanung', 'Verbessern (optional)', 'Feinplanung', 'Aufbereitung'];
 const START = {
@@ -88,7 +88,8 @@ export default function StundenplanerVorschau() {
                 <Sparkles className="h-5 w-5 shrink-0 text-primary" />
                 <p className="text-sm text-muted-foreground">Das sind deine Vorgaben. Nur das Thema ist Pflicht, alles andere ist optional oder hat einen Standard. Klick auf einen Bereich, um ihn zu bearbeiten.</p>
               </div>
-              <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur })} />
+              <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur })}
+                onThemaVorschlag={(bisher, korrektur) => kiGrobThema({ ...k(), bisher, korrektur })} />
               <GenerierenButton hatEntwurf={!!entwurf} bereit={ankerVorhanden(v.anker)} laedt={laedt} onGenerieren={planen} />
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
               {entwurf && !laedt && <GrobentwurfBereich entwurf={entwurf} onAendern={aendern} onWeiter={() => setPhase('verbessern')} />}
