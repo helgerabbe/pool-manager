@@ -47,7 +47,7 @@ export default function StundenmodellRaster({ einordnung, varianten }) {
           <div key={z.variantenVon.key} className="border-b p-3 last:border-b-0 text-sm">
             <p className="mb-2 font-semibold">{z.variantenVon.name}</p>
             <div className="space-y-2 border-l-2 border-primary/20 pl-3">
-              {eintrag(z.variantenVon).hinweis && <p className="text-xs"><span className="font-medium">Insgesamt: </span><span className="text-muted-foreground">{eintrag(z.variantenVon).hinweis}</span></p>}
+              {eintrag(z.variantenVon).hinweis && <p className="text-sm"><span className="font-semibold">Insgesamt: </span><span className="text-foreground/80">{eintrag(z.variantenVon).hinweis}</span></p>}
               <VariantenPassung modell={z.variantenVon} eintrag={eintrag(z.variantenVon)} varianten={varianten} />
             </div>
           </div>
