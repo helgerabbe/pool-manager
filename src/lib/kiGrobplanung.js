@@ -7,6 +7,8 @@ import { ERSCHLIESSUNG_VARIANTEN } from '@/lib/erschliessungVarianten';
 import { GESTALTUNG_VARIANTEN } from '@/lib/gestaltungVarianten';
 import { EINSTIEG_VARIANTEN } from '@/lib/einstiegVarianten';
 import { PRAESENTATION_VARIANTEN } from '@/lib/praesentationVarianten';
+import { wirksameGrundstruktur } from '@/components/grobplanung/GrundstrukturWahl';
+import { modellName } from '@/components/unterrichtsplanung/StundenmodellVorschlag';
 
 export const STUNDENTYPEN = [
   { key: '', name: 'Offen lassen' },
@@ -30,7 +32,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
   `Unterrichtseinheit: ${einheit.titel}`,
   minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
-  ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}${s.modell ? ` – vorgeschlagene Grundstruktur (Stundenmodell): ${s.modell}${s.modell_variante ? `, Variante ${s.modell_variante}` : ''} (bevorzugt verwenden, wenn stimmig)` : ''}`),
+  ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
   anker.thema?.trim() && `Thema der Stunde (gemeinsam festgehalten): ${anker.thema.trim()}`,
   anker.inhalt?.trim() && `Konkreter Inhalt (Text, Beispiel oder Streitfrage, unbedingt verwenden): ${anker.inhalt.trim()}`,
@@ -107,6 +109,7 @@ Grobes Stundenziel: ${ziel.haupt || 'noch offen – leite ein sinnvolles Ziel au
 Stundentyp: ${stundentypName(ziel.stundentyp) && ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen – wähle passend'}
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistungsvermögen ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${vorgaben.punkte?.length ? `Didaktisch-methodische Vorgaben (von der Lehrkraft bestätigt, unbedingt berücksichtigen):\n${vorgaben.punkte.map((p) => `- [${GEWICHTE[p.gewicht]}] ${p.text}`).join('\n')}` : ''}
+${grundstrukturText(vorgaben)}
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 
@@ -173,6 +176,12 @@ Mindestens zwei Inspirationen. Nichts zu digital/analog oder konkreten Materiali
   return r.tipps || [];
 }
 
+/** Grundstruktur-Zeile für die Prompts: gewählt bzw. vorgeschlagen ist dominant, offen = KI wählt. */
+const grundstrukturText = (vorgaben) => {
+  const g = wirksameGrundstruktur(vorgaben.grundstruktur, vorgaben.anker?.abschnitte?.find((s) => s.modell));
+  return g ? `Methodische Grundstruktur (von der Lehrkraft festgelegt, DOMINANT, Ablauf daran ausrichten): ${modellName(g.modell, g.variante)} (modell "${g.modell}"${g.variante ? `, Variante "${g.variante}"` : ''})` : 'Methodische Grundstruktur: offen – wähle die am besten passende.';
+};
+
 export const GEWICHTE = { unverzichtbar: 'Unverzichtbar', wichtig: 'Wichtig', beachten: 'Nehme ich mit' };
 
 /** Didaktisch-methodische Vorgaben: Worauf achtet der Assistent beim Bau der Stunde? */
@@ -183,6 +192,7 @@ ${kontextText(k)}
 Grobes Stundenziel: ${ziel.haupt || 'noch offen'}
 Stundentyp: ${ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen'}
 Lerngruppe: Tempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistung ${gruppe.leistung ?? 3}/5 (3 = normal)
+${grundstrukturText(vorgaben)}
 ${methode ? `Methodenwunsch: ${methode.name || methode.kurzbeschreibung}` : ''}
 ${ritual ? `Ritual: ${ritual.name}` : ''}
 
