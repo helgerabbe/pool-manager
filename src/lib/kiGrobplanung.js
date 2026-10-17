@@ -140,6 +140,24 @@ Antworte auf die letzte Nachricht der Lehrkraft in "antwort". Bei Fragen: erklä
   return { antwort: r.antwort, vorschlag: phasen && { ...entwurf, phasen } };
 }
 
+/** Tipp-Center: Inspirationen, Alternativen und kleine Tipps zur ganzen Stunde. */
+export async function kiTippCenter({ entwurf, ...k }) {
+  const r = await kiMitMaterial(k.assistent, `Du bist ein erfahrener, inspirierender Fachdidaktiker. Schau auf diese Stunde und gib der Lehrkraft Anregungen, was man noch anders oder besser machen könnte. Du-Form, kurz.
+${kontextText(k)}
+Ablauf: ${JSON.stringify(entwurf.phasen.map(({ name, schueler, sozialform, methode, minuten }) => ({ name, schueler, sozialform, methode, minuten })))}
+
+Gib 4–6 "tipps", je mit "art" und "text" (1–2 Sätze):
+- "inspiration" = eine größere andere Denkrichtung für die Stunde (z. B. auf 90 Minuten ausdehnen und dann X ermöglichen; einen anderen Schwerpunkt setzen, z. B. statt ein Argument zu finden gleich mehrere Argumente sortieren)
+- "alternative" = eine andere Variante für eine bestimmte Phase (Phase nennen)
+- "tipp" = ein kleiner praktischer Hinweis zur Durchführung
+Mindestens zwei Inspirationen. Nichts zu digital/analog oder konkreten Materialien.`, {
+    type: 'object',
+    properties: { tipps: { type: 'array', items: { type: 'object', properties: { art: { type: 'string', enum: ['inspiration', 'alternative', 'tipp'] }, text: { type: 'string' } } } } },
+    required: ['tipps'],
+  }, k.anker.materialien);
+  return r.tipps || [];
+}
+
 export const GEWICHTE = { unverzichtbar: 'Unverzichtbar', wichtig: 'Wichtig', beachten: 'Nehme ich mit' };
 
 /** Didaktisch-methodische Vorgaben: Worauf achtet der Assistent beim Bau der Stunde? */

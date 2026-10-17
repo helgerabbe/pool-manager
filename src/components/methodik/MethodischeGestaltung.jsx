@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import MethodikPhase from './MethodikPhase';
 import SparringFenster from './SparringFenster';
+import TippCenter from './TippCenter';
 
 const BEGRUESSUNG = {
   aendern: (n) => `Du möchtest etwas in der Phase „${n}“ ändern. Erklär mir, was es sein soll. Wir besprechen das so lange, bis es passt.`,
@@ -12,7 +13,7 @@ const BEGRUESSUNG = {
 };
 
 /** Schritt „Methodische Gestaltung“: Ablauf prüfen und alles über einen Gesprächsassistenten klären. */
-export default function MethodischeGestaltung({ entwurf, setEntwurf, onSparring, pruefung, onZurueck, onWeiter }) {
+export default function MethodischeGestaltung({ entwurf, setEntwurf, onSparring, onTipps, pruefung, onZurueck, onWeiter }) {
   const [gespraech, setGespraech] = React.useState(null);
   const oeffnen = (fokus, modus) => setGespraech({ fokus, verlauf: [{ role: 'assistant', content: BEGRUESSUNG[modus](entwurf.phasen[fokus]?.name) }] });
   return (
@@ -26,7 +27,8 @@ export default function MethodischeGestaltung({ entwurf, setEntwurf, onSparring,
         <Button size="sm" variant="outline" onClick={() => oeffnen(null, 'gesamt')}><MessageCircle /> Über den Gesamtverlauf sprechen</Button>
       </div>
       {entwurf.phasen.map((p, i) => <MethodikPhase key={i} phase={p} nr={i + 1} onStart={(modus) => oeffnen(i, modus)} />)}
-      {pruefung}
+      <TippCenter pruefung={pruefung} onLaden={onTipps}
+        onBesprechen={(t) => setGespraech({ fokus: null, verlauf: [{ role: 'assistant', content: `Lass uns über diese Idee sprechen:\n\n> ${t.text}\n\nWas hältst du davon? Soll ich dir zeigen, wie die Stunde damit aussehen würde?` }] })} />
       <div className="flex flex-wrap gap-2">
         <Button variant="ghost" onClick={onZurueck}>Zurück zur Grobplanung</Button>
         <Button onClick={onWeiter}>Ablauf passt so <ArrowRight /></Button>
