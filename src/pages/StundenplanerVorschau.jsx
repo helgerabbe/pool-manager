@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FundamentStart from '@/components/grobplanung/FundamentStart';
 import VorgabenRaster from '@/components/grobplanung/VorgabenRaster';
@@ -84,7 +84,10 @@ export default function StundenplanerVorschau() {
           )}
           {kontext && phase === 'grob' && (
             <>
-              <p className="text-sm text-muted-foreground">Das sind deine Vorgaben. Nur das Thema ist Pflicht, alles andere ist optional oder hat einen Standard. Klick auf einen Bereich, um ihn zu bearbeiten.</p>
+              <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+                <Sparkles className="h-5 w-5 shrink-0 text-primary" />
+                <p className="text-sm text-muted-foreground">Das sind deine Vorgaben. Nur das Thema ist Pflicht, alles andere ist optional oder hat einen Standard. Klick auf einen Bereich, um ihn zu bearbeiten.</p>
+              </div>
               <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur })} />
               <GenerierenButton hatEntwurf={!!entwurf} bereit={ankerVorhanden(v.anker)} laedt={laedt} onGenerieren={planen} />
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
