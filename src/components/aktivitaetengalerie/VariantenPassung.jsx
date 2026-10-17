@@ -6,8 +6,9 @@ import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
 import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
 import { ERSCHLIESSUNG_VARIANTEN } from '@/lib/erschliessungVarianten';
+import { GESTALTUNG_VARIANTEN } from '@/lib/gestaltungVarianten';
 
-export const VARIANTEN_LISTEN = { induktiv: INDUKTIVE_VARIANTEN, deduktiv: DEDUKTIVE_VARIANTEN, vertieft: VERTIEFTE_VARIANTEN, wiederholung: WIEDERHOLUNG_VARIANTEN, urteil: URTEIL_VARIANTEN, erschliessung: ERSCHLIESSUNG_VARIANTEN };
+export const VARIANTEN_LISTEN = { induktiv: INDUKTIVE_VARIANTEN, deduktiv: DEDUKTIVE_VARIANTEN, vertieft: VERTIEFTE_VARIANTEN, wiederholung: WIEDERHOLUNG_VARIANTEN, urteil: URTEIL_VARIANTEN, erschliessung: ERSCHLIESSUNG_VARIANTEN, gestaltung: GESTALTUNG_VARIANTEN };
 
 /** Variantenzeilen im gleichen Raster wie Übung/Diagnose. */
 export default function VariantenPassung({ modellKey, varianten }) {
