@@ -8,6 +8,7 @@ import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
 import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
 import { ERSCHLIESSUNG_VARIANTEN } from '@/lib/erschliessungVarianten';
 import { GESTALTUNG_VARIANTEN } from '@/lib/gestaltungVarianten';
+import { EINSTIEG_VARIANTEN } from '@/lib/einstiegVarianten';
 import VariantenKriterien from './VariantenKriterien';
 import KonzeptionBeispiel from './KonzeptionBeispiel';
 import { KONZEPTION_BLOECKE } from '@/lib/konzeptionBloecke';
@@ -48,6 +49,7 @@ export default function DidaktischeKonzeption() {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
           if (m.key === 'wiederholung') return WIEDERHOLUNG_VARIANTEN.map((v) => ({ key: `wiederholung_${v.key}`, name: `Wiederholung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'vertieft') return VERTIEFTE_VARIANTEN.map((v) => ({ key: `vertieft_${v.key}`, name: `Vertiefte Übung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
+          if (m.key === 'einstieg') return EINSTIEG_VARIANTEN.map((v) => ({ key: `einstieg_${v.key}`, name: `Einstieg: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'gestaltung') return GESTALTUNG_VARIANTEN.map((v) => ({ key: `gestaltung_${v.key}`, name: `Gestaltung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'erschliessung') return ERSCHLIESSUNG_VARIANTEN.map((v) => ({ key: `erschliessung_${v.key}`, name: `Erschließung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'urteil') return URTEIL_VARIANTEN.map((v) => ({ key: `urteil_${v.key}`, name: `Urteilsstunde: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));

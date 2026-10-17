@@ -9,6 +9,7 @@ export const STUNDEN_MODELLE = [
   { key: 'uebung_lang', name: 'Individuelle Übung · lang (selbst organisiert)', beschreibung: 'Über mehrere Stunden mit Aufgabenplan; die Schüler bestimmen Reihenfolge, Tempo und teils die Auswahl. Kontrolle im Wesentlichen als Selbstkontrolle, ergänzt um Abgabe oder Kontrollpunkte bei der Lehrkraft und eine Lernbilanz.', phasen: ['Arbeitsplan & Orientierung', 'Längere Übungszeit', 'Kontrolle & Korrektur', 'Abschlussbilanz'] },
   { key: 'wiederholung', name: 'Wiederholung', phasen: ['Vorwissen reaktivieren', 'Lücken bestimmen', 'Wiederholen & üben', 'Sicherheit überprüfen', 'Weiterführende Aufgabe', 'Abschlussreflexion'] },
   { key: 'vertieft', name: 'Vertiefte Übung', phasen: ['Aufgabe & Ziel klären', 'Problem erschließen', 'Lösungsideen entwickeln', 'Produkt erstellen', 'Vergleichen & präsentieren', 'Transfer reflektieren'] },
+  { key: 'einstieg', name: 'Einstiegsstunde', phasen: ['Impuls & Neugier', 'Vorwissen & Fragen', 'Überblick über die Einheit', 'Ziele klären', 'Ausblick'] },
   { key: 'gestaltung', name: 'Gestaltungsstunde', phasen: ['Auftrag & Kriterien', 'Ideen & Planung', 'Gestalten', 'Rückmeldung & Überarbeitung', 'Präsentieren'] },
   { key: 'erschliessung', name: 'Erschließungsstunde', phasen: ['Erstbegegnung', 'Erste Eindrücke & Fragen', 'Deutungshypothesen', 'Genaue Arbeit am Gegenstand', 'Deutung sichern'] },
   { key: 'urteil', name: 'Urteilsstunde', phasen: ['Streitfrage aufwerfen', 'Erste Positionen', 'Auseinandersetzung mit Argumenten', 'Begründet urteilen', 'Sichern & reflektieren'] },
