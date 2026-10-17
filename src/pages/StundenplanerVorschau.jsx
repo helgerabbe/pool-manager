@@ -108,7 +108,8 @@ export default function StundenplanerVorschau() {
                 routine={v.ritual?.name || ''} setRoutine={(t) => setze('ritual')(t ? { name: t, eigen: true } : null)} pause={pause && minuten > 45}
                 modellName={modell.name} modellKey={modell.key}
                 pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
-                  onBeheben={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was du geändert hast und warum.`).then(setEntwurf)}
+                  onVorschlag={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was der Hinweis bedeutet, was du geändert hast und warum.`)}
+                  onUebernehmen={setEntwurf}
                   warnungen={entwurfsWarnungen({ entwurf, modellKey: modell.key, gruppe: v.gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
                 onKiAendern={(bisher, wunsch) => generieren(bisher, wunsch)}
                 onTippsLaden={(e) => kiEntwurfsTipps({ assistent, fach: einheit.fach, jahrgang: einheit.jahrgangsstufe, modell, entwurf: e })}
