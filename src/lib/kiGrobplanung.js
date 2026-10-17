@@ -19,7 +19,7 @@ export const ankerVorhanden = (a) => a.abschnitte.length > 0 || !!a.text.trim() 
 const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
   `Unterrichtseinheit: ${einheit.titel}`,
-  `Verfügbare Zeit: ${minuten} Minuten`,
+  minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
   ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
   anker.vorwissen?.trim() && `Das haben die Schüler schon gemacht: ${anker.vorwissen.trim()}`,
@@ -93,7 +93,7 @@ ${items.map((m) => `- ${m.name} (${m.dauer_min ?? '?'}–${m.dauer_max ?? '?'} M
 Regeln:
 - Wähle das passende Stundenmodell ("modell") und folge seinen Phasen sinnvoll.
 - Je Phase: "lehrer" = was die Lehrkraft tut, "schueler" = was die Schüler tun (je 1–2 konkrete Sätze), "sozialform" (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), "methode" falls genutzt, "details" = 1–2 Sätze Hintergrund (warum so, worauf achten).
-- "minuten" grob schätzen; die Summe ergibt ${k.minuten}. Die Lehrkraft sieht die Zeiten erst in der Feinplanung.
+- "minuten" grob schätzen; ${k.minuten ? `die Summe ergibt ${k.minuten}.` : 'die Summe ergibt 45 oder 90 – entscheide, was das Vorhaben realistisch braucht, und nenne die Wahl samt kurzer Begründung in "hinweise".'} Die Lehrkraft sieht die Zeiten erst in der Feinplanung.
 - "kurz": eine Zeile, was diese Stunde ausmacht. "hinweise" nur, wenn sich Vorgaben nicht stimmig umsetzen lassen.${bisher ? `
 
 ÜBERARBEITUNG – bisheriger Entwurf:

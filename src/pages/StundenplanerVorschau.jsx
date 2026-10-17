@@ -38,7 +38,8 @@ export default function StundenplanerVorschau() {
   const setze = (key) => (w) => setV((alt) => ({ ...alt, [key]: typeof w === 'function' ? w(alt[key]) : w }));
 
   const einheit = kontext?.einheit;
-  const netto = minuten - (pause && minuten > 45 ? 5 : 0);
+  const netto = minuten === null ? null : minuten - (pause && minuten > 45 ? 5 : 0);
+  const summe = (entwurf?.phasen || []).reduce((s, p) => s + (p.minuten || 0), 0);
   const k = () => ({ assistent, einheit, anker: v.anker, minuten: netto });
   const generieren = (bisher, aenderung) => kiGrobverlauf({ ...k(), vorgaben: v, bisher, aenderung });
   const planen = () => { setLaedt(true); setFehler(''); generieren().then(setEntwurf).catch(() => setFehler('Der Entwurf konnte nicht erstellt werden. Bitte noch einmal versuchen.')).finally(() => setLaedt(false)); };
@@ -102,7 +103,7 @@ export default function StundenplanerVorschau() {
               <ProtoEntwurf entwuerfe={[entwurf]} setEntwuerfe={(fn) => setEntwurf((e) => fn([e])[0])} aktiv={0} setAktiv={() => {}}
                 routine={v.ritual?.name || ''} setRoutine={(t) => setze('ritual')(t ? { name: t, eigen: true } : null)} pause={pause && minuten > 45}
                 modellName={modell.name} modellKey={modell.key}
-                pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto} ziel={v.ziel.haupt} annahmen={annahmen}
+                pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
                   warnungen={entwurfsWarnungen({ entwurf, modellKey: modell.key, gruppe: v.gruppe, jahrgang: einheit?.jahrgangsstufe })} />}
                 onKiAendern={(bisher, wunsch) => generieren(bisher, wunsch)}
                 onTippsLaden={(e) => kiEntwurfsTipps({ assistent, fach: einheit.fach, jahrgang: einheit.jahrgangsstufe, modell, entwurf: e })}
