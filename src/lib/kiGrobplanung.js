@@ -6,6 +6,7 @@ import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
 import { ERSCHLIESSUNG_VARIANTEN } from '@/lib/erschliessungVarianten';
 import { GESTALTUNG_VARIANTEN } from '@/lib/gestaltungVarianten';
 import { EINSTIEG_VARIANTEN } from '@/lib/einstiegVarianten';
+import { PRAESENTATION_VARIANTEN } from '@/lib/praesentationVarianten';
 
 export const STUNDENTYPEN = [
   { key: '', name: 'Offen lassen' },
@@ -16,6 +17,7 @@ export const STUNDENTYPEN = [
   { key: 'erschliessung', name: 'Erschließungsstunde' },
   { key: 'gestaltung', name: 'Gestaltungsstunde' },
   { key: 'einstieg', name: 'Einstiegsstunde' },
+  { key: 'praesentation', name: 'Präsentationsstunde' },
   { key: 'urteil', name: 'Urteilsstunde' },
   { key: 'diagnose', name: 'Diagnosestunde' },
   { key: 'misch', name: 'Mischstunde' },
@@ -113,6 +115,7 @@ Urteilsstunde (modell "urteil") für offene Streitfragen ohne eine richtige Lös
 Erschließungsstunde (modell "erschliessung") für das Verstehen und Deuten eines Gegenstands (Text, Quelle, Bild, Musik), Ziel ist eine am Gegenstand belegte Deutung. Formen: ${ERSCHLIESSUNG_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Wähle "erschliessung", wenn ein Gegenstand gedeutet werden soll, und nenne die gewählte Form in "hinweise".
 Gestaltungsstunde (modell "gestaltung"), wenn jeder Schüler ein eigenes Produkt erstellt (Text, Bild, Aufführung, Medienprodukt); Kriterien zu Beginn und Überarbeitung nach Rückmeldung sind Pflicht. Formen: ${GESTALTUNG_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Nenne die gewählte Form in "hinweise".
 Einstiegsstunde (modell "einstieg"), wenn die Stunde eine neue Unterrichtseinheit eröffnet: Neugier wecken, Vorwissen und Fragen sammeln, Überblick geben, noch nichts erarbeiten. Formen: ${EINSTIEG_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Nenne die gewählte Form in "hinweise".
+Präsentationsstunde (modell "praesentation"), wenn die Schüler zuvor erarbeitete Ergebnisse vorstellen und Rückmeldung bekommen; Feedback-Kriterien und ein bündelnder Abschluss sind Pflicht. Formen: ${PRAESENTATION_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Nenne die gewählte Form in "hinweise".
 Methodenkatalog (nur diese Methoden verwenden, wenn eine Methode sinnvoll ist):
 ${items.map((m) => `- ${m.name} (${m.dauer_min ?? '?'}–${m.dauer_max ?? '?'} Min.)`).join('\n')}
 
