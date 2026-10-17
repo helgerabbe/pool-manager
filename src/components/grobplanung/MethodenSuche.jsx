@@ -33,8 +33,8 @@ export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, 
         </div>
       )}
       {wahl && (
-        <div className="flex items-start gap-2 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
-          <Check className="mt-0.5 h-4 w-4 text-primary" />
+        <div className="flex items-start gap-2 rounded-xl border border-chart-3/40 bg-chart-3/10 p-3 text-sm">
+          <Check className="mt-0.5 h-4 w-4 text-chart-3" />
           <div className="flex-1"><p className="font-semibold">{wahl.name}</p>{wahl.kurzbeschreibung && <p className="text-xs text-muted-foreground">{wahl.kurzbeschreibung}</p>}</div>
           <button onClick={() => setWahl(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
