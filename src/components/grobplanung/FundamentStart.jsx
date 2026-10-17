@@ -28,7 +28,10 @@ export default function FundamentStart({ einheit, verlauf, anker, setAnker, daue
         </div>
       </div>
       <DauerWahl {...dauer} />
-      <p className="text-xs font-semibold uppercase tracking-wide text-accent">Pflicht: ein inhaltlicher Anker – eine der drei Möglichkeiten reicht</p>
+      <div className="rounded-xl border-l-4 border-l-accent bg-accent/5 p-3 text-sm">
+        <p className="font-semibold">Pflicht: Worum geht es in der Stunde?</p>
+        <p className="text-muted-foreground">Dafür gibt es drei Möglichkeiten. <span className="font-medium text-foreground">Mindestens eine</span> musst du nutzen. Du kannst aber auch alle kombinieren: ein Thema wählen, etwas dazu beschreiben und Material hochladen.</p>
+      </div>
       <AnkerFelder verlauf={verlauf} anker={anker} setAnker={setAnker} />
       {fehler && <p className="text-xs text-destructive">Die Prüfung hat nicht geklappt. Bitte noch einmal versuchen.</p>}
       {rueck && (
