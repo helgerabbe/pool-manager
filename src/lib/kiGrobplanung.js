@@ -2,6 +2,7 @@
 import { base44 } from '@/api/base44Client';
 import { kiAufruf } from '@/lib/kiStundenVorbereitung';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
+import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
 
 export const STUNDENTYPEN = [
   { key: '', name: 'Offen lassen' },
@@ -9,6 +10,7 @@ export const STUNDENTYPEN = [
   { key: 'uebung', name: 'Übungsstunde' },
   { key: 'vertieft', name: 'Vertiefte Übungsstunde' },
   { key: 'wiederholung', name: 'Wiederholungsstunde' },
+  { key: 'urteil', name: 'Urteilsstunde' },
   { key: 'diagnose', name: 'Diagnosestunde' },
   { key: 'misch', name: 'Mischstunde' },
 ];
@@ -101,6 +103,7 @@ ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzb
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 
 Stundenmodelle: ${STUNDEN_MODELLE.map((m) => `${m.key} = ${m.name}`).join('; ')}
+Urteilsstunde (modell "urteil") für offene Streitfragen ohne eine richtige Lösung, Ziel ist ein begründetes Urteil statt einer Regel. Formen: ${URTEIL_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Wähle "urteil", wenn die Schüler eine Position bilden, abwägen, streiten oder entscheiden sollen, und nenne die gewählte Form in "hinweise".
 Methodenkatalog (nur diese Methoden verwenden, wenn eine Methode sinnvoll ist):
 ${items.map((m) => `- ${m.name} (${m.dauer_min ?? '?'}–${m.dauer_max ?? '?'} Min.)`).join('\n')}
 

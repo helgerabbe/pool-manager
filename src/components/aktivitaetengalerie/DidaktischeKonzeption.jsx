@@ -5,6 +5,7 @@ import { INDUKTIVE_VARIANTEN, VARIANTEN_PHASEN } from '@/lib/induktiveVarianten'
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
 import { VERTIEFTE_VARIANTEN } from '@/lib/vertiefteVarianten';
 import { WIEDERHOLUNG_VARIANTEN } from '@/lib/wiederholungVarianten';
+import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
 import VariantenKriterien from './VariantenKriterien';
 import KonzeptionBeispiel from './KonzeptionBeispiel';
 import { KONZEPTION_BLOECKE } from '@/lib/konzeptionBloecke';
@@ -45,6 +46,7 @@ export default function DidaktischeKonzeption() {
           if (m.key === 'induktiv') return INDUKTIVE_VARIANTEN.map((v) => ({ key: `induktiv_${v.key}`, name: `Induktiv: ${v.name}`, bedeutung: v.kurz, phasen: VARIANTEN_PHASEN[v.key] }));
           if (m.key === 'wiederholung') return WIEDERHOLUNG_VARIANTEN.map((v) => ({ key: `wiederholung_${v.key}`, name: `Wiederholung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'vertieft') return VERTIEFTE_VARIANTEN.map((v) => ({ key: `vertieft_${v.key}`, name: `Vertiefte Übung: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
+          if (m.key === 'urteil') return URTEIL_VARIANTEN.map((v) => ({ key: `urteil_${v.key}`, name: `Urteilsstunde: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           if (m.key === 'deduktiv') return DEDUKTIVE_VARIANTEN.map((v) => ({ key: `deduktiv_${v.key}`, name: `Deduktiv: ${v.name}`, bedeutung: v.kurz, phasen: v.phasen }));
           return [m];
         }).map((m) => (
