@@ -1,5 +1,5 @@
 import React from 'react';
-import { Loader2, Target, ArrowUp } from 'lucide-react';
+import { Loader2, Target, ArrowUp, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
@@ -20,6 +20,10 @@ export default function ZielEditor({ ziel, setZiel, onVorschlag }) {
   const zumHaupt = (a) => setZiel((z) => ({ ...z, haupt: a, vonKi: false, alternativen: [z.haupt, ...z.alternativen.filter((x) => x !== a)] }));
   return (
     <div className="space-y-4">
+      <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+        <Sparkles className="h-5 w-5 shrink-0 text-primary" />
+        <p className="text-sm text-muted-foreground">Entspann dich, wir machen das hier erst mal nur ganz grob. Das Ziel muss noch nicht fachdidaktisch perfekt sein. Es geht nur darum, dass wir beide verstehen, was in der Stunde passieren soll, damit wir eine gemeinsame Arbeitsgrundlage haben. Ausschärfen können wir es später noch.</p>
+      </div>
       <label className="block space-y-1 text-sm">
         <span className="font-semibold">Was für eine Stunde wird es? <span className="font-normal text-muted-foreground">(optional)</span></span>
         <select value={ziel.stundentyp} onChange={(e) => setZiel((z) => ({ ...z, stundentyp: e.target.value }))} className="w-full rounded-md border bg-card px-2 py-2">

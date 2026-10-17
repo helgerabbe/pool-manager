@@ -53,8 +53,8 @@ Prüfe, ob klar genug ist, worum es inhaltlich in dieser EINEN Stunde gehen soll
 export const kiGrobZiel = ({ stundentyp, bisher, korrektur, ...k }) => kiMitMaterial(k.assistent, `Du bist erfahrener Fachdidaktiker. Formuliere die GROBE Zielrichtung einer Stunde – verständliche Lehrersprache, keine perfekte Operatoren-Formulierung.
 ${kontextText(k)}${stundentyp ? `\nStundentyp: ${stundentypName(stundentyp)}` : ''}
 
-- "haupt": ein Satz, beginnend mit "Am Ende der Stunde können die Schüler …" oder "Am Ende der Stunde haben die Schüler …"
-- "alternativen": 2–3 andere sinnvolle Akzente in derselben Form.${korrektur ? `\n\nBisheriger Vorschlag: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {
+- "haupt": ein KURZER, bewusst allgemein gehaltener Satz (höchstens ca. 12 Wörter), beginnend mit "Am Ende der Stunde können die Schüler …" oder "Am Ende der Stunde haben die Schüler …". Nur die Kernhandlung nennen, KEINE Details, Bedingungen, Kontexte oder Beispiele. Gut: "Am Ende der Stunde können die Schüler eine begründete Behauptung formulieren." Zu genau: "… zu einer strittigen Alltagsfrage eine klare eigene Position finden und diese als begründete Behauptung formulieren."
+- "alternativen": 2–3 andere sinnvolle Akzente in derselben kurzen, allgemeinen Form.${korrektur ? `\n\nBisheriger Vorschlag: ${bisher}\nWunsch der Lehrkraft: "${korrektur}" – richte dich danach.` : ''}`, {
   type: 'object',
   properties: { haupt: { type: 'string' }, alternativen: { type: 'array', items: { type: 'string' } } },
   required: ['haupt', 'alternativen'],
