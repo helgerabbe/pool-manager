@@ -20,14 +20,26 @@ const Und = () => <p className="text-center text-xs font-semibold uppercase trac
 /** Inhaltlicher Anker: drei Möglichkeiten (Thema, Beschreibung, Material) – einzeln oder kombiniert. */
 export default function AnkerFelder({ verlauf, anker, setAnker }) {
   const an = (s) => anker.abschnitte.some((x) => x.titel === s.titel);
-  const umschalten = (s) => setAnker((a) => ({ ...a, abschnitte: an(s) ? a.abschnitte.filter((x) => x.titel !== s.titel) : [...a.abschnitte, s] }));
+  const [offen, setOffen] = React.useState(false);
+  const umschalten = (s) => {
+    const neu = !an(s);
+    setAnker((a) => ({ ...a, abschnitte: neu ? [...a.abschnitte, s] : a.abschnitte.filter((x) => x.titel !== s.titel) }));
+    if (neu) setOffen(false);
+  };
   return (
     <div className="space-y-3">
       <Moeglichkeit nr={1} titel="Thema aus der Einheit wählen" erledigt={anker.abschnitte.length > 0}>
-        <details className="group" open={anker.abschnitte.length > 0}>
+        {anker.abschnitte.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {anker.abschnitte.map((s) => (
+              <span key={s.titel} className="rounded-full border border-primary bg-primary/5 px-3 py-1 text-xs font-medium">{s.titel}</span>
+            ))}
+          </div>
+        )}
+        <details className="group" open={offen} onToggle={(e) => setOffen(e.currentTarget.open)}>
           <summary className="flex cursor-pointer list-none items-center gap-1 text-xs text-primary">
-            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /> Themen anzeigen
-            {anker.abschnitte.length > 0 && <span>({anker.abschnitte.length} gewählt)</span>}
+            <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+            {anker.abschnitte.length > 0 ? 'Thema ändern oder weiteres wählen' : 'Themen anzeigen'}
           </summary>
           {verlauf.length === 0 ? (
             <p className="mt-2 text-xs text-muted-foreground">Für diese Einheit ist noch kein Verlauf geplant. Nutze einfach Möglichkeit 2 oder 3.</p>
