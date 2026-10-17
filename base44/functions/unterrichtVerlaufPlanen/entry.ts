@@ -12,6 +12,35 @@ import { ladePlanung, NETTO_MINUTEN } from '../../shared/unterrichtsPlanung.js';
 
 const SCHWERPUNKTE = ['erarbeitung', 'uebung', 'vertiefung', 'sicherung', 'ueberpruefung'];
 
+// Stundenmodelle (Spiegel von src/lib/stundenModelle.js) mit ihren Varianten-Schlüsseln.
+const MODELLE: Record<string, string[]> = {
+  induktiv: ['offen', 'gelenkt', 'gestuft', 'kompakt'],
+  deduktiv: ['darbietend', 'loesungsbeispiel', 'material', 'kompakt'],
+  uebung_kurz: [], uebung_mittel: [], uebung_lang: [],
+  wiederholung: ['kurz', 'umfassend'],
+  vertieft: ['problemloesend', 'gestaltend', 'erkundend', 'perspektivisch'],
+  praesentation: ['vortragend', 'ausstellend', 'austauschend', 'bewertend'],
+  einstieg: ['problemorientiert', 'vorwissen', 'ueberblick', 'mitplanend'],
+  gestaltung: ['schreibend', 'bildnerisch', 'darstellend', 'medial'],
+  erschliessung: ['textdeutend', 'quellenkritisch', 'werkerschliessend', 'vergleichend', 'produktiv'],
+  urteil: ['positionierend', 'abwaegend', 'streitend', 'entscheidend'],
+  diagnose_kurz: [], diagnose_mittel: [], diagnose_lang: [],
+};
+const MODELL_REGEL = `Stundenmodell: Ordne jedem Abschnitt in "modell" das typische Stundenmodell zu und in "modell_variante" die passende Variante (leer, wenn das Modell keine hat). Modelle und Varianten: ${Object.entries(MODELLE).map(([m, v]) => `${m}${v.length ? ` (${v.join(', ')})` : ''}`).join('; ')}. Bedeutung: induktiv = Regel selbst entdecken, deduktiv = Regel vorgeben und anwenden, uebung_* = individuelles Üben (kurz/mittel/lang), wiederholung, vertieft = Transfer/Problemlösen, praesentation = Ergebnisse vorstellen mit Rückmeldung, einstieg = neue Einheit eröffnen, gestaltung = eigenes Produkt (z. B. Text schreiben), erschliessung = Gegenstand deuten, urteil = offene Streitfrage begründet beurteilen, diagnose_* = Lernstand erheben. "modell_begruendung": ein kurzer Satz, warum es typisch ist. "modell_alternativen": 0–2 weitere Modelle, NUR wenn sie wirklich gut möglich sind, je mit kurzem "hinweis", wann.`;
+
+const bereinigeModell = (s: any) => {
+  const m = MODELLE[s.modell] ? s.modell : undefined;
+  const ok = (mm: string, v: string) => (MODELLE[mm]?.includes(v) ? v : undefined);
+  return {
+    modell: m,
+    modell_variante: m ? ok(m, s.modell_variante) : undefined,
+    modell_begruendung: m ? String(s.modell_begruendung || '') : undefined,
+    modell_alternativen: (Array.isArray(s.modell_alternativen) ? s.modell_alternativen : [])
+      .filter((a: any) => MODELLE[a?.modell] && a.modell !== m)
+      .map((a: any) => ({ modell: a.modell, variante: ok(a.modell, a.variante), hinweis: String(a.hinweis || '') })),
+  };
+};
+
 const STRUKTUR_SCHEMA = {
   type: 'object',
   properties: {
@@ -26,8 +55,12 @@ const STRUKTUR_SCHEMA = {
           lernziel: { type: 'string' },
           vorschlag: { type: 'string' },
           inhalte: { type: 'array', items: { type: 'string' } },
+          modell: { type: 'string', enum: Object.keys(MODELLE) },
+          modell_variante: { type: 'string' },
+          modell_begruendung: { type: 'string' },
+          modell_alternativen: { type: 'array', items: { type: 'object', properties: { modell: { type: 'string' }, variante: { type: 'string' }, hinweis: { type: 'string' } } } },
         },
-        required: ['titel', 'schwerpunkt', 'lernziel', 'vorschlag'],
+        required: ['titel', 'schwerpunkt', 'lernziel', 'vorschlag', 'modell'],
       },
     },
   },
@@ -80,7 +113,7 @@ export default async function (req) {
           kontext: {
             ...kontext,
             inhalte: auswahl.map((i) => ({ titel: i.titel, beschreibung: i.beschreibung, prioritaet: i.prioritaet })),
-            bisheriger_verlauf: (planung.verlauf || []).map(({ titel, schwerpunkt, lernziel, vorschlag, inhalte }) => ({ titel, schwerpunkt, lernziel, vorschlag, inhalte })),
+            bisheriger_verlauf: (planung.verlauf || []).map(({ titel, schwerpunkt, lernziel, vorschlag, inhalte, modell, modell_variante }) => ({ titel, schwerpunkt, lernziel, vorschlag, inhalte, modell, modell_variante })),
             gespraech,
           },
           auftrag: wunsch
@@ -92,6 +125,7 @@ export default async function (req) {
             'Plane eine sinnvolle didaktische Progression: Erarbeitung, Übung, Vertiefung, Sicherung, gegen Ende ggf. Überprüfung.',
             'schwerpunkt: der HAUPTschwerpunkt — "erarbeitung" (Neues erarbeiten), "uebung" (Üben), "vertiefung" (vertiefte Übung/Transfer), "sicherung" (Sichern), "ueberpruefung" (Lernerfolgskontrolle).',
             'titel: kurzer Titel. lernziel: EIN Satz "Die Schüler können …". vorschlag: 1–2 Sätze zur Gestaltung. inhalte: Titel der behandelten Inhalte aus der Liste.',
+            MODELL_REGEL,
             'antwort: 1–3 Sätze an die Lehrkraft.',
           ],
         }),
@@ -107,6 +141,7 @@ export default async function (req) {
         inhalte: Array.isArray(s.inhalte) ? s.inhalte.map(String) : [],
         schwerpunkt: SCHWERPUNKTE.includes(s.schwerpunkt) ? s.schwerpunkt : 'erarbeitung',
         gewichtung: 'passt',
+        ...bereinigeModell(s),
       }));
       antwortText = String(ergebnis.antwort || '');
     } else {
