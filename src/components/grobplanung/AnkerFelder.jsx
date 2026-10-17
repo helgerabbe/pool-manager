@@ -2,6 +2,7 @@ import React from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
+import { ModellPlakette } from '@/components/unterrichtsplanung/StundenmodellVorschlag';
 
 const karte = (an) => `rounded-xl border p-3 text-left transition-all ${an ? 'border-primary bg-primary/5 shadow-sm' : 'bg-card hover:border-primary/40'}`;
 
@@ -49,6 +50,7 @@ export default function AnkerFelder({ verlauf, anker, setAnker, ohneMaterial = f
                 <button key={i} onClick={() => umschalten(s)} className={karte(an(s))}>
                   <p className="text-sm font-semibold">{i + 1}. {s.titel}</p>
                   {s.lernziel && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{s.lernziel}</p>}
+                  {s.modell && <div className="mt-1.5"><ModellPlakette abschnitt={s} /></div>}
                 </button>
               ))}
             </div>

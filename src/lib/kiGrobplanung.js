@@ -30,7 +30,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
   `Unterrichtseinheit: ${einheit.titel}`,
   minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
-  ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
+  ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}${s.modell ? ` – vorgeschlagene Grundstruktur (Stundenmodell): ${s.modell}${s.modell_variante ? `, Variante ${s.modell_variante}` : ''} (bevorzugt verwenden, wenn stimmig)` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
   anker.thema?.trim() && `Thema der Stunde (gemeinsam festgehalten): ${anker.thema.trim()}`,
   anker.inhalt?.trim() && `Konkreter Inhalt (Text, Beispiel oder Streitfrage, unbedingt verwenden): ${anker.inhalt.trim()}`,

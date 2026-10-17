@@ -9,11 +9,13 @@ import LerngruppeEditor from './LerngruppeEditor';
 import MethodenSuche from './MethodenSuche';
 import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
 import { ankerVorhanden, stundentypName } from '@/lib/kiGrobplanung';
+import StundenmodellVorschlag, { modellName } from '@/components/unterrichtsplanung/StundenmodellVorschlag';
 
 /** Sechs Vorgaben-Container; ein Klick öffnet den jeweiligen Bereich im Dialog. */
 export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVorschlag, onThemaVorschlag }) {
   const [offen, setOffen] = React.useState(null);
   const a = v.anker;
+  const modellAbschnitt = a.abschnitte.find((s) => s.modell);
   const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3 && (v.gruppe.leistung ?? 3) === 3;
   const gruppeStand = [normal ? 'Normale Lerngruppe (Standard)' : `Tempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5 · Leistung ${v.gruppe.leistung ?? 3}/5`, a.vorwissen?.trim() && 'Lernausgangslage angegeben'].filter(Boolean).join(' · ');
   const C = [
@@ -23,9 +25,9 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
       hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', ohneUntertitel: true, editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },
     { key: 'gruppe', icon: Users, titel: 'Lerngruppe', rand: 'border-l-chart-3', gesetzt: !normal || !!a.vorwissen?.trim(), stand: gruppeStand,
       hinweis: 'Wie arbeitet die Klasse, und worauf können wir aufbauen?', editor: <LerngruppeEditor gruppe={v.gruppe} setGruppe={setze('gruppe')} vorwissen={a.vorwissen} setVorwissen={(t) => setze('anker')((x) => ({ ...x, vorwissen: t }))} /> },
-    { key: 'methode', icon: Shapes, titel: 'Methodenwunsch', rand: 'border-l-chart-4', gesetzt: !!v.methode, stand: v.methode ? (v.methode.idee ? `Idee: ${v.methode.kurzbeschreibung}` : `${v.methode.name} – wird möglichst verwendet`) : 'Keine besondere Methode gewählt',
-      hinweis: 'Hast du eine methodische Idee? Beschreib sie, und wir suchen die passende Methode. Sie wird dann in der Stunde eingebaut.', ohneUntertitel: true, editor: <MethodenSuche wahl={v.methode} setWahl={setze('methode')} assistent={assistent} ideePlatzhalter="z. B. Die Schüler sollen ihre Ergebnisse an Stationen im Raum präsentieren."
-        hinweis="Wenn du schon eine ungefähre Idee hast, was methodisch passieren soll, beschreib sie einfach. Du kannst sie erst mal nur als Idee stehen lassen oder schon eine bestimmte Methode auswählen, beides geht. Du musst hier nicht auf Teufel komm raus die richtige Methode finden: Es reicht völlig, wenn du sagst, was du schön fändest." /> },
+    { key: 'methode', icon: Shapes, titel: 'Grundstruktur / Methoden', rand: 'border-l-chart-4', gesetzt: !!v.methode || !!modellAbschnitt, stand: [modellAbschnitt && `Grundstruktur: ${modellName(modellAbschnitt.modell, modellAbschnitt.modell_variante)}`, v.methode ? (v.methode.idee ? `Idee: ${v.methode.kurzbeschreibung}` : `${v.methode.name} – wird möglichst verwendet`) : 'Keine besondere Methode gewählt'].filter(Boolean).join(' · '),
+      hinweis: 'Hast du eine methodische Idee? Beschreib sie, und wir suchen die passende Methode. Sie wird dann in der Stunde eingebaut.', ohneUntertitel: true, editor: <>{modellAbschnitt && <StundenmodellVorschlag abschnitt={modellAbschnitt} />}<MethodenSuche wahl={v.methode} setWahl={setze('methode')} assistent={assistent} ideePlatzhalter="z. B. Die Schüler sollen ihre Ergebnisse an Stationen im Raum präsentieren."
+        hinweis="Wenn du schon eine ungefähre Idee hast, was methodisch passieren soll, beschreib sie einfach. Du kannst sie erst mal nur als Idee stehen lassen oder schon eine bestimmte Methode auswählen, beides geht. Du musst hier nicht auf Teufel komm raus die richtige Methode finden: Es reicht völlig, wenn du sagst, was du schön fändest." /></> },
     { key: 'ritual', icon: Repeat, titel: 'Rituale', rand: 'border-l-chart-5', gesetzt: !!v.ritual, stand: v.ritual ? v.ritual.name : 'Kein festes Ritual',
       hinweis: 'Machst du etwas in jeder Stunde, z. B. eine Begrüßungsrunde oder einen Wochenplan-Check?', editor: <MethodenSuche wahl={v.ritual} setWahl={setze('ritual')} assistent={assistent} eigenErlaubt ideePlatzhalter="z. B. Zu Beginn drei Minuten Blitzlicht, wie es allen geht." /> },
     { key: 'material', icon: Paperclip, titel: 'Materialien', rand: 'border-l-bundle', gesetzt: a.materialien.length > 0, stand: a.materialien.length ? `${a.materialien.length} Material(ien): ${a.materialien.map((m) => m.name).join(', ')}` : 'Noch kein Material',
