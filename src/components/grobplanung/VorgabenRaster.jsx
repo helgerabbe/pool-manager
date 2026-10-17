@@ -17,7 +17,7 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
   const normal = v.gruppe.fit === 3 && v.gruppe.stark === 3 && (v.gruppe.leistung ?? 3) === 3;
   const gruppeStand = [normal ? 'Normale Lerngruppe (Standard)' : `Tempo ${v.gruppe.fit}/5 · Selbstständigkeit ${v.gruppe.stark}/5 · Leistung ${v.gruppe.leistung ?? 3}/5`, a.vorwissen?.trim() && 'Lernausgangslage angegeben'].filter(Boolean).join(' · ');
   const C = [
-    { key: 'thema', icon: BookOpen, titel: 'Thema', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: a.thema || [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · ') || 'Noch offen',
+    { key: 'thema', icon: BookOpen, titel: 'Thema / Inhalt', pflicht: true, rand: 'border-l-accent', gesetzt: ankerVorhanden(a), stand: [a.thema || [...a.abschnitte.map((s) => s.titel), a.text, a.richtung].filter(Boolean).join(' · '), a.inhalt?.trim() && `Inhalt: ${a.inhalt.trim()}`].filter(Boolean).join(' · ') || 'Noch offen',
       hinweis: 'Worum geht es in dieser Stunde? Materialien findest du im Bereich „Materialien“.', editor: <ThemaEditor anker={a} setAnker={setze('anker')} onVorschlag={onThemaVorschlag} /> },
     { key: 'ziel', icon: Target, titel: 'Stundenziel', rand: 'border-l-primary', gesetzt: !!v.ziel.haupt, stand: [stundentypName(v.ziel.stundentyp) && v.ziel.stundentyp && stundentypName(v.ziel.stundentyp), v.ziel.haupt].filter(Boolean).join(' · ') || 'Noch offen – ich schlage dir eine Richtung vor',
       hinweis: 'Erst mal nur grob: In welche Richtung soll die Stunde gehen? Die genaue Formulierung kommt später.', ohneUntertitel: true, editor: <ZielEditor ziel={v.ziel} setZiel={setze('ziel')} onVorschlag={onZielVorschlag} /> },

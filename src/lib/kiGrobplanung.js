@@ -23,6 +23,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
   ...anker.abschnitte.map((s) => `Stunde aus dem Einheitenverlauf: ${s.titel}${s.lernziel ? ` – Lernziel: ${s.lernziel}` : ''}${s.inhalte?.length ? ` – Inhalte: ${s.inhalte.join('; ')}` : ''}`),
   anker.text.trim() && `Beschreibung der Lehrkraft: ${anker.text.trim()}`,
   anker.thema?.trim() && `Thema der Stunde (gemeinsam festgehalten): ${anker.thema.trim()}`,
+  anker.inhalt?.trim() && `Konkreter Inhalt (Text, Beispiel oder Streitfrage, unbedingt verwenden): ${anker.inhalt.trim()}`,
   anker.vorwissen?.trim() && `Lernausgangslage (das haben die Schüler schon gemacht): ${anker.vorwissen.trim()}`,
   anker.materialien.length > 0 && `Material der Lehrkraft: ${anker.materialien.map((m) => m.name).join(', ')} (lesbare Dateien sind angehängt)`,
   anker.richtung && `Gewählte inhaltliche Richtung: ${anker.richtung}`,
