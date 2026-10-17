@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { kiAufruf } from '@/lib/kiStundenVorbereitung';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { URTEIL_VARIANTEN } from '@/lib/urteilVarianten';
+import { ERSCHLIESSUNG_VARIANTEN } from '@/lib/erschliessungVarianten';
 
 export const STUNDENTYPEN = [
   { key: '', name: 'Offen lassen' },
@@ -10,6 +11,7 @@ export const STUNDENTYPEN = [
   { key: 'uebung', name: 'Übungsstunde' },
   { key: 'vertieft', name: 'Vertiefte Übungsstunde' },
   { key: 'wiederholung', name: 'Wiederholungsstunde' },
+  { key: 'erschliessung', name: 'Erschließungsstunde' },
   { key: 'urteil', name: 'Urteilsstunde' },
   { key: 'diagnose', name: 'Diagnosestunde' },
   { key: 'misch', name: 'Mischstunde' },
@@ -104,6 +106,7 @@ ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritua
 
 Stundenmodelle: ${STUNDEN_MODELLE.map((m) => `${m.key} = ${m.name}`).join('; ')}
 Urteilsstunde (modell "urteil") für offene Streitfragen ohne eine richtige Lösung, Ziel ist ein begründetes Urteil statt einer Regel. Formen: ${URTEIL_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Wähle "urteil", wenn die Schüler eine Position bilden, abwägen, streiten oder entscheiden sollen, und nenne die gewählte Form in "hinweise".
+Erschließungsstunde (modell "erschliessung") für das Verstehen und Deuten eines Gegenstands (Text, Quelle, Bild, Musik), Ziel ist eine am Gegenstand belegte Deutung. Formen: ${ERSCHLIESSUNG_VARIANTEN.map((u) => `${u.name} (${u.phasen.join(' → ')})`).join('; ')}. Wähle "erschliessung", wenn ein Gegenstand gedeutet werden soll, und nenne die gewählte Form in "hinweise".
 Methodenkatalog (nur diese Methoden verwenden, wenn eine Methode sinnvoll ist):
 ${items.map((m) => `- ${m.name} (${m.dauer_min ?? '?'}–${m.dauer_max ?? '?'} Min.)`).join('\n')}
 
