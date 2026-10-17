@@ -1,15 +1,16 @@
 import React from 'react';
 import { Presentation, Users, Sparkles } from 'lucide-react';
+import MethodeBadge from '@/components/methodik/MethodeBadge';
 
 /** Eine Phase des Grobentwurfs: Lehrkraft (blau) und Schüler (orange) nebeneinander, ohne Zeitangabe. */
-export default function GrobPhaseKarte({ phase, nr }) {
+export default function GrobPhaseKarte({ phase, nr, children }) {
   return (
     <div className={`space-y-3 rounded-xl border p-4 ${phase.neu ? 'border-accent/60 bg-accent/5' : 'bg-card'}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{nr}</span>
         <p className="text-sm font-semibold">{phase.name}</p>
         {phase.sozialform && <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{phase.sozialform}</span>}
-        {phase.methode && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">{phase.methode}</span>}
+        {phase.methode && <MethodeBadge name={phase.methode} />}
         {phase.neu && <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground"><Sparkles className="h-3 w-3" /> verändert</span>}
       </div>
       <div className="grid gap-2 sm:grid-cols-2">
@@ -22,10 +23,15 @@ export default function GrobPhaseKarte({ phase, nr }) {
           <p className="mt-1 text-sm">{phase.schueler}</p>
         </div>
       </div>
-      {phase.details && (
+      {(phase.details || phase.achten || phase.grenzen || children) && (
         <details className="text-xs text-muted-foreground">
           <summary className="cursor-pointer font-medium text-primary">Mehr dazu</summary>
-          <p className="mt-1">{phase.details}</p>
+          <div className="mt-2 space-y-2">
+            {[['Warum so?', phase.details], ['Worauf achten?', phase.achten], ['Wann eher nicht?', phase.grenzen]].filter(([, t]) => t).map(([t, x]) => (
+              <p key={t}><span className="font-semibold text-foreground">{t}</span> {x}</p>
+            ))}
+            {children}
+          </div>
         </details>
       )}
     </div>

@@ -11,7 +11,7 @@ import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
-import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern } from '@/lib/kiGrobplanung';
+import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern, kiSparring } from '@/lib/kiGrobplanung';
 
 const SCHRITTE = ['Fundament', 'Grobplanung', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
@@ -99,7 +99,8 @@ export default function StundenplanerVorschau() {
             </>
           )}
           {phase === 'methodik' && entwurf && (
-            <MethodischeGestaltung entwurf={entwurf} onPhaseAendern={phaseAendern} onZurueck={() => setPhase('grob')} onWeiter={() => setPhase('fertig')}
+            <MethodischeGestaltung entwurf={entwurf} setEntwurf={setEntwurf} onPhaseAendern={phaseAendern}
+              onSparring={(verlauf, fokus) => kiSparring({ ...k(), entwurf, verlauf, fokus })} onZurueck={() => setPhase('grob')} onWeiter={() => setPhase('fertig')}
                 pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
                   onVorschlag={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was der Hinweis bedeutet, was du geändert hast und warum.`)}
                   onUebernehmen={setEntwurf}

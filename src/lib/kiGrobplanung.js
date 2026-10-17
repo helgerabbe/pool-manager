@@ -84,7 +84,7 @@ ${items.map((m) => `- ${m.name}: ${m.kurzbeschreibung || ''}`).join('\n')}`, { t
   return (r.namen || []).map((n) => items.find((m) => m.name === n)).filter(Boolean);
 }
 
-const PHASE = { type: 'object', properties: { name: { type: 'string' }, minuten: { type: 'number' }, lehrer: { type: 'string' }, schueler: { type: 'string' }, sozialform: { type: 'string' }, methode: { type: 'string' }, details: { type: 'string' } } };
+const PHASE = { type: 'object', properties: { name: { type: 'string' }, minuten: { type: 'number' }, lehrer: { type: 'string' }, schueler: { type: 'string' }, sozialform: { type: 'string' }, methode: { type: 'string' }, details: { type: 'string' }, achten: { type: 'string' }, grenzen: { type: 'string' } } };
 const SCHEMA = { type: 'object', properties: { kurz: { type: 'string' }, modell: { type: 'string', enum: STUNDEN_MODELLE.map((m) => m.key) }, hinweise: { type: 'array', items: { type: 'string' } }, phasen: { type: 'array', items: PHASE } } };
 
 /** Grobverlauf aus allen Vorgaben – oder Überarbeitung eines bestehenden Entwurfs. */
@@ -106,7 +106,7 @@ ${items.map((m) => `- ${m.name} (${m.dauer_min ?? '?'}–${m.dauer_max ?? '?'} M
 
 Regeln:
 - Wähle das passende Stundenmodell ("modell") und folge seinen Phasen sinnvoll.
-- Je Phase: "lehrer" = was die Lehrkraft tut, "schueler" = was die Schüler tun (je 1–2 konkrete Sätze), "sozialform" (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), "methode" falls genutzt, "details" = 1–2 Sätze Hintergrund (warum so, worauf achten).
+- Je Phase: "lehrer" = was die Lehrkraft tut, "schueler" = was die Schüler tun (je 1–2 konkrete Sätze), "sozialform" (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), "methode" falls genutzt, "details" = 1–2 Sätze, warum diese Phase/Methode hier gut passt, "achten" = 1–2 Sätze, worauf die Lehrkraft besonders achten muss, "grenzen" = 1 Satz, wann oder warum man es eher nicht so machen sollte.
 - "minuten" grob schätzen; ${k.minuten ? `die Summe ergibt ${k.minuten}.` : 'die Summe ergibt 45 oder 90 – entscheide, was das Vorhaben realistisch braucht, und nenne die Wahl samt kurzer Begründung in "hinweise".'} Die Lehrkraft sieht die Zeiten erst in der Feinplanung.
 - Es geht NUR um den methodischen Ablauf: noch nicht festlegen, ob digital oder analog, keine konkreten Arbeitsmaterialien, keine ausformulierten Arbeitsaufträge.
 - "kurz": eine Zeile, was diese Stunde ausmacht. "hinweise" nur, wenn sich Vorgaben nicht stimmig umsetzen lassen.${bisher ? `
@@ -119,6 +119,25 @@ ${JSON.stringify(bisher.phasen.map(({ name, lehrer, schueler, sozialform, method
     name: 'Grobentwurf', kurz: r.kurz, modell: r.modell, hinweis: (r.hinweise || []).join(' '),
     phasen: (r.phasen || []).map((p) => ({ ...p, aktivitaet: p.schueler, begruendung: p.details, deckt: [] })),
   };
+}
+
+/** Sparringspartner zur Stunde: antwortet im Gespräch und schlägt Änderungen nur vor – übernommen wird erst nach Zustimmung. */
+export async function kiSparring({ entwurf, verlauf, fokus, ...k }) {
+  const r = await kiMitMaterial(k.assistent, `Du bist ein erfahrener, freundlicher Fachdidaktiker und Sparringspartner einer Lehrkraft bei der methodischen Gestaltung einer Stunde. Sprich in Du- bzw. Wir-Form, kurz und konkret.
+${kontextText(k)}
+Aktueller Ablauf: ${JSON.stringify(entwurf.phasen.map(({ name, lehrer, schueler, sozialform, methode, minuten }) => ({ name, lehrer, schueler, sozialform, methode, minuten })))}
+${fokus != null ? `Das Gespräch bezieht sich vor allem auf Phase ${fokus + 1}: "${entwurf.phasen[fokus]?.name}".` : 'Das Gespräch bezieht sich auf die ganze Stunde.'}
+
+Gesprächsverlauf:
+${verlauf.map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Assistent'}: ${m.content}`).join('\n')}
+
+Antworte auf die letzte Nachricht der Lehrkraft in "antwort". Bei Fragen: erklären, bei Bedarf Alternativen nennen. Wenn eine konkrete Änderung am Ablauf sinnvoll ist oder gewünscht wird, beschreibe sie in "antwort" und frage am Ende "Soll ich das so ändern?". Dann zusätzlich "vorschlag": der KOMPLETTE neue Ablauf als "phasen" (Felder: name, minuten, lehrer, schueler, sozialform, methode, details, achten, grenzen; unveränderte Phasen identisch übernehmen). Sonst "vorschlag" weglassen. Noch nichts zu digital/analog oder konkreten Materialien.`, {
+    type: 'object',
+    properties: { antwort: { type: 'string' }, vorschlag: { type: 'object', properties: { phasen: { type: 'array', items: PHASE } } } },
+    required: ['antwort'],
+  }, k.anker.materialien);
+  const phasen = r.vorschlag?.phasen?.length ? r.vorschlag.phasen.map((p) => ({ ...p, aktivitaet: p.schueler, begruendung: p.details, deckt: [] })) : null;
+  return { antwort: r.antwort, vorschlag: phasen && { ...entwurf, phasen } };
 }
 
 export const GEWICHTE = { unverzichtbar: 'Unverzichtbar', wichtig: 'Wichtig', beachten: 'Nehme ich mit' };
@@ -151,7 +170,7 @@ export async function kiPhaseAendern({ entwurf, index, wunsch, ...k }) {
 ${kontextText(k)}
 Ganzer Ablauf: ${JSON.stringify(entwurf.phasen.map(({ name, schueler, sozialform, methode, minuten }) => ({ name, schueler, sozialform, methode, minuten })))}
 Wunsch der Lehrkraft für Phase ${index + 1}: "${wunsch}"
-Nur methodischer Ablauf, noch nicht digital/analog, keine konkreten Materialien. Die Dauer ("minuten") möglichst ähnlich halten. Felder: name, minuten, lehrer, schueler, sozialform, methode, details.`, PHASE, k.anker.materialien);
+Nur methodischer Ablauf, noch nicht digital/analog, keine konkreten Materialien. Die Dauer ("minuten") möglichst ähnlich halten. Felder: name, minuten, lehrer, schueler, sozialform, methode, details (warum so), achten (worauf achten), grenzen (wann eher nicht).`, PHASE, k.anker.materialien);
   const phasen = entwurf.phasen.map((alt, i) => (i === index ? { ...p, aktivitaet: p.schueler, begruendung: p.details, deckt: [], neu: true } : { ...alt, neu: false }));
   return { ...entwurf, phasen };
 }
