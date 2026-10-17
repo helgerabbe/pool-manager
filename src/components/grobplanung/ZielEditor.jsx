@@ -6,7 +6,7 @@ import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import { STUNDENTYPEN } from '@/lib/kiGrobplanung';
 
 /** Grobes Stundenziel mit KI-Vorschlag, Alternativen, Nachjustieren per Sprache – und optionalem Stundentyp. */
-export default function ZielEditor({ ziel, setZiel, onVorschlag }) {
+export default function ZielEditor({ ziel, setZiel, onVorschlag, grundKey, ohneStundentyp }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState(false);
   const [wunsch, setWunsch] = React.useState('');
@@ -17,6 +17,8 @@ export default function ZielEditor({ ziel, setZiel, onVorschlag }) {
       .catch(() => setFehler(true)).finally(() => setLaedt(false));
   };
   React.useEffect(() => { if (!ziel.haupt) neu(); }, []);
+  const ersterLauf = React.useRef(true);
+  React.useEffect(() => { if (ersterLauf.current) { ersterLauf.current = false; return; } neu(); }, [grundKey]);
   const zumHaupt = (a) => setZiel((z) => ({ ...z, haupt: a, vonKi: false, alternativen: [z.haupt, ...z.alternativen.filter((x) => x !== a)] }));
   return (
     <div className="space-y-4">
@@ -24,12 +26,12 @@ export default function ZielEditor({ ziel, setZiel, onVorschlag }) {
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
         <p className="text-sm text-muted-foreground">Entspann dich, wir machen das hier erst mal nur ganz grob. Das Ziel muss noch nicht fachdidaktisch perfekt sein. Es geht nur darum, dass wir beide verstehen, was in der Stunde passieren soll, damit wir eine gemeinsame Arbeitsgrundlage haben. Ausschärfen können wir es später noch.</p>
       </div>
-      <label className="block space-y-1 text-sm">
+      {!ohneStundentyp && <label className="block space-y-1 text-sm">
         <span className="font-semibold">Was für eine Stunde wird es? <span className="font-normal text-muted-foreground">(optional)</span></span>
         <select value={ziel.stundentyp} onChange={(e) => setZiel((z) => ({ ...z, stundentyp: e.target.value }))} className="w-full rounded-md border bg-card px-2 py-2">
           {STUNDENTYPEN.map((t) => <option key={t.key} value={t.key}>{t.name}</option>)}
         </select>
-      </label>
+      </label>}
       <div className="space-y-2 rounded-xl border border-chart-3/40 bg-chart-3/10 p-4">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-chart-3"><Target className="h-4 w-4" /> Grobe Zielrichtung</p>
         {laedt ? <Loader2 className="h-4 w-4 animate-spin" /> : <Textarea rows={2} value={ziel.haupt} onChange={(e) => setZiel((z) => ({ ...z, haupt: e.target.value, vonKi: false }))} className="bg-card" />}
