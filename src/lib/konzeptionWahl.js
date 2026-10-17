@@ -33,6 +33,7 @@ export const KONZEPTION_WAHL = {
     ['Quellenkritisch', 'Der Gegenstand ist eine Quelle oder ein Sachtext, bei dem Absicht und Perspektive wichtig sind.'],
     ['Werkerschließend', 'Der Gegenstand ist ein Bild, eine Karikatur, ein Musikstück oder Film.'],
     ['Vergleichend', 'Zwei oder mehr Gegenstände erhellen sich gegenseitig. Braucht mehr Zeit.'],
+    ['Produktiv erschließend', 'Ein analytischer Zugang wäre zu schwer oder zu trocken, oder Figuren und Leerstellen laden zum Weiterdenken ein. Gut für jüngere oder weniger lesestarke Gruppen. Abgrenzung zur Gestaltungsstunde: Das Produkt dient dem Verstehen, nicht sich selbst.'],
   ],
   'Urteilsstunde': [
     ['Positionierend', 'Die Schüler sollen zum ersten Mal eine eigene Haltung finden. Auch für jüngere Gruppen.'],

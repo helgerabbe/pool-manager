@@ -8,6 +8,8 @@ export const ERSCHLIESSUNG_VARIANTEN = [
     phasen: ['Wahrnehmen & beschreiben', 'Gestaltung analysieren', 'Wirkung & Bedeutung deuten', 'In den Kontext einordnen', 'Deutung sichern & reflektieren'] },
   { key: 'vergleichend', name: 'Vergleichend', kurz: 'Zwei oder mehr Texte, Quellen oder Werke werden erschlossen und nach Kriterien verglichen. Typisch: arbeitsteilige Erschließung, Vergleichstabelle, Gruppenpuzzle.',
     phasen: ['Gegenstände kennenlernen', 'Einzeln erschließen', 'Vergleichskriterien festlegen', 'Vergleichen', 'Ergebnis deuten & sichern'] },
+  { key: 'produktiv', name: 'Produktiv erschließend', kurz: 'Der Gegenstand wird handlungs- und produktionsorientiert gedeutet: Die Schüler verstehen ihn, indem sie selbst etwas dazu schaffen. Unverzichtbar ist der Abgleich der Produkte mit dem Text. Typisch: Innerer Monolog, Brief an eine Figur, Paralleltext, Weiterschreiben, Standbild.',
+    phasen: ['Erstbegegnung mit dem Gegenstand', 'Produktive Aufgabe', 'Produkte vorstellen', 'Produkte am Gegenstand prüfen', 'Deutung sichern & reflektieren'] },
 ];
 
 export const erschliessungVariante = (key) => ERSCHLIESSUNG_VARIANTEN.find((v) => v.key === key);
