@@ -89,9 +89,9 @@ ${vorgaben && wirksameGrundstruktur(vorgaben.grundstruktur, vorgaben.anker?.absc
 const katalog = () => base44.entities.MethodenKatalog.filter({ ist_aktiv: { $ne: false }, quelle: { $ne: 'poolzeit' } }, { limit: 200, fields: ['name', 'kurzbeschreibung', 'dauer_min', 'dauer_max', 'stufe'] }).then((p) => p.items);
 
 /** Findet zu einer frei beschriebenen Idee bis zu drei passende Methoden aus dem Katalog. */
-export async function kiMethodenFinden({ assistent, beschreibung }) {
+export async function kiMethodenFinden({ assistent, beschreibung, grund }) {
   const items = await katalog();
-  const r = await kiAufruf(assistent, `Eine Lehrkraft beschreibt eine methodische Idee: "${beschreibung}"
+  const r = await kiAufruf(assistent, `Eine Lehrkraft beschreibt eine methodische Idee: "${beschreibung}"${grund ? `\nDie Stunde hat die Grundstruktur ${modellName(grund.modell, grund.variante)}. Bevorzuge Methoden, die dazu gut passen.` : ''}
 Welche Methoden aus diesem Katalog sind gemeint? Gib bis zu 3 Namen exakt wie im Katalog zurück, die beste zuerst. Passt keine, gib eine leere Liste.
 ${items.map((m) => `- ${m.name}: ${m.kurzbeschreibung || ''}`).join('\n')}`, { type: 'object', properties: { namen: { type: 'array', items: { type: 'string' } } } });
   return (r.namen || []).map((n) => items.find((m) => m.name === n)).filter(Boolean);

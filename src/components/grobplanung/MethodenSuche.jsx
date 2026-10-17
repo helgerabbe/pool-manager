@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import { kiMethodenFinden } from '@/lib/kiGrobplanung';
+import GrundstrukturMethodenHinweis from './GrundstrukturMethodenHinweis';
 
 /** Methode (oder Ritual) suchen, per Idee/Spracheingabe finden lassen oder – bei Ritualen – frei beschreiben. */
-export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, ideePlatzhalter, hinweis }) {
+export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, ideePlatzhalter, hinweis, grund }) {
   const [suche, setSuche] = React.useState('');
   const [treffer, setTreffer] = React.useState([]);
   const [idee, setIdee] = React.useState('');
@@ -18,7 +19,7 @@ export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, 
     const t = setTimeout(() => base44.entities.MethodenKatalog.filter({ quelle: { $ne: 'poolzeit' }, ist_aktiv: { $ne: false }, name: { $regex: suche.trim(), $options: 'i' } }, { sort: 'name', limit: 8, fields: ['name', 'kurzbeschreibung'] }).then((p) => setTreffer(p.items)), 300);
     return () => clearTimeout(t);
   }, [suche]);
-  const finden = async () => { setLaedt(true); setKiTreffer(await kiMethodenFinden({ assistent, beschreibung: idee }).catch(() => [])); setLaedt(false); };
+  const finden = async () => { setLaedt(true); setKiTreffer(await kiMethodenFinden({ assistent, beschreibung: idee, grund }).catch(() => [])); setLaedt(false); };
   const Treffer = ({ m }) => (
     <button onClick={() => setWahl({ name: m.name, kurzbeschreibung: m.kurzbeschreibung })} className="block w-full rounded-lg border bg-card p-2 text-left text-sm hover:border-primary/40">
       <span className="font-semibold">{m.name}</span>{m.kurzbeschreibung && <span className="block line-clamp-1 text-xs text-muted-foreground">{m.kurzbeschreibung}</span>}
@@ -32,6 +33,7 @@ export default function MethodenSuche({ wahl, setWahl, assistent, eigenErlaubt, 
           <p className="text-sm text-muted-foreground">{hinweis}</p>
         </div>
       )}
+      <GrundstrukturMethodenHinweis grund={grund} wahl={wahl} onWaehlen={setWahl} />
       {wahl && (
         <div className="flex items-start gap-2 rounded-xl border border-chart-3/40 bg-chart-3/10 p-3 text-sm">
           <Check className="mt-0.5 h-4 w-4 text-chart-3" />
