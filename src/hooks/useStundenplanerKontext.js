@@ -10,7 +10,8 @@ export default function useStundenplanerKontext(id) {
         base44.entities.Unterrichtseinheit.get(id),
         base44.entities.UnterrichtsPlanung.filter({ unterrichtseinheit_id: id }),
       ]);
-      return { einheit, verlauf: planungen[0]?.verlauf || [] };
+      const lerngruppe = einheit.lerngruppe_id ? await base44.entities.Lerngruppe.get(einheit.lerngruppe_id).catch(() => null) : null;
+      return { einheit, lerngruppe, verlauf: planungen[0]?.verlauf || [] };
     },
   });
 }

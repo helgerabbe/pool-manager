@@ -10,6 +10,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import LerngruppenProfil from './LerngruppenProfil';
 import { AKTUELLES_SCHULJAHR, SCHULJAHRE } from '@/lib/schuljahre';
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
@@ -24,6 +25,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
   const [jahrgang, setJahrgang] = useState('');
   const [name, setName] = useState('');
   const [schuljahr, setSchuljahr] = useState(AKTUELLES_SCHULJAHR);
+  const [profil, setProfil] = useState({ fit: 3, stark: 3, leistung: 3 });
 
   const { data: jahrgaenge = [] } = useQuery({
     queryKey: ['lookup-jahrgaenge'],
@@ -40,6 +42,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
     setJahrgang(kachel?.jahrgangsstufe || '');
     setName(kachel?.name || '');
     setSchuljahr(kachel?.schuljahr || AKTUELLES_SCHULJAHR);
+    setProfil({ fit: 3, stark: 3, leistung: 3, ...(kachel?.profil || {}) });
   }, [open, kachel]);
 
   const gueltig = fach && jahrgang;
@@ -92,12 +95,13 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
               Mehrere Lerngruppen im selben Fach und Jahrgang sind möglich (z. B. 9a, 9b).
             </p>
           </div>
+          <LerngruppenProfil profil={profil} setProfil={setProfil} />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button
             disabled={!gueltig || busy}
-            onClick={() => onSpeichern({ schuljahr, fach, jahrgangsstufe: jahrgang, name: name.trim() })}
+            onClick={() => onSpeichern({ schuljahr, fach, jahrgangsstufe: jahrgang, name: name.trim(), profil })}
           >
             {istBearbeiten ? 'Speichern' : 'Hinzufügen'}
           </Button>
