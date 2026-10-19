@@ -51,7 +51,7 @@ export default function KachelDialog({ open, onOpenChange, kachel, faecher = [],
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="w-[95%] sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{istBearbeiten ? 'Lerngruppe benennen' : 'Lerngruppe hinzufügen'}</DialogTitle>
+          <DialogTitle>{istBearbeiten ? 'Lerngruppe bearbeiten' : 'Lerngruppe hinzufügen'}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-2">
           <div className="space-y-2">
