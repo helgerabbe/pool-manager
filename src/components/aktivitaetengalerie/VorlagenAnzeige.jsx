@@ -1,9 +1,10 @@
 import React from 'react';
 import { STUNDEN_CSS } from '@/lib/stundenDesign';
+import { BAUSTEIN_CSS, BAUSTEIN_JS } from '@/lib/stundenBausteine';
 
 /** Zeigt ein Vorlagen-Fragment mit dem Grund-Design im passenden Seitenverhältnis. */
 export default function VorlagenAnzeige({ html, ansicht }) {
-  const doc = `<!doctype html><html><head><meta charset="utf-8"><style>${STUNDEN_CSS}</style></head><body>${html}</body></html>`;
+  const doc = `<!doctype html><html><head><meta charset="utf-8"><style>${STUNDEN_CSS}${BAUSTEIN_CSS}</style></head><body>${html}<script>${BAUSTEIN_JS}</script></body></html>`;
   const breite = ansicht === 'lehrer' ? 1280 : 1024;
   const hoehe = ansicht === 'lehrer' ? 720 : 768;
   return (

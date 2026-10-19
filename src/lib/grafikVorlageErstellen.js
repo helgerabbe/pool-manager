@@ -1,5 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { STUNDEN_KLASSEN } from '@/lib/stundenDesign';
+import { BAUSTEIN_KATALOG } from '@/lib/stundenBausteine';
 
 const FOTO_STIL = 'Realistic high-quality photograph, natural light, authentic, calm composition, soft muted colors, no text, no lettering. Strictly NOT a cartoon, NOT a comic, NOT an illustration, NOT clipart, NOT 3D render.';
 
@@ -29,6 +30,8 @@ Liefere zwei HTML-Fragmente (Inhalt von <body>), beide beginnen mit <div class="
 - schueler: das Schüler-Display (Tablet). DIESES soll ansprechend und lebendig wirken, nicht nur funktional.
 
 GRUND-DESIGN (bereits geladen, nutze es als Basis): ${STUNDEN_KLASSEN}
+
+${BAUSTEIN_KATALOG}
 
 LEBENDIGE GESTALTUNG DER SCHÜLERANSICHT (Pflicht, mit eigenem <style> und <script>):
 - Bewegung: Elemente gleiten beim Laden nacheinander weich herein (gestaffelt), Karten heben sich beim Berühren leicht an, Knöpfe reagieren beim Klick spürbar.
