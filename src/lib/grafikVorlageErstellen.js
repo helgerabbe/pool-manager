@@ -2,9 +2,11 @@ import { base44 } from '@/api/base44Client';
 import { STUNDEN_KLASSEN } from '@/lib/stundenDesign';
 import { BAUSTEIN_KATALOG } from '@/lib/stundenBausteine';
 
+// ZWEI ASSISTENTEN (2026-10-19): 1) Funktion baut Aufbau und Interaktion, 2) Gestaltung verschönert nur.
+// Geht beim Verschönern eine Interaktion verloren, bleibt das Gerüst aus Schritt 1 bestehen.
+
 const FOTO_STIL = 'Realistic high-quality photograph, natural light, authentic, calm composition, soft muted colors, no text, no lettering. Strictly NOT a cartoon, NOT a comic, NOT an illustration, NOT clipart, NOT 3D render.';
 
-/** Erzeugt jedes Foto einmal und liefert { ID: Adresse }. */
 async function erzeugeFotos(bilder) {
   const paare = await Promise.all((bilder || []).map(async (b) => {
     const { url } = await base44.integrations.Core.GenerateImage({ prompt: `${b.prompt}. ${FOTO_STIL}` });
@@ -15,53 +17,71 @@ async function erzeugeFotos(bilder) {
 
 const einsetzen = (html, fotos) => Object.entries(fotos).reduce((h, [id, url]) => h.split(`{{bild:${id}}}`).join(url), html || '');
 
-/** Grafische Vorlage (Lehrer- und Schüler-Display) einer Methode für ein Fach erzeugen. */
-export async function erstelleGrafikVorlage(methode, fach) {
-  const prompt = `Du bist Grafikassistent für Unterrichtsstunden an einer Gesamtschule. Erstelle eine beispielhafte grafische Vorlage der Methode "${methode.name}".
-Fach: ${fach}. Wähle selbst ein typisches, anschauliches Beispielthema aus diesem Fach (bei "Fächerübergreifend" ein Thema, das alle Jahrgänge kennen, z. B. Lernen lernen oder Klassenregeln). Schreibe realistische, kurze Inhalte auf Deutsch, Jahrgang 7.
+const BIBLIOTHEKEN = `GRAFIK-BIBLIOTHEKEN (erlaubt, nur diese, nur über genau diese Adressen per <script src>, sonst keine Netzwerkzugriffe):
+- three.js: <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> (globales THREE; eigene Maus-/Touch-Drehung, OrbitControls gibt es nicht)
+- JSXGraph: <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraph.css"><script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraphcore.js"></script> (globales JXG)
+- GSAP: <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script> (globales gsap)`;
 
+/** Merkmale der Funktion, die beim Verschönern erhalten bleiben müssen. */
+const MERKMALE = ['data-richtig', 'data-passt', 'data-wert', 'data-loesung', 'data-pos', 'data-minuten', 'class="option', 'ziehbar', 'ablage', 'sortieren', 'aufdecken', '<input', '<textarea', '<button', '<script', '<canvas', '<svg'];
+const zaehle = (html, m) => (html || '').split(m).length - 1;
+const funktionErhalten = (vorher, nachher) => !!nachher && MERKMALE.every((m) => zaehle(nachher, m) >= zaehle(vorher, m));
+
+async function funktionBauen(methode, fach) {
+  const prompt = `Du bist Assistent 1 (FUNKTION) für grafische Unterrichtsvorlagen an einer Gesamtschule. Baue NUR Aufbau und Funktion, um die Optik kümmert sich danach ein zweiter Assistent.
+Methode: "${methode.name}". Fach: ${fach}. Wähle ein typisches Beispielthema aus diesem Fach (bei "Fächerübergreifend" z. B. Lernen lernen oder Klassenregeln). Realistische, kurze Inhalte auf Deutsch, Jahrgang 7.
 Was die Methode ist: ${methode.kurzbeschreibung || ''}
 Ablauf: ${methode.ablauf || ''}
-Vorgaben für den Grafikassistenten:
-${methode.info_grafikassistent || '(keine)'}
+Vorgaben für den Grafikassistenten: ${methode.info_grafikassistent || '(keine)'}
 
 Liefere zwei HTML-Fragmente (Inhalt von <body>), beide beginnen mit <div class="stunde">:
-- lehrer: das Lehrer-Display (digitale Tafel, Querformat). Ruhig, groß, aus der Ferne gut lesbar. Dezente Einblend-Animationen sind erlaubt.
-- schueler: das Schüler-Display (Tablet). DIESES soll ansprechend und lebendig wirken, nicht nur funktional.
-
-GRUND-DESIGN (bereits geladen, nutze es als Basis): ${STUNDEN_KLASSEN}
-
+- lehrer: Lehrer-Display (digitale Tafel, Querformat): was die Klasse sieht, groß und klar gegliedert.
+- schueler: Schüler-Display (Tablet): alles, was die Schüler tun.
+DEINE AUFGABE: vollständiger, sinnvoller Inhalt, klare Reihenfolge, und echte Interaktion, wo die Methode es verlangt (Auswählen, Zuordnen, Sortieren, Aufdecken, Eingaben, Schieberegler, Timer). Alles muss wirklich funktionieren.
+Nutze dafür vorrangig die Bausteine (ihr Verhalten ist schon eingebaut):
 ${BAUSTEIN_KATALOG}
+Grundklassen: ${STUNDEN_KLASSEN}
+Eigenes <script> nur für Funktion, die kein Baustein abdeckt (z. B. Simulationen). ${BIBLIOTHEKEN}
+Keine Bilder, kein eigenes Design-CSS, keine Dekoration.`;
+  return base44.integrations.Core.InvokeLLM({
+    prompt, model: 'claude_sonnet_4_6',
+    response_json_schema: { type: 'object', properties: { thema: { type: 'string' }, lehrer: { type: 'string' }, schueler: { type: 'string' } } },
+  });
+}
 
-LEBENDIGE GESTALTUNG DER SCHÜLERANSICHT (Pflicht, mit eigenem <style> und <script>):
-- Bewegung: Elemente gleiten beim Laden nacheinander weich herein (gestaffelt), Karten heben sich beim Berühren leicht an, Knöpfe reagieren beim Klick spürbar.
-- Rückmeldung: Richtige Eingaben werden sichtbar belohnt (z. B. sanftes Aufleuchten, Häkchen-Animation, kleiner Funkenregen aus reinem CSS/JS), Fortschritt wird als sich füllender Balken oder Schritte gezeigt.
-- Tiefe und Reiz: Farbverläufe aus den Farbvariablen, weiche Schatten, Ebenen, große, selbstbewusste Überschriften, abgerundete Formen. Ein Bild darf als großes Kopfbild mit Verlauf darüber wirken.
-- Echte Interaktion, wo die Methode es verlangt (Zuordnen, Sortieren, Auswählen, Schieberegler). Alles muss wirklich funktionieren.
-- Nicht ablenken: Animationen kurz (0,3–0,8 s), keine Dauerschleifen, kein Blinken. Respektiere prefers-reduced-motion.
-Farben über die Farbvariablen (var(--leit) usw.) und deren Abstufungen/Transparenzen, gern als Verläufe; keine grellen Neonfarben. Rundungen über var(--radius). GRAFIK-BIBLIOTHEKEN (erlaubt, nur diese, nur über genau diese Adressen per <script src> laden, sonst keine Netzwerkzugriffe):
-- three.js (3D-Körper drehen, aufklappen, Netze): <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> (globales THREE; eigene Maus-/Touch-Drehung schreiben, OrbitControls gibt es nicht)
-- JSXGraph (Mathe-Konstruktionen, Funktionen, Geometrie mit Schiebereglern): <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraph.css"><script src="https://cdn.jsdelivr.net/npm/jsxgraph@1.8.0/distrib/jsxgraphcore.js"></script> (globales JXG)
-- GSAP (weiche Animationen): <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script> (globales gsap)
-Setze eine Bibliothek ein, wenn sie dem Verstehen dient (z. B. Pyramide per Schieberegler flüssig zum Körpernetz aufklappen, Kreis abrollen, um Umfang und Radius zu zeigen). Bewegungen flüssig über requestAnimationFrame bzw. die Bibliothek, Schieberegler wirken sofort. Für einfache Seiten reicht reines CSS/JavaScript.
+async function gestalten(geruest, methode) {
+  const prompt = `Du bist Assistent 2 (GESTALTUNG) für grafische Unterrichtsvorlagen. Du bekommst zwei fertige, funktionierende HTML-Fragmente der Methode "${methode.name}" (Thema: ${geruest.thema}) und machst sie NUR optisch hochwertig.
+STRENGE REGEL: Ändere nichts an der Funktion. Alle Texte, Knöpfe, Eingaben, Skripte, data-Attribute und die Klassen option, ziehbar, ablage, sortieren, aufdecken, timer, fortschritt bleiben vollständig erhalten. Du darfst Elemente umgruppieren, in Bausteine einbetten, Klassen ERGÄNZEN und ein eigenes <style> hinzufügen.
 
-BILDER: Nur echte Fotos, KEINE Comic-Figuren, keine Illustrationen, keine Cliparts, keine Emojis als Bildersatz.
-Wo ein Foto die Seite unterstützt oder verschönert (meist 1–2, höchstens 3), setze <img src="{{bild:ID}}" alt="..." style="object-fit:cover"> mit einer kurzen ID (z. B. kopf, bild1) und beschreibe das Foto in "bilder" auf Englisch (Motiv, Perspektive, Umgebung). Keine Personenporträts im Vordergrund, keine Schrift im Bild.
-STIMMUNGSBILD: Zusätzlich darf die Schüleransicht (und dezent auch die Lehreransicht) ein ruhiges, schönes Naturfoto als Hintergrund oder Kopfbild bekommen, das zum Thema oder zur Stimmung passt (z. B. Wald, Meer, Himmel, Berge, Wiese). Setze es als background-image (url('{{bild:hintergrund}}'), background-size:cover) und lege einen halbtransparenten Farbverlauf oder eine helle Fläche darüber, damit Texte immer gut lesbar bleiben. Beschreibe es in "bilder" mit der ID "hintergrund" (weite Landschaft, viel ruhige Fläche, sanftes Licht).`;
+LEHRERANSICHT: ruhig, groß, aus der Ferne lesbar, dezente Einblendungen.
+SCHÜLERANSICHT: ansprechend und lebendig: Kopfbereich (.held) mit Stimmungsbild, gestaffeltes Einblenden (data-einblenden), weiche Schatten, Farbverläufe aus den Farbvariablen, große selbstbewusste Überschriften, Karten heben sich beim Berühren an. Animationen kurz (0,3–0,8 s), keine Dauerschleifen, prefers-reduced-motion respektieren. Keine Neonfarben.
+${BAUSTEIN_KATALOG}
+Grundklassen: ${STUNDEN_KLASSEN}
 
-  const res = await base44.integrations.Core.InvokeLLM({
-    prompt,
-    model: 'claude_sonnet_4_6',
+BILDER: nur echte Fotos, keine Comics, Illustrationen, Cliparts oder Emojis als Bildersatz. 1–2, höchstens 3 Fotos per <img src="{{bild:ID}}" alt="..." style="object-fit:cover">, dazu ein ruhiges Naturfoto mit der ID "hintergrund" als background-image (z. B. im .held), mit Verlauf darüber für Lesbarkeit. Beschreibe jedes Foto in "bilder" auf Englisch (Motiv, Perspektive, Umgebung), keine Porträts im Vordergrund, keine Schrift im Bild.
+
+LEHRER-FRAGMENT:
+${geruest.lehrer}
+
+SCHÜLER-FRAGMENT:
+${geruest.schueler}`;
+  return base44.integrations.Core.InvokeLLM({
+    prompt, model: 'claude_opus_4_8',
     response_json_schema: {
       type: 'object',
       properties: {
-        thema: { type: 'string' },
-        lehrer: { type: 'string' },
-        schueler: { type: 'string' },
+        lehrer: { type: 'string' }, schueler: { type: 'string' },
         bilder: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, prompt: { type: 'string' } } } },
       },
     },
   });
-  const fotos = await erzeugeFotos(res.bilder);
-  return { thema: res.thema, lehrer: einsetzen(res.lehrer, fotos), schueler: einsetzen(res.schueler, fotos) };
+}
+
+/** Grafische Vorlage (Lehrer- und Schüler-Display) einer Methode erzeugen: erst Funktion, dann Gestaltung. */
+export async function erstelleGrafikVorlage(methode, fach) {
+  const geruest = await funktionBauen(methode, fach);
+  const schick = await gestalten(geruest, methode);
+  const fotos = await erzeugeFotos(schick.bilder);
+  const waehle = (teil) => (funktionErhalten(geruest[teil], schick[teil]) ? einsetzen(schick[teil], fotos) : geruest[teil]);
+  return { thema: geruest.thema, lehrer: waehle('lehrer'), schueler: waehle('schueler') };
 }
