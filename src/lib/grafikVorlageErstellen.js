@@ -77,9 +77,14 @@ ${geruest.schueler}`;
   });
 }
 
-/** Grafische Vorlage (Lehrer- und Schüler-Display) einer Methode erzeugen: erst Funktion, dann Gestaltung. */
-export async function erstelleGrafikVorlage(methode, fach) {
-  const geruest = await funktionBauen(methode, fach);
+/** Schritt 1: Prototyp ohne besondere Grafik aus der Anweisung für den Grafikassistenten. */
+export async function erstellePrototyp(methode, fach) {
+  const g = await funktionBauen(methode, fach);
+  return { thema: g.thema, lehrer: g.lehrer, schueler: g.schueler };
+}
+
+/** Schritt 2: fertigen Prototyp gestalten. Geht Funktion verloren, bleibt der Prototyp. */
+export async function gestalteVorlage(geruest, methode) {
   const schick = await gestalten(geruest, methode);
   const fotos = await erzeugeFotos(schick.bilder);
   const waehle = (teil) => (funktionErhalten(geruest[teil], schick[teil]) ? einsetzen(schick[teil], fotos) : geruest[teil]);
