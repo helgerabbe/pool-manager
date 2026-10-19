@@ -9,6 +9,8 @@ import MethodischeGestaltung from '@/components/methodik/MethodischeGestaltung';
 import GrobentwurfPruefung from '@/components/stundenplanerPrototyp/GrobentwurfPruefung';
 import UmsetzungsWahlSchritt from '@/components/feinplanung/UmsetzungsWahlSchritt';
 import { kiUmsetzungVorschlag } from '@/lib/kiUmsetzung';
+import AufbereitungSchritt from '@/components/feinplanung/AufbereitungSchritt';
+import { kiAufbereitung } from '@/lib/kiAufbereitung';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
@@ -55,7 +57,7 @@ export default function StundenplanerVorschau() {
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
-  const stufe = { start: 0, grob: 1, methodik: 2, fein: 3, fertig: 4 }[phase];
+  const stufe = { start: 0, grob: 1, methodik: 2, fein: 3, aufbereitung: 4, fertig: 4 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -113,7 +115,11 @@ export default function StundenplanerVorschau() {
           )}
           {phase === 'fein' && entwurf && (
             <UmsetzungsWahlSchritt entwurf={entwurf} setEntwurf={setEntwurf} onVorschlag={() => kiUmsetzungVorschlag({ assistent, einheit, entwurf })}
-              onZurueck={() => setPhase('methodik')} onWeiter={() => setPhase('fertig')} />
+              onZurueck={() => setPhase('methodik')} onWeiter={() => setPhase('aufbereitung')} />
+          )}
+          {phase === 'aufbereitung' && entwurf && (
+            <AufbereitungSchritt entwurf={entwurf} setEntwurf={setEntwurf} onErstellen={() => kiAufbereitung({ assistent, einheit, anker: v.anker, entwurf })}
+              onZurueck={() => setPhase('fein')} onWeiter={() => setPhase('fertig')} />
           )}
           {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
