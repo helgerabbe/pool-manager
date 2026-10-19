@@ -9,6 +9,7 @@ export default function AufbereitungsPhase({ phase, nr, onAendern }) {
   return (
     <div className="space-y-2 rounded-xl border bg-card p-3">
       <p className="text-sm font-semibold">{nr}. {phase.name}
+        {phase.minuten > 0 && <span className="ml-2 text-xs font-normal text-muted-foreground">ca. {phase.minuten} Min.</span>}
         {umsetzung && <span className="ml-2 rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">{umsetzung}</span>}
       </p>
       {AUFBEREITUNG_FELDER.map((f) => (
