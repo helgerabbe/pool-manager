@@ -2,16 +2,18 @@ import React from 'react';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import UmsetzungsPhase from './UmsetzungsPhase';
+import { mitBasismethode } from '@/lib/freieMethode';
 
 /** Feinplanung, Teil 1: je Phase analog, digital oder gemischt. */
 export default function UmsetzungsWahlSchritt({ entwurf, setEntwurf, onVorschlag, onZurueck, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState('');
   const setzePhase = (i, daten) => setEntwurf((e) => ({ ...e, phasen: e.phasen.map((p, j) => (j === i ? { ...p, ...daten } : p)) }));
+  React.useEffect(() => { setEntwurf((e) => ({ ...e, phasen: mitBasismethode(e.phasen) })); }, []);
   const vorschlagen = () => {
     setLaedt(true); setFehler('');
     onVorschlag()
-      .then((vs) => setEntwurf((e) => ({ ...e, phasen: e.phasen.map((p, i) => (vs[i] ? { ...p, umsetzung: vs[i].umsetzung, umsetzung_begruendung: vs[i].begruendung } : p)) })))
+      .then((vs) => setEntwurf((e) => ({ ...e, phasen: mitBasismethode(e.phasen.map((p, i) => (vs[i] ? { ...p, umsetzung: vs[i].umsetzung, umsetzung_begruendung: vs[i].begruendung } : p))) })))
       .catch(() => setFehler('Das hat nicht geklappt. Bitte noch einmal versuchen.'))
       .finally(() => setLaedt(false));
   };
