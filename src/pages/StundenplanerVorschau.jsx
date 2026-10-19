@@ -7,6 +7,8 @@ import VorgabenRaster from '@/components/grobplanung/VorgabenRaster';
 import VorgabenListe from '@/components/grobplanung/VorgabenListe';
 import MethodischeGestaltung from '@/components/methodik/MethodischeGestaltung';
 import GrobentwurfPruefung from '@/components/stundenplanerPrototyp/GrobentwurfPruefung';
+import UmsetzungsWahlSchritt from '@/components/feinplanung/UmsetzungsWahlSchritt';
+import { kiUmsetzungVorschlag } from '@/lib/kiUmsetzung';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
@@ -53,7 +55,7 @@ export default function StundenplanerVorschau() {
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
-  const stufe = { start: 0, grob: 1, methodik: 2, fertig: 3 }[phase];
+  const stufe = { start: 0, grob: 1, methodik: 2, fein: 3, fertig: 4 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -103,11 +105,15 @@ export default function StundenplanerVorschau() {
           {phase === 'methodik' && entwurf && (
             <MethodischeGestaltung entwurf={entwurf} setEntwurf={setEntwurf} onPhaseAendern={phaseAendern}
               onSparring={(verlauf, fokus) => kiSparring({ ...k(), entwurf, verlauf, fokus })}
-              onTipps={() => kiTippCenter({ ...k(), entwurf })} onZurueck={() => setPhase('grob')} onWeiter={() => setPhase('fertig')}
+              onTipps={() => kiTippCenter({ ...k(), entwurf })} onZurueck={() => setPhase('grob')} onWeiter={() => setPhase('fein')}
                 pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
                   onVorschlag={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was der Hinweis bedeutet, was du geändert hast und warum.`)}
                   onUebernehmen={setEntwurf}
                   warnungen={entwurfsWarnungen({ entwurf, modellKey: modell.key, gruppe: v.gruppe, jahrgang: einheit?.jahrgangsstufe })} />} />
+          )}
+          {phase === 'fein' && entwurf && (
+            <UmsetzungsWahlSchritt entwurf={entwurf} setEntwurf={setEntwurf} onVorschlag={() => kiUmsetzungVorschlag({ assistent, einheit, entwurf })}
+              onZurueck={() => setPhase('methodik')} onWeiter={() => setPhase('fertig')} />
           )}
           {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
