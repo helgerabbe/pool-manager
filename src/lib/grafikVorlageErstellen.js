@@ -32,6 +32,7 @@ async function funktionBauen(methode, fach) {
 Methode: "${methode.name}". Fach: ${fach}. Wähle ein typisches Beispielthema aus diesem Fach (bei "Fächerübergreifend" z. B. Lernen lernen oder Klassenregeln). Realistische, kurze Inhalte auf Deutsch, Jahrgang 7.
 Was die Methode ist: ${methode.kurzbeschreibung || ''}
 Ablauf: ${methode.ablauf || ''}
+Ablauf und Funktionalität der Methode: ${methode.info_methodenbeschreiber || '(keine)'}
 Vorgaben für den Grafikassistenten: ${methode.info_grafikassistent || '(keine)'}
 
 Liefere zwei HTML-Fragmente (Inhalt von <body>), beide beginnen mit <div class="stunde">:
