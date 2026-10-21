@@ -58,7 +58,9 @@ ${folienBaukastenText()}
 
 ${auftrag(bisher, wunsch, verlauf)}
 
-Form der Bauanleitung (Klartext, Deutsch, nummeriert, keine Programmiersprache):
+PFLICHT: Beschreibe IMMER zwei Foliensätze, einen für die ANALOGE und einen für die DIGITALE Durchführung. Analog: Die Folien zeigen nur, was die Klasse sehen muss (Auftrag, Symbole, Timer, Phasenwechsel); gearbeitet wird im Heft, auf Papier oder im Gespräch, es gibt keine Schüleransicht. Digital: zusätzlich die Schüleransicht mit den interaktiven und kollaborativen Elementen. Starre Folien, die in beiden gleich sind, beim digitalen Foliensatz nur mit "wie analog" kennzeichnen.
+
+Form der Bauanleitung (Klartext, Deutsch, nummeriert, keine Programmiersprache). Teil I = ANALOGER FOLIENSATZ (Abschnitte A–B), Teil II = DIGITALER FOLIENSATZ (Abschnitte A–C), danach gemeinsam D–F:
 A. ORGANISATION DES FOLIENSATZES: Zuteilung (Art, Verfahren, Gruppengröße/Rollen, Wechsel), Freigabe, Ablauf der Folien, Steuerung der Lehrkraft (Timer, Fertig melden, Partner nach Fertig-Meldung) – jeweils mit kurzer Begründung aus der Methode.
 B. FOLIE FÜR FOLIE: Für jede Folie
    - Nummer, Name, Folienart (Starre Folie / Aufgabenfolie), bei Aufgabenfolien Durchführung analog oder digital (bzw. beide Varianten)
@@ -68,6 +70,7 @@ B. FOLIE FÜR FOLIE: Für jede Folie
    - BEDIENELEMENTE DER LEHRKRAFT auf dieser Folie (z. B. Timer starten, Ergebnisse zeigen, Partner bilden)
 C. DATENFLUSS: welche Eingabe wohin weiterwandert (z. B. Think-Eingabe erscheint in der Pair-Folie beim Partner).
 D. ABFRAGEN VOR DER STUNDE: alle [Abfrage]-Felder als Liste mit Standardwert.
-E. OFFENE PUNKTE: was der Baukasten noch nicht abdeckt.
+E. VERGLEICH ANALOG / DIGITAL: Was ist der digitale Mehrwert, was geht analog besser, wann empfiehlst du welche Variante?
+F. OFFENE PUNKTE: was der Baukasten noch nicht abdeckt.
 Jeder Schritt der Methodenbeschreibung muss sich in den Folien wiederfinden. Keine Farben oder Dekoration.`);
 }
