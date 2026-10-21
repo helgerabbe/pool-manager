@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles, Save } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Save, RotateCcw } from 'lucide-react';
 import usePlanerSpeichern from '@/hooks/usePlanerSpeichern';
 import { Button } from '@/components/ui/button';
 import FundamentStart from '@/components/grobplanung/FundamentStart';
@@ -60,13 +60,19 @@ export default function StundenplanerVorschau() {
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
-  const { status, laden, speichern } = usePlanerSpeichern(einheit);
+  const { stundeId, status, laden, speichern } = usePlanerSpeichern(einheit);
   const stand = () => ({ phase, minuten, pause, v, punkte, entwurf });
   const titel = entwurf?.name || v.anker.thema || v.anker.abschnitte?.[0]?.titel;
   React.useEffect(() => {
     laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
   }, [laden]);
   React.useEffect(() => { if (einheit && phase !== 'start') speichern(stand(), titel); }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
+  const neuStarten = () => {
+    if (!window.confirm('Die bisherige Planung dieser Stunde wird verworfen und du startest wieder beim Fundament. Wirklich von vorne anfangen?')) return;
+    const leer = { phase: 'start', minuten: 45, pause: false, v: { ...START, gruppe: { ...START.gruppe, ...(profil || {}) } }, punkte: [], entwurf: null };
+    setPhase(leer.phase); setMinuten(leer.minuten); setPause(false); setV(leer.v); setPunkte([]); setEntwurf(null); setFehler('');
+    if (stundeId) speichern(leer, 'Neue Stunde');
+  };
   const stufe = { start: 0, gespraech: 1, grob: 2, methodik: 3, fein: 4, aufbereitung: 5, fertig: 5 }[phase];
 
   return (
@@ -81,6 +87,7 @@ export default function StundenplanerVorschau() {
               <Button size="sm" variant="outline" disabled={status === 'speichert'} onClick={() => speichern(stand(), titel)}>
                 {status === 'speichert' ? <Loader2 className="animate-spin" /> : <Save />} Speichern
               </Button>
+              <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={neuStarten}><RotateCcw /> Von vorne anfangen</Button>
               <span className="text-xs text-muted-foreground">{status === 'gespeichert' ? 'Gespeichert. Wird bei jedem Schrittwechsel automatisch gesichert.' : status === 'speichert' ? 'Speichert …' : ''}</span>
             </div>
           )}
@@ -123,6 +130,7 @@ export default function StundenplanerVorschau() {
               </Button>
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
               {punkte.length > 0 && <VorgabenListe punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />}
+              <Button variant="ghost" onClick={() => setPhase('gespraech')}><ArrowLeft /> Zurück zum Planungsgespräch</Button>
             </>
           )}
           {phase === 'methodik' && entwurf && (
