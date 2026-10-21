@@ -145,7 +145,7 @@ export default function StundenplanerVorschau() {
           )}
           {kontext && phase === 'gespraech' && (
             <>
-              <div className="grid gap-4 lg:grid-cols-[2fr_3fr]">
+              <div className="space-y-3">
                 <KernschrittListe schritte={v.kernschritte} gesperrt={gLaedt} onAnsprechen={(s) => setAnstoss({ text: `Ich möchte über die Phase „${s.name}“ sprechen.` })} />
                 <PlanungsGespraech verlauf={v.gespraech || []} setVerlauf={setze('gespraech')} onListe={listeZeigen} onSchritt={gespraechSchritt} anstoss={anstoss} onLaedt={setGLaedt} />
               </div>
