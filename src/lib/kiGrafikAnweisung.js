@@ -46,8 +46,22 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 }
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
-export function kiGrafikAnweisung({ methode, bisher, wunsch, verlauf }) {
-  return frage(`Du schreibst die BAUANLEITUNG für den Grafikassistenten. Er baut daraus die grafische Vorlage (Foliensatz) dieser Methode. Er darf NUR die Elemente und Einstellungen des Baukastens unten verwenden; beschreibe so genau, dass er nichts raten muss.
+// Die Bauanleitung ist zu lang für eine Antwort: drei Teile parallel, danach zusammengesetzt.
+const TEILE = [
+  'Schreibe NUR Teil I (ANALOGER FOLIENSATZ, Abschnitte A und B), vollständig für alle Folien.',
+  'Schreibe NUR Teil II (DIGITALER FOLIENSATZ, Abschnitte A, B und C), vollständig für alle Folien.',
+  'Schreibe NUR die gemeinsamen Abschnitte D, E und F.',
+];
+
+export async function kiGrafikAnweisung(args) {
+  const teile = await Promise.all(TEILE.map((t) => grafikTeil(args, t)));
+  return { text: teile.map((r) => r.text).join('\n\n'), kurz: teile.map((r) => r.kurz).filter(Boolean).join(' ') };
+}
+
+function grafikTeil({ methode, bisher, wunsch, verlauf }, teil) {
+  return frage(`${teil} Die anderen Teile schreiben parallel andere Assistenten; wiederhole sie nicht. Bei einem Wunsch überarbeitest du nur deinen Teil des bisherigen Textes.
+
+Du schreibst die BAUANLEITUNG für den Grafikassistenten. Er baut daraus die grafische Vorlage (Foliensatz) dieser Methode. Er darf NUR die Elemente und Einstellungen des Baukastens unten verwenden; beschreibe so genau, dass er nichts raten muss.
 ${methodenKontext(methode)}
 
 METHODENBESCHREIBUNG (Ablauf und Funktionalität, vom Methodenbeschreiber):
