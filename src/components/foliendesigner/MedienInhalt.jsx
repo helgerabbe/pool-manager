@@ -16,5 +16,5 @@ export default function MedienInhalt({ el }) {
     return <div className="flex h-full w-full flex-col items-center justify-center gap-1 rounded-lg bg-foreground/90 text-background"><Play className="h-10 w-10" />{v && <span className="text-xs underline">Video öffnen{v.anbieter ? ` (${v.anbieter})` : ''}</span>}</div>;
   }
   if (el.typ === 'audio') return url ? <audio src={url} controls className="w-full" /> : <div className="flex h-full w-full items-center gap-2 rounded-full bg-muted px-3"><Music className="h-4 w-4 text-primary" /><div className="h-1.5 flex-1 rounded-full bg-primary/30" /></div>;
-  return <span className="flex items-center gap-1 text-primary underline"><Link className="h-4 w-4" />{el.inhalt || 'Zur Webseite'}</span>;
+  return <span className="flex items-center gap-1 text-primary underline"><Link className="h-4 w-4" />{el.anzeige === 'adresse' ? (el.quelle || 'https://…') : (el.inhalt || 'Zur Webseite')}</span>;
 }

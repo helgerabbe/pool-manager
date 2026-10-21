@@ -28,7 +28,8 @@ export default function MedienEinstellungen({ el, setze }) {
   return (
     <>
       <Feld titel="Adresse (Pflicht)" value={el.quelle || ''} placeholder="https://…" onChange={(e) => setze({ quelle: e.target.value })} />
-      <Feld titel="Angezeigter Text" value={el.inhalt || ''} placeholder="Zur Webseite" onChange={(e) => setze({ inhalt: e.target.value })} />
+      <Umschalter titel="Anzeige" wert={el.anzeige || 'text'} setze={(v) => setze({ anzeige: v })} optionen={[['text', 'Text mit Link'], ['adresse', 'Adresse zeigen']]} />
+      {(el.anzeige || 'text') === 'text' && <Feld titel="Angezeigter Text" value={el.inhalt || ''} placeholder="Zur Webseite" onChange={(e) => setze({ inhalt: e.target.value })} />}
     </>
   );
 }

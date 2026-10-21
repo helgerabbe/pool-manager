@@ -35,7 +35,7 @@ export default function FolienArbeitsflaeche({ elemente, setElemente, gewaehlt, 
           style={{ left: el.x, top: el.y, width: el.b, height: el.h }}
           className={`absolute flex cursor-move items-center justify-center ${gewaehlt === el.id ? 'outline outline-2 outline-offset-2 outline-primary' : ''}`}>
           <div className="pointer-events-none flex h-full w-full items-center justify-center"><ElementInhalt el={el} /></div>
-          {gewaehlt === el.id && <GroessenGriff el={el} nurBreite={el.typ === 'pfeil_duenn'} setze={(p) => setElemente((alle) => alle.map((x) => (x.id === el.id ? { ...x, ...p } : x)))} />}
+          {gewaehlt === el.id && el.typ !== 'audio' && <GroessenGriff el={el} nurBreite={el.typ === 'pfeil_duenn'} setze={(p) => setElemente((alle) => alle.map((x) => (x.id === el.id ? { ...x, ...p } : x)))} />}
           {gewaehlt === el.id && (
             <button onClick={() => { setElemente(elemente.filter((x) => x.id !== el.id)); setGewaehlt(null); }}
               className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">
