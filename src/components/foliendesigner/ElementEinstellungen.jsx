@@ -11,6 +11,7 @@ import FunktionWahl from './einstellungen/FunktionWahl';
 import SichtbarkeitWahl from './einstellungen/SichtbarkeitWahl';
 import ZusatzOptionen from './einstellungen/ZusatzOptionen';
 import ErweiterungOptionen from './einstellungen/ErweiterungOptionen';
+import LetzteOptionen from './einstellungen/LetzteOptionen';
 import { ELEMENT_FUNKTIONEN } from '@/lib/folienFunktionen';
 
 const FORMEN = {
@@ -40,6 +41,7 @@ export default function ElementEinstellungen({ el, setze }) {
       {ELEMENT_FUNKTIONEN[el.typ] ? <FunktionWahl el={el} setze={setze} /> : inhalt}
       <ZusatzOptionen el={el} setze={setze} />
       <ErweiterungOptionen el={el} setze={setze} />
+      <LetzteOptionen el={el} setze={setze} />
       {!['erscheinen', 'verschwinden', 'bewegung'].includes(el.typ) && <SichtbarkeitWahl el={el} setze={setze} />}
     </aside>
   );

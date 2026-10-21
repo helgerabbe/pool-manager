@@ -1,6 +1,6 @@
 // Organisationsebene (2026-10-21): gilt für die ganze Stunde bzw. den Foliensatz, nicht für ein einzelnes Element.
 export const ZUTEILUNG_ARTEN = [['keine', 'Keine'], ['partner', 'Partner'], ['gruppen', 'Gruppen'], ['rollen', 'Rollen'], ['seiten', 'Seiten']];
-export const ZUTEILUNG_VERFAHREN = [['fest', 'Fest'], ['zufall', 'Zufällig'], ['rotierend', 'Rotierend']];
+export const ZUTEILUNG_VERFAHREN = [['fest', 'Fest'], ['zufall', 'Zufällig'], ['rotierend', 'Rotierend'], ['wahl', 'Nach eigener Wahl']];
 export const WECHSEL = [['signal', 'Auf Signal'], ['takt', 'Im Takt']];
 export const FREIGABE = [['lehrkraft', 'Lehrkraft'], ['automatisch', 'Automatisch'], ['fertig', 'Wenn alle fertig'], ['geloest', 'Nach Lösung']];
 export const LOESUNG_FUER = [['einzeln', 'Je Schüler'], ['gruppe', 'Je Gruppe']];

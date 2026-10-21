@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers, Camera, Mic, Hand, Table } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers, Camera, Mic, Hand, Table, Dices, AppWindow } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -14,6 +14,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'freihand', label: 'Freihandform', icon: PenTool, b: 170, h: 110 },
     { typ: 'formel', label: 'Formel', icon: Sigma, b: 220, h: 60 },
     { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
+    { typ: 'zufall', label: 'Zufallsgenerator', icon: Dices, b: 220, h: 140 },
     { typ: 'zuteilung', label: 'Zuteilungsanzeige', icon: UserCheck, b: 280, h: 70 },
   ] },
   { titel: 'Medien und Verweise', elemente: [
@@ -21,6 +22,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'video', label: 'Video', icon: Video, b: 280, h: 160 },
     { typ: 'audio', label: 'Audio', icon: Music, b: 260, h: 50 },
     { typ: 'link', label: 'Link', icon: Link, b: 200, h: 40 },
+    { typ: 'extern', label: 'Externe Seite (GeoGebra …)', icon: AppWindow, b: 360, h: 220 },
     { typ: 'animation_ki', label: 'Animation (KI)', icon: Film, b: 260, h: 160 },
     { typ: 'animation_interaktiv', label: 'Interaktive Animation (KI)', icon: Sparkles, b: 260, h: 190 },
   ] },

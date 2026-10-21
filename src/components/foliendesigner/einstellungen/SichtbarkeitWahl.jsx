@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import Umschalter from './Umschalter';
 import { ELEMENT_FUNKTIONEN } from '@/lib/folienFunktionen';
 
-const SICHTBAR_FUER = [['alle', 'Alle'], ['zuteilung', 'Rolle / Gruppe'], ['je_schueler', 'Je Schüler']];
+const SICHTBAR_FUER = [['alle', 'Alle'], ['zuteilung', 'Rolle / Gruppe'], ['je_schueler', 'Je Schüler'], ['ausser_mir', 'Alle außer mir']];
 const VERTEILUNG = [['verteilen', 'Verteilen'], ['mischen', 'Mischen']];
 const ERGEBNISSE = [['sofort', 'Sofort'], ['verdeckt', 'Nach Freigabe']];
 const NAMEN = [['mit_namen', 'Mit Namen'], ['anonym', 'Anonym']];
@@ -21,6 +21,7 @@ export default function SichtbarkeitWahl({ el, setze }) {
         <Umschalter titel="Inhalte" optionen={VERTEILUNG} wert={el.verteilung || 'verteilen'} setze={(v) => setze({ verteilung: v })} />
         <p className="text-xs text-muted-foreground">{(el.verteilung || 'verteilen') === 'verteilen' ? 'Jeder Schüler bekommt einen anderen Inhalt (z. B. Kettenquiz).' : 'Alle haben dieselben Inhalte in eigener Reihenfolge (z. B. Bingo).'}</p>
       </>}
+      {sichtbar === 'ausser_mir' && <p className="text-xs text-muted-foreground">Jeder Schüler hat einen eigenen Inhalt, den alle anderen sehen, nur er selbst nicht (z. B. Wer bin ich?).</p>}
       {ELEMENT_FUNKTIONEN[el.typ] && <>
         <Umschalter titel="Ergebnisse der anderen sichtbar" optionen={ERGEBNISSE} wert={el.ergebnisse || 'sofort'} setze={(v) => setze({ ergebnisse: v })} />
         <Umschalter titel="Beiträge zeigen" optionen={NAMEN} wert={el.namen || 'mit_namen'} setze={(v) => setze({ namen: v })} />
