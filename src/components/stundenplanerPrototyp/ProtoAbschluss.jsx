@@ -11,7 +11,7 @@ export default function ProtoAbschluss({ name, onZurueck }) {
         <p className="font-display text-lg font-bold">Deine Stunde steht.</p>
         <p className="text-sm text-muted-foreground">„{name}“ ist fertig: Phasen, Zeiten, Umsetzung sowie Impulse, Arbeitsaufträge und Materialien sind ausgearbeitet.</p>
       </div>
-      <p className="text-xs text-accent">Prototyp: Die Stunde wird noch nicht gespeichert.</p>
+      <p className="text-xs text-muted-foreground">Die Stunde ist gespeichert und in deiner Unterrichtseinheit zu finden.</p>
       <Button variant="outline" onClick={onZurueck}>Zurück zur Übersicht</Button>
     </div>
   );

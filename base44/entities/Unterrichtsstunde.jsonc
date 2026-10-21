@@ -1,48 +1,41 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id) und wird in der Privaten Bibliothek nach Fach > Unterrichtseinheit gruppiert angezeigt. Die eigentlichen Phasen liegen in der StundenSequenz-Entity.\n\nBEGRIFFSTRENNUNG (2026-09-14): Eine UNTERRICHTSEINHEIT ist die thematische Mappe im Bereich 'Mein Unterricht'. Sie ist etwas anderes als eine EINHEIT (Entity 'Einheiten') - das vollstaendige Lernszenario mit Lernpfaden, Dashboards und Moodle-Kurs. Beide Begriffe existieren nebeneinander und sind bewusst getrennte Datensaetze.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id). Die Phasen liegen in StundenSequenz. STUNDENPLANER (2026-10-21): 'planer_stand' speichert den Zwischenstand des Stundenplaners (Schritt, Vorgaben, Entwurf), damit die Lehrkraft jederzeit weiterarbeiten kann.",
   "properties": {
     "unterrichtseinheit_id": {
       "type": "string",
-      "description": "FK zur UNTERRICHTSEINHEIT (Entity 'Unterrichtseinheit'), in der diese Stunde liegt."
+      "description": "FK zur Unterrichtseinheit."
     },
     "einheit_id": {
       "type": "string",
-      "description": "@legacy: Frueher die Gruppierung ueber eine 'Einheit' (Entity 'Einheiten'). Ersetzt durch unterrichtseinheit_id; wird nicht mehr geschrieben."
+      "description": "@legacy: ersetzt durch unterrichtseinheit_id."
     },
     "fach": {
-      "type": "string",
-      "description": "Denormalisiert aus der Unterrichtseinheit - fuer die Gruppierung nach Fach."
+      "type": "string"
     },
     "jahrgangsstufe": {
-      "type": "string",
-      "description": "Denormalisiert aus der Unterrichtseinheit."
+      "type": "string"
     },
     "arbeitstitel": {
-      "type": "string",
-      "description": "Arbeitstitel der Stunde zur Wiedererkennung in der Bibliothek."
+      "type": "string"
     },
     "stundenziel": {
-      "type": "string",
-      "description": "Das Stundenziel (eine Formulierung)."
+      "type": "string"
     },
     "teilziele": {
       "type": "array",
       "items": {
         "type": "string"
       },
-      "default": [],
-      "description": "Optionale Teilziele der Stunde."
+      "default": []
     },
     "datum": {
       "type": "string",
-      "format": "date",
-      "description": "Optionales geplantes Datum der Stunde."
+      "format": "date"
     },
     "besitzer_email": {
-      "type": "string",
-      "description": "E-Mail der planenden Lehrkraft."
+      "type": "string"
     },
     "status": {
       "type": "string",
@@ -50,16 +43,18 @@
         "entwurf",
         "bereit"
       ],
-      "default": "entwurf",
-      "description": "'entwurf' = in Planung. 'bereit' = alle Phasen vollstaendig, Stunde ist fuer den Unterricht/Moodle einsetzbar."
+      "default": "entwurf"
     },
     "notfall_code": {
-      "type": "string",
-      "description": "Notfall-Schluessel der Stunde: schaltet im Stunden-Player JEDE Phase frei, falls der Lehrkraft die Phasen-Codes im Unterricht nicht vorliegen."
+      "type": "string"
+    },
+    "planer_stand": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Zwischenstand des Stundenplaners: { phase, minuten, pause, v, punkte, entwurf, gespeichert_am }."
     },
     "coach_plan": {
       "type": "object",
-      "description": "KI-Generator fuer das Stundenregieblatt (MUG Paket 2, 2026-08-16): Die im Dialog entstandene 'Bauanleitung' der Stunde. Sie bleibt dauerhaft erhalten - auch nachdem daraus Phasen (StundenSequenz) generiert wurden - und kann jederzeit weiterentwickelt und erneut umgesetzt werden. Struktur: steckbrief, verlaufsplan und didaktische_hinweise.",
       "additionalProperties": true,
       "properties": {
         "steckbrief": {
@@ -82,6 +77,7 @@
         },
         "verlaufsplan": {
           "type": "array",
+          "default": [],
           "items": {
             "type": "object",
             "additionalProperties": true,
@@ -119,20 +115,16 @@
               },
               "ki_erstellen": {
                 "type": "boolean",
-                "default": false,
-                "description": "KI-Mit-Erstellung (2026-08-16): true = beim Umsetzen der Bauanleitung soll die digitale Aufgabe dieser Phase gleich von der KI erzeugt werden."
+                "default": false
               },
               "ki_aktivitaet": {
-                "type": "string",
-                "description": "Name der Aufgabenart aus dem AktivitaetenKatalog, die fuer diese Phase erzeugt werden soll."
+                "type": "string"
               },
               "ki_hinweis": {
-                "type": "string",
-                "description": "Zusaetzliche inhaltliche Hinweise der Lehrkraft fuer die KI-Aufgabengenerierung dieser Phase."
+                "type": "string"
               }
             }
-          },
-          "default": []
+          }
         },
         "didaktische_hinweise": {
           "type": "string"
@@ -141,7 +133,7 @@
     },
     "coach_verlauf": {
       "type": "array",
-      "description": "Chat-Verlauf mit dem KI-Generator (Rollen 'user' und 'assistant'). Wird gespeichert, damit die Lehrkraft das Gespraech spaeter fortsetzen kann.",
+      "default": [],
       "items": {
         "type": "object",
         "properties": {
@@ -156,18 +148,15 @@
             "type": "string"
           }
         }
-      },
-      "default": []
+      }
     },
     "coach_plan_updated_at": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel der letzten Aenderung der Bauanleitung."
+      "format": "date-time"
     },
     "coach_plan_umgesetzt_am": {
       "type": "string",
-      "format": "date-time",
-      "description": "Zeitstempel, zu dem aus der Bauanleitung zuletzt Phasen (StundenSequenz) generiert wurden."
+      "format": "date-time"
     }
   },
   "required": [

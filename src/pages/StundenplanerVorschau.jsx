@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, Save } from 'lucide-react';
+import usePlanerSpeichern from '@/hooks/usePlanerSpeichern';
 import { Button } from '@/components/ui/button';
 import FundamentStart from '@/components/grobplanung/FundamentStart';
 import VorgabenRaster from '@/components/grobplanung/VorgabenRaster';
@@ -57,6 +58,13 @@ export default function StundenplanerVorschau() {
     !v.ziel.haupt && 'Stundenziel vom Assistenten abgeleitet.',
     !v.ritual && 'Kein festes Ritual eingeplant.',
   ].filter(Boolean);
+  const { status, laden, speichern } = usePlanerSpeichern(einheit);
+  const stand = () => ({ phase, minuten, pause, v, punkte, entwurf });
+  const titel = entwurf?.name || v.anker.thema || v.anker.abschnitte?.[0]?.titel;
+  React.useEffect(() => {
+    laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
+  }, [laden]);
+  React.useEffect(() => { if (einheit && phase !== 'start') speichern(stand(), titel); }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const stufe = { start: 0, grob: 1, methodik: 2, fein: 3, aufbereitung: 4, fertig: 4 }[phase];
 
   return (
@@ -66,7 +74,14 @@ export default function StundenplanerVorschau() {
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
           {einheit && <p className="text-sm text-muted-foreground">{einheit.titel} · {einheit.fach} · Jg. {einheit.jahrgangsstufe}</p>}
-          <p className="text-xs text-accent">Prototyp – nichts wird gespeichert.</p>
+          {phase !== 'start' && (
+            <div className="mt-1 flex items-center gap-2">
+              <Button size="sm" variant="outline" disabled={status === 'speichert'} onClick={() => speichern(stand(), titel)}>
+                {status === 'speichert' ? <Loader2 className="animate-spin" /> : <Save />} Speichern
+              </Button>
+              <span className="text-xs text-muted-foreground">{status === 'gespeichert' ? 'Gespeichert. Wird bei jedem Schrittwechsel automatisch gesichert.' : status === 'speichert' ? 'Speichert …' : ''}</span>
+            </div>
+          )}
           <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             Assistent:
             <select value={assistent} onChange={(e) => { setAssistent(e.target.value); localStorage.setItem('stundenplaner_assistent', e.target.value); }} className="rounded-md border bg-card px-2 py-1 text-foreground">
