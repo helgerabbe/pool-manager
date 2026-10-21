@@ -2,7 +2,7 @@ import React from 'react';
 import { Bot, Palette, ListOrdered } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import GrafikAnweisungAssistent from './GrafikAnweisungAssistent';
-import { kiMethodenBeschreibung, kiGrafikAnweisung } from '@/lib/kiGrafikAnweisung';
+import { kiMethodenBeschreibung, kiGrafikAnalog, kiGrafikDigital, kiGrafikGemeinsam } from '@/lib/kiGrafikAnweisung';
 
 const FELDER = [
   ['info_unterrichtsassistent', 'Informationen für den Unterrichtsassistenten', Bot],
@@ -12,7 +12,11 @@ const FELDER = [
 
 const KI = {
   info_methodenbeschreiber: { erzeugen: kiMethodenBeschreibung, knopf: 'Bereich befüllen', hinweis: 'Der Methodenbeschreiber erstellt eine Foliensatz-Expertise: Ablauf, Art des Foliensatzes, Folienfolge und was die Lehrkraft vorher entscheiden muss.', platzhalter: 'z. B. Die Gruppen sollen zweimal rotieren' },
-  info_grafikassistent: { erzeugen: kiGrafikAnweisung, hinweis: 'Hier wird aus der Methodenbeschreibung eine Beschreibung für den Grafikassistenten gemacht, damit er daraus die Lehrer- und Schüleransichten bauen kann.', platzhalter: 'z. B. Schüler sollen ihre Gruppe vorher auswählen können' },
+  info_grafikassistent: { knoepfe: [
+    { label: '1. Analoge Folien', erzeugen: kiGrafikAnalog },
+    { label: '2. Digitale Folien', erzeugen: kiGrafikDigital },
+    { label: '3. Abfragen & Vergleich', erzeugen: kiGrafikGemeinsam },
+  ], hinweis: 'Hier wird aus der Methodenbeschreibung eine Beschreibung für den Grafikassistenten gemacht, damit er daraus die Lehrer- und Schüleransichten bauen kann.', platzhalter: 'z. B. Schüler sollen ihre Gruppe vorher auswählen können' },
 };
 
 /** Arbeitsgrundlagen für Unterrichtsassistent, Methodenbeschreiber und Grafikassistent. */

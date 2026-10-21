@@ -47,6 +47,47 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
 // Kleinschrittig (2026-10-21): erst die Folienliste planen, dann jeder Abschnitt und jede Folie als eigene kurze Anfrage.
+// Drei Knöpfe (2026-10-21): analog, digital, Gesamtbeschreibung; jeder ersetzt nur seinen Teil im Text.
+const KOEPFE = ['TEIL I · ANALOGER FOLIENSATZ', 'TEIL II · DIGITALER FOLIENSATZ', 'GEMEINSAM'];
+
+function setzeTeil(bisher, kopf, neu) {
+  const teile = {};
+  KOEPFE.forEach((k, i) => {
+    const start = (bisher || '').indexOf(k);
+    if (start < 0) return;
+    const ende = KOEPFE.slice(i + 1).map((n) => bisher.indexOf(n)).filter((p) => p > start)[0] ?? bisher.length;
+    teile[k] = bisher.slice(start, ende).trim();
+  });
+  teile[kopf] = `${kopf}\n\n${neu}`;
+  return KOEPFE.filter((k) => teile[k]).map((k) => teile[k]).join('\n\n');
+}
+
+async function baueSatz(args, art) {
+  const plan = await planeFolien(args.methode);
+  const namen = plan[art] || [];
+  const gross = art === 'analog' ? 'ANALOGEN' : 'DIGITALEN';
+  const liste = `Folienliste ${art}: ${namen.map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
+  const schritte = [
+    `Schreibe NUR Abschnitt A (Organisation) für den ${gross} Foliensatz.`,
+    ...namen.map((n, i) => `Schreibe NUR Abschnitt B für die ${gross} Folie ${i + 1} "${n}"${art === 'analog' ? ' (keine Schüleransicht)' : ''}.`),
+    ...(art === 'digital' ? ['Schreibe NUR Abschnitt C (Datenfluss) des digitalen Foliensatzes.'] : []),
+  ];
+  const teile = [];
+  for (const s of schritte) teile.push((await grafikTeil(args, `${s}\n${liste}`)).text || '');
+  return teile.join('\n\n');
+}
+
+export async function kiGrafikAnalog(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[0], await baueSatz(args, 'analog')) };
+}
+export async function kiGrafikDigital(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[1], await baueSatz(args, 'digital')) };
+}
+export async function kiGrafikGemeinsam(args) {
+  const r = await grafikTeil(args, 'Schreibe NUR die Abschnitte D, E und F.');
+  return { text: setzeTeil(args.bisher, KOEPFE[2], r.text || '') };
+}
+
 async function planeFolien(methode) {
   return base44.integrations.Core.InvokeLLM({
     prompt: `Plane nur die Folienliste für den analogen und den digitalen Foliensatz dieser Methode, je Folie ein kurzer Name. Keine Details.
@@ -76,7 +117,8 @@ export async function kiGrafikAnweisung(args) {
   return { text, kurz: '' };
 }
 
-function grafikTeil({ methode, bisher, wunsch, verlauf }, teil) {
+function grafikTeil({ methode, wunsch, verlauf }, teil) {
+  const bisher = '';
   return frage(`${teil}
 Die anderen Abschnitte und Folien schreiben parallel andere Assistenten; wiederhole sie nicht, schreibe keine Teil-Überschrift. Knapp und vollständig.
 
