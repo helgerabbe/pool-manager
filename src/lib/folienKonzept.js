@@ -29,6 +29,11 @@ export const FOLIEN_KONZEPT = [
     ['Ablauf', 'Folien fest hintereinander oder frei wählbar (z. B. Stationenlernen).'],
     ['Signale', 'Synchroner Timer, Fertig melden und Partnerbildung nach Fertig-Meldung (Lerntempoduett).'],
   ] },
+  { titel: 'Sichtbarkeit (gilt für jedes Element)', punkte: [
+    ['Sichtbar für', 'Alle, nur eine Rolle oder Gruppe (z. B. Information Gap, Tabu) oder je Schüler verschieden: Inhalte verteilen (Kettenquiz) oder mischen (Bingo).'],
+    ['Ergebnisse', 'Die Ergebnisse der anderen erscheinen sofort oder erst nach Freigabe durch die Lehrkraft, damit niemand abschreibt oder sich der Mehrheit anschließt.'],
+    ['Namen', 'Beiträge erscheinen mit Namen oder anonym (z. B. Anonymer Hut).'],
+  ] },
   { titel: 'Inhalte: Wer legt sie fest? (gilt für jedes Element)', punkte: [
     ['Fest', 'Steht genau so auf der Folie, z. B. der Methodenname.'],
     ['Abfrage', 'Die Lehrkraft legt den Inhalt fest. Der Grafikassistent fragt nach oder lässt einen Platzhalter; Beispiele dienen nur der Orientierung.'],
