@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query';
 import GalerieListe from '@/components/aktivitaetengalerie/GalerieListe';
 import StufenFilter from '@/components/aktivitaetengalerie/StufenFilter';
 import FachFilter from '@/components/aktivitaetengalerie/FachFilter';
-import { Loader2, Search, BookOpen } from 'lucide-react';
+import { Loader2, Search, BookOpen, Presentation } from 'lucide-react';
+import FolienKonzept from '@/components/aktivitaetengalerie/FolienKonzept';
 import DidaktischeKonzeption from '@/components/aktivitaetengalerie/DidaktischeKonzeption';
 import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
@@ -33,6 +34,10 @@ export default function Aktivitaetengalerie() {
             className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahlId === 'konzeption' ? 'bg-muted font-semibold' : ''}`}>
             <BookOpen className="h-4 w-4 text-primary" /> Didaktische Konzeption
           </button>
+          <button onClick={() => setAuswahlId('folienkonzept')}
+            className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${auswahlId === 'folienkonzept' ? 'bg-muted font-semibold' : ''}`}>
+            <Presentation className="h-4 w-4 text-primary" /> Folienkonzept
+          </button>
           <h1 className="font-display text-lg font-bold">Methodengalerie</h1>
           <p className="text-xs text-muted-foreground">{fertig} von {galerie.length} Bauplänen geprüft</p>
           <StufenFilter stufe={stufe} setStufe={setStufe} />
@@ -48,7 +53,7 @@ export default function Aktivitaetengalerie() {
         </div>
       </aside>
       <main className="flex-1 overflow-y-auto">
-        {auswahlId === 'konzeption' ? <DidaktischeKonzeption /> : auswahl ? <MethodeBauplanForm key={auswahl.id} methode={auswahl} onGespeichert={refetch} /> : !isLoading && <p className="p-8 text-sm text-muted-foreground">Keine Methoden gefunden.</p>}
+        {auswahlId === 'konzeption' ? <DidaktischeKonzeption /> : auswahlId === 'folienkonzept' ? <FolienKonzept /> : auswahl ? <MethodeBauplanForm key={auswahl.id} methode={auswahl} onGespeichert={refetch} /> : !isLoading && <p className="p-8 text-sm text-muted-foreground">Keine Methoden gefunden.</p>}
       </main>
     </div>
   );
