@@ -15,6 +15,7 @@ import GrundstrukturWahl, { wirksameGrundstruktur } from './GrundstrukturWahl';
 /** Sechs Vorgaben-Container; ein Klick öffnet den jeweiligen Bereich im Dialog. */
 export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVorschlag, onThemaVorschlag }) {
   const [offen, setOffen] = React.useState(null);
+  const [bearbeitet, setBearbeitet] = React.useState([]);
   const a = v.anker;
   const modellAbschnitt = a.abschnitte.find((s) => s.modell);
   const grund = wirksameGrundstruktur(v.grundstruktur, modellAbschnitt);
@@ -39,14 +40,14 @@ export default function VorgabenRaster({ v, setze, verlauf, assistent, onZielVor
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {C.map((c) => <ContainerKarte key={c.key} {...c} onClick={() => setOffen(c.key)} />)}
+        {C.map((c) => <ContainerKarte key={c.key} {...c} bearbeitet={bearbeitet.includes(c.key)} onClick={() => setOffen(c.key)} />)}
       </div>
       <Dialog open={!!akt} onOpenChange={(o) => !o && setOffen(null)}>
         {akt && (
           <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
             <DialogHeader><DialogTitle>{akt.titel}</DialogTitle><DialogDescription className={akt.ohneUntertitel ? 'sr-only' : ''}>{akt.hinweis}</DialogDescription></DialogHeader>
             {akt.editor}
-            <Button onClick={() => setOffen(null)}>Fertig</Button>
+            <Button onClick={() => { setBearbeitet((b) => [...new Set([...b, akt.key])]); setOffen(null); }}>Fertig</Button>
           </DialogContent>
         )}
       </Dialog>
