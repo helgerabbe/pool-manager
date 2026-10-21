@@ -46,20 +46,39 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 }
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
-// Die Bauanleitung ist zu lang für eine Antwort: drei Teile parallel, danach zusammengesetzt.
-const TEILE = [
-  'Schreibe NUR Teil I (ANALOGER FOLIENSATZ, Abschnitte A und B), vollständig für alle Folien.',
-  'Schreibe NUR Teil II (DIGITALER FOLIENSATZ, Abschnitte A, B und C), vollständig für alle Folien.',
-  'Schreibe NUR die gemeinsamen Abschnitte D, E und F.',
-];
+// Kleinschrittig (2026-10-21): erst die Folienliste planen, dann jeder Abschnitt und jede Folie als eigene kurze Anfrage.
+async function planeFolien(methode) {
+  return base44.integrations.Core.InvokeLLM({
+    prompt: `Plane nur die Folienliste für den analogen und den digitalen Foliensatz dieser Methode, je Folie ein kurzer Name. Keine Details.
+${methodenKontext(methode)}
+METHODENBESCHREIBUNG:
+${methode.info_methodenbeschreiber || ''}`,
+    model: 'claude_sonnet_4_6',
+    response_json_schema: { type: 'object', properties: {
+      analog: { type: 'array', items: { type: 'string' } }, digital: { type: 'array', items: { type: 'string' } },
+    } },
+  });
+}
 
 export async function kiGrafikAnweisung(args) {
-  const teile = await Promise.all(TEILE.map((t) => grafikTeil(args, t)));
-  return { text: teile.map((r) => r.text).join('\n\n'), kurz: teile.map((r) => r.kurz).filter(Boolean).join(' ') };
+  const plan = await planeFolien(args.methode);
+  const liste = `Folienliste analog: ${(plan.analog || []).map((n, i) => `${i + 1}. ${n}`).join(' · ')}\nFolienliste digital: ${(plan.digital || []).map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
+  const schritte = [
+    ['TEIL I · ANALOGER FOLIENSATZ', 'Schreibe NUR Abschnitt A (Organisation) für den ANALOGEN Foliensatz.'],
+    ...(plan.analog || []).map((n, i) => [null, `Schreibe NUR Abschnitt B für die ANALOGE Folie ${i + 1} "${n}" (keine Schüleransicht).`]),
+    ['TEIL II · DIGITALER FOLIENSATZ', 'Schreibe NUR Abschnitt A (Organisation) für den DIGITALEN Foliensatz.'],
+    ...(plan.digital || []).map((n, i) => [null, `Schreibe NUR Abschnitt B für die DIGITALE Folie ${i + 1} "${n}".`]),
+    [null, 'Schreibe NUR Abschnitt C (Datenfluss) des digitalen Foliensatzes.'],
+    ['GEMEINSAM', 'Schreibe NUR die Abschnitte D, E und F.'],
+  ];
+  const teile = await Promise.all(schritte.map(([, t]) => grafikTeil(args, `${t}\n${liste}`)));
+  const text = schritte.map(([kopf], i) => `${kopf ? `${kopf}\n\n` : ''}${teile[i].text || ''}`).join('\n\n');
+  return { text, kurz: '' };
 }
 
 function grafikTeil({ methode, bisher, wunsch, verlauf }, teil) {
-  return frage(`${teil} Die anderen Teile schreiben parallel andere Assistenten; wiederhole sie nicht. Bei einem Wunsch überarbeitest du nur deinen Teil des bisherigen Textes.
+  return frage(`${teil}
+Die anderen Abschnitte und Folien schreiben parallel andere Assistenten; wiederhole sie nicht, schreibe keine Teil-Überschrift. Knapp und vollständig.
 
 Du schreibst die BAUANLEITUNG für den Grafikassistenten. Er baut daraus die grafische Vorlage (Foliensatz) dieser Methode. Er darf NUR die Elemente und Einstellungen des Baukastens unten verwenden; beschreibe so genau, dass er nichts raten muss.
 ${methodenKontext(methode)}
