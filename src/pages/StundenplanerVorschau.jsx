@@ -61,7 +61,10 @@ export default function StundenplanerVorschau() {
     const r = await kiGespraechSchritt({ ...k(), vorgaben: { ...v, hintergrund }, verlauf });
     if (r.kernschritte?.length) {
       const alt = v.kernschritte || [];
-      setze('kernschritte')(r.kernschritte.map((s, i) => ({ ...s, neu: alt[i]?.satz !== s.satz || alt[i]?.name !== s.name })));
+      setze('kernschritte')(r.kernschritte.map((s) => {
+        const vorher = alt.find((a) => a.name === s.name && a.satz === s.satz);
+        return { name: s.name, satz: s.satz, neu: alt.length > 0 && !vorher, ok: !!vorher?.ok };
+      }));
     }
     return r;
   };
@@ -146,7 +149,7 @@ export default function StundenplanerVorschau() {
           {kontext && phase === 'gespraech' && (
             <>
               <div className="space-y-3">
-                <KernschrittListe schritte={v.kernschritte} gesperrt={gLaedt} onAnsprechen={(s) => setAnstoss({ text: `Ich möchte über die Phase „${s.name}“ sprechen.` })} />
+                <KernschrittListe schritte={v.kernschritte} gesperrt={gLaedt} onOk={(i) => setze('kernschritte')((ks) => ks.map((s, j) => (j === i ? { ...s, ok: !s.ok, neu: false } : s)))} onAnsprechen={(s) => setAnstoss({ text: `Ich möchte über die Phase „${s.name}“ sprechen.` })} />
                 <PlanungsGespraech verlauf={v.gespraech || []} setVerlauf={setze('gespraech')} onListe={listeZeigen} onSchritt={gespraechSchritt} anstoss={anstoss} onLaedt={setGLaedt} />
               </div>
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
