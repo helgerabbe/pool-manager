@@ -28,7 +28,10 @@ export const stundentypName = (key) => STUNDENTYPEN.find((t) => t.key === key)?.
 
 export const ankerVorhanden = (a) => !!a.thema?.trim() || a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
 
-const kontextText = ({ einheit, anker, minuten }) => [
+/** Ergebnis des Planungsgesprächs als Prompt-Zeile. */
+export const gespraechText = (g) => (g ? `Ergebnis des Planungsgesprächs (Wunsch der Lehrkraft, unbedingt umsetzen): So soll die Stunde laufen: ${g.wahl}${g.verlauf?.length ? ` (grob: ${g.verlauf.join(' → ')})` : ''}${g.material ? `. Zum Material: ${g.material}` : ''}. Übungsanteile in einer Stunde mit Neuem bzw. kurze neue Anteile in einer Übungsstunde sind ausdrücklich erlaubt.` : '');
+
+export const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
   `Unterrichtseinheit: ${einheit.titel}`,
   minuten ? `Verfügbare Zeit: ${minuten} Minuten` : 'Verfügbare Zeit: noch offen – Einzelstunde (45 Min.) oder Doppelstunde (90 Min.), je nachdem, was das Vorhaben braucht',
@@ -43,7 +46,7 @@ const kontextText = ({ einheit, anker, minuten }) => [
 
 const LESBAR = /\.(pdf|png|jpe?g|webp|gif)$/i;
 /** Mit Plattform-KI werden lesbare Materialien als Dateien mitgegeben. */
-async function kiMitMaterial(assistent, prompt, schema, materialien) {
+export async function kiMitMaterial(assistent, prompt, schema, materialien) {
   const lesbar = materialien.filter((m) => LESBAR.test(m.name));
   if (assistent === 'anthropic' || !lesbar.length) return kiAufruf(assistent, prompt, schema);
   const urls = await Promise.all(lesbar.map((m) => base44.integrations.Core.CreateFileSignedUrl({ file_uri: m.file_uri, expires_in: 600 }).then((r) => r.signed_url)));
@@ -111,6 +114,7 @@ Stundentyp: ${stundentypName(ziel.stundentyp) && ziel.stundentyp ? stundentypNam
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistungsvermögen ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${vorgaben.punkte?.length ? `Didaktisch-methodische Vorgaben (von der Lehrkraft bestätigt, unbedingt berücksichtigen):\n${vorgaben.punkte.map((p) => `- [${GEWICHTE[p.gewicht]}] ${p.text}`).join('\n')}` : ''}
 ${grundstrukturText(vorgaben)}
+${gespraechText(vorgaben.gespraech)}
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 
@@ -194,6 +198,7 @@ Grobes Stundenziel: ${ziel.haupt || 'noch offen'}
 Stundentyp: ${ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen'}
 Lerngruppe: Tempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistung ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${grundstrukturText(vorgaben)}
+${gespraechText(vorgaben.gespraech)}
 ${methode ? `Methodenwunsch: ${methode.name || methode.kurzbeschreibung}` : ''}
 ${ritual ? `Ritual: ${ritual.name}` : ''}
 

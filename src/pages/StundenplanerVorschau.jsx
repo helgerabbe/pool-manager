@@ -12,13 +12,15 @@ import UmsetzungsWahlSchritt from '@/components/feinplanung/UmsetzungsWahlSchrit
 import { kiUmsetzungVorschlag } from '@/lib/kiUmsetzung';
 import AufbereitungSchritt from '@/components/feinplanung/AufbereitungSchritt';
 import { kiAufbereitung } from '@/lib/kiAufbereitung';
+import PlanungsGespraech from '@/components/planungsgespraech/PlanungsGespraech';
+import { kiPlanungsGespraech } from '@/lib/kiPlanungsGespraech';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern, kiSparring, kiTippCenter } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Fundament', 'Grobplanung', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament', 'Planungsgespräch', 'Grobplanung', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
@@ -65,7 +67,7 @@ export default function StundenplanerVorschau() {
     laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
   }, [laden]);
   React.useEffect(() => { if (einheit && phase !== 'start') speichern(stand(), titel); }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
-  const stufe = { start: 0, grob: 1, methodik: 2, fein: 3, aufbereitung: 4, fertig: 4 }[phase];
+  const stufe = { start: 0, gespraech: 1, grob: 2, methodik: 3, fein: 4, aufbereitung: 5, fertig: 5 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -102,7 +104,11 @@ export default function StundenplanerVorschau() {
           {isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {kontext && phase === 'start' && (
             <FundamentStart einheit={einheit} verlauf={kontext.verlauf} anker={v.anker} setAnker={setze('anker')} dauer={{ minuten, setMinuten, pause, setPause }}
-              onPruefen={() => kiAnkerPruefen(k())} onWeiter={() => setPhase('grob')} />
+              onPruefen={() => kiAnkerPruefen(k())} onWeiter={() => setPhase('gespraech')} />
+          )}
+          {kontext && phase === 'gespraech' && (
+            <PlanungsGespraech onFragen={(wunsch) => kiPlanungsGespraech({ ...k(), wunsch })} onZurueck={() => setPhase('start')}
+              onFertig={(g) => { setze('gespraech')(g); setPunkte([]); setPhase('grob'); }} />
           )}
           {kontext && phase === 'grob' && (
             <>
