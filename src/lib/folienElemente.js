@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -29,16 +29,20 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'regler', label: 'Regler', icon: SlidersHorizontal, b: 260, h: 60, art: 'interaktiv' },
     { typ: 'lueckentext_dnd', label: 'Lückentext (Ziehen)', icon: TextCursor, b: 340, h: 120, art: 'interaktiv' },
     { typ: 'bildbeschriftung', label: 'Bildbeschriftung (Ziehen)', icon: Tag, b: 320, h: 200, art: 'interaktiv' },
+    { typ: 'markieren', label: 'Text markieren', icon: Highlighter, b: 340, h: 120, art: 'interaktiv' },
     { typ: 'knopf', label: 'Knopf (Aktion)', icon: MousePointerClick, b: 160, h: 46, art: 'interaktiv' },
   ] },
   { titel: 'Interaktiv oder kollaborativ', hinweis: 'Allein bearbeiten oder im Team vernetzt: Das gemeinsame Ergebnis sehen alle.', elemente: [
     { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, art: 'beides' },
     { typ: 'reihenfolge', label: 'Reihenfolge', icon: ListOrdered, b: 240, h: 130, art: 'beides' },
     { typ: 'kanban', label: 'Kanban-Board', icon: Columns3, b: 380, h: 180, art: 'beides' },
+    { typ: 'skala', label: 'Skala / Positionieren', icon: Gauge, b: 320, h: 60, art: 'beides' },
+    { typ: 'legeboard', label: 'Legeboard (Karten verbinden)', icon: Network, b: 360, h: 200, art: 'beides' },
   ] },
   { titel: 'Kollaborativ', hinweis: 'Nutzer ↔ Nutzer: Mehrere tragen bei, die Ergebnisse erscheinen bei anderen.', elemente: [
     { typ: 'pinnwand', label: 'Live-Pinnwand', icon: StickyNote, b: 380, h: 190, art: 'kollaborativ' },
     { typ: 'abstimmung', label: 'Abstimmung', icon: BarChart3, b: 260, h: 110, art: 'kollaborativ' },
+    { typ: 'punktestand', label: 'Punktestand / Rangliste', icon: Trophy, b: 260, h: 120, art: 'kollaborativ' },
   ] },
   { titel: 'Animation auf der Folie', elemente: [
     { typ: 'erscheinen', label: 'Erscheinen', icon: Eye, b: 150, h: 46 },

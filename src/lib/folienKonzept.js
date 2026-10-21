@@ -15,10 +15,12 @@ export const FOLIEN_KONZEPT = [
     ['Beides', 'Je nach Funktion allein oder im Team vernetzt, z. B. Reihenfolge oder Kanban-Board.'],
   ] },
   { titel: 'Funktion einer Interaktion: Was passiert mit der Eingabe?', punkte: [
-    ['Übung', 'Auf das Signal der Lehrkraft wird angezeigt, was richtig oder falsch ist. Braucht eine hinterlegte Lösung.'],
+    ['Übung', 'Es wird angezeigt, was richtig oder falsch ist: sofort (Selbstkontrolle) oder auf das Signal der Lehrkraft. Braucht eine hinterlegte Lösung.'],
     ['Präsentation', 'Die Lehrkraft sieht alle Eingaben, wählt einzelne aus und zeigt sie vorne, um darüber zu sprechen.'],
     ['Weiterführung allein', 'Die Eingabe wird in einer eigenen Folgeaufgabe wieder aufgegriffen. Angabe: wohin.'],
     ['Weiterführung in die Gruppe', 'Die Eingabe fließt im nächsten Schritt in die Gruppenarbeit ein, z. B. bei Pair. Angabe: wohin und Gruppenkennung.'],
+    ['Weitergabe', 'Die Eingabe wandert zu einem anderen Schüler, der darauf aufbaut (Schreibgespräch, 6-3-5, Schreibkonferenz). Angabe: Takt oder Signal, Runden, Gruppenkennung.'],
+    ['Rückmeldung', 'Andere kommentieren oder bewerten das Ergebnis (Galeriegang, Peer-Evaluation). Angabe: Form der Rückmeldung.'],
     ['Kollaboration', 'Mehrere arbeiten gleichzeitig an einem gemeinsamen Ergebnis, z. B. Live-Pinnwand oder Abstimmung. Angabe: Gruppenkennung.'],
   ] },
   { titel: 'Inhalte: Wer legt sie fest? (gilt für jedes Element)', punkte: [
