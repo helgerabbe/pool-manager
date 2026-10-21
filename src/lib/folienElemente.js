@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -20,7 +20,8 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'link', label: 'Link', icon: Link, b: 200, h: 40 },
   ] },
   { titel: 'Interaktion und Bewegung', elemente: [
-    { typ: 'eingabe', label: 'Eingabefeld', icon: TextCursorInput, b: 280, h: 80, modus: true },
+    { typ: 'eingabe', label: 'Eingabefeld (kurz)', icon: TextCursorInput, b: 280, h: 80, modus: true },
+    { typ: 'texteingabe', label: 'Texteingabe (lang)', icon: FileText, b: 340, h: 170, modus: true },
     { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, modus: true },
     { typ: 'regler', label: 'Regler', icon: SlidersHorizontal, b: 260, h: 60, modus: true },
     { typ: 'zuordnen', label: 'Drag and Drop', icon: Move, b: 300, h: 120, modus: true },
