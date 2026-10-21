@@ -39,7 +39,7 @@ export default function StundenplanerVorschau() {
   const [assistent, setAssistent] = React.useState(() => localStorage.getItem('stundenplaner_assistent') || 'base44');
   const setze = (key) => (w) => setV((alt) => ({ ...alt, [key]: typeof w === 'function' ? w(alt[key]) : w }));
 
-  const profil = kontext?.lerngruppe?.profil;
+  const profil = kontext?.einheit?.profil || kontext?.lerngruppe?.profil;
   React.useEffect(() => { if (profil) setV((alt) => ({ ...alt, gruppe: { ...alt.gruppe, ...profil } })); }, [profil]);
   const einheit = kontext?.einheit;
   const netto = minuten === null ? null : minuten - (pause && minuten > 45 ? 5 : 0);

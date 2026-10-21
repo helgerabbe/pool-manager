@@ -17,7 +17,8 @@
  */
 import React, { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import ProfilDialogButton from '@/components/unterricht/ProfilDialogButton';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ import UebungsblockMoodleWegInfoBox from '@/components/uebungsbloecke/Uebungsblo
 
 export default function UnterrichtFachSeite() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { authUser } = useRBAC();
   const [neuOffen, setNeuOffen] = useState(false);
   const params = new URLSearchParams(window.location.search);
@@ -130,6 +132,13 @@ export default function UnterrichtFachSeite() {
               <UebungsblockMoodleWegInfoBox />
             </div>
           </AnleitungDialogButton>
+          <ProfilDialogButton
+            label="Lerngruppe einschätzen"
+            titel={`Einschätzung · ${lerngruppeTitel(lerngruppe)}`}
+            beschreibung="Gilt als Standard für alle Unterrichtseinheiten dieser Lerngruppe. Einzelne Einheiten kannst du dort eigens anpassen."
+            profil={lerngruppe.profil}
+            onSpeichern={async (p) => { await base44.entities.Lerngruppe.update(lerngruppe.id, { profil: p }); queryClient.invalidateQueries({ queryKey: ['lerngruppen'] }); }}
+          />
           <Button size="sm" onClick={() => setNeuOffen(true)} className="gap-2">
             <Plus className="w-4 h-4" /> Neue Unterrichtseinheit
           </Button>
@@ -156,6 +165,7 @@ export default function UnterrichtFachSeite() {
               stunden={stunden.filter((s) => s.unterrichtseinheit_id === m.id)}
               bloecke={bloecke.filter((b) => b.eltern_einheit_id === m.id)}
               besitzerEmail={authUser?.email}
+              lerngruppenProfil={lerngruppe.profil}
             />
           ))}
         </div>

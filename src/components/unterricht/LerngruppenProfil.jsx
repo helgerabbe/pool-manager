@@ -8,10 +8,10 @@ const REGLER = [
 ];
 
 /** Globale Einschätzung der Lerngruppe; wird im Stundenplaner voreingestellt. */
-export default function LerngruppenProfil({ profil, setProfil }) {
+export default function LerngruppenProfil({ profil, setProfil, hinweis }) {
   return (
     <div className="space-y-3 rounded-lg border bg-muted/40 p-3">
-      <p className="text-sm font-semibold">Einschätzung der Lerngruppe <span className="font-normal text-muted-foreground">(gilt als Voreinstellung für alle Stunden)</span></p>
+      {hinweis !== '' && <p className="text-sm font-semibold">Einschätzung der Lerngruppe <span className="font-normal text-muted-foreground">(gilt als Voreinstellung für alle Stunden)</span></p>}
       {REGLER.map((r) => (
         <div key={r.key} className="space-y-1.5">
           <p className="text-xs font-medium">{r.titel}</p>

@@ -8,6 +8,7 @@ import FachStundenListe from './FachStundenListe';
 import FachBloeckeListe from './FachBloeckeListe';
 import FachEinheitLoeschenButton from './FachEinheitLoeschenButton';
 import StrukturStatusButton from './StrukturStatusButton';
+import EinheitProfilButton from './EinheitProfilButton';
 import StundeAusVerlaufButton from './StundeAusVerlaufButton';
 import AusBibliothekButton from '@/components/bibliothek/AusBibliothekButton';
 import {
@@ -23,7 +24,7 @@ import {
  * Eine Unterrichtseinheit ist NICHT eine „Einheit" im Sinne des vollständigen
  * Lernszenarios (Dashboards, Freigabe, Moodle-Kurs) — sie ist reine Ordnung.
  */
-export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], bloecke = [], besitzerEmail }) {
+export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], bloecke = [], besitzerEmail, lerngruppenProfil }) {
   const [stundeOffen, setStundeOffen] = useState(false);
   const [blockOffen, setBlockOffen] = useState(false);
   const [umbenennenOffen, setUmbenennenOffen] = useState(false);
@@ -60,6 +61,7 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <EinheitProfilButton unterrichtseinheit={unterrichtseinheit} lerngruppenProfil={lerngruppenProfil} />
           <StrukturStatusButton unterrichtseinheitId={unterrichtseinheit.id} />
           <StundeAusVerlaufButton unterrichtseinheitId={unterrichtseinheit.id} />
           <AusBibliothekButton unterrichtseinheit={unterrichtseinheit} besitzerEmail={besitzerEmail} />
