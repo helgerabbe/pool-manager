@@ -1,5 +1,5 @@
 import { base44 } from '@/api/base44Client';
-import { BAUSTEIN_KATALOG } from '@/lib/stundenBausteine';
+import { folienBaukastenText } from '@/lib/folienBaukastenText';
 
 const methodenKontext = (m) => `Methode: ${m.name || ''}
 Kurzbeschreibung: ${m.kurzbeschreibung || ''}
@@ -47,23 +47,27 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
 export function kiGrafikAnweisung({ methode, bisher, wunsch, verlauf }) {
-  return frage(`Du bist der erste Grafikassistent (FUNKTION) für digitale Unterrichtsvorlagen. Mache aus der Methodenbeschreibung die Anweisung, nach der du später einen funktionierenden Prototyp baust.
+  return frage(`Du schreibst die BAUANLEITUNG für den Grafikassistenten. Er baut daraus die grafische Vorlage (Foliensatz) dieser Methode. Er darf NUR die Elemente und Einstellungen des Baukastens unten verwenden; beschreibe so genau, dass er nichts raten muss.
 ${methodenKontext(methode)}
 
 METHODENBESCHREIBUNG (Ablauf und Funktionalität, vom Methodenbeschreiber):
 ${methode.info_methodenbeschreiber || '(keine, nutze die Angaben oben)'}
 
-Verfügbare Bausteine (Verhalten eingebaut):
-${BAUSTEIN_KATALOG}
+BAUKASTEN DES FOLIEN-DESIGNERS:
+${folienBaukastenText()}
 
 ${auftrag(bisher, wunsch, verlauf)}
 
-Form der Anweisung (Klartext, Deutsch, für Lehrkräfte verständlich, keine Programmiersprache):
-LEHRERANSICHT (digitale Tafel)
-- Zweck, Elemente (was ist wo zu sehen), Ablauf (was sich ändert, was die Lehrkraft auslöst)
-SCHÜLERANSICHT (Tablet)
-- Zweck, Elemente (alle Bereiche und Bedienelemente), Bedienung Schritt für Schritt (was die Schüler tun, was dann passiert), Sonderfälle
-ZUSAMMENSPIEL: wie Lehrer- und Schüleransicht zusammenhängen.
-INTERAKTIONSMODUS: Lege für JEDES interaktive Element (Eingabe, Auswahl, Regler, Zuordnen, Sortieren, Abstimmung, Berechnung) fest: "Einzelmodus" (Eingaben und Ergebnisse gehören nur der einzelnen Person) oder "Gruppenmodus" (über eine Gruppenkennung geteilt, alle Gruppenmitglieder sehen und bearbeiten gemeinsam). Nenne jeweils, wer die Eingaben sehen und wer sie bearbeiten kann.
-Jeder Schritt der Methodenbeschreibung muss sich in den Ansichten wiederfinden. Nenne passende Bausteine beim Namen. Keine Farben oder Dekoration, darum kümmert sich der zweite Assistent.`);
+Form der Bauanleitung (Klartext, Deutsch, nummeriert, keine Programmiersprache):
+A. ORGANISATION DES FOLIENSATZES: Zuteilung (Art, Verfahren, Gruppengröße/Rollen, Wechsel), Freigabe, Ablauf der Folien, Steuerung der Lehrkraft (Timer, Fertig melden, Partner nach Fertig-Meldung) – jeweils mit kurzer Begründung aus der Methode.
+B. FOLIE FÜR FOLIE: Für jede Folie
+   - Nummer, Name, Folienart (Starre Folie / Aufgabenfolie), bei Aufgabenfolien Durchführung analog oder digital (bzw. beide Varianten)
+   - LEHRERANSICHT (Tafel): jedes Element mit Name aus dem Baukasten, Lage (oben/mitte/unten, links/rechts), Inhalt und Kennzeichnung [Fest] / [Abfrage] (die Lehrkraft gibt es vorher ein) / [Frei] (die KI füllt es passend zur Stunde); Symbole (Piktogramme) für Sozialform und Tätigkeit
+   - SCHÜLERANSICHT (Gerät), nur wenn digital: jedes Element mit Name, Inhalt, Kennzeichnung, Art (Interaktiv/Kollaborativ), Funktion (Übung, Präsentation, Weiterführung allein/in die Gruppe mit Ziel, Weitergabe, Rückmeldung, Kollaboration), Einzel- oder Gruppenmodus (mit Gruppenkennung), Sichtbarkeit und Ergebnisanzeige
+   - UMSCHALTEN: Freigabebedingung dieser Folie (mit Zeit, Anteil oder Code), wer auslöst und was dann bei Lehrkraft und Schülern passiert
+   - BEDIENELEMENTE DER LEHRKRAFT auf dieser Folie (z. B. Timer starten, Ergebnisse zeigen, Partner bilden)
+C. DATENFLUSS: welche Eingabe wohin weiterwandert (z. B. Think-Eingabe erscheint in der Pair-Folie beim Partner).
+D. ABFRAGEN VOR DER STUNDE: alle [Abfrage]-Felder als Liste mit Standardwert.
+E. OFFENE PUNKTE: was der Baukasten noch nicht abdeckt.
+Jeder Schritt der Methodenbeschreibung muss sich in den Folien wiederfinden. Keine Farben oder Dekoration.`);
 }
