@@ -5,7 +5,7 @@ import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import GespraechAntworten from './GespraechAntworten';
 
 /** Planungsgespräch als Ping-Pong: Assistent fragt, Lehrkraft antwortet per Klick oder freiem Text. Jederzeit abbrechbar. */
-export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onListe }) {
+export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onListe, anstoss, onLaedt }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState('');
   const [text, setText] = React.useState('');
@@ -18,6 +18,8 @@ export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onLi
   };
   const senden = (t) => { const neu = [...verlauf, { role: 'user', content: t }]; setVerlauf(neu); setText(''); fragen(neu); };
   React.useEffect(() => { if (!verlauf.length) fragen([]); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => { if (anstoss && !laedt) senden(anstoss.text); }, [anstoss]); // eslint-disable-line react-hooks/exhaustive-deps
+  React.useEffect(() => { onLaedt?.(laedt); }, [laedt]); // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => { ende.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, [verlauf.length, laedt]);
   const letzte = verlauf[verlauf.length - 1];
 
@@ -37,7 +39,7 @@ export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onLi
             <p className={`max-w-[80%] whitespace-pre-wrap rounded-xl px-3 py-2 text-sm ${m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-primary/5'}`}>{m.content}</p>
           </div>
         ))}
-        {laedt && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {verlauf.length ? 'Ich denke kurz nach …' : 'Ich analysiere, was du mir gegeben hast …'}</p>}
+        {laedt && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> {verlauf.length > 1 ? 'Ich denke kurz nach …' : verlauf.length ? 'Ich recherchiere kurz zum Thema und überlege …' : 'Ich analysiere, was du mir gegeben hast …'}</p>}
         <div ref={ende} />
       </div>
       {!laedt && letzte?.role === 'assistant' && <GespraechAntworten nachricht={letzte} onSenden={senden} onListe={onListe} />}

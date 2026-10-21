@@ -29,7 +29,8 @@ export const stundentypName = (key) => STUNDENTYPEN.find((t) => t.key === key)?.
 export const ankerVorhanden = (a) => !!a.thema?.trim() || a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
 
 /** Ergebnis des Planungsgesprächs als Prompt-Zeile. */
-export const gespraechText = (g) => (Array.isArray(g) && g.length ? `Planungsgespräch mit der Lehrkraft (ihre Antworten und Wünsche sind verbindlich, "Wichtig" bzw. "Unverzichtbar"; Übungsanteile in einer Stunde mit Neuem und kurze neue Anteile in einer Übungsstunde sind erlaubt):\n${g.map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Assistent'}: ${m.content}`).join('\n')}` : '');
+export const gespraechText = ({ gespraech: g, kernschritte: ks }) => [ks?.length && `Mit der Lehrkraft abgesprochene Kernschritte (Reihenfolge und Inhalt verbindlich, daraus die Phasen bauen):\n${ks.map((s, i) => `${i + 1}. ${s.name}: ${s.satz}`).join('\n')}`, gespraechAlsText(g)].filter(Boolean).join('\n');
+const gespraechAlsText = (g) => (Array.isArray(g) && g.length ? `Planungsgespräch mit der Lehrkraft (ihre Antworten und Wünsche sind verbindlich, "Wichtig" bzw. "Unverzichtbar"; Übungsanteile in einer Stunde mit Neuem und kurze neue Anteile in einer Übungsstunde sind erlaubt):\n${g.map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Assistent'}: ${m.content}`).join('\n')}` : '');
 
 export const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
@@ -89,7 +90,7 @@ ${vorgaben && wirksameGrundstruktur(vorgaben.grundstruktur, vorgaben.anker?.absc
   required: ['haupt', 'alternativen'],
 }, k.anker.materialien);
 
-const katalog = () => base44.entities.MethodenKatalog.filter({ ist_aktiv: { $ne: false }, quelle: { $ne: 'poolzeit' } }, { limit: 200, fields: ['name', 'kurzbeschreibung', 'dauer_min', 'dauer_max', 'stufe'] }).then((p) => p.items);
+export const katalog = () => base44.entities.MethodenKatalog.filter({ ist_aktiv: { $ne: false }, quelle: { $ne: 'poolzeit' } }, { limit: 200, fields: ['name', 'kurzbeschreibung', 'dauer_min', 'dauer_max', 'stufe'] }).then((p) => p.items);
 
 /** Findet zu einer frei beschriebenen Idee bis zu drei passende Methoden aus dem Katalog. */
 export async function kiMethodenFinden({ assistent, beschreibung, grund }) {
@@ -114,7 +115,7 @@ Stundentyp: ${stundentypName(ziel.stundentyp) && ziel.stundentyp ? stundentypNam
 Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistungsvermögen ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${vorgaben.punkte?.length ? `Didaktisch-methodische Vorgaben (von der Lehrkraft bestätigt, unbedingt berücksichtigen):\n${vorgaben.punkte.map((p) => `- [${GEWICHTE[p.gewicht]}] ${p.text}`).join('\n')}` : ''}
 ${grundstrukturText(vorgaben)}
-${gespraechText(vorgaben.gespraech)}
+${gespraechText(vorgaben)}
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 
@@ -198,7 +199,7 @@ Grobes Stundenziel: ${ziel.haupt || 'noch offen'}
 Stundentyp: ${ziel.stundentyp ? stundentypName(ziel.stundentyp) : 'offen'}
 Lerngruppe: Tempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, Leistung ${gruppe.leistung ?? 3}/5 (3 = normal)
 ${grundstrukturText(vorgaben)}
-${gespraechText(vorgaben.gespraech)}
+${gespraechText(vorgaben)}
 ${methode ? `Methodenwunsch: ${methode.name || methode.kurzbeschreibung}` : ''}
 ${ritual ? `Ritual: ${ritual.name}` : ''}
 
