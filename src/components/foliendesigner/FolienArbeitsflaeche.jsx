@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import ElementInhalt from './ElementInhalt';
 import GroessenGriff from './GroessenGriff';
+import DrehGriff, { istDrehbar } from './DrehGriff';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
 import { VORGABEN } from '@/lib/folienStil';
 
@@ -32,9 +33,10 @@ export default function FolienArbeitsflaeche({ elemente, setElemente, gewaehlt, 
         <div key={el.id} draggable
           onDragStart={(e) => { const r = e.currentTarget.getBoundingClientRect(); e.dataTransfer.setData('id', el.id); e.dataTransfer.setData('versatz', `${e.clientX - r.left},${e.clientY - r.top}`); }}
           onClick={(e) => { e.stopPropagation(); setGewaehlt(el.id); }}
-          style={{ left: el.x, top: el.y, width: el.b, height: el.h }}
+          style={{ left: el.x, top: el.y, width: el.b, height: el.h, transform: istDrehbar(el) && el.drehung ? `rotate(${el.drehung}deg)` : undefined }}
           className={`absolute flex cursor-move items-center justify-center ${gewaehlt === el.id ? 'outline outline-2 outline-offset-2 outline-primary' : ''}`}>
           <div className="pointer-events-none flex h-full w-full items-center justify-center"><ElementInhalt el={el} /></div>
+          {gewaehlt === el.id && istDrehbar(el) && <DrehGriff setze={(p) => setElemente((alle) => alle.map((x) => (x.id === el.id ? { ...x, ...p } : x)))} />}
           {gewaehlt === el.id && el.typ !== 'audio' && <GroessenGriff el={el} nurBreite={el.typ === 'pfeil_duenn' || el.typ === 'linie'} setze={(p) => setElemente((alle) => alle.map((x) => (x.id === el.id ? { ...x, ...p } : x)))} />}
           {gewaehlt === el.id && (
             <button onClick={() => { setElemente(elemente.filter((x) => x.id !== el.id)); setGewaehlt(null); }}
