@@ -13,6 +13,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'pfeil_breit', label: 'Pfeil (breit)', icon: MoveRight, b: 180, h: 70 },
     { typ: 'freihand', label: 'Freihandform', icon: PenTool, b: 170, h: 110 },
     { typ: 'formel', label: 'Formel', icon: Sigma, b: 220, h: 60 },
+    { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
   ] },
   { titel: 'Medien und Verweise', elemente: [
     { typ: 'bild', label: 'Bild', icon: Image, b: 240, h: 160 },
@@ -22,19 +23,22 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'animation_ki', label: 'Animation (KI)', icon: Film, b: 260, h: 160 },
     { typ: 'animation_interaktiv', label: 'Interaktive Animation (KI)', icon: Sparkles, b: 260, h: 190 },
   ] },
-  { titel: 'Interaktion', elemente: [
-    { typ: 'eingabe', label: 'Eingabefeld (kurz)', icon: TextCursorInput, b: 280, h: 80, modus: true },
-    { typ: 'texteingabe', label: 'Texteingabe (lang)', icon: FileText, b: 340, h: 170, modus: true },
-    { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, modus: true },
-    { typ: 'regler', label: 'Regler', icon: SlidersHorizontal, b: 260, h: 60, modus: true },
-    { typ: 'lueckentext_dnd', label: 'Lückentext (Ziehen)', icon: TextCursor, b: 340, h: 120, modus: true },
-    { typ: 'bildbeschriftung', label: 'Bildbeschriftung (Ziehen)', icon: Tag, b: 320, h: 200, modus: true },
-    { typ: 'kanban', label: 'Kanban-Board', icon: Columns3, b: 380, h: 180, modus: true },
-    { typ: 'pinnwand', label: 'Live-Pinnwand', icon: StickyNote, b: 380, h: 190, modus: true },
-    { typ: 'reihenfolge', label: 'Reihenfolge', icon: ListOrdered, b: 240, h: 130, modus: true },
-    { typ: 'knopf', label: 'Knopf (Aktion)', icon: MousePointerClick, b: 160, h: 46 },
-    { typ: 'abstimmung', label: 'Abstimmung', icon: BarChart3, b: 260, h: 110, modus: true },
-    { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
+  { titel: 'Interaktiv', hinweis: 'Schüler ↔ Folie: Die Eingabe bleibt beim Schüler.', elemente: [
+    { typ: 'eingabe', label: 'Eingabefeld (kurz)', icon: TextCursorInput, b: 280, h: 80, art: 'interaktiv' },
+    { typ: 'texteingabe', label: 'Texteingabe (lang)', icon: FileText, b: 340, h: 170, art: 'interaktiv' },
+    { typ: 'regler', label: 'Regler', icon: SlidersHorizontal, b: 260, h: 60, art: 'interaktiv' },
+    { typ: 'lueckentext_dnd', label: 'Lückentext (Ziehen)', icon: TextCursor, b: 340, h: 120, art: 'interaktiv' },
+    { typ: 'bildbeschriftung', label: 'Bildbeschriftung (Ziehen)', icon: Tag, b: 320, h: 200, art: 'interaktiv' },
+    { typ: 'knopf', label: 'Knopf (Aktion)', icon: MousePointerClick, b: 160, h: 46, art: 'interaktiv' },
+  ] },
+  { titel: 'Interaktiv oder kollaborativ', hinweis: 'Allein bearbeiten oder im Team vernetzt: Das gemeinsame Ergebnis sehen alle.', elemente: [
+    { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, art: 'beides' },
+    { typ: 'reihenfolge', label: 'Reihenfolge', icon: ListOrdered, b: 240, h: 130, art: 'beides' },
+    { typ: 'kanban', label: 'Kanban-Board', icon: Columns3, b: 380, h: 180, art: 'beides' },
+  ] },
+  { titel: 'Kollaborativ', hinweis: 'Nutzer ↔ Nutzer: Mehrere tragen bei, die Ergebnisse erscheinen bei anderen.', elemente: [
+    { typ: 'pinnwand', label: 'Live-Pinnwand', icon: StickyNote, b: 380, h: 190, art: 'kollaborativ' },
+    { typ: 'abstimmung', label: 'Abstimmung', icon: BarChart3, b: 260, h: 110, art: 'kollaborativ' },
   ] },
   { titel: 'Animation auf der Folie', elemente: [
     { typ: 'erscheinen', label: 'Erscheinen', icon: Eye, b: 150, h: 46 },

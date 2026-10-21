@@ -8,6 +8,7 @@ export default function ElementPalette() {
       {FOLIEN_GRUPPEN.map((g) => (
         <div key={g.titel} className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{g.titel}</p>
+          {g.hinweis && <p className="text-xs text-muted-foreground">{g.hinweis}</p>}
           <div className="grid grid-cols-2 gap-2">
             {g.elemente.map(({ typ, label, icon: Icon }) => (
               <div key={typ} draggable onDragStart={(e) => e.dataTransfer.setData('neu', typ)}
