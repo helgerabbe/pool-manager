@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber' (Ablauf und Funktionalit\u00e4t, Grundlage f\u00fcr den Grafikassistenten). GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher' (siehe src/lib/methodenFachbezug.js). STOLPERSTEINE (2026-10-14): 'stolpersteine' = Erfahrungswerte, woran die Methode typischerweise scheitert.",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber' (Ablauf und Funktionalit\u00e4t, Grundlage f\u00fcr den Grafikassistenten). Seit 2026-10-21 liegt die lange Grafik-Anweisung in St\u00fccken in 'info_grafikassistent_teile' (Feldgrenze 20.000 Zeichen, siehe src/lib/langerText.js). GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6 (siehe src/lib/methodenStufen.js), Zusatzvermerke 'auch_kurzform' und 'ausbaubar', 'stufe_pruefen' = Einordnung unsicher. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher' (siehe src/lib/methodenFachbezug.js). STOLPERSTEINE (2026-10-14): 'stolpersteine' = Erfahrungswerte, woran die Methode typischerweise scheitert.",
   "properties": {
     "name": {
       "type": "string"
@@ -182,7 +182,16 @@
       "description": "Ausf\u00fchrliche Beschreibung von Ablauf und Funktionalit\u00e4t der Methode (Methodenbeschreiber), noch ohne Grafik. Grundlage f\u00fcr den Grafikassistenten."
     },
     "info_grafikassistent": {
-      "type": "string"
+      "type": "string",
+      "description": "@legacy: Kurzfassung bzw. Altbestand; neue Speicherungen nutzen info_grafikassistent_teile."
+    },
+    "info_grafikassistent_teile": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Die Anweisung f\u00fcr den Grafikassistenten in St\u00fccken zu je max. 15.000 Zeichen; zusammengesetzt ergibt sie den vollst\u00e4ndigen Text."
     },
     "grafik_vorlagen": {
       "type": "object",

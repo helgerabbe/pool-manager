@@ -18,6 +18,7 @@ import StufenAuswahl from './StufenAuswahl';
 import EinsatzEmpfehlung from './EinsatzEmpfehlung';
 import FachbezugAuswahl from './FachbezugAuswahl';
 import { toast } from 'sonner';
+import { teileText, ladeGrafikText } from '@/lib/langerText';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -42,7 +43,7 @@ const FELDER = [
 
 /** Bauplan einer Methode bearbeiten. */
 export default function MethodeBauplanForm({ methode, onGespeichert }) {
-  const [werte, setWerte] = React.useState(methode);
+  const [werte, setWerte] = React.useState(() => ({ ...methode, info_grafikassistent: ladeGrafikText(methode) }));
   const [speichert, setSpeichert] = React.useState(false);
   const [vorlageOffen, setVorlageOffen] = React.useState(false);
   const setze = (k, v) => setWerte((w) => ({ ...w, [k]: v }));
@@ -70,8 +71,13 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
   const speichern = async () => {
     setSpeichert(true);
     const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'stufe', 'auch_kurzform', 'ausbaubar', 'stufe_pruefen', 'fachbezug', 'faecher', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_methodenbeschreiber', 'info_grafikassistent'].map((k) => [k, werte[k]]));
-    await base44.entities.MethodenKatalog.update(methode.id, daten);
-    setSpeichert(false);
+    daten.info_grafikassistent_teile = teileText(werte.info_grafikassistent);
+    daten.info_grafikassistent = '';
+    try {
+      await base44.entities.MethodenKatalog.update(methode.id, daten);
+    } finally {
+      setSpeichert(false);
+    }
     toast.success('Gespeichert.');
     onGespeichert();
   };
