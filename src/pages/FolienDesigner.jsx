@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ElementPalette from '@/components/foliendesigner/ElementPalette';
 import FolienArbeitsflaeche from '@/components/foliendesigner/FolienArbeitsflaeche';
@@ -12,7 +13,8 @@ import LehrerSteuerung from '@/components/foliendesigner/LehrerSteuerung';
 
 /** Folien-Designer: Übersicht der Bausteine, auf die der Grafikassistent zurückgreifen kann (noch ohne Funktion). */
 export default function FolienDesigner() {
-  const [elemente, setElemente] = React.useState([]);
+  const location = useLocation();
+  const [elemente, setElemente] = React.useState(location.state?.elemente || []);
   const [gewaehlt, setGewaehlt] = React.useState(null);
   const [organisation, setOrganisation] = React.useState(ORGANISATION_START);
   const gewaehltEl = elemente.find((e) => e.id === gewaehlt);

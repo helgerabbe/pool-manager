@@ -1,84 +1,69 @@
 import React from 'react';
-import { Loader2, Sparkles, Monitor, Tablet, Wrench } from 'lucide-react';
-import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
+import { Loader2, Sparkles, Monitor, Tablet, RefreshCw, PenTool, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FAECHER } from '@/lib/stundenDesign';
-import { erstellePrototyp, gestalteVorlage } from '@/lib/grafikVorlageErstellen';
-import VorlagenAnzeige from './VorlagenAnzeige';
+import { FREIGABE_TEXT } from '@/lib/folienSymbole';
+import useFoliensatz from '@/hooks/useFoliensatz';
+import FolienLeiste from './foliensatz/FolienLeiste';
+import FolieVorschau from './foliensatz/FolieVorschau';
+import FolieErklaerung from './foliensatz/FolieErklaerung';
 
-/** Grafische Vorlage einer Methode: je Fach erzeugen, speichern und zwischen Lehrer/Schüler wechseln. */
+/** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte }) {
-  const [vorlagen, setVorlagen] = React.useState(methode.grafik_vorlagen || {});
+  const navigate = useNavigate();
   const [fach, setFach] = React.useState(FAECHER[0]);
   const [ansicht, setAnsicht] = React.useState('lehrer');
-  const [laedt, setLaedt] = React.useState(false);
-  const vorlage = vorlagen[fach];
-
-  const [zeigePrototyp, setZeigePrototyp] = React.useState(false);
-  const gestaltet = vorlage?.stufe === 'gestaltet';
-  const prototyp = vorlage?.prototyp || vorlage;
-  const html = gestaltet && !zeigePrototyp ? vorlage[ansicht] : prototyp?.[ansicht];
-
-  const lauf = async (art, schritt) => {
-    setLaedt(art);
-    try {
-      const eintrag = await schritt();
-      const neu = { ...vorlagen, [fach]: { ...eintrag, erstellt_am: new Date().toISOString() } };
-      await base44.entities.MethodenKatalog.update(methode.id, { grafik_vorlagen: neu });
-      setVorlagen(neu);
-      setZeigePrototyp(false);
-    } catch (e) {
-      toast.error('Das hat nicht geklappt. Bitte noch einmal versuchen.');
-    } finally {
-      setLaedt(false);
-    }
-  };
-  const prototypBauen = () => lauf('prototyp', async () => {
-    const p = await erstellePrototyp({ ...methode, ...werte }, fach);
-    return { ...p, stufe: 'prototyp', prototyp: p };
-  });
-  const gestalten = () => lauf('gestalten', async () => {
-    const g = await gestalteVorlage(prototyp, { ...methode, ...werte });
-    return { ...g, stufe: 'gestaltet', prototyp };
-  });
+  const [aktivId, setAktivId] = React.useState(null);
+  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach);
+  const folien = satz?.folien || [];
+  const folie = folien.find((f) => f.id === aktivId) || folien[0];
+  const baut = planen || folien.some((f) => f.status === 'baut');
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl">
-        <DialogHeader><DialogTitle>Grafische Vorlage · {methode.name}</DialogTitle></DialogHeader>
+      <DialogContent className="flex h-[90vh] max-w-7xl flex-col">
+        <DialogHeader><DialogTitle>Grafische Vorlage · {methode.name}{satz?.thema ? ` · ${satz.thema}` : ''}</DialogTitle></DialogHeader>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={fach} onValueChange={setFach}>
             <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>{FAECHER.map((f) => <SelectItem key={f} value={f}>{f}{vorlagen[f] ? ' ✓' : ''}</SelectItem>)}</SelectContent>
+            <SelectContent>{FAECHER.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
           </Select>
-          <Button variant={ansicht === 'lehrer' ? 'default' : 'outline'} size="sm" className="gap-2" onClick={() => setAnsicht('lehrer')}><Monitor className="h-4 w-4" /> Lehrer-Display</Button>
-          <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" className="gap-2" onClick={() => setAnsicht('schueler')}><Tablet className="h-4 w-4" /> Schüler-Display</Button>
-          <div className="ml-auto flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" className="gap-2" disabled={!!laedt} onClick={prototypBauen}>
-              {laedt === 'prototyp' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />} {vorlage ? '1. Prototyp neu bauen' : '1. Prototyp bauen'}
-            </Button>
-            <Button size="sm" className="gap-2" disabled={!vorlage || !!laedt} onClick={gestalten}>
-              {laedt === 'gestalten' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {gestaltet ? '2. Neu gestalten' : '2. Gestalten'}
-            </Button>
-          </div>
+          <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
+            {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
+          </Button>
         </div>
-        {vorlage ? (
-          <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-              <span>Beispielthema: {vorlage.thema}</span>
-              <span className="rounded-full bg-muted px-2 py-0.5 font-medium">{gestaltet && !zeigePrototyp ? 'Gestaltete Vorlage' : 'Prototyp (ohne Gestaltung)'}</span>
-              {gestaltet && <button className="underline" onClick={() => setZeigePrototyp((z) => !z)}>{zeigePrototyp ? 'Gestaltete Vorlage zeigen' : 'Prototyp zeigen'}</button>}
-            </div>
-            {!gestaltet && <p className="text-xs text-muted-foreground">Prüfe den Prototyp. Passt die Funktion, lass ihn im zweiten Schritt gestalten. Sonst passe die Anweisung für den Grafikassistenten an und baue den Prototyp neu.</p>}
-            <VorlagenAnzeige html={html} ansicht={ansicht} />
-          </div>
-        ) : (
-          <p className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-            {laedt ? 'Der erste Grafikassistent baut den Prototyp …' : 'Für dieses Fach gibt es noch keine Vorlage. Beschreib in der Anweisung für den Grafikassistenten, was gebraucht wird, und bau dann den Prototyp.'}
+        {!folie ? (
+          <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed text-center text-sm text-muted-foreground">
+            {planen ? 'Der Grafikassistent plant die Folienfolge …' : werte.info_grafikassistent ? 'Noch kein Foliensatz für dieses Fach.' : 'Befülle zuerst die Informationen für den Grafikassistenten.'}
           </p>
+        ) : (
+          <div className="flex min-h-0 flex-1 gap-4">
+            <FolienLeiste folien={folien} aktiv={folie.id} setAktiv={setAktivId} />
+            <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant={ansicht === 'lehrer' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('lehrer')}><Monitor /> Tafel</Button>
+                <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
+                <div className="ml-auto flex gap-2">
+                  <Button variant="outline" size="sm" disabled={folie.status === 'baut' || planen} onClick={() => folieNeu(folie)}><RefreshCw /> Folie neu erzeugen</Button>
+                  <Button variant="outline" size="sm" disabled={folie.status !== 'fertig'} onClick={() => navigate('/folien-designer', { state: { elemente: folie[ansicht] } })}><PenTool /> Im Folien-Designer öffnen</Button>
+                </div>
+              </div>
+              {folie.status === 'fertig' ? (
+                ansicht === 'schueler' && !folie.schueler?.length
+                  ? <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">Analoge Folie: keine Tablet-Ansicht.</p>
+                  : <FolieVorschau elemente={folie[ansicht]} />
+              ) : (
+                <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
+                  {folie.status === 'fehler' ? 'Diese Folie konnte nicht gebaut werden. Bitte neu erzeugen.' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Folie wird gebaut …</>}
+                </div>
+              )}
+              <p className="flex items-center gap-2 text-sm text-accent"><Lock className="h-4 w-4" /> Weiter: {FREIGABE_TEXT[folie.freigabe] || 'Lehrkraft gibt frei'}{folie.freigabe === 'zeit' && folie.minuten ? ` (${folie.minuten} Min.)` : ''}</p>
+            </div>
+            <FolieErklaerung folie={folie} />
+          </div>
         )}
       </DialogContent>
     </Dialog>
