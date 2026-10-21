@@ -123,13 +123,9 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
       <AssistentenInfos werte={werte} setze={setze} />
       <GrafikVorlageDialog open={vorlageOffen} onOpenChange={setVorlageOffen} methode={methode} werte={werte} />
       <div className="flex flex-wrap gap-2">
-        {eingabe ? (
+        {eingabe && (
           <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>
             {strukturiert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Eingaben strukturiert übernehmen
-          </Button>
-        ) : (
-          <Button variant="outline" className="gap-2" onClick={() => setEingabe(true)}>
-            <Pencil className="h-4 w-4" /> Beschreibung überarbeiten
           </Button>
         )}
         <Button variant="outline" className="gap-2" onClick={() => setVorlageOffen(true)}>
