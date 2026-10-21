@@ -9,6 +9,7 @@ import ZusatzInhalte from './ZusatzInhalte';
 import BrueckenInhalte from './BrueckenInhalte';
 import ErweiterteInhalte from './ErweiterteInhalte';
 import LetzteInhalte from './LetzteInhalte';
+import SymbolFreigabeInhalt from './SymbolFreigabeInhalt';
 import { schriftKlasse, UEBERSCHRIFT_GROESSEN } from '@/lib/folienStil';
 
 const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 text-sm text-primary';
@@ -16,6 +17,7 @@ const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg b
 /** Darstellung eines Folienelements (nur Vorschau, ohne Funktion). */
 export default function ElementInhalt({ el }) {
   const { typ, farbe } = el;
+  if (typ === 'symbol' || typ === 'freigabe') return <SymbolFreigabeInhalt el={el} />;
   if (typ === 'zufall' || typ === 'extern' || (typ === 'raster' && el.raster_art === 'kreuzwort') || (typ === 'audioaufnahme' && el.mit_zeichnung)) return <LetzteInhalte el={el} />;
   if ((typ === 'skala' && el.belegung === 'karten') || (typ === 'kanban' && el.bereiche === 'venn') || (typ === 'abstimmung' && el.zwei_runden)) return <ErweiterteInhalte el={el} />;
   if ((typ === 'markieren' && el.ziel === 'bild') || (typ === 'auswahl' && el.begruendung) || (typ === 'abstimmung' && el.budget > 1)) return <ZusatzInhalte el={el} />;

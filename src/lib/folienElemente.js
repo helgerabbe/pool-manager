@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers, Camera, Mic, Hand, Table, Dices, AppWindow } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers, Camera, Mic, Hand, Table, Dices, AppWindow, Shapes, Lock } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -13,6 +13,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'pfeil_breit', label: 'Pfeil (breit)', icon: MoveRight, b: 180, h: 70 },
     { typ: 'freihand', label: 'Freihandform', icon: PenTool, b: 170, h: 110 },
     { typ: 'formel', label: 'Formel', icon: Sigma, b: 220, h: 60 },
+    { typ: 'symbol', label: 'Symbol (Piktogramm)', icon: Shapes, b: 90, h: 90 },
     { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
     { typ: 'zufall', label: 'Zufallsgenerator', icon: Dices, b: 220, h: 140 },
     { typ: 'zuteilung', label: 'Zuteilungsanzeige', icon: UserCheck, b: 280, h: 70 },
@@ -54,6 +55,9 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'abstimmung', label: 'Abstimmung', icon: BarChart3, b: 260, h: 110, art: 'kollaborativ' },
     { typ: 'wortwolke', label: 'Wortwolke', icon: Cloud, b: 320, h: 160, art: 'kollaborativ' },
     { typ: 'punktestand', label: 'Punktestand / Rangliste', icon: Trophy, b: 260, h: 120, art: 'kollaborativ' },
+  ] },
+  { titel: 'Ablauf der Phase', hinweis: 'Legt fest, wann es nach dieser Folie weitergeht.', elemente: [
+    { typ: 'freigabe', label: 'Freigabebedingung', icon: Lock, b: 300, h: 50 },
   ] },
   { titel: 'Animation auf der Folie', elemente: [
     { typ: 'erscheinen', label: 'Erscheinen', icon: Eye, b: 150, h: 46 },
