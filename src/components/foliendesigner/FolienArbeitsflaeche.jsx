@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import ElementInhalt from './ElementInhalt';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
+import { VORGABEN } from '@/lib/folienStil';
 
 /** Die Folie (16:9): Elemente hineinziehen, verschieben, auswählen und entfernen. */
 export default function FolienArbeitsflaeche({ elemente, setElemente, gewaehlt, setGewaehlt }) {
@@ -14,7 +15,7 @@ export default function FolienArbeitsflaeche({ elemente, setElemente, gewaehlt, 
     const id = e.dataTransfer.getData('id');
     if (neu) {
       const d = FOLIEN_ELEMENT[neu];
-      const el = { id: `${Date.now()}`, typ: neu, x: e.clientX - r.left - d.b / 2, y: e.clientY - r.top - d.h / 2, b: d.b, h: d.h };
+      const el = { ...VORGABEN[neu], id: `${Date.now()}`, typ: neu, x: e.clientX - r.left - d.b / 2, y: e.clientY - r.top - d.h / 2, b: d.b, h: d.h };
       setElemente([...elemente, el]); setGewaehlt(el.id);
     } else if (id) {
       const [dx, dy] = e.dataTransfer.getData('versatz').split(',').map(Number);
@@ -32,7 +33,7 @@ export default function FolienArbeitsflaeche({ elemente, setElemente, gewaehlt, 
           onClick={(e) => { e.stopPropagation(); setGewaehlt(el.id); }}
           style={{ left: el.x, top: el.y, width: el.b, height: el.h }}
           className={`absolute flex cursor-move items-center justify-center ${gewaehlt === el.id ? 'outline outline-2 outline-offset-2 outline-primary' : ''}`}>
-          <ElementInhalt typ={el.typ} />
+          <div className="pointer-events-none flex h-full w-full items-center justify-center"><ElementInhalt el={el} /></div>
           {gewaehlt === el.id && (
             <button onClick={() => { setElemente(elemente.filter((x) => x.id !== el.id)); setGewaehlt(null); }}
               className="absolute -right-3 -top-3 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground">

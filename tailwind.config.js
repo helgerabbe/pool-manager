@@ -6,7 +6,10 @@ module.exports = {
   	extend: {
   		fontFamily: {
   			inter: ['var(--font-inter)'],
-  			display: ['var(--font-display)']
+  			display: ['var(--font-display)'],
+  			folie: ['Arial', 'Helvetica', 'sans-serif'],
+  			hand: ['Caveat', 'cursive'],
+  			locker: ['Fredoka', 'sans-serif']
   		},
   		borderRadius: {
   			lg: 'var(--radius)',

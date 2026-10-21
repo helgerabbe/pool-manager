@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import ElementPalette from '@/components/foliendesigner/ElementPalette';
 import FolienArbeitsflaeche from '@/components/foliendesigner/FolienArbeitsflaeche';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
+import ElementEinstellungen from '@/components/foliendesigner/ElementEinstellungen';
 
 /** Folien-Designer: Übersicht der Bausteine, auf die der Grafikassistent zurückgreifen kann (noch ohne Funktion). */
 export default function FolienDesigner() {
   const [elemente, setElemente] = React.useState([]);
   const [gewaehlt, setGewaehlt] = React.useState(null);
-  const aktiv = FOLIEN_ELEMENT[elemente.find((e) => e.id === gewaehlt)?.typ];
+  const gewaehltEl = elemente.find((e) => e.id === gewaehlt);
+  const aktiv = FOLIEN_ELEMENT[gewaehltEl?.typ];
 
   return (
     <div className="flex h-full">
@@ -26,6 +28,7 @@ export default function FolienDesigner() {
         </div>
         <FolienArbeitsflaeche elemente={elemente} setElemente={setElemente} gewaehlt={gewaehlt} setGewaehlt={setGewaehlt} />
       </div>
+      {gewaehltEl && <ElementEinstellungen el={gewaehltEl} setze={(p) => setElemente(elemente.map((e) => (e.id === gewaehlt ? { ...e, ...p } : e)))} />}
     </div>
   );
 }
