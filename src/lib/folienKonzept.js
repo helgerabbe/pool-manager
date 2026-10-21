@@ -25,8 +25,8 @@ export const FOLIEN_KONZEPT = [
   ] },
   { titel: 'Organisation des Foliensatzes (gilt für die ganze Stunde)', punkte: [
     ['Zuteilung', 'Partner, Gruppen, Rollen oder Seiten, fest, zufällig oder rotierend (Wechsel auf Signal oder im Takt). Schüler sehen sie über die Zuteilungsanzeige.'],
-    ['Freigabe', 'Die nächste Folie gibt die Lehrkraft frei, sie öffnet sich automatisch oder wenn alle fertig sind.'],
-    ['Ablauf', 'Folien fest hintereinander oder frei wählbar (z. B. Stationenlernen).'],
+    ['Freigabe', 'Die nächste Folie gibt die Lehrkraft frei, sie öffnet sich automatisch, wenn alle fertig sind oder erst nach richtiger Lösung einer Übung (je Schüler oder je Gruppe, z. B. Escape Room).'],
+    ['Ablauf', 'Folien fest hintereinander, frei wählbar oder als Stationen mit Pflicht- und Wahlstationen und Laufzettel.'],
     ['Signale', 'Synchroner Timer, Fertig melden und Partnerbildung nach Fertig-Meldung (Lerntempoduett).'],
   ] },
   { titel: 'Sichtbarkeit (gilt für jedes Element)', punkte: [
