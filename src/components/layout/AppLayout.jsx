@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles, Shapes } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles, Shapes, Presentation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -213,6 +213,7 @@ export default function AppLayout() {
                 <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Methodengalerie" isActive={isActive('/aktivitaetengalerie')} />
               )}
               <NavIconLink to="/fachregister" icon={BookOpen} label="Fachregister" isActive={isActive('/fachregister')} />
+              <NavIconLink to="/folien-designer" icon={Presentation} label="Folien-Designer" isActive={isActive('/folien-designer')} />
 
               {/* Hilfe: Assistent (mit Dokumentation dahinter) */}
               <NavIconLink to="/docs" icon={LifeBuoy} label="Hilfe & Assistent" isActive={isActive('/docs')} />
