@@ -26,7 +26,8 @@ export default function MethodischeGestaltung({ entwurf, setEntwurf, onSparring,
         <p className="text-sm font-semibold">{entwurf.kurz}</p>
         <Button size="sm" variant="outline" onClick={() => oeffnen(null, 'gesamt')}><MessageCircle /> Über den Gesamtverlauf sprechen</Button>
       </div>
-      {entwurf.phasen.map((p, i) => <MethodikPhase key={i} phase={p} nr={i + 1} onStart={(modus) => oeffnen(i, modus)} />)}
+      {entwurf.phasen.map((p, i) => <MethodikPhase key={i} phase={p} nr={i + 1} onStart={(modus) => oeffnen(i, modus)}
+        onZeit={(spanne) => setEntwurf({ ...entwurf, phasen: entwurf.phasen.map((q, j) => (j === i ? { ...q, zeitspanne: spanne || undefined, minuten: spanne ? spanne[1] : q.minuten } : q)) })} />)}
       <TippCenter pruefung={pruefung} onLaden={onTipps}
         onBesprechen={(t) => setGespraech({ fokus: null, verlauf: [{ role: 'assistant', content: `Lass uns über diese Idee sprechen:\n\n> ${t.text}\n\nWas hältst du davon? Soll ich dir zeigen, wie die Stunde damit aussehen würde?` }] })} />
       <div className="flex flex-wrap gap-2">

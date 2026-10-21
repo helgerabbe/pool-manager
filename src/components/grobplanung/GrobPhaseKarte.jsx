@@ -9,7 +9,8 @@ export default function GrobPhaseKarte({ phase, nr, zeit, children }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{nr}</span>
         <p className="text-sm font-semibold">{phase.name}</p>
-        {zeit && <span className="inline-flex items-center gap-1 rounded-full bg-chart-3/15 px-2 py-0.5 text-[11px] font-medium text-chart-3"><Clock className="h-3 w-3" /> {zeit}</span>}
+        {zeit && typeof zeit !== 'string' && zeit}
+        {typeof zeit === 'string' && <span className="inline-flex items-center gap-1 rounded-full bg-chart-3/15 px-2 py-0.5 text-[11px] font-medium text-chart-3"><Clock className="h-3 w-3" /> {zeit}</span>}
         {phase.sozialform && <span className="rounded-full bg-chart-4/15 px-2 py-0.5 text-[11px] font-medium text-chart-4">{phase.sozialform}</span>}
         {phase.methode && <MethodeBadge name={phase.methode} />}
         {phase.neu && <span className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-[10px] font-semibold text-accent-foreground"><Sparkles className="h-3 w-3" /> verändert</span>}
