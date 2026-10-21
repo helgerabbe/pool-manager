@@ -11,7 +11,7 @@ const FELDER = [
 ];
 
 const KI = {
-  info_methodenbeschreiber: { erzeugen: kiMethodenBeschreibung, hinweis: 'Der Methodenbeschreiber beschreibt ausführlich, wie die Methode abläuft und funktioniert, noch ohne Grafik.', platzhalter: 'z. B. Die Gruppen sollen zweimal rotieren' },
+  info_methodenbeschreiber: { erzeugen: kiMethodenBeschreibung, knopf: 'Bereich befüllen', hinweis: 'Der Methodenbeschreiber erstellt eine Foliensatz-Expertise: Ablauf, Art des Foliensatzes, Folienfolge und was die Lehrkraft vorher entscheiden muss.', platzhalter: 'z. B. Die Gruppen sollen zweimal rotieren' },
   info_grafikassistent: { erzeugen: kiGrafikAnweisung, hinweis: 'Der Grafikassistent macht aus der Methodenbeschreibung eine Beschreibung von Lehrer- und Schüleransicht.', platzhalter: 'z. B. Schüler sollen ihre Gruppe vorher auswählen können' },
 };
 

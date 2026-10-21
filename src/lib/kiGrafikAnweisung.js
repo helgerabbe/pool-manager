@@ -24,20 +24,25 @@ async function frage(prompt) {
 
 /** Methodenbeschreiber: beschreibt Ablauf und Funktionalität der Methode ausführlich (noch ohne Grafik). */
 export function kiMethodenBeschreibung({ methode, bisher, wunsch, verlauf }) {
-  return frage(`Du bist der Methodenbeschreiber. Beschreibe ausführlich und für Lehrkräfte verständlich, wie diese Unterrichtsmethode abläuft und funktioniert. Noch KEINE grafische Oberfläche, keine Bildschirme, kein Design.
+  return frage(`Du bist der Methodenbeschreiber. Erstelle eine FOLIENSATZ-EXPERTISE für diese Unterrichtsmethode: Wie läuft sie ab, und wie müsste ein Foliensatz (Presenter an der Tafel + ggf. Schüleransicht auf dem Gerät) aussehen, damit sie im Unterricht funktioniert? Noch kein Design, keine Farben.
 ${methodenKontext(methode)}
+Bauplan-Rohtext: ${methode.bauplan_rohtext || ''}
+Assistent-Fragen: ${methode.assistent_fragen || ''}
+Prüfregeln: ${methode.pruefregeln || ''}
 
 ${auftrag(bisher, wunsch, verlauf)}
 
-Gliederung (Klartext, Deutsch):
-ZIEL DER METHODE
-ABLAUF Schritt für Schritt (mit Zeitanteilen, Sozialform, wer was tut)
-ROLLE DER LEHRKRAFT (was sie anleitet, beobachtet, auslöst)
-ROLLE DER SCHÜLER (was sie in jedem Schritt tun und als Ergebnis haben)
-REGELN UND WECHSEL (Gruppenbildung, Rotation, Zeitsignale, Übergänge)
-ERGEBNISSE UND SICHERUNG
-SONDERFÄLLE (schnelle/langsame Gruppen, fehlende Schüler, Varianten)
-Bei komplexen Methoden besonders genau.`);
+Gliederung (Klartext, Deutsch, nummerierte Abschnitte):
+1. KERN DER METHODE (Phasen, worauf es ankommt)
+2. ART DES FOLIENSATZES: Einstufung KEINE FOLIEN NÖTIG / STATISCH (zeigt nur Inhalte und Aufträge) / DYNAMISCH (führt durch Phasen, Timer, Gruppeneinteilung, einfache Notizen) / INTERAKTIV (Schüler geben ein, wählen, sortieren, bewerten gemeinsam; App speichert oder synchronisiert). Begründen: Funktioniert die Methode ohne App? Was ist der digitale Mehrwert? Entwicklungsaufwand je Variante (gering/mittel/hoch).
+3. LEHRERANSICHT (Presenter), Folie für Folie: Folientyp (Methodenfolie, Auftragsfolie, Phasenfolie, Übergangsfolie, Sicherungsfolie), Inhalt, was davon variabel ist.
+4. SCHÜLERANSICHT (Gerät), nur falls dynamisch/interaktiv: was je Phase zu sehen und zu tun ist, was gespeichert und was synchronisiert wird.
+5. WIEDERVERWENDBAR vs. STUNDENBEZOGEN (Methodenbausteine vs. Inhalte, die aus der Stunde kommen)
+6. WAS DIE LEHRKRAFT VORHER ENTSCHEIDEN MUSS: jede Entscheidung als eigener Punkt mit Optionen und Standardwert. Wenn nichts zu entscheiden ist, ausdrücklich sagen.
+7. WAS ANALOG BLEIBEN SOLLTE
+8. RISIKEN / PRÜFPUNKTE FÜR DEN FOLIENSATZ (aus den Stolpersteinen)
+9. EINORDNUNG: Klar / Annahme / Offen
+Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders genau.`);
 }
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
