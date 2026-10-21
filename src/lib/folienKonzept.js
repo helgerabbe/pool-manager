@@ -1,28 +1,33 @@
-// Folienkonzept (2026-10-21): gemeinsame Sprache zwischen Methodenbeschreiber und Grafikassistent.
-// Jede Folie einer Bauanleitung wird mit diesen Begriffen gekennzeichnet.
+// Folienkonzept (2026-10-21, überarbeitet): gemeinsame Sprache zwischen Methodenbeschreiber und Grafikassistent.
+// Jede Folie und jedes Element einer Bauanleitung wird mit diesen Begriffen gekennzeichnet.
 export const FOLIEN_KONZEPT = [
-  { titel: 'Folienart (Aufgabe der Folie)', punkte: [
-    ['Methodenfolie', 'Erklärt die Methode selbst. Wiederverwendbar, in jeder Stunde gleich.'],
-    ['Auftragsfolie', 'Trägt den Arbeitsauftrag der Stunde. Stundenbezogen, Inhalte setzt die Lehrkraft ein.'],
-    ['Phasenfolie', 'Begleitet eine Phase der Methode (z. B. Timer, Regel, Symbol). Wiederverwendbares Muster, nur Zeit oder Modus variieren.'],
-    ['Sicherungsfolie', 'Hält Ergebnisse fest. Stundenbezogen, oft optional.'],
+  { titel: 'Folienart', punkte: [
+    ['Starre Folie', 'Zeigt nur etwas an, z. B. die Methodenfolie (erklärt die Methode) oder die Auftragsfolie (Arbeitsauftrag der Stunde). Analog und digital gleich.'],
+    ['Aufgabenfolie', 'Die Schüler arbeiten mit der Folie. Auch die Sicherung ist eine Aufgabenfolie. Nur hier stellt sich die Frage analog oder digital.'],
   ] },
-  { titel: 'Umsetzungsprofil (Wie viel passiert auf der Folie?)', punkte: [
-    ['Starr', 'Reine Anzeige, nichts verändert sich.'],
-    ['Dynamisch', 'Die Folie verändert sich im Ablauf (Timer, Einblendungen, übernommene Eingaben), ohne dass Schüler darauf einwirken.'],
-    ['Interaktiv', 'Schüler wirken auf die Folie ein (Eingabe, Auswahl, Ziehen, Live-Pinnwand). Immer mit Einzel- oder Gruppenmodus.'],
+  { titel: 'Durchführung der Aufgabenfolie', punkte: [
+    ['Analog', 'Die Folie zeigt nur, was die Klasse sehen muss: Auftrag, Regel, Zeit. Gearbeitet wird im Heft oder im Gespräch.'],
+    ['Digital', 'Zusätzlich die Elemente, mit denen die Schüler auf ihrem Gerät arbeiten. Jedes dieser Elemente hat eine Funktion (siehe unten).'],
   ] },
-  { titel: 'Durchführung (analog oder digital)', punkte: [
-    ['Analog', 'Die Folie zeigt nur, was die Klasse sehen muss, meist den Auftrag, die Regel und die Zeit. Gearbeitet wird im Heft oder im Gespräch.'],
-    ['Digital', 'Zusätzlich die Elemente, mit denen die Schüler auf ihrem Gerät arbeiten. Jede Folie der Bauanleitung nennt beide Fälle, sofern sie sich unterscheiden.'],
+  { titel: 'Art eines Elements', punkte: [
+    ['Interaktiv', 'Schüler ↔ Folie: Der Schüler gibt etwas ein, zieht oder wählt aus.'],
+    ['Kollaborativ', 'Nutzer ↔ Nutzer: Ein Ergebnis erscheint bei anderen (Lehrkraft, Partner, Gruppe, Klasse).'],
+    ['Beides', 'Je nach Funktion allein oder im Team vernetzt, z. B. Reihenfolge oder Kanban-Board.'],
   ] },
-  { titel: 'Kennzeichnung von Texten', punkte: [
-    ['Pflichttext', 'Steht wörtlich so auf der Folie, z. B. der Methodenname.'],
-    ['Platzhalter', 'Hier setzt die Lehrkraft eigenen Inhalt ein. Das Beispiel dient nur der Orientierung und wird nicht übernommen.'],
-    ['Freier Text', 'Sinn ist vorgegeben, die Formulierung wählt der Grafikassistent.'],
+  { titel: 'Funktion einer Interaktion: Was passiert mit der Eingabe?', punkte: [
+    ['Übung', 'Auf das Signal der Lehrkraft wird angezeigt, was richtig oder falsch ist. Braucht eine hinterlegte Lösung.'],
+    ['Präsentation', 'Die Lehrkraft sieht alle Eingaben, wählt einzelne aus und zeigt sie vorne, um darüber zu sprechen.'],
+    ['Weiterführung allein', 'Die Eingabe wird in einer eigenen Folgeaufgabe wieder aufgegriffen. Angabe: wohin.'],
+    ['Weiterführung in die Gruppe', 'Die Eingabe fließt im nächsten Schritt in die Gruppenarbeit ein, z. B. bei Pair. Angabe: wohin und Gruppenkennung.'],
+    ['Kollaboration', 'Mehrere arbeiten gleichzeitig an einem gemeinsamen Ergebnis, z. B. Live-Pinnwand oder Abstimmung. Angabe: Gruppenkennung.'],
+  ] },
+  { titel: 'Inhalte: Wer legt sie fest? (gilt für jedes Element)', punkte: [
+    ['Fest', 'Steht genau so auf der Folie, z. B. der Methodenname.'],
+    ['Abfrage', 'Die Lehrkraft legt den Inhalt fest. Der Grafikassistent fragt nach oder lässt einen Platzhalter; Beispiele dienen nur der Orientierung.'],
+    ['Frei', 'Ziel und Wirkung sind beschrieben, die Umsetzung entscheidet der Grafikassistent.'],
   ] },
   { titel: 'Grundsatz für die Gestaltung', punkte: [
     ['Funktion statt Layout', 'Die Bauanleitung nennt nur, welche Elemente es braucht und was sie leisten müssen. Anordnung, Größe und Farbe wählt der Grafikassistent.'],
-    ['Ausnahme', 'Größe oder Farbe werden nur vorgegeben, wenn die Funktion davon abhängt (z. B. Timer aus der ganzen Klasse lesbar, fachlich festgelegte Farbe).'],
+    ['Ausnahme', 'Größe oder Farbe werden nur vorgegeben, wenn die Funktion davon abhängt (z. B. Timer aus der ganzen Klasse lesbar).'],
   ] },
 ];

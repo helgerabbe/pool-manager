@@ -7,6 +7,8 @@ import TextEinstellungen from './einstellungen/TextEinstellungen';
 import FormelEditor from './einstellungen/FormelEditor';
 import MedienEinstellungen from './einstellungen/MedienEinstellungen';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
+import FunktionWahl from './einstellungen/FunktionWahl';
+import { ELEMENT_FUNKTIONEN } from '@/lib/folienFunktionen';
 
 const FORMEN = {
   rechteck: ['form', 'Ecken', [['eckig', 'Eckig'], ['rund', 'Abgerundet']]],
@@ -32,7 +34,7 @@ export default function ElementEinstellungen({ el, setze }) {
   return (
     <aside className="w-72 shrink-0 space-y-4 overflow-y-auto border-l border-border bg-card p-4">
       <p className="flex items-center gap-2 font-semibold"><d.icon className="h-4 w-4 text-primary" />{d.label}</p>
-      {inhalt}
+      {ELEMENT_FUNKTIONEN[el.typ] ? <FunktionWahl el={el} setze={setze} /> : inhalt}
     </aside>
   );
 }
