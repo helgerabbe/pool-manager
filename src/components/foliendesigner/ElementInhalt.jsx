@@ -5,6 +5,7 @@ import MedienInhalt from './MedienInhalt';
 import ZiehInhalte from './ZiehInhalte';
 import NeueInhalte from './NeueInhalte';
 import WeitereInhalte from './WeitereInhalte';
+import ZusatzInhalte from './ZusatzInhalte';
 import { schriftKlasse, UEBERSCHRIFT_GROESSEN } from '@/lib/folienStil';
 
 const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 text-sm text-primary';
@@ -12,6 +13,7 @@ const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg b
 /** Darstellung eines Folienelements (nur Vorschau, ohne Funktion). */
 export default function ElementInhalt({ el }) {
   const { typ, farbe } = el;
+  if ((typ === 'markieren' && el.ziel === 'bild') || (typ === 'auswahl' && el.begruendung) || (typ === 'abstimmung' && el.budget > 1)) return <ZusatzInhalte el={el} />;
   switch (typ) {
     case 'ueberschrift': return <p className={`w-full font-bold leading-tight ${schriftKlasse(el.schrift)}`} style={{ color: farbe, fontSize: UEBERSCHRIFT_GROESSEN[el.stufe] }}>{el.inhalt}</p>;
     case 'text': return <p className={`w-full whitespace-pre-wrap ${schriftKlasse(el.schrift)}`} style={{ color: farbe, fontSize: el.groesse }}>{el.inhalt}</p>;
