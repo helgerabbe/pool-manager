@@ -23,14 +23,21 @@ export const FOLIEN_KONZEPT = [
     ['Rückmeldung', 'Andere kommentieren oder bewerten das Ergebnis (Galeriegang, Peer-Evaluation). Angabe: Form der Rückmeldung.'],
     ['Kollaboration', 'Mehrere arbeiten gleichzeitig an einem gemeinsamen Ergebnis, z. B. Live-Pinnwand oder Abstimmung. Angabe: Gruppenkennung.'],
   ] },
+  { titel: 'Besondere Elemente und Varianten', punkte: [
+    ['Zufallsgenerator', 'Glücksrad mit eigenen Feldern, Würfel oder Namen ziehen (jeder kommt einmal dran, bevor jemand erneut gezogen wird). Für Rituale, Aufrufen und Spiele.'],
+    ['Externe Seite', 'Bettet eine fremde Seite ein, z. B. GeoGebra, LearningApps oder eine Simulation. Angabe: Adresse.'],
+    ['Raster als Kreuzworträtsel', 'Das Raster wird zum Kreuzworträtsel mit Eingabe je Kästchen; sonst Aufdeckfelder (z. B. Bingo, Memory).'],
+    ['Audioaufnahme zur Zeichnung', 'Ton und Zeichenfläche werden gemeinsam aufgenommen, so entsteht ein Erklärvideo.'],
+    ['Skala, Kanban, Abstimmung', 'Skala mit einer Position oder mehreren Karten (Zeitstrahl); Kanban als Spalten oder überlappend (Venn); Abstimmung in zwei Runden (Peer Instruction) oder mit Punktebudget.'],
+  ] },
   { titel: 'Organisation des Foliensatzes (gilt für die ganze Stunde)', punkte: [
-    ['Zuteilung', 'Partner, Gruppen, Rollen oder Seiten, fest, zufällig oder rotierend (Wechsel auf Signal oder im Takt). Schüler sehen sie über die Zuteilungsanzeige.'],
+    ['Zuteilung', 'Partner, Gruppen, Rollen oder Seiten, fest, zufällig, rotierend oder nach eigener Wahl über eine Abstimmung (Vier-Ecken-Methode) (Wechsel beim Rotieren auf Signal oder im Takt). Schüler sehen sie über die Zuteilungsanzeige.'],
     ['Freigabe', 'Die nächste Folie gibt die Lehrkraft frei, sie öffnet sich automatisch, wenn alle fertig sind oder erst nach richtiger Lösung einer Übung (je Schüler oder je Gruppe, z. B. Escape Room).'],
     ['Ablauf', 'Folien fest hintereinander, frei wählbar oder als Stationen mit Pflicht- und Wahlstationen und Laufzettel.'],
     ['Signale', 'Synchroner Timer, Fertig melden und Partnerbildung nach Fertig-Meldung (Lerntempoduett).'],
   ] },
   { titel: 'Sichtbarkeit (gilt für jedes Element)', punkte: [
-    ['Sichtbar für', 'Alle, nur eine Rolle oder Gruppe (z. B. Information Gap, Tabu) oder je Schüler verschieden: Inhalte verteilen (Kettenquiz) oder mischen (Bingo).'],
+    ['Sichtbar für', 'Alle, nur eine Rolle oder Gruppe (z. B. Information Gap, Tabu) oder je Schüler verschieden: Inhalte verteilen (Kettenquiz) oder mischen (Bingo), oder für alle außer mir: Jeder hat einen eigenen Inhalt, den nur die anderen sehen (Wer bin ich?).'],
     ['Ergebnisse', 'Die Ergebnisse der anderen erscheinen sofort oder erst nach Freigabe durch die Lehrkraft, damit niemand abschreibt oder sich der Mehrheit anschließt.'],
     ['Namen', 'Beiträge erscheinen mit Namen oder anonym (z. B. Anonymer Hut).'],
   ] },
