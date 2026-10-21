@@ -10,7 +10,7 @@ export default function SparringFenster({ titel, verlauf, setVerlauf, onAnfrage,
   const [text, setText] = React.useState('');
   const [laedt, setLaedt] = React.useState(false);
   const ende = React.useRef(null);
-  React.useEffect(() => ende.current?.scrollIntoView({ block: 'end' }), [verlauf, laedt]);
+  React.useEffect(() => { ende.current?.scrollIntoView({ block: 'end' }); }, [verlauf, laedt]);
 
   const ziehen = (e) => {
     const sx = e.clientX - pos.x, sy = e.clientY - pos.y;
