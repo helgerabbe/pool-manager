@@ -18,12 +18,12 @@ ${m.info_grafikassistent || '(keine)'}`;
 
 const textFeld = { type: 'string' };
 
-export async function planeFoliensatz(methode, fach) {
+export async function planeFoliensatz(methode, fach, kanal) {
   const r = await base44.integrations.Core.InvokeLLM({
     model: 'claude_sonnet_4_6',
     prompt: `Du bist der Grafikassistent. Plane den Foliensatz dieser Methode, noch ohne Folieninhalt.
 ${kontext(methode, fach)}
-Wähle ein typisches Beispielthema aus dem Fach. Lege die Folien in Ablaufreihenfolge an, zuerst den analogen, dann den digitalen Foliensatz (so wie die Anweisung sie trennt). Je Folie: kurzer Titel, Phase der Methode (z. B. Think, Pair, Share), Kanal (analog oder digital), Freigabe (lehrkraft | zeit | alle_fertig | anteil | geloest | code) mit Minuten falls zeit, und eine knappe Beschreibung, was auf Tafel und Tablet zu sehen ist.`,
+Wähle ein typisches Beispielthema aus dem Fach. Lege NUR den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz in Ablaufreihenfolge an (so wie die Anweisung ihn beschreibt), jede Folie mit Kanal "${kanal}". Je Folie: kurzer Titel, Phase der Methode (z. B. Think, Pair, Share), Kanal (analog oder digital), Freigabe (lehrkraft | zeit | alle_fertig | anteil | geloest | code) mit Minuten falls zeit, und eine knappe Beschreibung, was auf Tafel und Tablet zu sehen ist.`,
     response_json_schema: { type: 'object', properties: {
       thema: textFeld,
       folien: { type: 'array', items: { type: 'object', properties: {

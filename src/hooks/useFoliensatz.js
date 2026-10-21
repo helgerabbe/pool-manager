@@ -4,7 +4,9 @@ import { base44 } from '@/api/base44Client';
 import { planeFoliensatz, baueFolie } from '@/lib/kiFoliensatz';
 
 /** Foliensatz einer Methode je Fach: planen, Folie für Folie bauen, einzelne Folien neu bauen, speichern. */
-export default function useFoliensatz(methode, werte, fach) {
+// Analog und digital getrennt (2026-10-21): Schlüssel "<Fach> · digital"; analog nutzt den bisherigen Schlüssel "<Fach>".
+export default function useFoliensatz(methode, werte, fachName, kanal) {
+  const fach = kanal === 'digital' ? `${fachName} · digital` : fachName;
   const [vorlagen, setVorlagen] = React.useState(methode.grafik_vorlagen || {});
   const [planen, setPlanen] = React.useState(false);
   const satz = vorlagen[fach]?.folien ? vorlagen[fach] : null;
@@ -32,7 +34,7 @@ export default function useFoliensatz(methode, werte, fach) {
     setPlanen(true);
     let plan;
     try {
-      plan = await planeFoliensatz(m, f);
+      plan = await planeFoliensatz(m, fachName, kanal);
     } catch (e) {
       toast.error('Die Folienfolge konnte nicht geplant werden.');
       setPlanen(false);

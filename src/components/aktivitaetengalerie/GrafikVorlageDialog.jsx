@@ -17,7 +17,8 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
   const [fach, setFach] = React.useState(FAECHER[0]);
   const [ansicht, setAnsicht] = React.useState('lehrer');
   const [aktivId, setAktivId] = React.useState(null);
-  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach);
+  const [kanal, setKanal] = React.useState('analog');
+  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal);
   const folien = satz?.folien || [];
   const folie = folien.find((f) => f.id === aktivId) || folien[0];
   const baut = planen || folien.some((f) => f.status === 'baut');
@@ -31,6 +32,11 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
             <SelectContent>{FAECHER.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
           </Select>
+          {['analog', 'digital'].map((k) => (
+            <Button key={k} size="sm" variant={kanal === k ? 'default' : 'outline'} disabled={baut} onClick={() => { setKanal(k); setAktivId(null); setAnsicht('lehrer'); }}>
+              {k === 'analog' ? 'Analoge Folien' : 'Digitale Folien'}
+            </Button>
+          ))}
           <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
