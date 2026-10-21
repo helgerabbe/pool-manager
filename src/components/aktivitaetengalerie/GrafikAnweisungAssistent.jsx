@@ -29,7 +29,7 @@ export default function GrafikAnweisungAssistent({ werte, setze, feld, erzeugen,
         <Sparkles className="h-4 w-4 text-primary" />
         <p className="flex-1 text-xs text-muted-foreground">{hinweis}</p>
         <Button size="sm" variant="outline" disabled={laedt || gesperrt} onClick={() => lauf('')}>
-          {laedt && !wunsch ? <Loader2 className="animate-spin" /> : <Sparkles />} {knopf ? (bisher ? 'Bereich neu befüllen' : knopf) : bisher ? 'Neuer Erstvorschlag' : 'Erstvorschlag schreiben'}
+          {laedt && !wunsch ? <Loader2 className="animate-spin" /> : <Sparkles />} {knopf && !bisher ? knopf : 'Bereich neu befüllen'}
         </Button>
       </div>
       {verlauf.map((v, i) => (
