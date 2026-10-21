@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -14,6 +14,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'freihand', label: 'Freihandform', icon: PenTool, b: 170, h: 110 },
     { typ: 'formel', label: 'Formel', icon: Sigma, b: 220, h: 60 },
     { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
+    { typ: 'zuteilung', label: 'Zuteilungsanzeige', icon: UserCheck, b: 280, h: 70 },
   ] },
   { titel: 'Medien und Verweise', elemente: [
     { typ: 'bild', label: 'Bild', icon: Image, b: 240, h: 160 },

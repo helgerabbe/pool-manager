@@ -23,6 +23,12 @@ export const FOLIEN_KONZEPT = [
     ['Rückmeldung', 'Andere kommentieren oder bewerten das Ergebnis (Galeriegang, Peer-Evaluation). Angabe: Form der Rückmeldung.'],
     ['Kollaboration', 'Mehrere arbeiten gleichzeitig an einem gemeinsamen Ergebnis, z. B. Live-Pinnwand oder Abstimmung. Angabe: Gruppenkennung.'],
   ] },
+  { titel: 'Organisation des Foliensatzes (gilt für die ganze Stunde)', punkte: [
+    ['Zuteilung', 'Partner, Gruppen, Rollen oder Seiten, fest, zufällig oder rotierend (Wechsel auf Signal oder im Takt). Schüler sehen sie über die Zuteilungsanzeige.'],
+    ['Freigabe', 'Die nächste Folie gibt die Lehrkraft frei, sie öffnet sich automatisch oder wenn alle fertig sind.'],
+    ['Ablauf', 'Folien fest hintereinander oder frei wählbar (z. B. Stationenlernen).'],
+    ['Signale', 'Synchroner Timer, Fertig melden und Partnerbildung nach Fertig-Meldung (Lerntempoduett).'],
+  ] },
   { titel: 'Inhalte: Wer legt sie fest? (gilt für jedes Element)', punkte: [
     ['Fest', 'Steht genau so auf der Folie, z. B. der Methodenname.'],
     ['Abfrage', 'Die Lehrkraft legt den Inhalt fest. Der Grafikassistent fragt nach oder lässt einen Platzhalter; Beispiele dienen nur der Orientierung.'],

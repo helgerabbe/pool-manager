@@ -5,11 +5,14 @@ import ElementPalette from '@/components/foliendesigner/ElementPalette';
 import FolienArbeitsflaeche from '@/components/foliendesigner/FolienArbeitsflaeche';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
 import ElementEinstellungen from '@/components/foliendesigner/ElementEinstellungen';
+import OrganisationDialog from '@/components/foliendesigner/organisation/OrganisationDialog';
+import { ORGANISATION_START } from '@/lib/folienOrganisation';
 
 /** Folien-Designer: Übersicht der Bausteine, auf die der Grafikassistent zurückgreifen kann (noch ohne Funktion). */
 export default function FolienDesigner() {
   const [elemente, setElemente] = React.useState([]);
   const [gewaehlt, setGewaehlt] = React.useState(null);
+  const [organisation, setOrganisation] = React.useState(ORGANISATION_START);
   const gewaehltEl = elemente.find((e) => e.id === gewaehlt);
   const aktiv = FOLIEN_ELEMENT[gewaehltEl?.typ];
 
@@ -24,7 +27,8 @@ export default function FolienDesigner() {
               {aktiv ? `${aktiv.label}${aktiv.modus ? ' · später wählbar: Einzelmodus oder Gruppenmodus' : ''}` : 'Vorschau der Bausteine des Grafikassistenten, noch ohne hinterlegte Funktion.'}
             </p>
           </div>
-          <Button variant="outline" size="sm" disabled={!elemente.length} onClick={() => { setElemente([]); setGewaehlt(null); }}><Trash2 />Folie leeren</Button>
+          <div className="flex gap-2"><OrganisationDialog o={organisation} setO={setOrganisation} />
+          <Button variant="outline" size="sm" disabled={!elemente.length} onClick={() => { setElemente([]); setGewaehlt(null); }}><Trash2 />Folie leeren</Button></div>
         </div>
         <FolienArbeitsflaeche elemente={elemente} setElemente={setElemente} gewaehlt={gewaehlt} setGewaehlt={setGewaehlt} />
       </div>
