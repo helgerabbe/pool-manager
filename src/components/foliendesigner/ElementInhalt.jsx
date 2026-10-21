@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Film, Eye, EyeOff, MoveHorizontal } from 'lucide-react';
 import FormelAnzeige from './FormelAnzeige';
 import MedienInhalt from './MedienInhalt';
 import { schriftKlasse, UEBERSCHRIFT_GROESSEN } from '@/lib/folienStil';
@@ -29,7 +29,11 @@ export default function ElementInhalt({ el }) {
     case 'knopf': return <div className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Weiter</div>;
     case 'abstimmung': return <div className="w-full space-y-1.5">{[['Ja', 'w-3/4'], ['Nein', 'w-1/4']].map(([l, w]) => <div key={l} className="flex items-center gap-2 text-xs"><span className="w-9">{l}</span><div className="h-3 flex-1 rounded-full bg-muted"><div className={`h-full rounded-full bg-primary ${w}`} /></div></div>)}</div>;
     case 'timer': return <div className="rounded-full bg-foreground px-4 py-1.5 text-xl font-bold tabular-nums text-background">10:00</div>;
-    case 'animation': return <div className={platz}><Sparkles className="h-6 w-6" />Animation</div>;
+    case 'animation_ki': return <div className={platz}><Film className="h-6 w-6" />Animation (KI)</div>;
+    case 'animation_interaktiv': return <div className="flex h-full w-full flex-col gap-2"><div className={platz}><Sparkles className="h-6 w-6" />Interaktive Animation</div><div className="h-2 rounded-full bg-muted"><div className="h-full w-1/2 rounded-full bg-primary" /></div></div>;
+    case 'erscheinen': return <div className="flex items-center gap-2 rounded-full bg-chart-3/15 px-3 py-1.5 text-sm text-chart-3"><Eye className="h-4 w-4" />Erscheint auf Klick</div>;
+    case 'verschwinden': return <div className="flex items-center gap-2 rounded-full bg-destructive/10 px-3 py-1.5 text-sm text-destructive"><EyeOff className="h-4 w-4" />Verschwindet auf Klick</div>;
+    case 'bewegung': return <div className="flex w-full items-center gap-2 text-sm text-primary"><span className="h-3 w-3 rounded-full bg-primary" /><span className="flex-1 border-t-2 border-dashed border-primary" /><MoveHorizontal className="h-4 w-4" /></div>;
     default: return null;
   }
 }

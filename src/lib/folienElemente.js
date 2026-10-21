@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -18,8 +18,10 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'video', label: 'Video', icon: Video, b: 280, h: 160 },
     { typ: 'audio', label: 'Audio', icon: Music, b: 260, h: 50 },
     { typ: 'link', label: 'Link', icon: Link, b: 200, h: 40 },
+    { typ: 'animation_ki', label: 'Animation (KI)', icon: Film, b: 260, h: 160 },
+    { typ: 'animation_interaktiv', label: 'Interaktive Animation (KI)', icon: Sparkles, b: 260, h: 190 },
   ] },
-  { titel: 'Interaktion und Bewegung', elemente: [
+  { titel: 'Interaktion', elemente: [
     { typ: 'eingabe', label: 'Eingabefeld (kurz)', icon: TextCursorInput, b: 280, h: 80, modus: true },
     { typ: 'texteingabe', label: 'Texteingabe (lang)', icon: FileText, b: 340, h: 170, modus: true },
     { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, modus: true },
@@ -29,7 +31,11 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'knopf', label: 'Knopf (Aktion)', icon: MousePointerClick, b: 160, h: 46 },
     { typ: 'abstimmung', label: 'Abstimmung', icon: BarChart3, b: 260, h: 110, modus: true },
     { typ: 'timer', label: 'Timer', icon: Timer, b: 130, h: 50 },
-    { typ: 'animation', label: 'Animation', icon: Sparkles, b: 200, h: 120 },
+  ] },
+  { titel: 'Animation auf der Folie', elemente: [
+    { typ: 'erscheinen', label: 'Erscheinen', icon: Eye, b: 150, h: 46 },
+    { typ: 'verschwinden', label: 'Verblassen / Entfernen', icon: EyeOff, b: 170, h: 46 },
+    { typ: 'bewegung', label: 'Lineare Bewegung', icon: MoveHorizontal, b: 220, h: 46 },
   ] },
 ];
 
