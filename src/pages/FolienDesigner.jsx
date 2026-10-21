@@ -8,6 +8,7 @@ import ElementEinstellungen from '@/components/foliendesigner/ElementEinstellung
 import OrganisationDialog from '@/components/foliendesigner/organisation/OrganisationDialog';
 import { ORGANISATION_START } from '@/lib/folienOrganisation';
 import FolienKonzeptDialog from '@/components/foliendesigner/FolienKonzeptDialog';
+import LehrerSteuerung from '@/components/foliendesigner/LehrerSteuerung';
 
 /** Folien-Designer: Übersicht der Bausteine, auf die der Grafikassistent zurückgreifen kann (noch ohne Funktion). */
 export default function FolienDesigner() {
@@ -31,6 +32,7 @@ export default function FolienDesigner() {
           <div className="flex gap-2"><FolienKonzeptDialog /><OrganisationDialog o={organisation} setO={setOrganisation} />
           <Button variant="outline" size="sm" disabled={!elemente.length} onClick={() => { setElemente([]); setGewaehlt(null); }}><Trash2 />Folie leeren</Button></div>
         </div>
+        <LehrerSteuerung o={organisation} />
         <FolienArbeitsflaeche elemente={elemente} setElemente={setElemente} gewaehlt={gewaehlt} setGewaehlt={setGewaehlt} />
       </div>
       {gewaehltEl && <ElementEinstellungen el={gewaehltEl} setze={(p) => setElemente(elemente.map((e) => (e.id === gewaehlt ? { ...e, ...p } : e)))} />}
