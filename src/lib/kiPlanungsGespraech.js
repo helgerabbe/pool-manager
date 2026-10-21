@@ -1,28 +1,33 @@
-// Planungsgespräch (2026-10-21): Vor der Grobplanung klärt der Assistent in Alltagssprache, was für eine Stunde die Lehrkraft vor Augen hat.
-import { kontextText, kiMitMaterial } from '@/lib/kiGrobplanung';
+// Planungsgespräch (2026-10-21): Ping-Pong-Gespräch zwischen Lehrkraft und Assistent in der Grobplanung.
+// Immer genau eine Nachricht des Assistenten: bestätigen lassen, eine Frage stellen oder vorschlagen, die Liste zu zeigen.
+import { kontextText, kiMitMaterial, grundstrukturText, stundentypName } from '@/lib/kiGrobplanung';
 
 const SCHEMA = {
   type: 'object',
   properties: {
-    verstanden: { type: 'string' },
-    frage: { type: 'string' },
-    optionen: { type: 'array', items: { type: 'object', properties: {
-      titel: { type: 'string' }, kurz: { type: 'string' },
-      verlauf: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, minuten: { type: 'number' }, extra: { type: 'boolean' } } } },
-    } } },
-    material_frage: { type: 'string' },
-    material_optionen: { type: 'array', items: { type: 'string' } },
+    nachricht: { type: 'string' },
+    art: { type: 'string', enum: ['bestaetigen', 'frage', 'fertig'] },
+    optionen: { type: 'array', items: { type: 'string' } },
   },
-  required: ['verstanden', 'frage', 'optionen'],
+  required: ['nachricht', 'art'],
 };
 
-export const kiPlanungsGespraech = ({ wunsch, ...k }) => kiMitMaterial(k.assistent, `Du bist ein erfahrener Kollege im Lehrerzimmer und hilfst beim Planen einer Stunde. Du redest wie im Lehreralltag: einfach, locker, kurz, Du-Form. KEINE Fachbegriffe wie "deduktiv", "induktiv", "integriert", "Sicherungsphase", "Stundenmodell". Lieber: "was Neues einführen", "kurz üben", "zusammen festhalten", "knackig durchziehen".
+export const kiGespraechSchritt = ({ vorgaben, verlauf, ...k }) => kiMitMaterial(k.assistent, `Du bist ein erfahrener, freundlicher Kollege mit viel didaktischem Wissen und Ideen. Du führst mit einer Lehrkraft ein Planungsgespräch über ihre Stunde, BEVOR die Stunde gebaut wird. Du bist ein kritischer, aber wohlwollender Begleiter. Sprich einfach und locker wie im Lehrerzimmer, Du-Form, kurz (höchstens 3 Sätze). Keine Fachbegriffe wie "deduktiv", "induktiv", "Sicherungsphase", "Stundenmodell".
 ${kontextText(k)}
+Grobes Stundenziel: ${vorgaben.ziel.haupt || 'noch offen'}
+Stundentyp: ${vorgaben.ziel.stundentyp ? stundentypName(vorgaben.ziel.stundentyp) : 'offen'}
+Lerngruppe: Tempo ${vorgaben.gruppe.fit}/5, Selbstständigkeit ${vorgaben.gruppe.stark}/5, Leistung ${vorgaben.gruppe.leistung ?? 3}/5 (3 = normal)
+${grundstrukturText(vorgaben)}
+${vorgaben.methode ? `Methodenwunsch: ${vorgaben.methode.name || vorgaben.methode.kurzbeschreibung}` : ''}
+${vorgaben.anker.materialien.length ? '' : 'Die Lehrkraft hat noch kein Material angegeben.'}
 
-Wichtig: In einer Stunde, in der was Neues kommt, darf auch geübt werden. In einer Übungsstunde darf auch kurz was Neues dazukommen. Finde heraus, was die Lehrkraft eigentlich will.
+Bisheriges Gespräch:
+${verlauf.length ? verlauf.map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Du'}: ${m.content}`).join('\n') : '(noch nichts, du beginnst)'}
 
-- "verstanden": 1–2 kurze Sätze, was du verstanden hast, z. B. "Ich glaube, du willst hier was Neues einführen." Wenn die Lehrkraft schon klar gesagt hat, was sie will (z. B. "mit Übung"), sag das so: "Ich habe verstanden, dass du … willst. Richtig?"
-- "frage": eine kurze Frage, z. B. "Wie soll die Stunde laufen?"
-- "optionen": 2–3 echte Möglichkeiten, wie die Stunde laufen kann (z. B. "Knackig durchziehen" = nur das Neue, ohne Übung; "Kleine Schritte" = Neues in Häppchen, dazwischen kurz üben; "Erst erklären, dann üben" = kompakt einführen, danach eine Übung). Passe sie an das Vorhaben an. Je Option: "titel" (2–4 Wörter), "kurz" (ein einfacher Satz, was das bedeutet), "verlauf" = 3–6 Phasen mit ganz einfachem "name" (2–5 Wörter, Alltagssprache), "minuten" (Summe = verfügbare Zeit bzw. 45) und "extra" = true bei Phasen, die gegenüber dem schlichten Weg dazukommen (z. B. eine Übung in einer Stunde mit Neuem).
-- "material_frage": NUR wenn die Lehrkraft kein Material genannt hat und es für die Stunde wichtig ist, eine lockere Frage, z. B. "Du hast noch kein Material angegeben. Hast du was, oder machen wir es ohne?" Sonst leerer String.
-- "material_optionen": 3–4 kurze Antworten dazu (z. B. "Ich habe was, lade ich noch hoch", "Ich erkläre es selbst", "Ein Erklärvideo wäre gut", "Ganz ohne Material"). Sonst leere Liste.${wunsch ? `\n\nDie Lehrkraft hat gerade dazu gesagt: "${wunsch}". Nimm das auf und passe "verstanden" und die Optionen an.` : ''}`, SCHEMA, k.anker.materialien);
+So läuft das Gespräch, immer genau EIN Schritt:
+- Zu Beginn (noch nichts gesagt): Fasse in einfachen Worten zusammen, was du verstanden hast ("Ich habe verstanden, dass du … willst."), und frage "Richtig?". art = "bestaetigen".
+- Hat die Lehrkraft gerade etwas Eigenes geschrieben: Spiegle kurz, wie du es verstanden hast, und frage "Richtig?". art = "bestaetigen".
+- Sagt die Lehrkraft "Nein": Frag freundlich nach, was sie anders sieht oder anders machen würde. art = "frage", optionen leer.
+- Sagt sie "Ja" oder wählt eine Antwort: Nimm das kurz auf ("Okay, alles klar.") und stelle die nächste wichtige Frage. art = "frage", dazu 2–3 kurze "optionen" zum Anklicken. Gute Fragen: Wie soll die Stunde laufen (knackig nur das Neue, in kleinen Schritten mit kurzem Üben dazwischen, erst erklären dann üben)? Soll schon in der Stunde geübt werden oder als Hausaufgabe? Gibt es Material, oder erklärt die Lehrkraft selbst, oder ein Erklärvideo? Wie wird festgehalten? Wo könnten die Schüler hängen bleiben? Bringe auch eigene Ideen ein, wenn sie passen. Frage nichts doppelt.
+- Bringt die Lehrkraft eine Idee ein ("Wir könnten auch …, wie siehst du das?"): Antworte ehrlich als Kollege mit Für und Wider, dann frag, ob sie es so machen will. art = "bestaetigen".
+- Wenn du ein rundes Bild hast (meist nach 3–5 Fragen) oder die Lehrkraft weiter will: Sag, dass du jetzt eine gute Grundlage hast, und biete an, ihr zu zeigen, worauf du achten würdest. art = "fertig".`, SCHEMA, k.anker.materialien);

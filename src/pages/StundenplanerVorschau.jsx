@@ -5,7 +5,6 @@ import usePlanerSpeichern from '@/hooks/usePlanerSpeichern';
 import { Button } from '@/components/ui/button';
 import FundamentStart from '@/components/grobplanung/FundamentStart';
 import VorgabenRaster from '@/components/grobplanung/VorgabenRaster';
-import VorgabenListe from '@/components/grobplanung/VorgabenListe';
 import MethodischeGestaltung from '@/components/methodik/MethodischeGestaltung';
 import GrobentwurfPruefung from '@/components/stundenplanerPrototyp/GrobentwurfPruefung';
 import UmsetzungsWahlSchritt from '@/components/feinplanung/UmsetzungsWahlSchritt';
@@ -13,14 +12,15 @@ import { kiUmsetzungVorschlag } from '@/lib/kiUmsetzung';
 import AufbereitungSchritt from '@/components/feinplanung/AufbereitungSchritt';
 import { kiAufbereitung } from '@/lib/kiAufbereitung';
 import PlanungsGespraech from '@/components/planungsgespraech/PlanungsGespraech';
-import { kiPlanungsGespraech } from '@/lib/kiPlanungsGespraech';
+import { kiGespraechSchritt } from '@/lib/kiPlanungsGespraech';
+import VorgabenPopup from '@/components/planungsgespraech/VorgabenPopup';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern, kiSparring, kiTippCenter } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Fundament', 'Planungsgespräch', 'Grobplanung', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament', 'Grobplanung & Gespräch', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
@@ -51,7 +51,8 @@ export default function StundenplanerVorschau() {
   const generieren = (bisher, aenderung) => kiGrobverlauf({ ...k(), vorgaben: v, bisher, aenderung });
   const [punkte, setPunkte] = React.useState([]);
   const lauf = (p, ok) => { setLaedt(true); setFehler(''); p.then(ok).catch(() => setFehler('Das hat nicht geklappt. Bitte noch einmal versuchen.')).finally(() => setLaedt(false)); };
-  const vorgabenErstellen = () => lauf(kiPlanungsVorgaben({ ...k(), vorgaben: v }), setPunkte);
+  const [popup, setPopup] = React.useState(false);
+  const listeZeigen = () => { setPunkte([]); setPopup(true); lauf(kiPlanungsVorgaben({ ...k(), vorgaben: v }), setPunkte); };
   const bauen = () => lauf(kiGrobverlauf({ ...k(), vorgaben: { ...v, punkte } }), (e) => { setEntwurf(e); setPhase('methodik'); });
   const phaseAendern = (index, wunsch) => kiPhaseAendern({ ...k(), entwurf, index, wunsch }).then(setEntwurf);
   const modell = STUNDEN_MODELLE.find((m) => m.key === entwurf?.modell) || STUNDEN_MODELLE[0];
@@ -64,7 +65,7 @@ export default function StundenplanerVorschau() {
   const stand = () => ({ phase, minuten, pause, v, punkte, entwurf });
   const titel = entwurf?.name || v.anker.thema || v.anker.abschnitte?.[0]?.titel;
   React.useEffect(() => {
-    laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
+    laden().then((s) => { if (!s) return; setPhase(s.phase === 'gespraech' ? 'grob' : s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
   }, [laden]);
   React.useEffect(() => { if (einheit && phase !== 'start') speichern(stand(), titel); }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const neuStarten = () => {
@@ -73,7 +74,7 @@ export default function StundenplanerVorschau() {
     setPhase(leer.phase); setMinuten(leer.minuten); setPause(false); setV(leer.v); setPunkte([]); setEntwurf(null); setFehler('');
     if (stundeId) speichern(leer, 'Neue Stunde');
   };
-  const stufe = { start: 0, gespraech: 1, grob: 2, methodik: 3, fein: 4, aufbereitung: 5, fertig: 5 }[phase];
+  const stufe = { start: 0, gespraech: 1, grob: 1, methodik: 2, fein: 3, aufbereitung: 4, fertig: 4 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -111,11 +112,7 @@ export default function StundenplanerVorschau() {
           {isLoading && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade die Unterrichtseinheit …</p>}
           {kontext && phase === 'start' && (
             <FundamentStart einheit={einheit} verlauf={kontext.verlauf} anker={v.anker} setAnker={setze('anker')} dauer={{ minuten, setMinuten, pause, setPause }}
-              onPruefen={() => kiAnkerPruefen(k())} onWeiter={() => setPhase('gespraech')} />
-          )}
-          {kontext && phase === 'gespraech' && (
-            <PlanungsGespraech onFragen={(wunsch) => kiPlanungsGespraech({ ...k(), wunsch })} onZurueck={() => setPhase('start')}
-              onFertig={(g) => { setze('gespraech')(g); setPunkte([]); setPhase('grob'); }} />
+              onPruefen={() => kiAnkerPruefen(k())} onWeiter={() => setPhase('grob')} />
           )}
           {kontext && phase === 'grob' && (
             <>
@@ -125,12 +122,17 @@ export default function StundenplanerVorschau() {
               </div>
               <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur, vorgaben: v })}
                 onThemaVorschlag={(bisher, korrektur) => kiGrobThema({ ...k(), bisher, korrektur })} />
-              <Button variant={punkte.length ? 'outline' : 'default'} disabled={!ankerVorhanden(v.anker) || laedt} onClick={vorgabenErstellen}>
-                {laedt && !punkte.length ? <Loader2 className="animate-spin" /> : <Sparkles />} {punkte.length ? 'Vorgaben neu zusammenstellen' : 'Worauf achten wir in der Stunde?'}
-              </Button>
+              {Array.isArray(v.gespraech) ? (
+                <PlanungsGespraech verlauf={v.gespraech} setVerlauf={setze('gespraech')} onListe={listeZeigen}
+                  onSchritt={(verlauf) => kiGespraechSchritt({ ...k(), vorgaben: v, verlauf })} />
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <Button disabled={!ankerVorhanden(v.anker)} onClick={() => setze('gespraech')([])}><Sparkles /> Planungsgespräch starten</Button>
+                  <Button variant="ghost" disabled={!ankerVorhanden(v.anker)} onClick={listeZeigen}>Ohne Gespräch: Worauf achten wir?</Button>
+                </div>
+              )}
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
-              {punkte.length > 0 && <VorgabenListe punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />}
-              <Button variant="ghost" onClick={() => setPhase('gespraech')}><ArrowLeft /> Zurück zum Planungsgespräch</Button>
+              <VorgabenPopup offen={popup} onSchliessen={() => setPopup(false)} punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />
             </>
           )}
           {phase === 'methodik' && entwurf && (

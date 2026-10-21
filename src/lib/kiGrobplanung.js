@@ -29,7 +29,7 @@ export const stundentypName = (key) => STUNDENTYPEN.find((t) => t.key === key)?.
 export const ankerVorhanden = (a) => !!a.thema?.trim() || a.abschnitte.length > 0 || !!a.text.trim() || a.materialien.length > 0;
 
 /** Ergebnis des Planungsgesprächs als Prompt-Zeile. */
-export const gespraechText = (g) => (g ? `Ergebnis des Planungsgesprächs (Wunsch der Lehrkraft, unbedingt umsetzen): So soll die Stunde laufen: ${g.wahl}${g.verlauf?.length ? ` (grob: ${g.verlauf.join(' → ')})` : ''}${g.material ? `. Zum Material: ${g.material}` : ''}. Übungsanteile in einer Stunde mit Neuem bzw. kurze neue Anteile in einer Übungsstunde sind ausdrücklich erlaubt.` : '');
+export const gespraechText = (g) => (Array.isArray(g) && g.length ? `Planungsgespräch mit der Lehrkraft (ihre Antworten und Wünsche sind verbindlich, "Wichtig" bzw. "Unverzichtbar"; Übungsanteile in einer Stunde mit Neuem und kurze neue Anteile in einer Übungsstunde sind erlaubt):\n${g.map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Assistent'}: ${m.content}`).join('\n')}` : '');
 
 export const kontextText = ({ einheit, anker, minuten }) => [
   `Fach: ${einheit.fach}, Jahrgang ${einheit.jahrgangsstufe}, ${anker.schulform || 'Integrierte Gesamtschule'} in Niedersachsen (Leistungsniveau entsprechend ausrichten)`,
@@ -182,7 +182,7 @@ Mindestens zwei Inspirationen. Nichts zu digital/analog oder konkreten Materiali
 }
 
 /** Grundstruktur-Zeile für die Prompts: gewählt bzw. vorgeschlagen ist dominant, offen = KI wählt. */
-const grundstrukturText = (vorgaben) => {
+export const grundstrukturText = (vorgaben) => {
   const g = wirksameGrundstruktur(vorgaben.grundstruktur, vorgaben.anker?.abschnitte?.find((s) => s.modell));
   return g ? `Methodische Grundstruktur (von der Lehrkraft festgelegt, DOMINANT, Ablauf daran ausrichten): ${modellName(g.modell, g.variante)} (modell "${g.modell}"${g.variante ? `, Variante "${g.variante}"` : ''})` : 'Methodische Grundstruktur: offen – wähle die am besten passende.';
 };
