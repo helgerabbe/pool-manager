@@ -36,7 +36,7 @@ Gliederung (Klartext, Deutsch, nummerierte Abschnitte):
 1. KERN DER METHODE (Phasen, worauf es ankommt)
 2. ART DES FOLIENSATZES: Einstufung KEINE FOLIEN NÖTIG / STATISCH (zeigt nur Inhalte und Aufträge) / DYNAMISCH (führt durch Phasen, Timer, Gruppeneinteilung, einfache Notizen) / INTERAKTIV (Schüler geben ein, wählen, sortieren, bewerten gemeinsam; App speichert oder synchronisiert). Begründen: Funktioniert die Methode ohne App? Was ist der digitale Mehrwert? Entwicklungsaufwand je Variante (gering/mittel/hoch).
 3. LEHRERANSICHT (Presenter), Folie für Folie: Folientyp (Methodenfolie, Auftragsfolie, Phasenfolie, Übergangsfolie, Sicherungsfolie), Inhalt, was davon variabel ist.
-4. SCHÜLERANSICHT (Gerät), nur falls dynamisch/interaktiv: was je Phase zu sehen und zu tun ist, was gespeichert und was synchronisiert wird.
+4. SCHÜLERANSICHT (Gerät), nur falls dynamisch/interaktiv: was je Phase zu sehen und zu tun ist, was gespeichert und was synchronisiert wird; je interaktivem Element Einzelmodus oder Gruppenmodus (mit Gruppenkennung) und wer sieht/bearbeitet.
 5. WIEDERVERWENDBAR vs. STUNDENBEZOGEN (Methodenbausteine vs. Inhalte, die aus der Stunde kommen)
 6. WAS DIE LEHRKRAFT VORHER ENTSCHEIDEN MUSS: jede Entscheidung als eigener Punkt mit Optionen und Standardwert. Wenn nichts zu entscheiden ist, ausdrücklich sagen.
 7. WAS ANALOG BLEIBEN SOLLTE
@@ -64,5 +64,6 @@ LEHRERANSICHT (digitale Tafel)
 SCHÜLERANSICHT (Tablet)
 - Zweck, Elemente (alle Bereiche und Bedienelemente), Bedienung Schritt für Schritt (was die Schüler tun, was dann passiert), Sonderfälle
 ZUSAMMENSPIEL: wie Lehrer- und Schüleransicht zusammenhängen.
+INTERAKTIONSMODUS: Lege für JEDES interaktive Element (Eingabe, Auswahl, Regler, Zuordnen, Sortieren, Abstimmung, Berechnung) fest: "Einzelmodus" (Eingaben und Ergebnisse gehören nur der einzelnen Person) oder "Gruppenmodus" (über eine Gruppenkennung geteilt, alle Gruppenmitglieder sehen und bearbeiten gemeinsam). Nenne jeweils, wer die Eingaben sehen und wer sie bearbeiten kann.
 Jeder Schritt der Methodenbeschreibung muss sich in den Ansichten wiederfinden. Nenne passende Bausteine beim Namen. Keine Farben oder Dekoration, darum kümmert sich der zweite Assistent.`);
 }

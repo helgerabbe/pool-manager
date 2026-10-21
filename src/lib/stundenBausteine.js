@@ -102,4 +102,7 @@ export const BAUSTEIN_KATALOG = `BAUSTEINBIBLIOTHEK (fest gestaltet, Verhalten i
 - Abstimmung/Balken: <div class="balken"><div class="balken-zeile"><span>Ja</span><div class="spur" data-wert="70"><span></span></div><b>70 %</b></div></div>
 - Timer: <span class="timer" data-minuten="10"></span>
 - Funken für eigene Erfolge: window.bsFunken(element)
+INTERAKTIONSMODUS (Pflicht für jedes interaktive Element, als data-modus):
+- Einzelmodus: data-modus="einzel" → Eingaben und berechnete Ergebnisse gehören nur der einzelnen Person (Zuordnung: Schüler-ID); nur sie (und die Lehrkraft) sieht und bearbeitet sie.
+- Gruppenmodus: data-modus="gruppe" data-gruppe="{{gruppe}}" → Eingaben und Ergebnisse werden über die Gruppenkennung geteilt; alle Mitglieder dieser Gruppe sehen und bearbeiten sie gemeinsam.
 REGEL: Baue jede Ansicht überwiegend aus diesen Bausteinen und den Grundklassen. Eigenes CSS nur für kleine Anpassungen, nie um die Bausteine neu zu gestalten. So sehen alle Methoden aus einem Guss aus.`;
