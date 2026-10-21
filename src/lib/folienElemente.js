@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -8,6 +8,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'rechteck', label: 'Rechteck', icon: Square, b: 180, h: 110 },
     { typ: 'ellipse', label: 'Ellipse', icon: Circle, b: 160, h: 110 },
     { typ: 'dreieck', label: 'Dreieck', icon: Triangle, b: 140, h: 120 },
+    { typ: 'linie', label: 'Linie', icon: Minus, b: 180, h: 20 },
     { typ: 'pfeil_duenn', label: 'Pfeil (dünn)', icon: ArrowRight, b: 180, h: 30 },
     { typ: 'pfeil_breit', label: 'Pfeil (breit)', icon: MoveRight, b: 180, h: 70 },
     { typ: 'freihand', label: 'Freihandform', icon: PenTool, b: 170, h: 110 },

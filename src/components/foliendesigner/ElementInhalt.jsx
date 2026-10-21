@@ -15,6 +15,7 @@ export default function ElementInhalt({ el }) {
     case 'rechteck': return <div className={`h-full w-full ${el.form === 'rund' ? 'rounded-2xl' : ''}`} style={{ background: farbe }} />;
     case 'ellipse': return <div className={`rounded-full ${el.form === 'kreis' ? 'aspect-square h-full max-w-full' : 'h-full w-full'}`} style={{ background: farbe }} />;
     case 'dreieck': return <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full"><polygon points={el.form === 'recht' ? '0,0 0,100 100,100' : '50,0 100,100 0,100'} fill={farbe} /></svg>;
+    case 'linie': return <div className="h-0.5 w-full" style={{ background: farbe }} />;
     case 'pfeil_duenn': return <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="h-full w-full"><line x1="0" y1="10" x2="97" y2="10" stroke={farbe} strokeWidth="2" />{el.spitze === 'linie' ? <polyline points="88,3 98,10 88,17" fill="none" stroke={farbe} strokeWidth="2" /> : <polygon points="88,3 100,10 88,17" fill={farbe} />}</svg>;
     case 'pfeil_breit': return <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full"><polygon points="1,15 65,15 65,1 99,25 65,49 65,35 1,35" fill={el.fuellung === 'umriss' ? 'none' : farbe} stroke={farbe} strokeWidth="2" /></svg>;
     case 'freihand': return <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full"><path d="M5,40 C20,5 35,55 50,25 S80,5 95,35" fill="none" className="stroke-chart-4" strokeWidth="3" /></svg>;

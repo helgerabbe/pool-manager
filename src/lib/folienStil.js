@@ -29,6 +29,7 @@ export const VORGABEN = {
   rechteck: { form: 'eckig', farbe: '#1e3a8a' },
   ellipse: { form: 'ellipse', farbe: '#ea580c' },
   dreieck: { form: 'gleich', farbe: '#166534' },
+  linie: { farbe: '#1a1a1a' },
   pfeil_duenn: { spitze: 'gefuellt', farbe: '#1a1a1a' },
   pfeil_breit: { fuellung: 'gefuellt', farbe: '#1e3a8a' },
   formel: { teile: [{ art: 'bruch', a: '1', b: '2' }], farbe: '#1a1a1a' },
