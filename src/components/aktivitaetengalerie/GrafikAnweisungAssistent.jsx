@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 export default function GrafikAnweisungAssistent({ werte, setze, feld, erzeugen, hinweis, gesperrt, knopf, knoepfe }) {
   const [laedt, setLaedt] = React.useState(null);
   const [fehler, setFehler] = React.useState('');
+  const [stand, setStand] = React.useState('');
   const bisher = werte[feld] || '';
   const liste = knoepfe || [{ label: knopf && !bisher ? knopf : 'Bereich neu befüllen', erzeugen }];
 
   const lauf = (k) => {
-    setLaedt(k.label); setFehler('');
-    k.erzeugen({ methode: werte, bisher, wunsch: '', verlauf: [] })
+    setLaedt(k.label); setFehler(''); setStand('');
+    k.erzeugen({ methode: werte, bisher, wunsch: '', verlauf: [], fortschritt: setStand })
       .then((r) => setze(feld, r.text || bisher))
       .catch(() => setFehler('Das hat nicht geklappt. Bitte noch einmal versuchen.'))
       .finally(() => setLaedt(null));
@@ -29,6 +30,7 @@ export default function GrafikAnweisungAssistent({ werte, setze, feld, erzeugen,
           </Button>
         ))}
       </div>
+      {laedt && stand && <p className="text-xs text-primary">{stand}</p>}
       {fehler && <p className="text-xs text-destructive">{fehler}</p>}
     </div>
   );

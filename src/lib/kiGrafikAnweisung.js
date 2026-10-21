@@ -15,11 +15,14 @@ Stolpersteine: ${m.stolpersteine || ''}`;
 
 const auftrag = (bisher, wunsch, verlauf) => `${bisher ? `BISHERIGER TEXT:\n${bisher}\n` : ''}${(verlauf || []).length ? `BISHERIGE WÜNSCHE:\n${verlauf.map((w) => `- ${w}`).join('\n')}\n` : ''}${wunsch ? `NEUER WUNSCH DER LEHRKRAFT: ${wunsch}\nÜberarbeite den Text entsprechend, alles andere bleibt erhalten.` : 'Schreibe einen ersten Vorschlag.'}`;
 
+// Schutz gegen Hängen (2026-10-21): jede Anfrage bricht nach 90 Sekunden ab.
+const mitZeitlimit = (p) => Promise.race([p, new Promise((_, nein) => setTimeout(() => nein(new Error('Zeitlimit')), 90000))]);
+
 async function frage(prompt) {
-  return base44.integrations.Core.InvokeLLM({
+  return mitZeitlimit(base44.integrations.Core.InvokeLLM({
     prompt, model: 'claude_sonnet_4_6',
     response_json_schema: { type: 'object', properties: { text: { type: 'string' }, kurz: { type: 'string', description: 'Ein Satz, was du geschrieben bzw. geändert hast.' } } },
-  });
+  }));
 }
 
 /** Methodenbeschreiber: beschreibt Ablauf und Funktionalität der Methode ausführlich (noch ohne Grafik). */
@@ -63,6 +66,7 @@ function setzeTeil(bisher, kopf, neu) {
 }
 
 async function baueSatz(args, art) {
+  args.fortschritt?.('Folienliste wird geplant …');
   const plan = await planeFolien(args.methode);
   const namen = plan[art] || [];
   const gross = art === 'analog' ? 'ANALOGEN' : 'DIGITALEN';
@@ -72,8 +76,11 @@ async function baueSatz(args, art) {
     ...namen.map((n, i) => `Schreibe NUR Abschnitt B für die ${gross} Folie ${i + 1} "${n}"${art === 'analog' ? ' (keine Schüleransicht)' : ''}.`),
     ...(art === 'digital' ? ['Schreibe NUR Abschnitt C (Datenfluss) des digitalen Foliensatzes.'] : []),
   ];
-  const teile = [];
-  for (const s of schritte) teile.push((await grafikTeil(args, `${s}\n${liste}`)).text || '');
+  let fertig = 0;
+  args.fortschritt?.(`0 von ${schritte.length} Teilen fertig`);
+  const teile = await Promise.all(schritte.map((s) => grafikTeil(args, `${s}\n${liste}`).then((r) => {
+    fertig += 1; args.fortschritt?.(`${fertig} von ${schritte.length} Teilen fertig`); return r.text || '';
+  })));
   return teile.join('\n\n');
 }
 
@@ -89,7 +96,7 @@ export async function kiGrafikGemeinsam(args) {
 }
 
 async function planeFolien(methode) {
-  return base44.integrations.Core.InvokeLLM({
+  return mitZeitlimit(base44.integrations.Core.InvokeLLM({
     prompt: `Plane nur die Folienliste für den analogen und den digitalen Foliensatz dieser Methode, je Folie ein kurzer Name. Keine Details.
 ${methodenKontext(methode)}
 METHODENBESCHREIBUNG:
@@ -98,7 +105,7 @@ ${methode.info_methodenbeschreiber || ''}`,
     response_json_schema: { type: 'object', properties: {
       analog: { type: 'array', items: { type: 'string' } }, digital: { type: 'array', items: { type: 'string' } },
     } },
-  });
+  }));
 }
 
 export async function kiGrafikAnweisung(args) {
@@ -117,9 +124,15 @@ export async function kiGrafikAnweisung(args) {
   return { text, kurz: '' };
 }
 
-function grafikTeil({ methode, wunsch, verlauf }, teil) {
+// Klartext statt JSON (2026-10-21): das JSON-Antwortformat schnitt lange Texte ab.
+async function grafikTeil(args, teil) {
+  const text = await mitZeitlimit(base44.integrations.Core.InvokeLLM({ prompt: `${grafikPrompt(args, teil)}\nAntworte nur mit dem Text, ohne Vorrede.`, model: 'claude_sonnet_4_6' }));
+  return { text: String(text || '').trim() };
+}
+
+function grafikPrompt({ methode, wunsch, verlauf }, teil) {
   const bisher = '';
-  return frage(`${teil}
+  return (`${teil}
 Die anderen Abschnitte und Folien schreiben parallel andere Assistenten; wiederhole sie nicht, schreibe keine Teil-Überschrift. Knapp und vollständig.
 
 Du schreibst die BAUANLEITUNG für den Grafikassistenten. Er baut daraus die grafische Vorlage (Foliensatz) dieser Methode. Er darf NUR die Elemente und Einstellungen des Baukastens unten verwenden; beschreibe so genau, dass er nichts raten muss.
