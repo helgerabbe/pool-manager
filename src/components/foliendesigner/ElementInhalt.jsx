@@ -18,7 +18,7 @@ export default function ElementInhalt({ el }) {
     case 'pfeil_duenn': return <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="h-full w-full"><line x1="0" y1="10" x2="97" y2="10" stroke={farbe} strokeWidth="2" />{el.spitze === 'linie' ? <polyline points="88,3 98,10 88,17" fill="none" stroke={farbe} strokeWidth="2" /> : <polygon points="88,3 100,10 88,17" fill={farbe} />}</svg>;
     case 'pfeil_breit': return <svg viewBox="0 0 100 50" preserveAspectRatio="none" className="h-full w-full"><polygon points="1,15 65,15 65,1 99,25 65,49 65,35 1,35" fill={el.fuellung === 'umriss' ? 'none' : farbe} stroke={farbe} strokeWidth="2" /></svg>;
     case 'freihand': return <svg viewBox="0 0 100 60" preserveAspectRatio="none" className="h-full w-full"><path d="M5,40 C20,5 35,55 50,25 S80,5 95,35" fill="none" className="stroke-chart-4" strokeWidth="3" /></svg>;
-    case 'formel': return <FormelAnzeige teile={el.teile} farbe={farbe} />;
+    case 'formel': return <FormelAnzeige teile={el.teile} farbe={farbe} groesse={el.groesse} />;
     case 'bild': case 'video': case 'audio': case 'link': return <MedienInhalt el={el} />;
     case 'eingabe': return <div className="w-full space-y-1"><p className="text-xs text-muted-foreground">Deine Antwort</p><div className="h-10 rounded-md border border-input bg-background" /></div>;
     case 'texteingabe': return <div className="flex h-full w-full flex-col gap-1"><p className="text-xs text-muted-foreground">Schreibe deinen Text</p><div className="flex-1 space-y-2 rounded-md border border-input bg-background p-2">{['w-full', 'w-11/12', 'w-2/3'].map((w) => <div key={w} className={`h-1.5 rounded-full bg-muted ${w}`} />)}</div></div>;

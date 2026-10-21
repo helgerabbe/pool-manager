@@ -1,9 +1,9 @@
 import React from 'react';
 
 /** Zeigt eine Formel mit waagerechtem Bruchstrich, Wurzel, Hoch- und Tiefgestelltem. */
-export default function FormelAnzeige({ teile = [], farbe }) {
+export default function FormelAnzeige({ teile = [], farbe, groesse = 24 }) {
   return (
-    <div className="flex items-center gap-1 font-serif text-2xl" style={{ color: farbe }}>
+    <div className="flex flex-wrap items-center gap-1 font-serif" style={{ color: farbe, fontSize: groesse }}>
       {teile.map((t, i) => {
         if (t.art === 'bruch') return (
           <span key={i} className="mx-0.5 inline-flex flex-col items-center leading-tight">

@@ -1,5 +1,6 @@
 import React from 'react';
 import FarbWahl from './einstellungen/FarbWahl';
+import { Slider } from '@/components/ui/slider';
 import Umschalter from './einstellungen/Umschalter';
 import TextEinstellungen from './einstellungen/TextEinstellungen';
 import FormelEditor from './einstellungen/FormelEditor';
@@ -22,7 +23,8 @@ export default function ElementEinstellungen({ el, setze }) {
   if (el.typ === 'ueberschrift' || el.typ === 'text') inhalt = <TextEinstellungen el={el} setze={setze} />;
   else if (f) inhalt = <><Umschalter titel={f[1]} optionen={f[2]} wert={el[f[0]]} setze={(v) => setze({ [f[0]]: v })} /><FarbWahl wert={el.farbe} setze={(v) => setze({ farbe: v })} /></>;
   else if (el.typ === 'freihand') inhalt = <p className="text-sm text-muted-foreground">Die Freihandform braucht keine Einstellungen.</p>;
-  else if (el.typ === 'formel') inhalt = <><FormelEditor teile={el.teile} setze={(teile) => setze({ teile })} /><FarbWahl wert={el.farbe} setze={(v) => setze({ farbe: v })} /></>;
+  else if (el.typ === 'formel') inhalt = <><FormelEditor teile={el.teile} setze={(teile) => setze({ teile })} />
+    <div className="space-y-2"><p className="text-xs font-medium text-muted-foreground">Größe der Formel</p><Slider min={16} max={64} step={4} value={[el.groesse || 24]} onValueChange={([v]) => setze({ groesse: v })} /></div><FarbWahl wert={el.farbe} setze={(v) => setze({ farbe: v })} /></>;
   else if (['bild', 'video', 'audio', 'link'].includes(el.typ)) inhalt = <MedienEinstellungen el={el} setze={setze} />;
   return (
     <aside className="w-72 shrink-0 space-y-4 overflow-y-auto border-l border-border bg-card p-4">
