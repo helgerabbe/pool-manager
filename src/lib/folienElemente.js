@@ -1,4 +1,4 @@
-import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers } from 'lucide-react';
+import { Type, Heading, Square, Circle, Triangle, ArrowRight, MoveRight, PenTool, Sigma, Image, Video, Music, Link, TextCursorInput, ListChecks, SlidersHorizontal, MousePointerClick, Timer, BarChart3, Sparkles, Move, ListOrdered, FileText, Eye, EyeOff, MoveHorizontal, Film, Minus, TextCursor, Tag, Columns3, StickyNote, Gauge, Network, Highlighter, Trophy, UserCheck, Brush, Grid3x3, Cloud, Layers, Camera, Mic, Hand, Table } from 'lucide-react';
 
 // Bausteinkatalog des Folien-Designers (2026-10-21): zunächst nur Darstellung, ohne hinterlegte Funktion.
 export const FOLIEN_GRUPPEN = [
@@ -33,6 +33,9 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'markieren', label: 'Text markieren', icon: Highlighter, b: 340, h: 120, art: 'interaktiv' },
     { typ: 'karteikarte', label: 'Karteikarte (umdrehen)', icon: Layers, b: 260, h: 150, art: 'interaktiv' },
     { typ: 'knopf', label: 'Knopf (Aktion)', icon: MousePointerClick, b: 160, h: 46, art: 'interaktiv' },
+    { typ: 'foto', label: 'Foto hochladen', icon: Camera, b: 280, h: 170, art: 'interaktiv' },
+    { typ: 'audioaufnahme', label: 'Audioaufnahme', icon: Mic, b: 280, h: 80, art: 'interaktiv' },
+    { typ: 'melden', label: 'Melden (digitale Hand)', icon: Hand, b: 200, h: 60, art: 'interaktiv' },
   ] },
   { titel: 'Interaktiv oder kollaborativ', hinweis: 'Allein bearbeiten oder im Team vernetzt: Das gemeinsame Ergebnis sehen alle.', elemente: [
     { typ: 'auswahl', label: 'Auswahl', icon: ListChecks, b: 260, h: 120, art: 'beides' },
@@ -42,6 +45,7 @@ export const FOLIEN_GRUPPEN = [
     { typ: 'legeboard', label: 'Legeboard (Karten verbinden)', icon: Network, b: 360, h: 200, art: 'beides' },
     { typ: 'zeichenflaeche', label: 'Zeichenfläche', icon: Brush, b: 340, h: 200, art: 'beides' },
     { typ: 'raster', label: 'Raster / Aufdeckfelder', icon: Grid3x3, b: 340, h: 200, art: 'beides' },
+    { typ: 'tabelle', label: 'Tabelle', icon: Table, b: 360, h: 170, art: 'beides' },
   ] },
   { titel: 'Kollaborativ', hinweis: 'Nutzer ↔ Nutzer: Mehrere tragen bei, die Ergebnisse erscheinen bei anderen.', elemente: [
     { typ: 'pinnwand', label: 'Live-Pinnwand', icon: StickyNote, b: 380, h: 190, art: 'kollaborativ' },

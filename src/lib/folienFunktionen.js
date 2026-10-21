@@ -31,4 +31,8 @@ export const ELEMENT_FUNKTIONEN = {
   raster: ALLE,
   wortwolke: ['kollaboration', 'praesentation'],
   karteikarte: ['uebung'],
+  foto: ['praesentation', 'weiter_allein', 'weiter_gruppe', 'rueckmeldung'],
+  audioaufnahme: ['praesentation', 'weiter_allein', 'rueckmeldung'],
+  tabelle: ['uebung', 'praesentation', 'weiter_allein', 'weiter_gruppe', 'kollaboration'],
+  melden: ['praesentation'],
 };

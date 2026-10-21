@@ -6,6 +6,7 @@ import ZiehInhalte from './ZiehInhalte';
 import NeueInhalte from './NeueInhalte';
 import WeitereInhalte from './WeitereInhalte';
 import ZusatzInhalte from './ZusatzInhalte';
+import BrueckenInhalte from './BrueckenInhalte';
 import { schriftKlasse, UEBERSCHRIFT_GROESSEN } from '@/lib/folienStil';
 
 const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 text-sm text-primary';
@@ -33,6 +34,7 @@ export default function ElementInhalt({ el }) {
     case 'lueckentext_dnd': case 'bildbeschriftung': case 'kanban': case 'pinnwand': return <ZiehInhalte typ={typ} />;
     case 'zeichenflaeche': case 'raster': case 'wortwolke': case 'karteikarte': return <WeitereInhalte typ={typ} />;
     case 'skala': case 'legeboard': case 'markieren': case 'punktestand': return <NeueInhalte typ={typ} />;
+    case 'foto': case 'audioaufnahme': case 'tabelle': case 'melden': return <BrueckenInhalte typ={typ} />;
     case 'reihenfolge': return <div className="w-full space-y-1.5">{['1', '2', '3'].map((n) => <div key={n} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-sm"><span className="text-muted-foreground">⋮⋮</span>Schritt {n}</div>)}</div>;
     case 'knopf': return <div className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Weiter</div>;
     case 'abstimmung': return <div className="w-full space-y-1.5">{[['Ja', 'w-3/4'], ['Nein', 'w-1/4']].map(([l, w]) => <div key={l} className="flex items-center gap-2 text-xs"><span className="w-9">{l}</span><div className="h-3 flex-1 rounded-full bg-muted"><div className={`h-full rounded-full bg-primary ${w}`} /></div></div>)}</div>;
