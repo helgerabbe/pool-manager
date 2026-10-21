@@ -27,4 +27,8 @@ export const ELEMENT_FUNKTIONEN = {
   pinnwand: ['kollaboration', 'rueckmeldung'],
   abstimmung: ['kollaboration'],
   punktestand: ['kollaboration'],
+  zeichenflaeche: ['praesentation', 'weiter_allein', 'weiter_gruppe', 'weitergabe', 'rueckmeldung', 'kollaboration'],
+  raster: ALLE,
+  wortwolke: ['kollaboration', 'praesentation'],
+  karteikarte: ['uebung'],
 };

@@ -4,6 +4,7 @@ import FormelAnzeige from './FormelAnzeige';
 import MedienInhalt from './MedienInhalt';
 import ZiehInhalte from './ZiehInhalte';
 import NeueInhalte from './NeueInhalte';
+import WeitereInhalte from './WeitereInhalte';
 import { schriftKlasse, UEBERSCHRIFT_GROESSEN } from '@/lib/folienStil';
 
 const platz = 'flex h-full w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 text-sm text-primary';
@@ -28,6 +29,7 @@ export default function ElementInhalt({ el }) {
     case 'auswahl': return <div className="w-full space-y-1.5">{['Antwort A', 'Antwort B', 'Antwort C'].map((a) => <div key={a} className="rounded-md border border-border bg-background px-2 py-1 text-sm">{a}</div>)}</div>;
     case 'regler': return <div className="w-full space-y-1"><p className="text-xs text-muted-foreground">Wert: 40</p><div className="relative h-2 rounded-full bg-muted"><div className="h-full w-2/5 rounded-full bg-primary" /><div className="absolute left-[40%] top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-background" /></div></div>;
     case 'lueckentext_dnd': case 'bildbeschriftung': case 'kanban': case 'pinnwand': return <ZiehInhalte typ={typ} />;
+    case 'zeichenflaeche': case 'raster': case 'wortwolke': case 'karteikarte': return <WeitereInhalte typ={typ} />;
     case 'skala': case 'legeboard': case 'markieren': case 'punktestand': return <NeueInhalte typ={typ} />;
     case 'reihenfolge': return <div className="w-full space-y-1.5">{['1', '2', '3'].map((n) => <div key={n} className="flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1 text-sm"><span className="text-muted-foreground">⋮⋮</span>Schritt {n}</div>)}</div>;
     case 'knopf': return <div className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">Weiter</div>;
