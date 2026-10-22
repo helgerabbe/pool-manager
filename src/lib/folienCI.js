@@ -20,6 +20,8 @@ export const CI_FOLIENTYPEN = {
   methode:   { name: 'Methodenfolie',  farbe: '#DCEBE1' },
   aufgabe:   { name: 'Aufgabenfolie',  farbe: '#DCE8F5' },
   sicherung: { name: 'Sicherungsfolie', farbe: '#F7EDCB' },
+  organisation: { name: 'Organisationsfolie', farbe: '#E7E4F3' }, // z. B. „Finde einen Partner“, „Hör zu“
+  reflexion: { name: 'Reflexionsfolie', farbe: '#F5E1DC' },       // Metakognition, Rückblick auf die Stunde
 };
 
 // Teil 2: Bedienelemente. Runde Ecken (12px), keine harten Schatten, ruhige Pastell-Zustände.
