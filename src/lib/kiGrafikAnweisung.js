@@ -30,10 +30,13 @@ async function frage(prompt) {
 const BESCHREIBER_TEILE = ['Schreibe NUR die Abschnitte 1 bis 3.', 'Schreibe NUR die Abschnitte 4 bis 6.', 'Schreibe NUR die Abschnitte 7 bis 9.'];
 
 export async function kiMethodenBeschreibung(args) {
+  let fertig = 0;
+  const n = BESCHREIBER_TEILE.length;
+  args.fortschritt?.(`0 von ${n} Teilen fertig – der Methodenbeschreiber arbeitet …`);
   const teile = await Promise.all(BESCHREIBER_TEILE.map((t) => mitZeitlimit(base44.integrations.Core.InvokeLLM({
     prompt: `${beschreiberPrompt(args)}\n\n${t} Die anderen Abschnitte schreiben andere Assistenten parallel, wiederhole sie nicht. Antworte nur mit dem Text, ohne Vorrede.`,
     model: 'claude_sonnet_4_6',
-  }))));
+  })).then((r) => { fertig += 1; args.fortschritt?.(`${fertig} von ${n} Teilen fertig`); return r; })));
   return { text: teile.map((x) => String(x || '').trim()).join('\n\n'), kurz: '' };
 }
 
