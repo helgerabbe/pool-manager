@@ -70,7 +70,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
 
   const speichern = async () => {
     setSpeichert(true);
-    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'stufe', 'auch_kurzform', 'ausbaubar', 'stufe_pruefen', 'fachbezug', 'faecher', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_methodenbeschreiber', 'info_grafikassistent'].map((k) => [k, werte[k]]));
+    const daten = Object.fromEntries([...FELDER.map(([k]) => k), 'phasen', 'stufe', 'auch_kurzform', 'ausbaubar', 'stufe_pruefen', 'fachbezug', 'faecher', 'bauplan_fertig', 'bauplan_rohtext', 'gehoert_dazu', 'gehoert_nicht_dazu', 'info_unterrichtsassistent', 'info_methodenbeschreiber', 'info_wuensche_roh', 'info_wuensche', 'info_grobuebersicht', 'info_grafikassistent'].map((k) => [k, werte[k]]));
     daten.info_grafikassistent_teile = teileText(werte.info_grafikassistent);
     daten.info_grafikassistent = '';
     try {

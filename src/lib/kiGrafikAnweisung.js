@@ -33,6 +33,9 @@ Bauplan-Rohtext: ${methode.bauplan_rohtext || ''}
 Assistent-Fragen: ${methode.assistent_fragen || ''}
 Prüfregeln: ${methode.pruefregeln || ''}
 
+WAS DER LEHRKRAFT BESONDERS WICHTIG IST (unbedingt berücksichtigen, hat Vorrang):
+${methode.info_wuensche || methode.info_wuensche_roh || '(nichts angegeben)'}
+
 ${auftrag(bisher, wunsch, verlauf)}
 
 Gliederung (Klartext, Deutsch, nummerierte Abschnitte):
@@ -53,16 +56,16 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 // Drei Knöpfe (2026-10-21): analog, digital, Gesamtbeschreibung; jeder ersetzt nur seinen Teil im Text.
 const KOEPFE = ['TEIL I · ANALOGER FOLIENSATZ', 'TEIL II · DIGITALER FOLIENSATZ', 'GEMEINSAM'];
 
-function setzeTeil(bisher, kopf, neu) {
+export function setzeTeil(bisher, kopf, neu, koepfe = KOEPFE) {
   const teile = {};
-  KOEPFE.forEach((k, i) => {
+  koepfe.forEach((k, i) => {
     const start = (bisher || '').indexOf(k);
     if (start < 0) return;
-    const ende = KOEPFE.slice(i + 1).map((n) => bisher.indexOf(n)).filter((p) => p > start)[0] ?? bisher.length;
+    const ende = koepfe.slice(i + 1).map((n) => bisher.indexOf(n)).filter((p) => p > start)[0] ?? bisher.length;
     teile[k] = bisher.slice(start, ende).trim();
   });
   teile[kopf] = `${kopf}\n\n${neu}`;
-  return KOEPFE.filter((k) => teile[k]).map((k) => teile[k]).join('\n\n');
+  return koepfe.filter((k) => teile[k]).map((k) => teile[k]).join('\n\n');
 }
 
 async function baueSatz(args, art) {
@@ -97,10 +100,9 @@ export async function kiGrafikGemeinsam(args) {
 
 async function planeFolien(methode) {
   return mitZeitlimit(base44.integrations.Core.InvokeLLM({
-    prompt: `Plane nur die Folienliste für den analogen und den digitalen Foliensatz dieser Methode, je Folie ein kurzer Name. Keine Details.
-${methodenKontext(methode)}
-METHODENBESCHREIBUNG:
-${methode.info_methodenbeschreiber || ''}`,
+    prompt: `Übernimm aus der bestätigten GROBÜBERSICHT die Folienliste für den analogen und den digitalen Foliensatz, je Folie ein kurzer Name, in genau dieser Reihenfolge. Nichts hinzufügen oder weglassen.
+GROBÜBERSICHT:
+${methode.info_grobuebersicht || ''}`,
     model: 'claude_sonnet_4_6',
     response_json_schema: { type: 'object', properties: {
       analog: { type: 'array', items: { type: 'string' } }, digital: { type: 'array', items: { type: 'string' } },
@@ -140,6 +142,12 @@ ${methodenKontext(methode)}
 
 METHODENBESCHREIBUNG (Ablauf und Funktionalität, vom Methodenbeschreiber):
 ${methode.info_methodenbeschreiber || '(keine, nutze die Angaben oben)'}
+
+WAS DER LEHRKRAFT BESONDERS WICHTIG IST:
+${methode.info_wuensche || methode.info_wuensche_roh || '(nichts angegeben)'}
+
+BESTÄTIGTE GROBÜBERSICHT (Folienfolge verbindlich):
+${methode.info_grobuebersicht || '(keine)'}
 
 BAUKASTEN DES FOLIEN-DESIGNERS:
 ${folienBaukastenText()}
