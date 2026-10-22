@@ -3,6 +3,7 @@ import { Palette, ListOrdered, LayoutList } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import GrafikAnweisungAssistent from './GrafikAnweisungAssistent';
 import WuenscheFeld from './WuenscheFeld';
+import AbgleichEntscheidungsbaum from './AbgleichEntscheidungsbaum';
 import { kiMethodenBeschreibung, kiGrafikAnalog, kiGrafikDigital, kiGrafikGemeinsam } from '@/lib/kiGrafikAnweisung';
 import { kiGrobAnalog, kiGrobDigital } from '@/lib/kiGrobuebersicht';
 
@@ -37,6 +38,7 @@ export default function AssistentenInfos({ werte, setze }) {
             gesperrt={k === 'info_grafikassistent' && !(werte.info_grobuebersicht || '').trim()}
             hinweis={k === 'info_grafikassistent' && !(werte.info_grobuebersicht || '').trim() ? 'Erstelle zuerst die Grobübersicht.' : KI[k].hinweis} />}
           <Textarea rows={KI[k] ? 16 : 10} value={werte[k] || ''} onChange={(e) => setze(k, e.target.value)} />
+          {k === 'info_grobuebersicht' && <AbgleichEntscheidungsbaum werte={werte} setze={setze} />}
         </div>
       ))}
     </div>
