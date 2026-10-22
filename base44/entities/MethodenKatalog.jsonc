@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. Seit 2026-10-21 liegt die lange Grafik-Anweisung in St\u00fccken in 'info_grafikassistent_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Feinplanung (info_grafikassistent). GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. LANGE TEXTE: Seit 2026-10-21 bzw. 2026-10-22 liegen Grafik-Anweisung, Methodenbeschreibung und Grob\u00fcbersicht in St\u00fccken in '<feld>_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Feinplanung (info_grafikassistent). GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
   "properties": {
     "name": {
       "type": "string"
@@ -187,11 +187,27 @@
     },
     "info_methodenbeschreiber": {
       "type": "string",
-      "description": "Ausf\u00fchrliche Beschreibung von Ablauf und Funktionalit\u00e4t der Methode (Methodenbeschreiber), noch ohne Grafik. Grundlage f\u00fcr den Grafikassistenten."
+      "description": "@legacy: Altbestand; neue Speicherungen nutzen info_methodenbeschreiber_teile."
+    },
+    "info_methodenbeschreiber_teile": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Methodenbeschreibung (Ablauf und Funktionalit\u00e4t) in St\u00fccken zu je max. 15.000 Zeichen."
     },
     "info_grobuebersicht": {
       "type": "string",
-      "description": "Grob\u00fcbersicht des Foliensatzes (analog/digital): nur Folienfolge mit Kurzbeschreibung. Voraussetzung f\u00fcr die Feinplanung."
+      "description": "@legacy: Altbestand; neue Speicherungen nutzen info_grobuebersicht_teile."
+    },
+    "info_grobuebersicht_teile": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Grob\u00fcbersicht des Foliensatzes in St\u00fccken zu je max. 15.000 Zeichen."
     },
     "info_grafikassistent": {
       "type": "string",

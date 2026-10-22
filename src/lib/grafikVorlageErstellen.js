@@ -1,4 +1,5 @@
 import { base44 } from '@/api/base44Client';
+import { mitLangenTexten } from '@/lib/langerText';
 import { STUNDEN_KLASSEN } from '@/lib/stundenDesign';
 import { BAUSTEIN_KATALOG } from '@/lib/stundenBausteine';
 
@@ -27,7 +28,8 @@ const MERKMALE = ['data-richtig', 'data-passt', 'data-wert', 'data-loesung', 'da
 const zaehle = (html, m) => (html || '').split(m).length - 1;
 const funktionErhalten = (vorher, nachher) => !!nachher && MERKMALE.every((m) => zaehle(nachher, m) >= zaehle(vorher, m));
 
-async function funktionBauen(methode, fach) {
+async function funktionBauen(roh, fach) {
+  const methode = mitLangenTexten(roh);
   const prompt = `Du bist Assistent 1 (FUNKTION) für grafische Unterrichtsvorlagen an einer Gesamtschule. Baue NUR Aufbau und Funktion, um die Optik kümmert sich danach ein zweiter Assistent.
 Methode: "${methode.name}". Fach: ${fach}. Wähle ein typisches Beispielthema aus diesem Fach (bei "Fächerübergreifend" z. B. Lernen lernen oder Klassenregeln). Realistische, kurze Inhalte auf Deutsch, Jahrgang 7.
 Was die Methode ist: ${methode.kurzbeschreibung || ''}

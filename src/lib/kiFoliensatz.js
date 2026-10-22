@@ -2,6 +2,7 @@ import { base44 } from '@/api/base44Client';
 import { folienBaukastenText } from '@/lib/folienBaukastenText';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
 import { VORGABEN } from '@/lib/folienStil';
+import { mitLangenTexten } from '@/lib/langerText';
 
 // Grafikassistent (2026-10-21): baut aus der Anweisung einen Foliensatz, Folie für Folie.
 // Schritt 1 plant die Folienfolge, Schritt 2 baut jede Folie einzeln (parallel, einzeln neu baubar).
@@ -9,7 +10,7 @@ import { VORGABEN } from '@/lib/folienStil';
 export const FOLIE_B = 1024;
 export const FOLIE_H = 576;
 
-const kontext = (m, fach) => `Methode: ${m.name}. Fach: ${fach}. Jahrgang 7, Inhalte auf Deutsch.
+const kontext = (roh, fach, m = mitLangenTexten(roh)) => `Methode: ${m.name}. Fach: ${fach}. Jahrgang 7, Inhalte auf Deutsch.
 Kurzbeschreibung: ${m.kurzbeschreibung || ''}
 Ablauf und Funktionalität (Methodenbeschreiber):
 ${m.info_methodenbeschreiber || m.ablauf || ''}
