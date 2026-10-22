@@ -20,7 +20,7 @@ export const CI_FOLIENTYPEN = {
   methode:   { name: 'Methodenfolie',  farbe: '#DCEBE1' },
   aufgabe:   { name: 'Aufgabenfolie',  farbe: '#DCE8F5' },
   sicherung: { name: 'Sicherungsfolie', farbe: '#F7EDCB' },
-  impuls: { name: 'Impulsfolie', farbe: '#D9EEEC' },             // Einstieg: Bild, Frage oder Problem, das neugierig macht
+  inhalt: { name: 'Inhaltsfolie', farbe: '#D9EEEC' },            // Inhalt präsentieren/erklären: Impuls, Grafik (auch sich verändernd), Erklärung
   organisation: { name: 'Organisationsfolie', farbe: '#E7E4F3' }, // z. B. „Finde einen Partner“, „Hör zu“
   reflexion: { name: 'Reflexionsfolie', farbe: '#F5E1DC' },       // Metakognition, Rückblick auf die Stunde
 };
@@ -54,6 +54,24 @@ export const CI_TIMER = {
   normal:  { hg: '#E3EEF9', text: '#1E3A6E', ring: '#7FA6D6' },
   bald:    { hg: '#FBF3D5', text: '#6B4423', ring: '#EBD9A0' }, // letzte Minute
   vorbei:  { hg: '#F5E1DC', text: '#8A4B3C', ring: '#EBC9BE' },
+};
+
+// Teil 4: Folienraster. Feste Zonen für Standardelemente; der Rest ist Inhaltsbereich.
+// Angaben in Prozent der Folie (16:9). Zonen bleiben klein, damit Inhalte Platz haben.
+export const CI_RASTER = {
+  kopf:  { name: 'Kopfleiste', hoehe: 6, inhalt: 'Fach · Einheit · Stunde (klein, grau)' },
+  oben:  { name: 'Ecke rechts oben', breite: 18, hoehe: 12, inhalt: 'Timer, Sozialform-Symbol' },
+  unten: { name: 'Ecke rechts unten', breite: 30, hoehe: 12, inhalt: 'Steuerung: Prüfen, Fertig, Zurück …' },
+};
+
+// Welche Zonen je Folientyp belegt sind (frei = gehört dem Inhalt).
+export const CI_ZONEN_JE_TYP = {
+  inhalt:       { oben: false, unten: false },
+  methode:      { oben: false, unten: false },
+  aufgabe:      { oben: true,  unten: true },
+  organisation: { oben: true,  unten: true },
+  sicherung:    { oben: false, unten: true },
+  reflexion:    { oben: true,  unten: true },
 };
 
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
