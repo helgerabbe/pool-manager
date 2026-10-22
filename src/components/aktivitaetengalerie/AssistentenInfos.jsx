@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Palette, ListOrdered, LayoutList } from 'lucide-react';
+import { Palette, ListOrdered, LayoutList } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import GrafikAnweisungAssistent from './GrafikAnweisungAssistent';
 import WuenscheFeld from './WuenscheFeld';
@@ -7,7 +7,6 @@ import { kiMethodenBeschreibung, kiGrafikAnalog, kiGrafikDigital, kiGrafikGemein
 import { kiGrobAnalog, kiGrobDigital } from '@/lib/kiGrobuebersicht';
 
 const FELDER = [
-  ['info_unterrichtsassistent', 'Informationen für den Unterrichtsassistenten', Bot],
   ['wuensche'],
   ['info_methodenbeschreiber', 'Ablauf und Funktionalität (Methodenbeschreiber)', ListOrdered],
   ['info_grobuebersicht', 'Grobübersicht des Foliensatzes', LayoutList],
