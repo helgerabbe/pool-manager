@@ -26,8 +26,19 @@ async function frage(prompt) {
 }
 
 /** Methodenbeschreiber: beschreibt Ablauf und Funktionalität der Methode ausführlich (noch ohne Grafik). */
-export function kiMethodenBeschreibung({ methode, bisher, wunsch, verlauf }) {
-  return frage(`Du bist der Methodenbeschreiber. Erstelle eine FOLIENSATZ-EXPERTISE für diese Unterrichtsmethode: Wie läuft sie ab, und wie müsste ein Foliensatz (Presenter an der Tafel + ggf. Schüleransicht auf dem Gerät) aussehen, damit sie im Unterricht funktioniert? Noch kein Design, keine Farben.
+// Drei kurze Klartext-Anfragen parallel (2026-10-22): eine lange JSON-Antwort lief ins Zeitlimit.
+const BESCHREIBER_TEILE = ['Schreibe NUR die Abschnitte 1 bis 3.', 'Schreibe NUR die Abschnitte 4 bis 6.', 'Schreibe NUR die Abschnitte 7 bis 9.'];
+
+export async function kiMethodenBeschreibung(args) {
+  const teile = await Promise.all(BESCHREIBER_TEILE.map((t) => mitZeitlimit(base44.integrations.Core.InvokeLLM({
+    prompt: `${beschreiberPrompt(args)}\n\n${t} Die anderen Abschnitte schreiben andere Assistenten parallel, wiederhole sie nicht. Antworte nur mit dem Text, ohne Vorrede.`,
+    model: 'claude_sonnet_4_6',
+  }))));
+  return { text: teile.map((x) => String(x || '').trim()).join('\n\n'), kurz: '' };
+}
+
+function beschreiberPrompt({ methode, bisher, wunsch, verlauf }) {
+  return (`Du bist der Methodenbeschreiber. Erstelle eine FOLIENSATZ-EXPERTISE für diese Unterrichtsmethode: Wie läuft sie ab, und wie müsste ein Foliensatz (Presenter an der Tafel + ggf. Schüleransicht auf dem Gerät) aussehen, damit sie im Unterricht funktioniert? Noch kein Design, keine Farben.
 ${methodenKontext(methode)}
 Bauplan-Rohtext: ${methode.bauplan_rohtext || ''}
 Assistent-Fragen: ${methode.assistent_fragen || ''}
