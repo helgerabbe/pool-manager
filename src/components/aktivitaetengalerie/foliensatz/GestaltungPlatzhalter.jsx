@@ -12,7 +12,7 @@ const OFFEN = [
 /** Schritt 2 (Prototyp): gestaltete Vorlage – wartet noch auf die festen Gestaltungsregeln. */
 export default function GestaltungPlatzhalter() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-xl border border-dashed p-6 text-center">
+    <div className="flex min-h-0 flex-1 flex-col items-center gap-3 overflow-y-auto rounded-xl border border-dashed p-6 text-center">
       <Palette className="h-8 w-8 text-primary" />
       <p className="font-display text-lg font-bold">Gestaltete Vorlage</p>
       <p className="max-w-xl text-sm text-muted-foreground">Hier baut ein Assistent aus dem Funktionsaufbau die echte, wiedererkennbare Ansicht. Dafür müssen zuerst diese Regeln festgelegt werden:</p>
