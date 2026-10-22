@@ -41,4 +41,19 @@ export const CI_EINGABE = {
   label:  { text: '#4B5565' },
 };
 
+// Teil 3: Überschriften, Textfelder, Timer.
+export const CI_TEXT = {
+  titel:     { name: 'Folientitel', groesse: 40, gewicht: 700, farbe: '#2E3440' },
+  zwischen:  { name: 'Zwischenüberschrift', groesse: 28, gewicht: 600, farbe: '#3E5C8A' },
+  fliess:    { name: 'Fließtext', groesse: 22, gewicht: 400, farbe: '#2E3440', zeile: 1.5 },
+  klein:     { name: 'Kleiner Hinweistext', groesse: 16, gewicht: 400, farbe: '#6A7181' },
+};
+export const CI_TEXTFELD = { hg: '#FFFFFF', rand: '#E4E1DA', ecke: 12, innen: 20 }; // ruhige weiße Karte ohne Schatten
+
+export const CI_TIMER = {
+  normal:  { hg: '#E3EEF9', text: '#1E3A6E', ring: '#7FA6D6' },
+  bald:    { hg: '#FBF3D5', text: '#6B4423', ring: '#EBD9A0' }, // letzte Minute
+  vorbei:  { hg: '#F5E1DC', text: '#8A4B3C', ring: '#EBC9BE' },
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
