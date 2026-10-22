@@ -1,5 +1,7 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, SearchCheck, X, RotateCcw } from 'lucide-react';
+
+const SYMBOLE = { Check, SearchCheck, X, RotateCcw };
 import { CI_GRUND, CI_BUTTONS, CI_EINGABE } from '@/lib/folienCI';
 
 const btn = (b) => ({ background: b.hg, color: b.text, borderColor: b.rand });
@@ -13,7 +15,7 @@ export default function CiBedienVorschau() {
         {Object.entries(CI_BUTTONS).map(([k, b]) => (
           <div key={k} className="space-y-1">
             <span className="inline-flex items-center gap-2 rounded-xl border-2 px-5 py-2 text-sm font-semibold" style={btn(b)}>
-              {k === 'erledigt' && <Check className="h-4 w-4" />}{k === 'haupt' ? 'Fertig' : k === 'neben' ? 'Zurück' : 'Erledigt'}
+              {SYMBOLE[b.symbol] && React.createElement(SYMBOLE[b.symbol], { className: 'h-4 w-4' })}{b.label}
             </span>
             <p className="text-xs text-muted-foreground">{b.name}</p>
           </div>

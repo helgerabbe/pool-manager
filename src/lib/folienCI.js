@@ -27,9 +27,12 @@ export const CI_FOLIENTYPEN = {
 
 // Teil 2: Bedienelemente. Runde Ecken (12px), keine harten Schatten, ruhige Pastell-Zustände.
 export const CI_BUTTONS = {
-  haupt:   { name: 'Hauptaktion (z. B. „Fertig“)', hg: '#3E5C8A', text: '#FFFFFF', rand: '#3E5C8A' },
-  neben:   { name: 'Nebenaktion (z. B. „Zurück“)', hg: '#FFFFFF', text: '#3E5C8A', rand: '#B9D2EE' },
-  erledigt:{ name: 'Erledigt-Zustand', hg: '#DCEBE1', text: '#24553A', rand: '#BFDCC9' },
+  haupt:   { name: 'Hauptaktion (z. B. „Fertig“)', label: 'Fertig', hg: '#3E5C8A', text: '#FFFFFF', rand: '#3E5C8A' },
+  pruefen: { name: 'Prüfen (Lösung kontrollieren)', label: 'Prüfen', symbol: 'SearchCheck', hg: '#E3EEF9', text: '#1E3A6E', rand: '#7FA6D6' },
+  neben:   { name: 'Nebenaktion (z. B. „Zurück“)', label: 'Zurück', hg: '#FFFFFF', text: '#3E5C8A', rand: '#B9D2EE' },
+  abbrechen: { name: 'Abbrechen', label: 'Abbrechen', symbol: 'X', hg: '#FFFFFF', text: '#6A7181', rand: '#D6DCE5' },
+  zuruecksetzen: { name: 'Von vorne / Zurücksetzen', label: 'Von vorne', symbol: 'RotateCcw', hg: '#FBEFEA', text: '#8A4B3C', rand: '#EBC9BE' },
+  erledigt:{ name: 'Erledigt-Zustand', label: 'Erledigt', symbol: 'Check', hg: '#DCEBE1', text: '#24553A', rand: '#BFDCC9' },
 };
 
 export const CI_EINGABE = {
