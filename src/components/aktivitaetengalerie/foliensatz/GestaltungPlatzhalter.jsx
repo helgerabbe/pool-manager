@@ -1,5 +1,6 @@
 import React from 'react';
 import { Palette } from 'lucide-react';
+import CiVorschau from './CiVorschau';
 
 const OFFEN = [
   'Gesamtlayout: Farbschema, Hintergrund, Kopf- und Fußbereich der Folien',
@@ -15,6 +16,7 @@ export default function GestaltungPlatzhalter() {
       <p className="font-display text-lg font-bold">Gestaltete Vorlage</p>
       <p className="max-w-xl text-sm text-muted-foreground">Hier baut ein Assistent aus dem Funktionsaufbau die echte, wiedererkennbare Ansicht. Dafür müssen zuerst diese Regeln festgelegt werden:</p>
       <ul className="max-w-xl list-disc text-left text-sm">{OFFEN.map((t) => <li key={t}>{t}</li>)}</ul>
+      <div className="w-full max-w-4xl text-left"><p className="mb-2 text-sm font-semibold">Festgelegt (Teil 1): Grundfarben, Inhaltsboxen, Folientypen</p><CiVorschau /></div>
     </div>
   );
 }
