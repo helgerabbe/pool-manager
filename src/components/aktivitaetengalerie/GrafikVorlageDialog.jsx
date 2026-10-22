@@ -10,6 +10,10 @@ import useFoliensatz from '@/hooks/useFoliensatz';
 import FolienLeiste from './foliensatz/FolienLeiste';
 import FolieVorschau from './foliensatz/FolieVorschau';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
+import LehrerTutorial from './foliensatz/LehrerTutorial';
+import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
+
+const SCHRITTE = [['funktion', '1. Funktionsaufbau'], ['gestaltung', '2. Gestaltete Vorlage'], ['tutorial', '3. Lehrer-Tutorial']];
 
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte }) {
@@ -18,6 +22,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
   const [ansicht, setAnsicht] = React.useState('lehrer');
   const [aktivId, setAktivId] = React.useState(null);
   const [kanal, setKanal] = React.useState('analog');
+  const [schritt, setSchritt] = React.useState('funktion');
   const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal);
   const folien = satz?.folien || [];
   const folie = folien.find((f) => f.id === aktivId) || folien[0];
@@ -27,6 +32,12 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[90vh] max-w-7xl flex-col">
         <DialogHeader><DialogTitle>Grafische Vorlage · {methode.name}{satz?.thema ? ` · ${satz.thema}` : ''}</DialogTitle></DialogHeader>
+        <div className="flex gap-2 border-b pb-2">
+          {SCHRITTE.map(([k, l]) => <Button key={k} size="sm" variant={schritt === k ? 'secondary' : 'ghost'} onClick={() => setSchritt(k)}>{l}</Button>)}
+        </div>
+        {schritt === 'gestaltung' && <GestaltungPlatzhalter />}
+        {schritt === 'tutorial' && <LehrerTutorial key={kanal + fach} folien={folien} />}
+        {schritt === 'funktion' && <>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={fach} onValueChange={setFach}>
             <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
@@ -71,6 +82,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             <FolieErklaerung folie={folie} />
           </div>
         )}
+        </>}
       </DialogContent>
     </Dialog>
   );
