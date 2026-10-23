@@ -33,7 +33,7 @@ export default function VorlagenInhalt({ f }) {
   );
   if (f.vorlage === 'fokus') return (
     <div className="relative flex flex-1 flex-col gap-6">
-      {f.bild && <img src={f.bild} alt="" className="pointer-events-none absolute -bottom-24 -right-10 h-[62%] w-[58%] object-cover opacity-80" style={{ WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 60%, transparent)', WebkitMaskComposite: 'source-in', maskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 60%, transparent)', maskComposite: 'intersect' }} />}
+      {f.bild && <img src={f.bild} alt="" className="pointer-events-none absolute -bottom-24 -right-10 h-[95%] w-[58%] object-cover opacity-90" style={{ WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 75%, transparent)', WebkitMaskComposite: 'source-in', maskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 75%, transparent)', maskComposite: 'intersect' }} />}
       <div className="relative max-w-[60%]"><Titel>{f.titel}</Titel><p className="mt-4 line-clamp-3 text-[30px] leading-snug text-[#3E5C8A]">{f.satz}</p></div>
     </div>
   );
