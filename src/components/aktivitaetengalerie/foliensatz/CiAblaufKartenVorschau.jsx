@@ -25,9 +25,9 @@ const REGELN = [
 export default function CiAblaufKartenVorschau() {
   return (
     <div className="space-y-3 rounded-xl border p-4">
-      <div className="grid gap-3 md:grid-cols-2">
-        <div><p className="mb-1 text-xs font-semibold text-muted-foreground">Mit Sozialform (Phasen)</p><div className="flex h-44 rounded-lg bg-[#F7F5EF] p-3"><AblaufKarten karten={PHASEN} klein /></div></div>
-        <div><p className="mb-1 text-xs font-semibold text-muted-foreground">Mit Nummer (Schritte, Stationen)</p><div className="flex h-44 rounded-lg bg-[#F7F5EF] p-3"><AblaufKarten karten={SCHRITTE} klein /></div></div>
+      <div className="space-y-3">
+        <div><p className="mb-1 text-xs font-semibold text-muted-foreground">Mit Sozialform (Phasen)</p><div className="flex h-48 rounded-lg bg-[#F7F5EF] p-3"><AblaufKarten karten={PHASEN} klein /></div></div>
+        <div><p className="mb-1 text-xs font-semibold text-muted-foreground">Mit Nummer (Schritte, Stationen)</p><div className="flex h-48 rounded-lg bg-[#F7F5EF] p-3"><AblaufKarten karten={SCHRITTE} klein /></div></div>
       </div>
       <ul className="list-disc pl-5 text-sm">{REGELN.map((r) => <li key={r}>{r}</li>)}</ul>
     </div>

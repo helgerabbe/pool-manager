@@ -14,7 +14,7 @@ export default function AblaufKarten({ karten = [], klein = false }) {
     <div className={`flex flex-1 items-center ${klein ? 'gap-2' : 'gap-3'}`}>
       {karten.slice(0, 4).map((k, i, a) => (
         <React.Fragment key={i}>
-          <div className={`flex h-full flex-1 flex-col items-center rounded-xl border-2 bg-white text-center ${klein ? 'gap-1.5 p-3' : 'gap-3 p-5'}`} style={{ borderColor: CI_TEXTFELD.rand }}>
+          <div className={`flex h-full min-w-0 flex-1 basis-0 flex-col items-center rounded-xl border-2 bg-white text-center ${klein ? 'gap-1.5 p-3' : 'gap-3 p-5'}`} style={{ borderColor: CI_TEXTFELD.rand }}>
             <Kopf k={k} i={i} klein={klein} />
             <p className={`line-clamp-1 font-semibold text-[#3E5C8A] ${klein ? 'text-base' : 'text-[28px]'}`}>{k.name}</p>
             <p className={`leading-snug ${klein ? 'line-clamp-3 text-xs' : 'line-clamp-3 text-lg'}`}>{k.satz}</p>
