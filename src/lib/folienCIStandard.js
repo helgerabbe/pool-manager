@@ -14,8 +14,8 @@ export const CI_STANDARDFOLIEN = {
   },
   partner: {
     name: 'Partner finden', folientyp: 'organisation',
-    schueler: 'Satz „Such dir einen Partner.“ Eingabefeld „Mit wem arbeitest du?“ mit Namensvorschlägen aus der Klasse. Erst wenn beide sich gegenseitig eingetragen haben, erscheint grün „Ihr seid Partner 7“.',
-    lehrer: 'Übersicht als Kärtchen: bestätigte Paare (Partner-Symbol + Zahl + zwei Namen), offene Anfragen gestrichelt, Schüler ohne Partner hellgrau unten. Lehrkraft kann Übrige per Ziehen zuordnen.',
+    schueler: 'Satz „Such dir einen Partner.“ Eingabefeld „Mit wem arbeitest du?“ mit Namensvorschlägen aus der Klasse. Erst wenn beide sich gegenseitig eingetragen haben, erscheint grün „Ihr seid Partner 7“. Zusatzoptionen (von der Lehrkraft zuschaltbar): „Wir sind zu dritt“ und „Ich arbeite allein“. Allein ist nur eine Anfrage, die Lehrkraft entscheidet.',
+    lehrer: 'Übersicht als Kärtchen: Paare und Dreier (Partner-Symbol + Zahl + Namen), Allein-Wünsche gelb hervorgehoben, Schüler ohne Partner hellgrau unten. Die Lehrkraft kann einen Allein-Wunsch erlauben (✓) oder ablehnen (×, Schüler muss sich einen Partner suchen), Dreier und Paare auflösen und Übrige per Ziehen zuordnen. Auflösen ist auch während der laufenden Partnerarbeit möglich (z. B. zu laut).',
   },
   partnerphase: {
     name: 'Partnerarbeit läuft (Lehreransicht)', folientyp: 'aufgabe',
