@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserX } from 'lucide-react';
+import StoppHinweis from './StoppHinweis';
 
 const FEHLEN = ['Jonas K.', 'Ella M.', 'Noah S.', 'Ben T.', 'Lina W.', 'Can Y.'];
 
@@ -10,6 +11,7 @@ export default function BegruessungBild({ ansicht }) {
     <div className="text-center">
       <p className="text-2xl font-bold">Guten Morgen!</p>
       <p className="text-xs text-[#6A7181]">Heute: Warum ziehen Menschen in die Städte?</p>
+      {ansicht !== 'lehrer' && <StoppHinweis />}
       {ansicht === 'lehrer' && (
         <div className="mt-2 space-y-1 text-[10px]">
           <span>18 von 24 angemeldet · </span>
