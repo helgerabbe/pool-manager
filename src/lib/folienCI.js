@@ -93,4 +93,27 @@ export const CI_SCHATTEN = {
   gehoben: '0 8px 24px rgba(46,52,64,0.16)',       // nur aktive/gezogene Elemente
 };
 
+// Teil 6: Symbole (lucide-Namen). Immer gleiche Form: runder Pastell-Kreis, Symbol in Akzentfarbe.
+export const CI_SYMBOL_STIL = { hg: '#E3EEF9', farbe: '#1E3A6E', groesse: 40 };
+export const CI_SOZIALFORM = {
+  EA: { name: 'Einzelarbeit', symbol: 'User' },
+  PA: { name: 'Partnerarbeit', symbol: 'Users' },
+  GA: { name: 'Gruppenarbeit', symbol: 'UsersRound' },
+  PL: { name: 'Plenum', symbol: 'Presentation' },
+};
+export const CI_TAETIGKEIT = {
+  lesen:     { name: 'Lesen', symbol: 'BookOpen' },
+  schreiben: { name: 'Schreiben', symbol: 'PenLine' },
+  sprechen:  { name: 'Sprechen / Austauschen', symbol: 'MessageCircle' },
+  zuhoeren:  { name: 'Zuhören', symbol: 'Ear' },
+  ansehen:   { name: 'Ansehen (Video/Bild)', symbol: 'Eye' },
+  denken:    { name: 'Nachdenken', symbol: 'Brain' },
+  melden:    { name: 'Melden', symbol: 'Hand' },
+  zeichnen:  { name: 'Zeichnen / Skizzieren', symbol: 'Pencil' },
+  rechnen:   { name: 'Rechnen', symbol: 'Calculator' },
+  recherche: { name: 'Recherchieren', symbol: 'Search' },
+  geraet:    { name: 'Am Gerät arbeiten', symbol: 'Tablet' },
+  heft:      { name: 'Im Heft arbeiten', symbol: 'Notebook' },
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
