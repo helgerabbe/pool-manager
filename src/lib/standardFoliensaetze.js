@@ -29,11 +29,10 @@ const tps = (k) => [
     liegt: ['Methodische Anweisung im grauen Streifen „So arbeitest du“ (feststehend)', 'Inhaltliche Aufgabe in der Aufgabenbox (zum Thema der Stunde)', 'Stille-Zeichen, Sozialform und Timer oben rechts', k === 'digital' ? 'Notizfeld auf dem Tablet' : 'Verweis auf Heft oder Zettel'],
     entscheidungen: ['Wie lautet die inhaltliche Aufgabe bzw. Fragestellung?', 'Wie lange dauert die Think-Phase?', 'Geht es nach Ablauf der Zeit automatisch weiter oder gibt die Lehrkraft frei?'] }),
   k === 'analog'
-    ? f('tps4', k, { vorlage: 'uebergang', titel: 'Partner finden', phase: 'Pair', sozialform: 'PA', freigabe: 'lehrkraft',
-      satz: 'Such dir jetzt einen Partner oder eine Partnerin, mit dem oder der du die nächste Arbeitsphase gestalten möchtest.',
-      erklaerung: 'Analog: Die Schüler suchen sich ohne Gerät einen Partner. Keine digitale Zuordnung an der Tafel.',
-      liegt: ['Großes Partner-Symbol', 'Ein Satz zur Partnersuche', 'Keine Zuordnung oder Partnernummer'],
-      entscheidungen: ['Wie werden die Partner gebildet (Sitznachbar, frei, feste Paare)?', 'Sind Dreiergruppen erlaubt?'] })
+    ? f('tps4', k, { vorlage: 'partnersuche', partnersuche: 'frei', titel: 'Partner finden', phase: 'Pair', freigabe: 'lehrkraft',
+      erklaerung: 'Analoge Standardfolie: Die Schüler finden ohne Gerät einen Partner. Die Art der Suche legt die Lehrkraft fest.',
+      liegt: ['Aquarellbild zur gewählten Art der Partnersuche', 'Name der Art und ein fester Satz', 'Keine Zuordnung oder Partnernummer'],
+      entscheidungen: ['Wie finden die Schüler ihren Partner: frei, Sitznachbar, Losen oder Lerntempo-Duett?', 'Sind Dreiergruppen erlaubt?'] })
     : f('tps4', k, { vorlage: 'standard', standard: 'partner', phase: 'Pair', freigabe: 'lehrkraft', erklaerung: 'Die Schüler finden ihren Partner.',
       liegt: ['Standardfolie „Partner finden“', 'Partnernummer je Paar'],
       entscheidungen: ['Wie werden die Partner gebildet (Sitznachbar, zufällig, feste Paare)?', 'Sind Dreiergruppen erlaubt?'] }),

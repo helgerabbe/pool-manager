@@ -7,6 +7,7 @@ export const FOLIEN_VORLAGEN = {
   aufgabe: { name: 'Aufgaben-Platzhalter', folientyp: 'aufgabe', felder: 'titel (max. 30), sozialform, minuten. Der Aufgabentext wird später von der Lehrkraft eingesetzt.' },
   fokus: { name: 'Fokusfolie (Einstieg)', folientyp: 'inhalt', felder: 'titel (max. 40), satz (max. 110, freier Text, MUSS ein Signalwort enthalten: „jetzt“ oder „als Nächstes“, z. B. „Wir wollen jetzt herausfinden, …“), optional bild = fotorealistisches Impulsbild unten rechts im Hintergrund, nie Comic' },
   uebergang: { name: 'Übergang', folientyp: 'organisation', felder: 'titel (max. 30, z. B. „Jetzt: Pair“), sozialform der NÄCHSTEN Phase, satz (max. 80, genau ein Satz)' },
+  partnersuche: { name: 'Partner finden (Standard)', folientyp: 'organisation', felder: 'partnersuche = frei | nachbar | los | duett (Lerntempo-Duett); Bild und Satz sind fest' },
   sicherung: { name: 'Sicherung', folientyp: 'sicherung', felder: 'titel (max. 30), punkte: 2-4 Stichpunkte (je max. 60)' },
   standard: { name: 'Standardfolie', folientyp: 'organisation', felder: `standard = einer von ${Object.keys(CI_STANDARDFOLIEN).join(', ')}` },
 };
@@ -17,7 +18,7 @@ const t = { type: 'string' };
 export const folieSchema = { type: 'object', properties: {
   titel: t, phase: t, kanal: { type: 'string', enum: ['analog', 'digital'] }, freigabe: t, minuten: { type: 'number' },
   vorlage: { type: 'string', enum: Object.keys(FOLIEN_VORLAGEN) }, standard: t,
-  untertitel: t, sozialform: { type: 'string', enum: ['EA', 'PA', 'GA', 'PL'] }, auftrag: t, hinweis: t, satz: t, methodisch: t, inhalt: t, leise: { type: 'boolean' },
+  untertitel: t, sozialform: { type: 'string', enum: ['EA', 'PA', 'GA', 'PL'] }, auftrag: t, hinweis: t, satz: t, methodisch: t, inhalt: t, leise: { type: 'boolean' }, partnersuche: { type: 'string', enum: ['frei', 'nachbar', 'los', 'duett'] },
   phasen: { type: 'array', items: { type: 'object', properties: { name: t, sozialform: t, satz: t } } },
   punkte: { type: 'array', items: t },
   erklaerung: t, abfrage: t,
