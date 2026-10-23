@@ -2,6 +2,7 @@ import React from 'react';
 import FolieVorschau from './FolieVorschau';
 import VorlageRahmen from './vorlagen/VorlageRahmen';
 import VorlagenInhalt from './vorlagen/VorlagenInhalt';
+import TabletInhalt from './vorlagen/TabletInhalt';
 import CiStandardBild from './CiStandardBild';
 import PartnerTafel from './standard/PartnerTafel';
 
@@ -14,7 +15,7 @@ export default function FolieAnzeige({ folie, ansicht = 'lehrer', klein, kopf })
         ? <PartnerTafel />
         : folie.vorlage === 'standard'
         ? <div className="flex flex-1 origin-center scale-[1.8] items-center justify-center"><CiStandardBild art={folie.standard} ansicht={ansicht} /></div>
-        : <VorlagenInhalt f={folie} />}
+        : ansicht === 'schueler' ? <TabletInhalt f={folie} /> : <VorlagenInhalt f={folie} />}
     </VorlageRahmen>
   );
 }
