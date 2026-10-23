@@ -7,10 +7,12 @@ import { FOLIEN_VORLAGEN } from '@/lib/folienVorlagen';
 const f = (id, kanal, d) => ({ id, kanal, status: 'fertig', folientyp: FOLIEN_VORLAGEN[d.vorlage].folientyp, ...d });
 
 const tps = (k) => [
-  f('tps2', k, { vorlage: 'aufgabe', titel: 'Überschrift der Aufgabe', phase: 'Einstieg', folientyp: 'inhalt', freigabe: 'lehrkraft',
-    erklaerung: 'Stellt die Aufgabe der Stunde vor. Reine Information: Die Schüler bearbeiten sie hier noch nicht.',
-    liegt: ['Überschrift der Aufgabe', 'Aufgabenbox mit dem Aufgabentext', 'Kein Sozialform-Symbol und kein Timer (Inhaltsfolie)'],
-    entscheidungen: ['Welche Überschrift bekommt die Aufgabe?', 'Wie lautet die Denkfrage bzw. Aufgabe?', 'Gibt es Material zur Aufgabe (Text, Bild)?'] }),
+  f('tps2', k, { vorlage: 'fokus', titel: 'Unzufrieden im Beruf?', phase: 'Einstieg', freigabe: 'lehrkraft',
+    satz: 'Wir wollen herausfinden, warum viele Menschen mit ihrem Beruf unglücklich sind.',
+    bild: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/ab5930a9d_generated_image.png',
+    erklaerung: 'Die Lehrkraft stellt den Fokus der Stunde vor: was wir herausfinden wollen. Keine Aufgabe, sondern freier Text.',
+    liegt: ['Überschrift', 'Freier Fokus-Satz („Wir wollen herausfinden, …“), keine Aufgabenbox', 'Optional: fotorealistisches Impulsbild im unteren rechten Viertel, leicht blass im Hintergrund, über dem Folienart-Kreis', 'Kein Sozialform-Symbol und kein Timer (Inhaltsfolie)'],
+    entscheidungen: ['Welche Überschrift bekommt die Folie?', 'Was wollen wir herausfinden (Fokus der Stunde)?', 'Soll es einen Bildimpuls geben? Wenn ja: welches Motiv (immer fotorealistisch)?'] }),
   f('tps1', k, { vorlage: 'uebersicht', titel: 'Think – Pair – Share', untertitel: 'Erst allein denken, dann zu zweit, dann alle gemeinsam', phase: 'Einstieg', freigabe: 'lehrkraft',
     phasen: [
       { name: 'Think', sozialform: 'EA', satz: 'Du denkst allein nach und notierst deine Ideen.' },

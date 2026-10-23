@@ -31,6 +31,12 @@ export default function VorlagenInhalt({ f }) {
       <p className="line-clamp-2 max-w-2xl text-[26px]">{f.satz}</p>
     </div>
   );
+  if (f.vorlage === 'fokus') return (
+    <div className="relative flex flex-1 flex-col gap-6">
+      {f.bild && <img src={f.bild} alt="" className="pointer-events-none absolute -bottom-24 -right-10 h-[62%] w-[58%] object-cover opacity-80" style={{ WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 60%, transparent)', WebkitMaskComposite: 'source-in', maskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 60%, transparent)', maskComposite: 'intersect' }} />}
+      <div className="relative max-w-[60%]"><Titel>{f.titel}</Titel><p className="mt-4 line-clamp-3 text-[30px] leading-snug text-[#3E5C8A]">{f.satz}</p></div>
+    </div>
+  );
   if (f.vorlage === 'sicherung') return (
     <div className="flex flex-1 flex-col gap-5 pr-48"><Titel>{f.titel}</Titel>
       <Box art="merksatz"><ul className="space-y-2 text-[22px]">{(f.punkte || []).slice(0, 4).map((p, i) => <li key={i} className="line-clamp-1">• {p}</li>)}</ul></Box>
