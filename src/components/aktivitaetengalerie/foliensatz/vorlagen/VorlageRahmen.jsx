@@ -24,7 +24,7 @@ export default function VorlageRahmen({ folie, kopf, klein, children }) {
           {folie.leise && <span title="Bitte leise arbeiten" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><VolumeX className="h-7 w-7" /></span>}
           {folie.fluestern && <span title="Bitte mit Flüsterstimme sprechen" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><Volume1 className="h-7 w-7" /></span>}
           {folie.sozialform && <SozialSymbol form={folie.sozialform} />}
-          {folie.minuten > 0 && <span className="rounded-full px-4 py-1.5 text-lg font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{folie.minuten}:00</span>}
+          {folie.minuten > 0 && folie.folientyp !== 'sicherung' && <span className="rounded-full px-4 py-1.5 text-lg font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{folie.minuten}:00</span>}
         </div>
         <div className="absolute inset-x-10 bottom-24 top-16 flex flex-col">{children}</div>
         <div className="absolute bottom-6 right-8 flex items-center gap-2 rounded-xl border-2 px-5 py-2.5 text-lg font-semibold" style={{ background: knopf.hg, color: knopf.text, borderColor: knopf.rand }}>
