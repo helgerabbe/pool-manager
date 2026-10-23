@@ -9,12 +9,14 @@ import PartnerLehrer from './standard/PartnerLehrer';
 import { CI_GRUPPEN } from '@/lib/folienCI';
 import BegruessungBild from './standard/BegruessungBild';
 import ZuhoerenBild from './standard/ZuhoerenBild';
+import LernortBild from './standard/LernortBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 
 /** Skizze einer Standardfolie, je Ansicht (schueler | lehrer). */
 export default function CiStandardBild({ art, ansicht }) {
   if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
+  if (art === 'lernort') return <LernortBild ansicht={ansicht} />;
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
   if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <EinzelarbeitTafel />;

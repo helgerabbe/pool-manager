@@ -32,6 +32,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
+  lernort: {
+    name: 'Lernort frei wählen', folientyp: 'organisation',
+    schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
+    lehrer: 'Lehrergerät (nicht Tafel): Liste nach Orten gruppiert mit Namen bzw. Partner-/Gruppenkennung, darunter grau „Noch keine Angabe“. Schalter „Lernort frei“ an/aus; aus = alle bitte zurück in den Klassenraum.',
+  },
 };
 
 // Ideenspeicher (noch nicht umgesetzt, 2026-10-23):
