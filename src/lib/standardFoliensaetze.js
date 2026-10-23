@@ -28,9 +28,15 @@ const tps = (k) => [
     erklaerung: 'Stille Einzelarbeit mit Timer. Oben die methodische Anweisung (gleich bei jeder Think-Phase), darunter groß die inhaltliche Aufgabe zum Thema.',
     liegt: ['Methodische Anweisung im grauen Streifen „So arbeitest du“ (feststehend)', 'Inhaltliche Aufgabe in der Aufgabenbox (zum Thema der Stunde)', 'Stille-Zeichen, Sozialform und Timer oben rechts', k === 'digital' ? 'Notizfeld auf dem Tablet' : 'Verweis auf Heft oder Zettel'],
     entscheidungen: ['Wie lautet die inhaltliche Aufgabe bzw. Fragestellung?', 'Wie lange dauert die Think-Phase?', 'Geht es nach Ablauf der Zeit automatisch weiter oder gibt die Lehrkraft frei?'] }),
-  f('tps4', k, { vorlage: 'standard', standard: 'partner', phase: 'Pair', freigabe: 'lehrkraft', erklaerung: 'Die Schüler finden ihren Partner.',
-    liegt: ['Standardfolie „Partner finden“', 'Partnernummer je Paar'],
-    entscheidungen: ['Wie werden die Partner gebildet (Sitznachbar, zufällig, feste Paare)?', 'Sind Dreiergruppen erlaubt?'] }),
+  k === 'analog'
+    ? f('tps4', k, { vorlage: 'uebergang', titel: 'Partner finden', phase: 'Pair', sozialform: 'PA', freigabe: 'lehrkraft',
+      satz: 'Such dir jetzt einen Partner oder eine Partnerin, mit dem oder der du die nächste Arbeitsphase gestalten möchtest.',
+      erklaerung: 'Analog: Die Schüler suchen sich ohne Gerät einen Partner. Keine digitale Zuordnung an der Tafel.',
+      liegt: ['Großes Partner-Symbol', 'Ein Satz zur Partnersuche', 'Keine Zuordnung oder Partnernummer'],
+      entscheidungen: ['Wie werden die Partner gebildet (Sitznachbar, frei, feste Paare)?', 'Sind Dreiergruppen erlaubt?'] })
+    : f('tps4', k, { vorlage: 'standard', standard: 'partner', phase: 'Pair', freigabe: 'lehrkraft', erklaerung: 'Die Schüler finden ihren Partner.',
+      liegt: ['Standardfolie „Partner finden“', 'Partnernummer je Paar'],
+      entscheidungen: ['Wie werden die Partner gebildet (Sitznachbar, zufällig, feste Paare)?', 'Sind Dreiergruppen erlaubt?'] }),
   f('tps5', k, { vorlage: 'phase', titel: 'Pair', phase: 'Pair', sozialform: 'PA', minuten: 7, freigabe: 'zeit',
     auftrag: 'Erzählt euch eure Ideen. Einigt euch auf die besten und haltet sie fest.',
     hinweis: 'Flüsterstimme', erklaerung: 'Austausch zu zweit.',
