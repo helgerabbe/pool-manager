@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CI_GRUND, CI_RASTER, CI_ZONEN_JE_TYP, CI_FOLIENTYPEN } from '@/lib/folienCI';
+import { CI_GRUND, CI_RASTER, CI_ZONEN_JE_TYP, CI_FOLIENTYPEN, CI_STEUERUNG } from '@/lib/folienCI';
 
 const zone = 'absolute flex items-center justify-center rounded-lg border border-dashed text-[10px] text-center';
 
@@ -21,6 +21,7 @@ export default function CiRasterVorschau() {
         {z.oben && <div className={`${zone} bg-muted`} style={{ top: `${kopf.hoehe + 2}%`, right: '3%', width: `${oben.breite}%`, height: `${oben.hoehe}%` }}>{oben.inhalt}</div>}
         {z.unten && <div className={`${zone} bg-muted`} style={{ bottom: '4%', right: '3%', width: `${unten.breite}%`, height: `${unten.hoehe}%` }}>{unten.inhalt}</div>}
       </div>
+      <p className="text-xs"><b>Steuerung – {CI_STEUERUNG.regel}:</b> Lehrkraft: {CI_STEUERUNG.lehrkraft} Schüler zurück: {CI_STEUERUNG.schueler_zurueck} Schüler vor: {CI_STEUERUNG.schueler_vor}</p>
       <p className="text-xs text-muted-foreground">Die Ecken sind nur belegt, wenn der Folientyp sie braucht. Sonst gehört die Fläche dem Inhalt. Inhalte dürfen nie in eine belegte Zone ragen.</p>
     </div>
   );

@@ -66,12 +66,21 @@ export const CI_RASTER = {
 
 // Welche Zonen je Folientyp belegt sind (frei = gehört dem Inhalt).
 export const CI_ZONEN_JE_TYP = {
-  inhalt:       { oben: false, unten: false },
+  inhalt:       { oben: false, unten: true },
   methode:      { oben: false, unten: false },
   aufgabe:      { oben: true,  unten: true },
   organisation: { oben: true,  unten: true },
   sicherung:    { oben: false, unten: true },
   reflexion:    { oben: true,  unten: true },
+};
+
+// Wer steuert? Grundregel "Lehrkraft führt": Schüler dürfen jederzeit zurück,
+// aber nur bis zu der Folie bzw. dem Schritt vor, den die Lehrkraft schon erreicht hat.
+export const CI_STEUERUNG = {
+  regel: 'Lehrkraft führt',
+  lehrkraft: 'Schaltet Folien und Schritte frei (Weiter).',
+  schueler_zurueck: 'Immer erlaubt.',
+  schueler_vor: 'Nur bis zum Stand der Lehrkraft.',
 };
 
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
