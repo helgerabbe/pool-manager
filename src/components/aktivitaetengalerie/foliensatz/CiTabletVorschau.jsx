@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users, SearchCheck, LayoutList } from 'lucide-react';
-import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN, CI_FOLIENTYPEN } from '@/lib/folienCI';
+import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users, SearchCheck, LayoutList, Network } from 'lucide-react';
+import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN, CI_FOLIENTYPEN, CI_PARTNER } from '@/lib/folienCI';
 
 const kreis = 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full';
 const sym = { background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe };
@@ -11,6 +11,7 @@ export default function CiTabletVorschau() {
   const [seg, setSeg] = useState('Aufgabe');
   const [nav, setNav] = useState(false);
   const [info, setInfo] = useState(false);
+  const [partner, setPartner] = useState(false);
   const m = hoch ? CI_TABLET.hoch : CI_TABLET.quer;
   const g = CI_GRUPPEN[1];
   return (
@@ -40,8 +41,11 @@ export default function CiTabletVorschau() {
             </div>
             <span className="ml-auto flex items-center gap-1">
               <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>
-              <span className={kreis} style={sym}><Users className="h-3 w-3" /></span>
-              <span className={`${kreis} font-bold`} style={{ background: g.hg, color: g.text }}>{g.kennung}</span>
+              <button onClick={() => setPartner(!partner)} title="Umschalten Gruppe/Partner">
+                {partner
+                  ? <span className="flex h-5 items-center gap-0.5 rounded-full border bg-white px-1.5 font-bold" style={{ borderColor: CI_PARTNER.rand, color: CI_PARTNER.text }}><Users className="h-3 w-3" />7</span>
+                  : <span className="flex h-5 items-center gap-0.5 rounded-full px-1.5 font-bold" style={{ background: g.hg, color: g.text }}><Network className="h-3 w-3" />{g.kennung}</span>}
+              </button>
               <span className={kreis} style={sym}><Lightbulb className="h-3 w-3" /></span>
               <span className={kreis} style={sym}><Bot className="h-3 w-3" /></span>
             </span>
