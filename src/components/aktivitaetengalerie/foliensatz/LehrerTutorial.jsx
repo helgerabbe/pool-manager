@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight, Monitor, Tablet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FolieVorschau from './FolieVorschau';
+import FolieAnzeige from './FolieAnzeige';
 
 /** Schritt 3 (Prototyp): Zettelkino für Lehrkräfte – kurze Erklärung plus Tafel- und Tablet-„Screenshot“ je Schritt. */
 export default function LehrerTutorial({ folien }) {
@@ -12,7 +12,7 @@ export default function LehrerTutorial({ folien }) {
   const bild = (titel, Icon, el) => (
     <div className="min-w-0 flex-1 space-y-1">
       <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><Icon className="h-3.5 w-3.5" />{titel}</p>
-      <div className="pointer-events-none">{el?.length ? <FolieVorschau elemente={el} folientyp={f.folientyp} /> : <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">Hier nichts zu sehen</p>}</div>
+      <div className="pointer-events-none">{(f.vorlage ? (el === 'lehrer' || f.kanal === 'digital') : f[el]?.length) ? <FolieAnzeige folie={f} ansicht={el} /> : <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">Hier nichts zu sehen</p>}</div>
     </div>
   );
   return (
@@ -24,8 +24,8 @@ export default function LehrerTutorial({ folien }) {
         {f.abfrage && <p className="mt-2 text-sm"><b>Das entscheidest du vorher:</b> {f.abfrage}</p>}
       </div>
       <div className="flex gap-4">
-        {bild('Das sieht die Klasse (Tafel)', Monitor, f.lehrer)}
-        {bild('Das sehen die Schüler (Tablet)', Tablet, f.schueler)}
+        {bild('Das sieht die Klasse (Tafel)', Monitor, 'lehrer')}
+        {bild('Das sehen die Schüler (Tablet)', Tablet, 'schueler')}
       </div>
       <div className="flex justify-between">
         <Button variant="outline" disabled={i === 0} onClick={() => setI(i - 1)}><ChevronLeft /> Zurück</Button>

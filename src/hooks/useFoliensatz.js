@@ -41,9 +41,7 @@ export default function useFoliensatz(methode, werte, fachName, kanal) {
       return;
     }
     setPlanen(false);
-    setVorlagen((v) => ({ ...v, [f]: { ...plan, erstellt_am: new Date().toISOString() } }));
-    await Promise.all(plan.folien.map((folie) => bauen(f, plan, folie)));
-    setVorlagen((v) => { speichern(v); return v; });
+    setVorlagen((v) => { const neu = { ...v, [f]: { ...plan, erstellt_am: new Date().toISOString() } }; speichern(neu); return neu; });
   };
 
   const folieNeu = async (folie) => {

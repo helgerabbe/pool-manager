@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { FREIGABE_TEXT } from '@/lib/folienSymbole';
 import useFoliensatz from '@/hooks/useFoliensatz';
 import FolienLeiste from './foliensatz/FolienLeiste';
-import FolieVorschau from './foliensatz/FolieVorschau';
+import FolieAnzeige from './foliensatz/FolieAnzeige';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
 import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
@@ -62,13 +62,13 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
                 <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
                 <div className="ml-auto flex gap-2">
                   <Button variant="outline" size="sm" disabled={folie.status === 'baut' || planen} onClick={() => folieNeu(folie)}><RefreshCw /> Folie neu erzeugen</Button>
-                  <Button variant="outline" size="sm" disabled={folie.status !== 'fertig'} onClick={() => navigate('/folien-designer', { state: { elemente: folie[ansicht] } })}><PenTool /> Im Folien-Designer öffnen</Button>
+                  <Button variant="outline" size="sm" disabled={folie.status !== 'fertig' || !!folie.vorlage} title={folie.vorlage ? 'Vorlagenfolien sind fest gestaltet' : undefined} onClick={() => navigate('/folien-designer', { state: { elemente: folie[ansicht] } })}><PenTool /> Im Folien-Designer öffnen</Button>
                 </div>
               </div>
               {folie.status === 'fertig' ? (
-                ansicht === 'schueler' && !folie.schueler?.length
+                ansicht === 'schueler' && (folie.kanal === 'analog' || (!folie.vorlage && !folie.schueler?.length))
                   ? <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">Analoge Folie: keine Tablet-Ansicht.</p>
-                  : <FolieVorschau elemente={folie[ansicht]} folientyp={folie.folientyp} />
+                  : <FolieAnzeige folie={folie} ansicht={ansicht} kopf={satz?.thema} />
               ) : (
                 <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
                   {folie.status === 'fehler' ? 'Diese Folie konnte nicht gebaut werden. Bitte neu erzeugen.' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Folie wird gebaut …</>}

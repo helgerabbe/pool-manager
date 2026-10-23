@@ -1,6 +1,6 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import FolieVorschau from './FolieVorschau';
+import FolieAnzeige from './FolieAnzeige';
 
 /** Linke Leiste: alle Folien in Reihenfolge mit Phase und Kanal. */
 export default function FolienLeiste({ folien, aktiv, setAktiv }) {
@@ -10,7 +10,7 @@ export default function FolienLeiste({ folien, aktiv, setAktiv }) {
         <button key={f.id} onClick={() => setAktiv(f.id)}
           className={`w-full rounded-lg border p-1.5 text-left transition ${aktiv === f.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted'}`}>
           {f.status === 'fertig'
-            ? <FolieVorschau elemente={f.lehrer} folientyp={f.folientyp} klein />
+            ? <FolieAnzeige folie={f} klein />
             : <div className="flex aspect-video items-center justify-center rounded-md bg-muted">{f.status === 'baut' ? <Loader2 className="h-4 w-4 animate-spin text-primary" /> : <span className="text-[10px] text-muted-foreground">{f.status === 'fehler' ? 'Fehler' : 'wartet'}</span>}</div>}
           <p className="mt-1 truncate text-xs font-medium">{i + 1}. {f.titel}</p>
           <div className="flex gap-1 text-[10px]">
