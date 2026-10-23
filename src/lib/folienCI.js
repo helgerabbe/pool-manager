@@ -183,4 +183,12 @@ export const CI_ZUSTAENDE = {
   verbindung: { titel: 'Verbindung schwach', satz: 'Deine Eingaben werden gespeichert und später gesendet.', symbol: 'WifiOff', hg: '#FBF3D5', text: '#6B4423' },
 };
 
+// Teil 11: Schwierigkeit von Aufgaben. Vier Stufen, als kleines Abzeichen neben der Aufgaben-Überschrift.
+export const CI_NIVEAU = {
+  bruecke: { name: 'Brücke', beschreibung: 'Mit besonderer Unterstützung (z. B. Förderbedarf)', symbol: 'Milestone', anzahl: 1, hg: '#E6F2EA', text: '#24553A' },
+  stern1:  { name: '1 Stern', beschreibung: 'Grundlegend', symbol: 'Star', anzahl: 1, hg: '#FBF3D5', text: '#6B4423' },
+  stern2:  { name: '2 Sterne', beschreibung: 'Weiterführend', symbol: 'Star', anzahl: 2, hg: '#FBF3D5', text: '#6B4423' },
+  rakete:  { name: 'Rakete', beschreibung: 'Knobelaufgabe für Schnelle', symbol: 'Rocket', anzahl: 1, hg: '#E7E4F3', text: '#4A4170' },
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
