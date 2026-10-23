@@ -34,7 +34,7 @@ export default function AbgleichEntscheidungsbaum({ werte, setze }) {
       {laeuft && <p className="text-xs text-muted-foreground">Ich vergleiche Foliensatz, Entscheidungsbaum und Prüfregeln …</p>}
       {ergebnis && Object.keys(TITEL).filter((k) => ergebnis[k]).map((k) => (
         <AbgleichVorschlag key={k} titel={TITEL[k]} vorschlag={ergebnis[k]}
-          onUebernehmen={() => { setze(k, ergebnis[k].neuer_text || ''); weg(k); toast.success('Übernommen. Bitte noch speichern.'); }}
+          onUebernehmen={() => { if (ergebnis[k].neuer_text) setze(k, ergebnis[k].neuer_text); weg(k); toast.success('Übernommen. Bitte noch speichern.'); }}
           onVerwerfen={() => weg(k)} />
       ))}
     </div>
