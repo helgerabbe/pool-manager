@@ -151,6 +151,12 @@ export const CI_RUECKMELDUNG = {
   falsch:   { titel: 'Noch nicht', symbol: 'RotateCcw', hg: '#FBEFEA', rand: '#EBC9BE', text: '#8A4B3C', satz: 'Versuch es noch einmal.' },
   loesung:  { titel: 'Lösung', symbol: 'Eye', hg: '#E3EEF9', rand: '#B9D2EE', text: '#1E3A6E', satz: 'So sieht eine mögliche Lösung aus.' },
 };
+// Hilfen: Tippkarte (gestuft, aufklappbar) und KI-Tutor (Lernunterstützung, gibt keine Lösungen vor).
+export const CI_HILFEN = {
+  tipp:  { titel: 'Tipp', symbol: 'Lightbulb', hg: '#FFF8E6', rand: '#EBD9A0', text: '#6B4423', knopf: 'Tipp anzeigen', stufen: 'Tipp 1 → Tipp 2 → Lösungsweg (je ein Klick)' },
+  tutor: { titel: 'KI-Tutor', symbol: 'Bot', hg: '#E7E4F3', rand: '#D3CDEB', text: '#4A4170', knopf: 'Frag den Tutor', regel: 'Hilft mit Rückfragen und Denkanstößen, verrät keine Lösung. Kann von der Lehrkraft je Folie ein- und ausgeschaltet werden.' },
+};
+
 export const CI_RUECKMELDUNG_REGEL = 'Markiert wird am Element selbst (Rand in der Rückmeldefarbe), die Rückmeldebox erscheint unten über der Steuerung. Lösung erst nach zwei Versuchen oder auf Freigabe der Lehrkraft.';
 
 // Teil 9: Ergebnisanzeigen an der Tafel (gesammelte Antworten aller Schüler).
