@@ -32,6 +32,8 @@ export const CI_BUTTONS = {
   neben:   { name: 'Nebenaktion (z. B. „Zurück“)', label: 'Zurück', hg: '#FFFFFF', text: '#3E5C8A', rand: '#B9D2EE' },
   abbrechen: { name: 'Abbrechen', label: 'Abbrechen', symbol: 'X', hg: '#FFFFFF', text: '#6A7181', rand: '#D6DCE5' },
   zuruecksetzen: { name: 'Von vorne / Zurücksetzen', label: 'Von vorne', symbol: 'RotateCcw', hg: '#FBEFEA', text: '#8A4B3C', rand: '#EBC9BE' },
+  weiter:  { name: 'Weiter (freigeschaltet)', label: 'Weiter', symbol: 'ArrowRight', hg: '#3E5C8A', text: '#FFFFFF', rand: '#3E5C8A' },
+  weiter_gesperrt: { name: 'Weiter (noch gesperrt, wartet auf Lehrkraft)', label: 'Weiter', symbol: 'Lock', hg: '#EEF0F3', text: '#9AA3B2', rand: '#D6DCE5', gesperrt: true },
   erledigt:{ name: 'Erledigt-Zustand', label: 'Erledigt', symbol: 'Check', hg: '#DCEBE1', text: '#24553A', rand: '#BFDCC9' },
 };
 
