@@ -10,6 +10,7 @@ export default function CiTabletVorschau() {
   const [hoch, setHoch] = useState(false);
   const [seg, setSeg] = useState('Aufgabe');
   const [nav, setNav] = useState(false);
+  const [info, setInfo] = useState(false);
   const m = hoch ? CI_TABLET.hoch : CI_TABLET.quer;
   const g = CI_GRUPPEN[1];
   return (
@@ -33,7 +34,10 @@ export default function CiTabletVorschau() {
                 </div>
               )}
             </div>
-            <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</span>
+            <div className="relative">
+              <button onClick={() => setInfo(!info)} className="rounded-full px-2 py-0.5 font-semibold" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</button>
+              {info && <div className="absolute left-0 top-full z-10 mt-1 w-48 rounded-lg p-2 shadow" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.erklaerung}</div>}
+            </div>
             <span className="ml-auto flex items-center gap-1">
               <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>
               <span className={kreis} style={sym}><Users className="h-3 w-3" /></span>
@@ -53,7 +57,7 @@ export default function CiTabletVorschau() {
           <div className="mx-auto mb-1 h-1 w-16 rounded-full bg-neutral-800" />
         </div>
       </div>
-      <ul className="list-disc space-y-0.5 pl-5 text-xs">{CI_TABLET.regeln.map((r) => <li key={r}>{r}</li>)}</ul>
+      <ul className="list-disc space-y-0.5 pl-5 text-xs">{[...CI_TABLET.regeln, CI_METHODE_ANZEIGE.regel].map((r) => <li key={r}>{r}</li>)}</ul>
     </div>
   );
 }

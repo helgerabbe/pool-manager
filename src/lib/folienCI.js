@@ -193,7 +193,11 @@ export const CI_NIVEAU = {
 };
 
 // Methodenanzeige: kein eigenes Symbol je Methode, nur der Name als ruhiges Schild rechts in der Kopfleiste.
-export const CI_METHODE_ANZEIGE = { hg: '#E7E4F3', text: '#4A4170', beispiel: 'Think-Pair-Share', schritt: 'Pair' };
+export const CI_METHODE_ANZEIGE = {
+  hg: '#E7E4F3', text: '#4A4170', beispiel: 'Think-Pair-Share', schritt: 'Pair',
+  erklaerung: 'Jetzt bist du mit deinem Partner dran: Erzählt euch eure Ideen und einigt euch auf die besten.',
+  regel: 'Antippen des Methodenschilds öffnet eine kurze Erklärung in Schülersprache: Was passiert gerade, was wird von mir erwartet? Erneutes Tippen schließt sie.',
+};
 
 // Teil 12: Gruppenkennung. Feste Pastellfarbe + Buchstabe; erscheint auf dem Schülergerät und an der Tafel.
 export const CI_GRUPPEN = [
