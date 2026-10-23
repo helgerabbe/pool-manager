@@ -128,6 +128,8 @@ export const CI_ORGANISATION = {
   material:     { name: 'Material holen / aufräumen', symbol: 'Package' },
   wechseln:     { name: 'Platz wechseln', symbol: 'Footprints' },
   warten:       { name: 'Warten / Stillarbeit', symbol: 'Hourglass' },
+  abstimmen:    { name: 'Abstimmen', symbol: 'Vote' },
+  diskutieren:  { name: 'Diskutieren', symbol: 'MessagesSquare' },
 };
 
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';

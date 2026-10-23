@@ -1,8 +1,8 @@
 import React from 'react';
-import { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass } from 'lucide-react';
+import { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass, Vote, MessagesSquare } from 'lucide-react';
 import { CI_GRUND, CI_SYMBOL_STIL, CI_SOZIALFORM, CI_TAETIGKEIT, CI_ORGANISATION } from '@/lib/folienCI';
 
-const ICONS = { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass };
+const ICONS = { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass, Vote, MessagesSquare };
 
 function Gruppe({ titel, eintraege }) {
   const s = CI_SYMBOL_STIL;
