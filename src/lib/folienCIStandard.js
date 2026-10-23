@@ -34,4 +34,9 @@ export const CI_STANDARDFOLIEN = {
   },
 };
 
+// Ideenspeicher (noch nicht umgesetzt, 2026-10-23):
+export const CI_IDEEN = [
+  'Dauer-Zusatzpaket „Pluspunkte“: Wer fertig ist, arbeitet an einem festen, fachlich sinnvollen Aufgabenpaket weiter (z. B. Wochenknobelei, Wortschatz-Sammlung, Kopfrechen-Leiter, Lesepass). Jede erledigte Einheit füllt ein Sammelbild bzw. einen Fortschrittsbalken; ist es voll, gibt es eine Belohnung (Abzeichen, Urkunde, Extrapunkte). Kein Zeitdruck, freiwillig, nur sichtbar für Schüler und Lehrkraft.',
+];
+
 export const CI_STANDARD_REGEL = 'Standardfolien werden nicht neu gestaltet, sondern nur mit Text gefüllt. Organisationsfolien (lila Ecke) zeigen immer ein großes Symbol mittig und genau einen Satz.';
