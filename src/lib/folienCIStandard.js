@@ -7,6 +7,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Großes „Guten Morgen!“, darunter Thema der Stunde und ein Foto zum Thema im Bildrahmen.',
     lehrer: 'Gleiche Folie an der Tafel, zusätzlich Zähler „18 von 24 angemeldet“. Optional per Knopf „Wer fehlt noch?“: Liste der Schüler, die noch nicht in der App sind (nur auf dem Lehrergerät, nicht an der Tafel).',
   },
+  start: {
+    name: 'Stundenstart', folientyp: 'inhalt',
+    schueler: 'Folgt direkt auf die Begrüßung. Oben klein Fach und Einheit, groß das Thema der Stunde. Von der Lehrkraft zuschaltbar: Stundenziel „Am Ende der Stunde kannst du …“ (gelbe Merksatz-Box) und ein kurzer Ablauf „Heute: 1 … 2 … 3 …“ als nummerierte Stichpunkte (höchstens vier). Kein ausführlicher Einstieg, nur Orientierung.',
+    lehrer: 'Gleiche Folie an der Tafel. Auf dem Lehrergerät zwei Schalter: „Stundenziel zeigen“ und „Ablauf zeigen“.',
+  },
   zuhoeren: {
     name: 'Lehrkraft erklärt – zuhören', folientyp: 'organisation',
     schueler: 'Ohr- und Stille-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise, hör zu und stör die anderen nicht.“ Kein Weiter. Optional (von der Lehrkraft zuschaltbar): Knopf „Notiz machen“ öffnet einen gelben Notizzettel für Stichworte oder Fragen.',
