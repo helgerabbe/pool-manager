@@ -3,6 +3,7 @@ import { PenLine, Lightbulb, Route } from 'lucide-react';
 import { CI_BOXEN } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
 import AblaufKarten from './AblaufKarten';
+import SatzZeilen from './SatzZeilen';
 
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
@@ -43,13 +44,13 @@ export default function VorlagenInhalt({ f }) {
     </div>
   );
   if (f.inhalt) return (
-    <div className="flex flex-1 flex-col gap-4 pr-48">
-      <Titel>{f.titel}</Titel>
+    <div className="flex flex-1 flex-col gap-4 pr-16">
+      <div className="pr-32"><Titel>{f.titel}</Titel></div>
       <div className="flex items-start gap-3 rounded-lg border-l-4 border-[#9AA3B2] bg-[#EEF0F3] px-5 py-3 text-[#4A5363]">
         <Route className="mt-1 h-6 w-6 shrink-0" />
-        <div><p className="text-sm font-semibold uppercase tracking-wide">So arbeitest du</p><p className="line-clamp-2 text-[20px] leading-snug">{f.methodisch}</p></div>
+        <div className="min-w-0 flex-1"><p className="text-sm font-semibold uppercase tracking-wide">So arbeitest du</p><SatzZeilen text={f.methodisch} groesse={20} min={16} /></div>
       </div>
-      <Box art="aufgabe"><p className="line-clamp-4 text-[28px] font-semibold leading-snug">{f.inhalt}</p></Box>
+      <Box art="aufgabe"><SatzZeilen text={f.inhalt} groesse={28} min={20} className="font-semibold" /></Box>
     </div>
   );
   return (
