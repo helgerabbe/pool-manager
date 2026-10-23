@@ -58,6 +58,11 @@ const tps = (k) => [
     erklaerung: 'Klassische Lehrersicherung: Während die Schüler vortragen, schreibt die Lehrkraft live mit. Noch keine Einigung, nur Sammeln. Kein Merksatz.',
     liegt: ['Überschrift und Leitfrage der Sammlung', 'Offenes Textfeld, in das die Lehrkraft während der Vorträge tippt', 'Die Einträge erscheinen als Liste (zweispaltig bei vielen Punkten)'],
     entscheidungen: ['Wie lautet die Leitfrage der Sammlung?', 'Soll ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät bereitliegen?'] }),
+  f('tps8', k, { vorlage: 'abstimmung', abstimmung: 'gewichten', titel: 'Was ist am wichtigsten?', phase: 'Share', freigabe: 'lehrkraft', optional: true,
+    punkte: ['Schlechte Bezahlung', 'Stress und Überstunden', 'Keine Abwechslung', 'Ärger mit dem Chef'],
+    erklaerung: 'Optional: Die Schüler gewichten die gesammelten Punkte per Abstimmung. Je mehr Stimmen, desto wichtiger.',
+    liegt: ['Die Einträge der Sammlung als Karten', 'Balken mit Stimmenzahl je Punkt (bzw. stimmt / teils / stimmt nicht)', 'Ergebnis an der Tafel anonym, Lehrkraft deckt auf'],
+    entscheidungen: ['Soll im Anschluss abgestimmt werden?', 'Art: gewichten (drei Stimmen), bewerten (je Punkt) oder auswählen (eine Stimme)?'] }),
 ];
 
 // Konvergierende Fassung (2026-10-23): gleiche Folienfolge, Ziel ist eine Einigung statt einer Sammlung.
@@ -85,7 +90,7 @@ const KONVERGENT = {
     liegt: ['Merksatz-Box (gelb) mit bis zu vier Stichpunkten in Rangfolge'],
     entscheidungen: ['Wird das Ergebnis live eingetragen oder liegt ein Erwartungshorizont bereit?'] },
 };
-const tpsKonvergent = (k) => tps(k).map((x) => (KONVERGENT[x.id] ? { ...x, ...KONVERGENT[x.id] } : x));
+const tpsKonvergent = (k) => tps(k).filter((x) => x.id !== 'tps8').map((x) => (KONVERGENT[x.id] ? { ...x, ...KONVERGENT[x.id] } : x));
 
 // Weiche: divergierend (öffnend, Ideen sammeln) oder konvergierend (schließend, sich einigen).
 export const ZIELE = [['divergierend', 'Divergierend · Ideen sammeln'], ['konvergierend', 'Konvergierend · sich einigen']];

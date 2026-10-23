@@ -52,6 +52,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Überschrift und Leitfrage der Sammlung, darunter eine offene Liste. Kein Merksatz-Kasten, weil noch nichts festgelegt ist: Es wird erst gesammelt, was aus der Arbeitsphase kommt.',
     lehrer: 'Klassische Lehrersicherung: Während die Schüler vortragen bzw. sich melden, tippt die Lehrkraft live in das Textfeld; jeder Eintrag erscheint sofort als Punkt in der Liste (zweispaltig bei vielen Punkten). Optional liegt ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät.',
   },
+  abstimmung: {
+    name: 'Abstimmung (nach der Sammlung)', folientyp: 'sicherung',
+    schueler: 'Optional im Anschluss an eine Sammlung: Die gesammelten Punkte erscheinen als Karten. Drei Arten: Gewichten (drei Stimmen verteilen), Bewerten (je Punkt stimmt / teils / stimmt nicht), Auswählen (eine Stimme). Ordnen und Merksatz formulieren gehen nicht per Abstimmung.',
+    lehrer: 'Tafel zeigt anonyme Balken je Punkt, die Lehrkraft deckt auf. Je mehr Stimmen, desto höher steht der Punkt.',
+  },
   lernort: {
     name: 'Lernort frei wählen', folientyp: 'organisation',
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
