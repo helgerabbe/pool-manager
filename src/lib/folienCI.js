@@ -185,6 +185,7 @@ export const CI_ZUSTAENDE = {
 
 // Teil 11: Schwierigkeit von Aufgaben. Vier Stufen, als kleines Abzeichen neben der Aufgaben-Überschrift.
 export const CI_NIVEAU = {
+  alle:    { name: 'Für alle', beschreibung: 'Pflichtaufgabe ohne Stufe, alle bearbeiten sie', symbol: 'Users', anzahl: 1, hg: '#E3EEF9', text: '#1E3A6E' },
   bruecke: { name: 'Brücke', beschreibung: 'Mit besonderer Unterstützung (z. B. Förderbedarf)', symbol: 'Milestone', anzahl: 1, hg: '#E6F2EA', text: '#24553A' },
   stern1:  { name: '1 Stern', beschreibung: 'Grundlegend', symbol: 'Star', anzahl: 1, hg: '#FBF3D5', text: '#6B4423' },
   stern2:  { name: '2 Sterne', beschreibung: 'Weiterführend', symbol: 'Star', anzahl: 2, hg: '#FBF3D5', text: '#6B4423' },

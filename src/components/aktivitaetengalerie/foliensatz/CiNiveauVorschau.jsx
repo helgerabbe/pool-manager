@@ -1,8 +1,8 @@
 import React from 'react';
-import { Milestone, Star, Rocket } from 'lucide-react';
+import { Milestone, Star, Rocket, Users } from 'lucide-react';
 import { CI_GRUND, CI_NIVEAU } from '@/lib/folienCI';
 
-const ICONS = { Milestone, Star, Rocket };
+const ICONS = { Milestone, Star, Rocket, Users };
 
 /** Vorschau Teil 11: Schwierigkeitsstufen als Abzeichen. */
 export default function CiNiveauVorschau() {
