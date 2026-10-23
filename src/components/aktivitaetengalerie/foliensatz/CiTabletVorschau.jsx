@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users } from 'lucide-react';
-import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN } from '@/lib/folienCI';
+import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users, SearchCheck } from 'lucide-react';
+import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN, CI_FOLIENTYPEN } from '@/lib/folienCI';
 
-/** Vorschau Teil 13: Schüleransicht auf dem iPad 11" mit iPadOS-Navigation. */
+const kreis = 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full';
+const sym = { background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe };
+
+/** Vorschau Teil 13: Schüleransicht auf dem iPad 11" – eine schmale Leiste, Inhalt auf voller Fläche. */
 export default function CiTabletVorschau() {
   const [hoch, setHoch] = useState(false);
   const [seg, setSeg] = useState('Aufgabe');
   const m = hoch ? CI_TABLET.hoch : CI_TABLET.quer;
-  const b = CI_BUTTONS.weiter;
+  const g = CI_GRUPPEN[1];
   return (
     <div className="space-y-3 rounded-xl p-4 ring-1 ring-border" style={{ background: CI_GRUND.hintergrund }}>
       <div className="flex gap-2">
@@ -15,30 +18,31 @@ export default function CiTabletVorschau() {
           <button key={l} onClick={() => setHoch(i === 1)} className={`rounded-full border px-3 py-1 text-xs ${hoch === (i === 1) ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>{l}</button>
         ))}
       </div>
-      <div className="mx-auto rounded-[28px] bg-neutral-800 p-3" style={{ width: hoch ? 300 : 520 }}>
-        <div className="flex flex-col overflow-hidden rounded-[18px]" style={{ aspectRatio: `${m.breite} / ${m.hoehe}`, background: CI_GRUND.hintergrund, color: CI_GRUND.text }}>
-          <div className="flex justify-between px-3 py-0.5 text-[8px]"><span>9:41</span><span>100 %</span></div>
-          <div className="flex items-center border-b bg-white/80 px-2 py-1.5 text-[10px]">
+      <div className="mx-auto rounded-[28px] bg-neutral-800 p-3" style={{ width: hoch ? 320 : 560 }}>
+        <div className="relative flex flex-col overflow-hidden rounded-[18px]" style={{ aspectRatio: `${m.breite} / ${m.hoehe}`, background: CI_GRUND.hintergrund, color: CI_GRUND.text }}>
+          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full" style={{ background: CI_FOLIENTYPEN.aufgabe.farbe }} />
+          <div className="relative flex justify-between px-3 pt-0.5 text-[8px]"><span>9:41</span><span>100 %</span></div>
+          <div className="relative flex flex-wrap items-center gap-2 px-2 py-1 text-[9px]">
             <span className="flex items-center text-[#3E5C8A]"><ChevronLeft className="h-3.5 w-3.5" />Zurück</span>
-            <span className="flex-1 text-center font-semibold" style={{ color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</span>
-            <span className="flex gap-2 text-[#3E5C8A]"><Lightbulb className="h-3.5 w-3.5" /><Bot className="h-3.5 w-3.5" /></span>
-          </div>
-          <div className="mx-auto mt-2 flex rounded-lg bg-neutral-200 p-0.5 text-[9px]">
-            {['Aufgabe', 'Material'].map((s) => <button key={s} onClick={() => setSeg(s)} className={`rounded-md px-3 py-0.5 ${seg === s ? 'bg-white shadow-sm' : ''}`}>{s}</button>)}
-          </div>
-          <div className={`m-3 flex flex-1 gap-2 ${hoch ? 'flex-col' : ''}`}>
-            <div className={`flex gap-1 ${hoch ? 'order-first justify-end' : 'order-last flex-col items-end'}`}>
-              <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Users className="h-3 w-3" /></span>
-              <span className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold" style={{ background: CI_GRUPPEN[1].hg, color: CI_GRUPPEN[1].text }}>{CI_GRUPPEN[1].kennung}</span>
+            <div className="flex rounded-md bg-white/70 p-0.5">
+              {['Aufgabe', 'Material'].map((s) => <button key={s} onClick={() => setSeg(s)} className={`rounded px-2 ${seg === s ? 'bg-white shadow-sm' : ''}`}>{s}</button>)}
             </div>
-            <div className="flex-1 rounded-lg border p-2 text-[10px]" style={{ background: CI_BOXEN.aufgabe.hg, borderColor: CI_BOXEN.aufgabe.rand, color: CI_BOXEN.aufgabe.text }}>
-              <b>{seg}</b><p>{seg === 'Aufgabe' ? 'Notiere zwei Gründe, warum Menschen in die Stadt ziehen.' : 'Text: Leben in der Großstadt'}</p>
-            </div>
+            <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</span>
+            <span className="ml-auto flex items-center gap-1">
+              <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>
+              <span className={kreis} style={sym}><Users className="h-3 w-3" /></span>
+              <span className={`${kreis} font-bold`} style={{ background: g.hg, color: g.text }}>{g.kennung}</span>
+              <span className={kreis} style={sym}><Lightbulb className="h-3 w-3" /></span>
+              <span className={kreis} style={sym}><Bot className="h-3 w-3" /></span>
+            </span>
           </div>
-          <div className="flex justify-end gap-1 px-3 pb-1">
-            <span className="rounded-lg border px-3 py-1 text-[10px] font-semibold" style={{ background: CI_BUTTONS.pruefen.hg, color: CI_BUTTONS.pruefen.text, borderColor: CI_BUTTONS.pruefen.rand }}>Prüfen</span>
-            <span className="flex items-center gap-1 rounded-lg px-3 py-1 text-[10px] font-semibold" style={{ background: b.hg, color: b.text }}>{b.label}<ArrowRight className="h-3 w-3" /></span>
+          <div className="relative mx-2 mb-2 flex-1 rounded-lg border bg-white/80 p-2 text-[10px]" style={{ borderColor: CI_BOXEN.aufgabe.rand }}>
+            <b style={{ color: CI_BOXEN.aufgabe.text }}>{seg}</b>
+            <p>{seg === 'Aufgabe' ? 'Notiere zwei Gründe, warum Menschen in die Stadt ziehen.' : 'Text: Leben in der Großstadt'}</p>
+            <div className="absolute bottom-1.5 right-1.5 flex gap-1">
+              <span className="flex items-center gap-1 rounded-full border px-2 py-0.5 text-[9px] font-semibold" style={{ background: CI_BUTTONS.pruefen.hg, color: CI_BUTTONS.pruefen.text, borderColor: CI_BUTTONS.pruefen.rand }}><SearchCheck className="h-3 w-3" />Prüfen</span>
+              <span className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold shadow" style={{ background: CI_BUTTONS.weiter.hg, color: CI_BUTTONS.weiter.text }}>Weiter<ArrowRight className="h-3 w-3" /></span>
+            </div>
           </div>
           <div className="mx-auto mb-1 h-1 w-16 rounded-full bg-neutral-800" />
         </div>
