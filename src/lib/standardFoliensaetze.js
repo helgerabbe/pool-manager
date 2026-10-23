@@ -50,5 +50,5 @@ export const STANDARD_FOLIENSAETZE = {
 
 export const standardSatz = (name, kanal) => {
   const s = STANDARD_FOLIENSAETZE[name]?.[kanal];
-  return s ? { thema: 'Standard', standard: true, folien: s } : null;
+  return s ? { thema: '', standard: true, folien: s } : null;
 };
