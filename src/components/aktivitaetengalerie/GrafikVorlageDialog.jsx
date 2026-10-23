@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { FREIGABE_TEXT } from '@/lib/folienSymbole';
 import useFoliensatz from '@/hooks/useFoliensatz';
+import { ZIELE, hatZielWeiche } from '@/lib/standardFoliensaetze';
 import FolienLeiste from './foliensatz/FolienLeiste';
 import FolieAnzeige from './foliensatz/FolieAnzeige';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
@@ -22,7 +23,8 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
   const [aktivId, setAktivId] = React.useState(null);
   const [kanal, setKanal] = React.useState('analog');
   const [schritt, setSchritt] = React.useState('funktion');
-  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal);
+  const [ziel, setZiel] = React.useState('divergierend');
+  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal, ziel);
   const folien = satz?.folien || [];
   const folie = folien.find((f) => f.id === aktivId) || folien[0];
   const baut = planen || folien.some((f) => f.status === 'baut');
@@ -35,7 +37,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
           {SCHRITTE.map(([k, l]) => <Button key={k} size="sm" variant={schritt === k ? 'secondary' : 'ghost'} onClick={() => setSchritt(k)}>{l}</Button>)}
         </div>
         {schritt === 'gestaltung' && <GestaltungPlatzhalter />}
-        {schritt === 'tutorial' && <LehrerTutorial key={kanal + fach} folien={folien} />}
+        {schritt === 'tutorial' && <LehrerTutorial key={kanal + ziel + fach} folien={folien} />}
         {schritt === 'funktion' && <>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border px-3 py-1 text-xs">Fächerübergreifende Vorlage · gestalteter Look</span>
@@ -44,6 +46,9 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
               {k === 'analog' ? 'Analoge Folien' : 'Digitale Folien'}
             </Button>
           ))}
+          {hatZielWeiche(methode.name) && <span className="ml-2 flex gap-1 border-l pl-3">
+            {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
+          </span>}
           <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>

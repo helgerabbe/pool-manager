@@ -60,11 +60,46 @@ const tps = (k) => [
     entscheidungen: ['Wie lautet die Leitfrage der Sammlung?', 'Soll ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät bereitliegen?'] }),
 ];
 
+// Konvergierende Fassung (2026-10-23): gleiche Folienfolge, Ziel ist eine Einigung statt einer Sammlung.
+const KONVERGENT = {
+  tps1: { untertitel: 'Erst allein entscheiden, dann zu zweit einigen, dann alle gemeinsam',
+    phasen: [
+      { name: 'Think', sozialform: 'EA', satz: 'Du entscheidest allein, was dir am wichtigsten ist.' },
+      { name: 'Pair', sozialform: 'PA', satz: 'Ihr vergleicht und einigt euch auf eine Rangfolge.' },
+      { name: 'Share', sozialform: 'PL', satz: 'Die Klasse einigt sich auf ein gemeinsames Ergebnis.' },
+    ] },
+  tps3: { inhalt: 'Welche drei Gründe sind für dich die wichtigsten? Bringe sie in eine Rangfolge von 1 bis 3.',
+    erklaerung: 'Stille Einzelarbeit mit Timer: Jeder gewichtet bzw. entscheidet für sich, bevor verhandelt wird.',
+    entscheidungen: ['Was wird gewichtet bzw. entschieden (z. B. die Sammlung der letzten Phase)?', 'Wie viele Aspekte wählt jeder aus, mit oder ohne Rangfolge?', 'Wie lange dauert die Think-Phase?'] },
+  tps5: { methodisch: 'Vergleicht eure Rangfolgen und begründet eure Wahl. Sprecht dabei mit Flüsterstimme.',
+    inhalt: 'Einigt euch auf eine gemeinsame Rangfolge der drei wichtigsten Gründe und haltet sie fest.',
+    erklaerung: 'Einigung zu zweit mit Timer: Aus zwei Einzelentscheidungen wird eine gemeinsame.',
+    entscheidungen: ['Auf wie viele Aspekte sollen sich die Paare einigen?', 'Mit Rangfolge oder nur Auswahl?', 'Wie lange dauert die Pair-Phase?', 'Wie halten die Paare ihr Ergebnis fest?'] },
+  tps6: { methodisch: 'Begründet eure Rangfolge. Hört zu und meldet euch, wenn ihr widersprechen oder ergänzen möchtet.',
+    inhalt: 'Stellt eure Rangfolge vor. Wir vergleichen sie und einigen uns als Klasse auf die drei wichtigsten Gründe.',
+    erklaerung: 'Methodenfolie der Share-Phase: Die Paar-Ergebnisse werden verglichen, bis die Klasse sich einig ist.',
+    entscheidungen: ['Wie wird im Plenum geeinigt (Diskussion, Abstimmung, Lehrkraft moderiert)?', 'Wer stellt vor (freiwillig, ausgelost, alle Paare)?'] },
+  tps7: { vorlage: 'sicherung', titel: 'Darauf haben wir uns geeinigt',
+    punkte: ['Wichtigster Grund', 'Zweitwichtigster Grund', 'Drittwichtigster Grund'],
+    erklaerung: 'Konvergierendes Ergebnis: Die Einigung der Klasse wird als Merksatz festgehalten.',
+    liegt: ['Merksatz-Box (gelb) mit bis zu vier Stichpunkten in Rangfolge'],
+    entscheidungen: ['Wird das Ergebnis live eingetragen oder liegt ein Erwartungshorizont bereit?'] },
+};
+const tpsKonvergent = (k) => tps(k).map((x) => (KONVERGENT[x.id] ? { ...x, ...KONVERGENT[x.id] } : x));
+
+// Weiche: divergierend (öffnend, Ideen sammeln) oder konvergierend (schließend, sich einigen).
+export const ZIELE = [['divergierend', 'Divergierend · Ideen sammeln'], ['konvergierend', 'Konvergierend · sich einigen']];
+
 export const STANDARD_FOLIENSAETZE = {
-  'Think-Pair-Share': { digital: tps('digital'), analog: tps('analog') },
+  'Think-Pair-Share': {
+    divergierend: { digital: tps('digital'), analog: tps('analog') },
+    konvergierend: { digital: tpsKonvergent('digital'), analog: tpsKonvergent('analog') },
+  },
 };
 
-export const standardSatz = (name, kanal) => {
-  const s = STANDARD_FOLIENSAETZE[name]?.[kanal];
+export const hatZielWeiche = (name) => !!STANDARD_FOLIENSAETZE[name]?.konvergierend;
+
+export const standardSatz = (name, kanal, ziel = 'divergierend') => {
+  const s = STANDARD_FOLIENSAETZE[name]?.[ziel]?.[kanal];
   return s ? { thema: '', standard: true, folien: s } : null;
 };
