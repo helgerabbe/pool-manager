@@ -4,7 +4,7 @@ import VorlagenInhalt from '../vorlagen/VorlagenInhalt';
 
 export const ANKUENDIGUNG_BEISPIEL = {
   vorlage: 'fokus', folientyp: 'inhalt', freigabe: 'lehrkraft', titel: 'Unzufrieden im Beruf?',
-  satz: 'Wir wollen herausfinden, warum viele Menschen mit ihrem Beruf unglücklich sind.',
+  satz: 'Wir wollen jetzt herausfinden, warum viele Menschen mit ihrem Beruf unglücklich sind.',
   bild: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/ab5930a9d_generated_image.png',
 };
 

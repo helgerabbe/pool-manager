@@ -8,7 +8,7 @@ const f = (id, kanal, d) => ({ id, kanal, status: 'fertig', folientyp: FOLIEN_VO
 
 const tps = (k) => [
   f('tps2', k, { vorlage: 'fokus', titel: 'Unzufrieden im Beruf?', phase: 'Einstieg', freigabe: 'lehrkraft',
-    satz: 'Wir wollen herausfinden, warum viele Menschen mit ihrem Beruf unglücklich sind.',
+    satz: 'Wir wollen jetzt herausfinden, warum viele Menschen mit ihrem Beruf unglücklich sind.',
     bild: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/ab5930a9d_generated_image.png',
     erklaerung: 'Die Lehrkraft stellt den Fokus der Stunde vor: was wir herausfinden wollen. Keine Aufgabe, sondern freier Text.',
     liegt: ['Überschrift', 'Freier Fokus-Satz („Wir wollen herausfinden, …“), keine Aufgabenbox', 'Optional: fotorealistisches Impulsbild im unteren rechten Viertel, leicht blass im Hintergrund, über dem Folienart-Kreis', 'Kein Sozialform-Symbol und kein Timer (Inhaltsfolie)'],
