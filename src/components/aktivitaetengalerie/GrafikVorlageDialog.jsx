@@ -10,6 +10,7 @@ import FolieVorschau from './foliensatz/FolieVorschau';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
 import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
+import BauFortschrittLeiste from './foliensatz/BauFortschrittLeiste';
 
 const SCHRITTE = [['funktion', '1. Funktionsaufbau'], ['gestaltung', '2. Gestaltete Vorlage'], ['tutorial', '3. Lehrer-Tutorial']];
 
@@ -47,6 +48,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
         </div>
+        {baut && <BauFortschrittLeiste planen={planen} folien={planen ? [] : folien} />}
         {!folie ? (
           <p className="flex flex-1 items-center justify-center rounded-xl border border-dashed text-center text-sm text-muted-foreground">
             {planen ? 'Der Grafikassistent plant die Folienfolge …' : werte.info_grafikassistent ? 'Noch kein Foliensatz für dieses Fach.' : 'Befülle zuerst die Informationen für den Grafikassistenten.'}
