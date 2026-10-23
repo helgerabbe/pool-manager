@@ -1,7 +1,8 @@
 import React from 'react';
-import { ArrowRight, PenLine, Lightbulb } from 'lucide-react';
-import { CI_BOXEN, CI_TEXTFELD } from '@/lib/folienCI';
+import { PenLine, Lightbulb } from 'lucide-react';
+import { CI_BOXEN } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
+import AblaufKarten from './AblaufKarten';
 
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
@@ -20,18 +21,7 @@ export default function VorlagenInhalt({ f }) {
   if (f.vorlage === 'uebersicht') return (
     <div className="flex flex-1 flex-col gap-6">
       <div className="pr-48"><Titel>{f.titel}</Titel><p className="line-clamp-1 text-2xl text-[#3E5C8A]">{f.untertitel}</p></div>
-      <div className="flex flex-1 items-center gap-3">
-        {(f.phasen || []).slice(0, 4).map((p, i, a) => (
-          <React.Fragment key={i}>
-            <div className="flex h-full flex-1 flex-col items-center gap-3 rounded-xl border-2 bg-white p-5 text-center" style={{ borderColor: CI_TEXTFELD.rand }}>
-              <SozialSymbol form={p.sozialform} mitName />
-              <p className="line-clamp-1 text-[28px] font-semibold text-[#3E5C8A]">{p.name}</p>
-              <p className="line-clamp-3 text-lg leading-snug">{p.satz}</p>
-            </div>
-            {i < a.length - 1 && <ArrowRight className="h-8 w-8 shrink-0 text-[#9AA3B2]" />}
-          </React.Fragment>
-        ))}
-      </div>
+      <AblaufKarten karten={f.phasen} />
     </div>
   );
   if (f.vorlage === 'uebergang') return (
