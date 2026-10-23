@@ -16,7 +16,7 @@ export default function CiRasterVorschau() {
         ))}
       </div>
       <div className="relative mx-auto aspect-video w-full max-w-2xl overflow-hidden rounded-xl bg-card ring-1 ring-border">
-        <div className="absolute inset-x-0 top-0 flex items-center border-b px-3 text-[10px] text-muted-foreground" style={{ height: `${kopf.hoehe}%` }}>Erdkunde · Stadt und Land · Warum ziehen Menschen in die Städte?</div>
+        <div className="absolute inset-x-0 top-0 flex items-center border-b px-3 text-[10px] text-muted-foreground" style={{ height: `${kopf.hoehe}%` }}><img src={CI_RASTER.logo.url} alt="Logo" className="mr-2 rounded-sm object-contain opacity-80" style={{ height: `${CI_RASTER.logo.hoehe}%` }} />Erdkunde · Stadt und Land · Warum ziehen Menschen in die Städte?</div>
         <div className={`${zone} border-primary/40 bg-primary/5 text-primary`} style={{ top: `${kopf.hoehe + 2}%`, left: '3%', right: z.oben ? `${oben.breite + 5}%` : '3%', bottom: '4%' }}>Inhaltsbereich</div>
         {z.oben && <div className={`${zone} bg-muted`} style={{ top: `${kopf.hoehe + 2}%`, right: '3%', width: `${oben.breite}%`, height: `${oben.hoehe}%` }}>{oben.inhalt}</div>}
         {z.unten && <div className={`${zone} bg-muted`} style={{ bottom: '4%', right: '3%', width: `${unten.breite}%`, height: `${unten.hoehe}%` }}>{unten.inhalt}</div>}

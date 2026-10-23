@@ -59,7 +59,8 @@ export const CI_TIMER = {
 // Teil 4: Folienraster. Feste Zonen für Standardelemente; der Rest ist Inhaltsbereich.
 // Angaben in Prozent der Folie (16:9). Zonen bleiben klein, damit Inhalte Platz haben.
 export const CI_RASTER = {
-  kopf:  { name: 'Kopfleiste', hoehe: 6, inhalt: 'Fach · Einheit · Stunde (klein, grau)' },
+  kopf:  { name: 'Kopfleiste', hoehe: 6, inhalt: 'Logo (klein, links) · Fach · Einheit · Stunde (klein, grau)' },
+  logo:  { url: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/88cea1b76_PoolManagerLogo.jpg', hoehe: 70 }, // Höhe in % der Kopfleiste
   oben:  { name: 'Ecke rechts oben', breite: 18, hoehe: 12, inhalt: 'Timer, Sozialform-Symbol' },
   unten: { name: 'Ecke rechts unten', breite: 30, hoehe: 12, inhalt: 'Steuerung: Prüfen, Fertig, Zurück …' },
 };
