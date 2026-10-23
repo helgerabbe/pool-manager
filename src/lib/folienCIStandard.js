@@ -37,6 +37,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
     lehrer: 'Lehrergerät (nicht Tafel): Liste nach Orten gruppiert mit Namen bzw. Partner-/Gruppenkennung, darunter grau „Noch keine Angabe“. Schalter „Lernort frei“ an/aus; aus = alle bitte zurück in den Klassenraum.',
   },
+  reflexion: {
+    name: 'Reflexion (Stunde / Phase)', folientyp: 'reflexion',
+    schueler: 'Teil 1 Pflicht: kurze Aussagen, je mit drei Antippfeldern „stimmt“ / „teils“ / „stimmt nicht“: Ich habe das Thema verstanden · Ich habe alles geschafft · Ich habe mich wohlgefühlt und konnte gut arbeiten · Das Thema war schwierig · Wir sollten das noch vertiefen. Für eine einzelne Phase reichen 2–3 Aussagen. Optional ein Satz „Das nehme ich heute mit: …“. Teil 2 freiwillig und anonym, nur wenn die Lehrkraft es freischaltet: Rückmeldung an die Lehrkraft (Sie haben verständlich erklärt · Der Unterricht war spannend · Der Einstieg hat mir geholfen) plus eine eigene Frage der Lehrkraft, z. B. „Ich habe heute etwas Neues ausprobiert. Wie fandet ihr das?“. Knopf „Überspringen“ immer sichtbar.',
+    lehrer: 'Tafel: nur anonyme Balken je Aussage in der Ergebnisreihe (Teil 9), Aufdecken durch die Lehrkraft. Lehrergerät: zusätzlich Namensliste „Braucht Unterstützung“ (Verstanden = stimmt nicht oder Wohlgefühlt = stimmt nicht). Die Rückmeldung an die Lehrkraft ist immer anonym und erscheint nur auf dem Lehrergerät, nie an der Tafel. Aussagen und eigene Frage werden vor der Stunde in der Folie vorbereitet.',
+  },
 };
 
 // Ideenspeicher (noch nicht umgesetzt, 2026-10-23):

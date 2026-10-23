@@ -10,12 +10,14 @@ import { CI_GRUPPEN } from '@/lib/folienCI';
 import BegruessungBild from './standard/BegruessungBild';
 import ZuhoerenBild from './standard/ZuhoerenBild';
 import LernortBild from './standard/LernortBild';
+import ReflexionBild from './standard/ReflexionBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 
 /** Skizze einer Standardfolie, je Ansicht (schueler | lehrer). */
 export default function CiStandardBild({ art, ansicht }) {
   if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
+  if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;
   if (art === 'lernort') return <LernortBild ansicht={ansicht} />;
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
