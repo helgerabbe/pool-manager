@@ -5,11 +5,11 @@ export const CI_STANDARDFOLIEN = {
   begruessung: {
     name: 'Begrüßung', folientyp: 'organisation',
     schueler: 'Großes „Guten Morgen!“, darunter Thema der Stunde und ein Foto zum Thema im Bildrahmen.',
-    lehrer: 'Gleiche Folie an der Tafel, zusätzlich Zähler „18 von 24 angemeldet“ oben rechts.',
+    lehrer: 'Gleiche Folie an der Tafel, zusätzlich Zähler „18 von 24 angemeldet“. Optional per Knopf „Wer fehlt noch?“: Liste der Schüler, die noch nicht in der App sind (nur auf dem Lehrergerät, nicht an der Tafel).',
   },
   zuhoeren: {
     name: 'Lehrkraft erklärt – zuhören', folientyp: 'organisation',
-    schueler: 'Großes Ohr-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Hör aufmerksam zu.“ Gerät ist gesperrt (kein Weiter), Bildschirm ruhig.',
+    schueler: 'Ohr- und Stille-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise, hör zu und stör die anderen nicht.“ Kein Weiter. Optional (von der Lehrkraft zuschaltbar): Knopf „Notiz machen“ öffnet einen gelben Notizzettel für Stichworte oder Fragen.',
     lehrer: 'Tafel zeigt den eigentlichen Inhalt; die Schülergeräte zeigen nur die Zuhör-Folie.',
   },
   partner: {

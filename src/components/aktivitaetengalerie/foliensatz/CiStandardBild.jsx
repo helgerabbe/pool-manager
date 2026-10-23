@@ -1,14 +1,15 @@
 import React from 'react';
 import { Ear, Hand, Users, Network, CheckCircle2 } from 'lucide-react';
-import { CI_GRUPPEN, CI_SYMBOL_STIL } from '@/lib/folienCI';
+import { CI_GRUPPEN } from '@/lib/folienCI';
+import BegruessungBild from './standard/BegruessungBild';
+import ZuhoerenBild from './standard/ZuhoerenBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
-const gross = { background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe };
 
 /** Skizze einer Standardfolie, je Ansicht (schueler | lehrer). */
 export default function CiStandardBild({ art, ansicht }) {
-  if (art === 'begruessung') return <div className="text-center"><p className="text-2xl font-bold">Guten Morgen!</p><p className="text-xs text-[#6A7181]">Heute: Warum ziehen Menschen in die Städte?</p>{ansicht === 'lehrer' && <p className="mt-2 text-[10px]">18 von 24 angemeldet</p>}</div>;
-  if (art === 'zuhoeren') return ansicht === 'lehrer' ? <p className="text-xs">(Inhalt der Lehrkraft an der Tafel)</p> : <div className="flex flex-col items-center gap-2 text-center text-xs"><span className="flex h-14 w-14 items-center justify-center rounded-full" style={gross}><Ear className="h-7 w-7" /></span>Deine Lehrkraft erklärt dir jetzt etwas.<br />Hör aufmerksam zu.</div>;
+  if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
+  if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner' && ansicht === 'schueler') return (
     <div className="w-48 space-y-2 text-xs"><p className="font-semibold">Such dir einen Partner.</p>
       <div className="rounded-lg border border-[#D6DCE5] bg-white px-2 py-1 text-[#9AA3B2]">Mit wem arbeitest du? Lea …</div>
