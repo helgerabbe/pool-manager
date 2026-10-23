@@ -153,4 +153,26 @@ export const CI_RUECKMELDUNG = {
 };
 export const CI_RUECKMELDUNG_REGEL = 'Markiert wird am Element selbst (Rand in der Rückmeldefarbe), die Rückmeldebox erscheint unten über der Steuerung. Lösung erst nach zwei Versuchen oder auf Freigabe der Lehrkraft.';
 
+// Teil 9: Ergebnisanzeigen an der Tafel (gesammelte Antworten aller Schüler).
+// Anonym als Standard, ruhige Pastellreihe, größter Wert dezent hervorgehoben.
+export const CI_ERGEBNIS = {
+  reihe: ['#B9D2EE', '#BFDCC9', '#EBD9A0', '#EBC9BE', '#D3CDEB'],
+  hervorhebung: '#3E5C8A',
+  arten: {
+    balken:   { name: 'Abstimmung / Balken', symbol: 'BarChart3' },
+    wolke:    { name: 'Wortwolke', symbol: 'Cloud' },
+    pinnwand: { name: 'Gesammelte Antworten (Pinnwand)', symbol: 'StickyNote' },
+    zaehler:  { name: 'Fortschritt der Klasse („18 von 24 fertig“)', symbol: 'Users' },
+  },
+  regel: 'Ergebnisse sind anonym, solange die Lehrkraft keine Namen einblendet. Anzeige erst, wenn die Lehrkraft sie aufdeckt.',
+};
+
+// Teil 10: Zustände auf dem Schülergerät. Immer gleiche Karte mittig, Symbol + ein Satz.
+export const CI_ZUSTAENDE = {
+  warten:     { titel: 'Warte auf die Lehrkraft', satz: 'Gleich geht es weiter.', symbol: 'Hourglass', hg: '#E3EEF9', text: '#1E3A6E' },
+  gesperrt:   { titel: 'Noch gesperrt', satz: 'Diese Folie wird gleich freigeschaltet.', symbol: 'Lock', hg: '#E7E4F3', text: '#4A4170' },
+  abgegeben:  { titel: 'Abgegeben', satz: 'Deine Antwort ist angekommen.', symbol: 'CheckCircle2', hg: '#DCEBE1', text: '#24553A' },
+  verbindung: { titel: 'Verbindung schwach', satz: 'Deine Eingaben werden gespeichert und später gesendet.', symbol: 'WifiOff', hg: '#FBF3D5', text: '#6B4423' },
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
