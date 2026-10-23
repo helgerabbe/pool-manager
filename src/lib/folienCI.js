@@ -228,7 +228,9 @@ export const CI_TABLET = {
   rand: 20,
   regeln: [
     'Platz für den Inhalt: Alles Bedienbare sitzt in EINER schmalen Leiste oben und in schwebenden Knöpfen unten rechts. Der Inhalt nutzt die volle restliche Fläche.',
-    'Leiste oben (von links): „‹ Zurück“ · Segment-Schalter (Aufgabe | Material) · Methodenschild · rechts Timer, Sozialform, Gruppe, Tipp, Tutor als kleine Kreise.',
+    'Leiste oben (von links): „‹ Zurück“ · Navigationssymbol · Methodenschild · rechts Timer, Sozialform, Gruppe, Tipp, Tutor als kleine Kreise.',
+    'Platzsparend: Hilfen (Tipp, Tutor) sind nur Symbole. Ein Tippen öffnet ein kleines Blatt mit dem Inhalt, erneutes Tippen schließt es.',
+    'Gibt es mehrere Bereiche (z. B. Aufgabe, Material, Text 2), zeigt die Leiste nur ein Navigationssymbol mit dem aktuellen Bereich. Ein Tippen klappt die Liste der Bereiche auf.',
     'Steuerung unten rechts schwebt über dem Inhalt (keine eigene Zeile); der Inhalt lässt dort nur etwas Luft.',
     'Hintergrund wie an der Tafel: warmes Off-White mit der weichen Folientyp-Form in der Ecke, damit man die Folienart auch auf dem iPad erkennt.',
     'Gleiche Orte wie an der Tafel (Teil 4): Status oben rechts, Steuerung unten rechts. Logo, Fach und Einheit entfallen auf dem iPad.',

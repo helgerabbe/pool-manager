@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users, SearchCheck } from 'lucide-react';
+import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users, SearchCheck, LayoutList } from 'lucide-react';
 import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN, CI_FOLIENTYPEN } from '@/lib/folienCI';
 
 const kreis = 'flex h-5 w-5 shrink-0 items-center justify-center rounded-full';
@@ -9,6 +9,7 @@ const sym = { background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe };
 export default function CiTabletVorschau() {
   const [hoch, setHoch] = useState(false);
   const [seg, setSeg] = useState('Aufgabe');
+  const [nav, setNav] = useState(false);
   const m = hoch ? CI_TABLET.hoch : CI_TABLET.quer;
   const g = CI_GRUPPEN[1];
   return (
@@ -24,8 +25,13 @@ export default function CiTabletVorschau() {
           <div className="relative flex justify-between px-3 pt-0.5 text-[8px]"><span>9:41</span><span>100 %</span></div>
           <div className="relative flex flex-wrap items-center gap-2 px-2 py-1 text-[9px]">
             <span className="flex items-center text-[#3E5C8A]"><ChevronLeft className="h-3.5 w-3.5" />Zurück</span>
-            <div className="flex rounded-md bg-white/70 p-0.5">
-              {['Aufgabe', 'Material'].map((s) => <button key={s} onClick={() => setSeg(s)} className={`rounded px-2 ${seg === s ? 'bg-white shadow-sm' : ''}`}>{s}</button>)}
+            <div className="relative">
+              <button onClick={() => setNav(!nav)} className="flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5"><LayoutList className="h-3 w-3" />{seg}</button>
+              {nav && (
+                <div className="absolute left-0 top-full z-10 mt-1 w-24 rounded-lg bg-white p-1 shadow">
+                  {['Aufgabe', 'Material'].map((s) => <button key={s} onClick={() => { setSeg(s); setNav(false); }} className={`block w-full rounded px-2 py-0.5 text-left ${seg === s ? 'bg-[#E3EEF9]' : ''}`}>{s}</button>)}
+                </div>
+              )}
             </div>
             <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</span>
             <span className="ml-auto flex items-center gap-1">
