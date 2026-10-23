@@ -216,4 +216,25 @@ export const CI_MEDIEN = {
 };
 export const CI_MEDIEN_REGEL = 'Gleicher weißer Rahmen, runde Ecken, sanfter Schatten, graue Unterschrift. Keine Rahmenfarben je Inhalt. Audio bekommt eine schmale Abspielleiste.';
 
+// Teil 13: Schülergerät = iPad 11" (ca. 29 cm). Querformat 1180×820 pt, Hochformat 820×1180 pt (Seitenverhältnis ca. 1,44).
+// Bedienung nach iPadOS-Gewohnheit: kein Burger-Menü, sondern Navigationsleiste oben, große Tippflächen, Wischgesten.
+export const CI_TABLET = {
+  quer: { breite: 1180, hoehe: 820 },
+  hoch: { breite: 820, hoehe: 1180 },
+  statusleiste: 24,       // Uhrzeit/Akku des Systems, frei lassen
+  navleiste: 50,          // ‹ Zurück links · Titel mittig · Aktionen rechts
+  homeleiste: 20,         // Wischbalken unten, frei lassen
+  tippflaeche: 44,        // Mindestgröße jedes Bedienelements
+  rand: 20,
+  regeln: [
+    'Oben eine Navigationsleiste: links „‹ Zurück“, mittig der Titel (Methode · Schritt), rechts höchstens zwei Symbole (z. B. Hilfe, Tutor).',
+    'Kein Burger-Menü: Es gibt nur einen Weg nach vorn und zurück, Inhalte liegen nicht in versteckten Menüs.',
+    'Umschalten zwischen Ansichten mit einem Segment-Schalter (z. B. „Aufgabe | Material“), wie in Apple-Apps.',
+    'Wischen vom linken Rand = zurück. Weiter nur über den Weiter-Knopf (Lehrkraft führt).',
+    'Zusatzinhalte (Tipp, Tutor) öffnen als Blatt von unten, nicht als neue Seite.',
+    'Jedes Bedienelement mindestens 44 × 44 pt groß, unten mittig der Weiter-Knopf über dem Home-Balken.',
+    'Läuft im Quer- und Hochformat; im Hochformat stapeln sich die Inhalte untereinander.',
+  ],
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
