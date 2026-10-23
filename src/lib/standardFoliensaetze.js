@@ -104,7 +104,19 @@ export const STANDARD_FOLIENSAETZE = {
 
 export const hatZielWeiche = (name) => !!STANDARD_FOLIENSAETZE[name]?.konvergierend;
 
+// Ein gemeinsamer Satz (2026-10-23): Grundlage ist der digitale Satz. Folien, die sich je Kanal im Aufbau
+// unterscheiden (andere Vorlage), erscheinen beide nacheinander, gekennzeichnet mit 'nur'.
+const vereint = (s) => {
+  const analog = Object.fromEntries((s.analog || []).map((a) => [a.id, a]));
+  return (s.digital || []).flatMap((d) => {
+    const a = analog[d.id];
+    if (!a || a.vorlage === d.vorlage) return [d];
+    return [{ ...a, id: `${a.id}_analog`, nur: 'analog' }, { ...d, nur: 'digital' }];
+  });
+};
+
 export const standardSatz = (name, kanal, ziel = 'divergierend') => {
-  const s = STANDARD_FOLIENSAETZE[name]?.[ziel]?.[kanal];
-  return s ? { thema: '', standard: true, folien: s } : null;
+  const s = STANDARD_FOLIENSAETZE[name]?.[ziel];
+  if (!s) return null;
+  return { thema: '', standard: true, folien: kanal === 'digital' ? vereint(s) : s[kanal] };
 };

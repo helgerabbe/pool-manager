@@ -21,7 +21,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
   const fach = 'Fächerübergreifend';
   const [ansicht, setAnsicht] = React.useState('lehrer');
   const [aktivId, setAktivId] = React.useState(null);
-  const [kanal, setKanal] = React.useState('analog');
+  const kanal = 'digital'; // ein gemeinsamer Satz; kanalspezifische Folien sind mit „nur analog/digital“ gekennzeichnet
   const [schritt, setSchritt] = React.useState('funktion');
   const [ziel, setZiel] = React.useState('divergierend');
   const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal, ziel);
@@ -41,11 +41,6 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
         {schritt === 'funktion' && <>
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-full border px-3 py-1 text-xs">Fächerübergreifende Vorlage · gestalteter Look</span>
-          {['analog', 'digital'].map((k) => (
-            <Button key={k} size="sm" variant={kanal === k ? 'default' : 'outline'} disabled={baut} onClick={() => { setKanal(k); setAktivId(null); setAnsicht('lehrer'); }}>
-              {k === 'analog' ? 'Analoge Folien' : 'Digitale Folien'}
-            </Button>
-          ))}
           <span className="ml-2 flex gap-1 border-l pl-3">
             {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
           </span>
@@ -64,7 +59,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant={ansicht === 'lehrer' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('lehrer')}><Monitor /> Tafel</Button>
-                <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" disabled={kanal === 'analog'} title={kanal === 'analog' ? 'Analoge Folien haben keine Tablet-Ansicht' : undefined} onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
+                <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" disabled={folie.kanal === 'analog'} title={folie.kanal === 'analog' ? 'Analoge Folien haben keine Tablet-Ansicht' : undefined} onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
                 <div className="ml-auto flex gap-2">
                   <Button variant="outline" size="sm" disabled={folie.status === 'baut' || planen} onClick={() => folieNeu(folie)}><RefreshCw /> Folie neu erzeugen</Button>
                   <Button variant="outline" size="sm" disabled={folie.status !== 'fertig' || !!folie.vorlage} title={folie.vorlage ? 'Vorlagenfolien sind fest gestaltet' : undefined} onClick={() => navigate('/folien-designer', { state: { elemente: folie[ansicht] } })}><PenTool /> Im Folien-Designer öffnen</Button>

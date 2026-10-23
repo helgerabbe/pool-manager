@@ -16,7 +16,7 @@ export default function FolienLeiste({ folien, aktiv, setAktiv }) {
           <div className="flex gap-1 text-[10px]">
             <span className="rounded bg-muted px-1">{f.phase}</span>
             {f.platzhalter && <span className="rounded border border-dashed px-1">Platzhalter</span>}
-            <span className={`rounded px-1 ${f.kanal === 'digital' ? 'bg-primary/10 text-primary' : 'bg-accent/15 text-accent'}`}>{f.kanal}</span>
+            {f.nur && <span className={`rounded px-1 ${f.nur === 'digital' ? 'bg-primary/10 text-primary' : 'bg-accent/15 text-accent'}`}>nur {f.nur}</span>}
           </div>
         </button>
       ))}
