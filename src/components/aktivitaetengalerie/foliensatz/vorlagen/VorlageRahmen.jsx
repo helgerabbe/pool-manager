@@ -18,7 +18,7 @@ export default function VorlageRahmen({ folie, kopf, klein, children }) {
   return (
     <div ref={ref} className={`relative aspect-video w-full overflow-hidden ring-1 ring-border ${klein ? 'rounded-md' : 'rounded-xl shadow-lg'}`}>
       <div className="absolute left-0 top-0 origin-top-left font-inter" style={{ width: FOLIE_B, height: FOLIE_H, transform: `scale(${faktor})`, background: CI_GRUND.hintergrund, color: CI_GRUND.text }}>
-        {typ && <div className="absolute -right-16 -top-20 h-60 w-60 rounded-full" style={{ background: typ.farbe }} />}
+        {typ && <div className="absolute -right-32 -top-40 h-[480px] w-[480px] rounded-full" style={{ background: typ.farbe }} />}
         <div className="absolute left-10 top-4 text-sm text-[#6A7181]">{kopf}</div>
         <div className="absolute right-8 top-6 flex items-center gap-3">
           {folie.sozialform && <SozialSymbol form={folie.sozialform} />}
