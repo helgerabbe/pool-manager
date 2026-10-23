@@ -7,7 +7,7 @@ import { FOLIEN_VORLAGEN } from '@/lib/folienVorlagen';
 const f = (id, kanal, d) => ({ id, kanal, status: 'fertig', folientyp: FOLIEN_VORLAGEN[d.vorlage].folientyp, ...d });
 
 const tps = (k) => [
-  f('tps1', k, { vorlage: 'uebersicht', titel: 'Think – Pair – Share', untertitel: 'Erst allein denken, dann zu zweit, dann alle', phase: 'Einstieg', freigabe: 'lehrkraft',
+  f('tps1', k, { vorlage: 'uebersicht', titel: 'Think – Pair – Share', untertitel: 'Erst allein denken, dann zu zweit, dann alle gemeinsam', phase: 'Einstieg', freigabe: 'lehrkraft',
     phasen: [
       { name: 'Think', sozialform: 'EA', satz: 'Du denkst allein nach und notierst deine Ideen.' },
       { name: 'Pair', sozialform: 'PA', satz: 'Ihr vergleicht eure Ideen und einigt euch.' },
