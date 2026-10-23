@@ -126,7 +126,7 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
         </>
       )}
       <AssistentenInfos werte={werte} setze={setze} />
-      <GrafikVorlageDialog open={vorlageOffen} onOpenChange={setVorlageOffen} methode={methode} werte={werte} setze={setze} />
+      <GrafikVorlageDialog open={vorlageOffen} onOpenChange={setVorlageOffen} methode={methode} werte={werte} setze={setze} onGespeichert={onGespeichert} />
       <div className="flex flex-wrap gap-2">
         {eingabe && (
           <Button variant="outline" className="gap-2" disabled={strukturiert || speichert} onClick={strukturieren}>

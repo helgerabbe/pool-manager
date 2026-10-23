@@ -6,7 +6,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { beschreibeFoliensatz, STATUS_QUO_WERTE, statusQuoSpeichern } from '@/lib/foliensatzStatusQuo';
 
 /** Übernimmt den jetzigen Foliensatz als Status quo und ersetzt die bisherigen Planungsfelder. */
-export default function StatusQuoButton({ methode, folien, setze, disabled }) {
+export default function StatusQuoButton({ methode, folien, setze, onGespeichert, disabled }) {
   const [offen, setOffen] = React.useState(false);
   const [laeuft, setLaeuft] = React.useState(false);
   const uebernehmen = async () => {
@@ -16,7 +16,8 @@ export default function StatusQuoButton({ methode, folien, setze, disabled }) {
     Object.entries(w).forEach(([k, v]) => setze(k, v));
     setLaeuft(false);
     setOffen(false);
-    toast.success('Status quo übernommen.');
+    toast.success('Status quo übernommen und gespeichert.');
+    onGespeichert?.();
   };
   return (
     <>
