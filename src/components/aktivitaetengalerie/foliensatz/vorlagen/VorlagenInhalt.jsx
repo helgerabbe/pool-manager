@@ -36,6 +36,13 @@ export default function VorlagenInhalt({ f }) {
       <p className="line-clamp-2 max-w-2xl text-[26px]">{f.satz}</p>
     </div>
   );
+  if (f.vorlage === 'impuls') return (
+    <div className="flex flex-1 items-center justify-center pb-6 pt-4">
+      {f.bild
+        ? <img src={f.bild} alt="" className="max-h-[560px] max-w-[85%] rounded-xl object-contain shadow-lg" />
+        : <p className="text-2xl text-[#9AA1AE]">Hier erscheint der Impuls (Bild, Gegenstand oder Text).</p>}
+    </div>
+  );
   if (f.vorlage === 'partnersuche') return <PartnersucheInhalt f={f} />;
   if (f.vorlage === 'sammlung') return <SammlungInhalt f={f} />;
   if (f.vorlage === 'abstimmung') return <AbstimmungInhalt f={f} />;

@@ -4,6 +4,7 @@ import { CI_STANDARDFOLIEN } from '@/lib/folienCIStandard';
 export const FOLIEN_VORLAGEN = {
   uebersicht: { name: 'Methodenübersicht', folientyp: 'methode', felder: 'titel (max. 40 Zeichen), untertitel (max. 60), phasen: 2-4 Einträge je { name (max. 14), sozialform EA|PA|GA|PL, satz (max. 70) }' },
   phase: { name: 'Phasenfolie', folientyp: 'methode', felder: 'titel = Phasenname (max. 30), sozialform, methodisch (max. 110: feststehende Arbeitsanweisung der Methode, z. B. „Denke allein und leise nach …“), inhalt (max. 140: konkrete inhaltliche Aufgabe zum Thema), leise (true = Stille-Zeichen oben rechts), minuten' },
+  impuls: { name: 'Impulsfolie', folientyp: 'methode', felder: 'Tafel zeigt NUR den Impuls (bild), ohne Überschrift und Hinweisbox. Tablet: methodisch + inhalt (Aufgabe) und Notizfeld. Felder: bild, methodisch (max. 110), inhalt (max. 140), sozialform, leise, minuten' },
   aufgabe: { name: 'Aufgaben-Platzhalter', folientyp: 'aufgabe', felder: 'titel (max. 30), sozialform, minuten. Der Aufgabentext wird später von der Lehrkraft eingesetzt.' },
   fokus: { name: 'Fokusfolie (Einstieg)', folientyp: 'inhalt', felder: 'titel (max. 40), satz (max. 110, freier Text, MUSS ein Signalwort enthalten: „jetzt“ oder „als Nächstes“, z. B. „Wir wollen jetzt herausfinden, …“), optional bild = fotorealistisches Impulsbild unten rechts im Hintergrund, nie Comic' },
   uebergang: { name: 'Übergang', folientyp: 'organisation', felder: 'titel (max. 30, z. B. „Jetzt: Pair“), sozialform der NÄCHSTEN Phase, satz (max. 80, genau ein Satz)' },

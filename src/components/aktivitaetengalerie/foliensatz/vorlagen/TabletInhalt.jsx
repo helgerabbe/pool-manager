@@ -25,7 +25,7 @@ export default function TabletInhalt({ f }) {
       <button className="flex items-center gap-2 self-start rounded-xl bg-[#FBE3CF] px-6 py-3 text-xl font-semibold text-[#8A4B1E]"><Hand className="h-6 w-6" /> Ich möchte etwas sagen</button>
     </div>
   );
-  if (f.vorlage === 'phase') return (
+  if (f.vorlage === 'phase' || f.vorlage === 'impuls') return (
     <div className="flex flex-1 flex-col gap-4 pr-16">
       <div className="h-1/4"><AufgabeOben f={f} /></div>
       <div className="flex flex-1 flex-col rounded-xl border-2 border-[#C9CED8] bg-white p-5">
