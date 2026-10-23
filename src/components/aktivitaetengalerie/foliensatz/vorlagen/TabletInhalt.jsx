@@ -7,7 +7,9 @@ const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
   <div className="rounded-xl border-2 px-5 py-3" style={{ background: auf.hg, borderColor: auf.rand, borderLeft: `6px solid ${auf.akzent}`, color: auf.text }}>
     <p className="text-sm text-[#6A7181]">{f.methodisch}</p>
-    <p className="mt-1 line-clamp-2 text-[22px] font-semibold leading-snug">{f.inhalt}</p>
+    <div className="mt-1 text-[22px] font-semibold leading-snug">
+      {(f.inhalt || '').split(/(?<=\?)\s+/).map((z, i) => <p key={i}>{z}</p>)}
+    </div>
   </div>
 );
 
