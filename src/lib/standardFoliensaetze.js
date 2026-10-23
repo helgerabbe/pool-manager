@@ -7,6 +7,10 @@ import { FOLIEN_VORLAGEN } from '@/lib/folienVorlagen';
 const f = (id, kanal, d) => ({ id, kanal, status: 'fertig', folientyp: FOLIEN_VORLAGEN[d.vorlage].folientyp, ...d });
 
 const tps = (k) => [
+  f('tps2', k, { vorlage: 'aufgabe', titel: 'Überschrift der Aufgabe', phase: 'Einstieg', folientyp: 'inhalt', freigabe: 'lehrkraft',
+    erklaerung: 'Stellt die Aufgabe der Stunde vor. Reine Information: Die Schüler bearbeiten sie hier noch nicht.',
+    liegt: ['Überschrift der Aufgabe', 'Aufgabenbox mit dem Aufgabentext', 'Kein Sozialform-Symbol und kein Timer (Inhaltsfolie)'],
+    entscheidungen: ['Welche Überschrift bekommt die Aufgabe?', 'Wie lautet die Denkfrage bzw. Aufgabe?', 'Gibt es Material zur Aufgabe (Text, Bild)?'] }),
   f('tps1', k, { vorlage: 'uebersicht', titel: 'Think – Pair – Share', untertitel: 'Erst allein denken, dann zu zweit, dann alle gemeinsam', phase: 'Einstieg', freigabe: 'lehrkraft',
     phasen: [
       { name: 'Think', sozialform: 'EA', satz: 'Du denkst allein nach und notierst deine Ideen.' },
@@ -16,10 +20,6 @@ const tps = (k) => [
     erklaerung: 'Zeigt den Ablauf der Methode, bevor es losgeht.',
     liegt: ['Titel und Untertitel der Methode', 'Drei Phasenkarten mit Sozialform-Symbol und einem Satz', 'Pfeile zwischen den Phasen', 'Weiter-Knopf (Lehrkraft gibt frei)'],
     entscheidungen: [] }),
-  f('tps2', k, { vorlage: 'aufgabe', titel: 'Eure Aufgabe', phase: 'Einstieg', folientyp: 'inhalt', freigabe: 'lehrkraft',
-    erklaerung: 'Stellt die Aufgabe der Stunde vor. Reine Information: Die Schüler bearbeiten sie hier noch nicht.',
-    liegt: ['Aufgabenbox mit dem Aufgabentext', 'Kein Sozialform-Symbol und kein Timer (Inhaltsfolie)'],
-    entscheidungen: ['Wie lautet die Denkfrage bzw. Aufgabe?', 'Gibt es Material zur Aufgabe (Text, Bild)?'] }),
   f('tps3', k, { vorlage: 'phase', titel: 'Think', phase: 'Think', sozialform: 'EA', minuten: 5, freigabe: 'zeit',
     auftrag: k === 'digital' ? 'Denke allein über die Aufgabe nach. Schreibe deine Ideen in das Notizfeld.' : 'Denke allein über die Aufgabe nach. Schreibe deine Ideen in dein Heft.',
     hinweis: 'Bitte leise arbeiten', erklaerung: 'Stille Einzelarbeit mit Timer.',
