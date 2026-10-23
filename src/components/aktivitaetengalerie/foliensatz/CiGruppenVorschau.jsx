@@ -1,5 +1,6 @@
 import React from 'react';
-import { CI_GRUND, CI_GRUPPEN, CI_GRUPPEN_REGEL } from '@/lib/folienCI';
+import { Users } from 'lucide-react';
+import { CI_GRUND, CI_GRUPPEN, CI_GRUPPEN_REGEL, CI_PARTNER } from '@/lib/folienCI';
 
 /** Vorschau Teil 12: Gruppenkennung (Farbe + Buchstabe). */
 export default function CiGruppenVorschau() {
@@ -14,6 +15,15 @@ export default function CiGruppenVorschau() {
         ))}
       </div>
       <p className="text-xs text-muted-foreground">{CI_GRUPPEN_REGEL}</p>
+      <p className="pt-2 text-sm font-semibold">Partnerteams</p>
+      <div className="flex flex-wrap gap-3">
+        {[1, 2, 3, 12].map((n) => (
+          <span key={n} className="flex h-8 items-center gap-1 rounded-full border bg-white px-2 text-xs font-bold" style={{ borderColor: CI_PARTNER.rand, color: CI_PARTNER.text }}>
+            <Users className="h-3.5 w-3.5" />{CI_PARTNER.praefix}{n}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">{CI_PARTNER.regel}</p>
     </div>
   );
 }

@@ -210,6 +210,14 @@ export const CI_GRUPPEN = [
 ];
 export const CI_GRUPPEN_REGEL = 'Die Kennung steht in der Ecke rechts oben neben dem Sozialform-Symbol. Gruppenmitglieder sehen dieselbe Farbe, an der Tafel werden Ergebnisse in der Gruppenfarbe gezeigt.';
 
+// Teil 12b: Partnerteams. Nummer statt Buchstabe (es gibt viele Paare), keine eigene Farbe, damit sie nicht mit Gruppen verwechselt werden.
+export const CI_PARTNER = {
+  praefix: 'Team ',
+  rand: '#B9D2EE',
+  text: '#1E3A6E',
+  regel: 'Partnerteams heißen „Team 1“, „Team 2“ … und tragen ein kleines Partner-Symbol. Beide Partner sehen dieselbe Nummer oben rechts neben dem Sozialform-Symbol. Die Lehrkraft kann feste Teams für mehrere Stunden speichern; an der Tafel werden Ergebnisse mit der Teamnummer gezeigt.',
+};
+
 // Teil 5b: Medien. Ein Rahmen für alles Sichtbare (Bild, Grafik, Video, Animation), keine Farbcodes.
 // Unterschieden wird nur durch ein kleines Zeichen, wo man etwas tun kann.
 export const CI_MEDIEN = {
