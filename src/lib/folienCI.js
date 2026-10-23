@@ -238,6 +238,9 @@ export const CI_TABLET = {
     'Zusatzinhalte (Tipp, Tutor) öffnen als Blatt von unten, nicht als neue Seite.',
     'Jedes Bedienelement mindestens 44 × 44 pt groß; nichts liegt auf dem Home-Balken.',
     'Im Hochformat stapeln sich die Inhalte untereinander.',
+    'Scrollen: Nur der Inhalt scrollt. Leiste oben und Knöpfe unten rechts bleiben fest und sind immer voll sichtbar (keine Transparenz).',
+    'Der Inhalt bekommt unten Freiraum in Knopfhöhe, damit am Ende nichts unter den Knöpfen verdeckt bleibt.',
+    'Bei eingeblendeter Tastatur rücken die Knöpfe direkt über die Tastatur.',
   ],
 };
 
