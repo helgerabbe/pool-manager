@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { FREIGABE_TEXT } from '@/lib/folienSymbole';
 import useFoliensatz from '@/hooks/useFoliensatz';
-import { ZIELE } from '@/lib/standardFoliensaetze';
+import { ZIELE, hatZielWeiche } from '@/lib/standardFoliensaetze';
 import FolienLeiste from './foliensatz/FolienLeiste';
 import FolieAnzeige from './foliensatz/FolieAnzeige';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
@@ -40,10 +40,9 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
         {schritt === 'tutorial' && <LehrerTutorial key={kanal + ziel + fach} folien={folien} />}
         {schritt === 'funktion' && <>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full border px-3 py-1 text-xs">Fächerübergreifende Vorlage · gestalteter Look</span>
-          <span className="ml-2 flex gap-1 border-l pl-3">
+          {hatZielWeiche(methode.name) && <span className="flex gap-1">
             {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
-          </span>
+          </span>}
           <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
