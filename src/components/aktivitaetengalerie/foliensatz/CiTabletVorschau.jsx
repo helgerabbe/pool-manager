@@ -20,7 +20,7 @@ export default function CiTabletVorschau() {
       </div>
       <div className="mx-auto rounded-[28px] bg-neutral-800 p-3" style={{ width: hoch ? 320 : 560 }}>
         <div className="relative flex flex-col overflow-hidden rounded-[18px]" style={{ aspectRatio: `${m.breite} / ${m.hoehe}`, background: CI_GRUND.hintergrund, color: CI_GRUND.text }}>
-          <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full" style={{ background: CI_FOLIENTYPEN.aufgabe.farbe }} />
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full" style={{ background: CI_FOLIENTYPEN.aufgabe.farbe }} />
           <div className="relative flex justify-between px-3 pt-0.5 text-[8px]"><span>9:41</span><span>100 %</span></div>
           <div className="relative flex flex-wrap items-center gap-2 px-2 py-1 text-[9px]">
             <span className="flex items-center text-[#3E5C8A]"><ChevronLeft className="h-3.5 w-3.5" />Zurück</span>
