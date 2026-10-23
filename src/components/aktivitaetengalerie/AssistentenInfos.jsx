@@ -29,6 +29,14 @@ const KI = {
 
 /** Arbeitsgrundlagen für Unterrichtsassistent, Methodenbeschreiber und Grafikassistent. */
 export default function AssistentenInfos({ werte, setze }) {
+  if (werte.foliensatz_status_quo) return (
+    <div className="space-y-1.5">
+      <p className="flex items-center gap-2 text-sm font-medium"><Palette className="h-4 w-4 text-primary" />Status quo des Foliensatzes (Informationen für den Grafikassistenten)</p>
+      <p className="text-xs text-muted-foreground">Genaue Beschreibung des fertig gebauten Foliensatzes. Damit lässt er sich identisch wieder erstellen.</p>
+      <Textarea rows={16} value={werte.info_grafikassistent || ''} onChange={(e) => setze('info_grafikassistent', e.target.value)} />
+      <AbgleichEntscheidungsbaum werte={werte} setze={setze} />
+    </div>
+  );
   return (
     <div className="space-y-4">
       {FELDER.map(([k, label, Icon]) => k === 'wuensche' ? <WuenscheFeld key={k} werte={werte} setze={setze} /> : (

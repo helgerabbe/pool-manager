@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. LANGE TEXTE: Seit 2026-10-21 bzw. 2026-10-22 liegen Grafik-Anweisung, Methodenbeschreibung und Grob\u00fcbersicht in St\u00fccken in '<feld>_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Feinplanung (info_grafikassistent). GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. LANGE TEXTE: Seit 2026-10-21 bzw. 2026-10-22 liegen Grafik-Anweisung, Methodenbeschreibung und Grob\u00fcbersicht in St\u00fccken in '<feld>_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Feinplanung (info_grafikassistent). STATUS QUO (2026-10-23): Ist der Foliensatz fertig, kann er als Status quo \u00fcbernommen werden (foliensatz_status_quo=true): info_grafikassistent enth\u00e4lt dann die genaue Beschreibung des fertigen Satzes, die Vorstufen sind geleert. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
   "properties": {
     "name": {
       "type": "string"
@@ -220,6 +220,11 @@
       },
       "default": [],
       "description": "Die Anweisung f\u00fcr den Grafikassistenten in St\u00fccken zu je max. 15.000 Zeichen; zusammengesetzt ergibt sie den vollst\u00e4ndigen Text."
+    },
+    "foliensatz_status_quo": {
+      "type": "boolean",
+      "default": false,
+      "description": "true = der fertige Foliensatz wurde als Status quo \u00fcbernommen; info_grafikassistent enth\u00e4lt seine genaue Beschreibung, W\u00fcnsche/Methodenbeschreibung/Grob\u00fcbersicht sind geleert."
     },
     "grafik_vorlagen": {
       "type": "object",

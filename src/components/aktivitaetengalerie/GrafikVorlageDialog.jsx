@@ -12,11 +12,12 @@ import FolieErklaerung from './foliensatz/FolieErklaerung';
 import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
 import BauFortschrittLeiste from './foliensatz/BauFortschrittLeiste';
+import StatusQuoButton from './foliensatz/StatusQuoButton';
 
 const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['gestaltung', '2. Layoutvorlagen'], ['tutorial', '3. Lehrer-Tutorial']];
 
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
-export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte }) {
+export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte, setze }) {
   const navigate = useNavigate();
   const fach = 'Fächerübergreifend';
   const [ansicht, setAnsicht] = React.useState('lehrer');
@@ -43,7 +44,8 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
           {hatZielWeiche(methode.name) && <span className="flex gap-1">
             {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
           </span>}
-          <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
+          {setze && <span className="ml-auto"><StatusQuoButton methode={methode} folien={folien} setze={setze} disabled={baut || !folien.length || folien.some((f) => f.status !== 'fertig')} /></span>}
+          <Button size="sm" className={`${setze ? '' : 'ml-auto '}gap-2`} disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
         </div>

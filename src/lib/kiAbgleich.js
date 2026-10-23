@@ -31,7 +31,7 @@ METHODENBESCHREIBUNG:
 ${m.info_methodenbeschreiber || '(keine)'}
 
 GROBÜBERSICHT DES FOLIENSATZES:
-${m.info_grobuebersicht || '(keine)'}
+${m.foliensatz_status_quo ? m.info_grafikassistent : m.info_grobuebersicht || '(keine)'}
 
 WÜNSCHE DER LEHRKRAFT:
 ${m.info_wuensche || '(keine)'}

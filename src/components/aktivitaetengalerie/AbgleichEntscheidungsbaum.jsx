@@ -27,7 +27,7 @@ export default function AbgleichEntscheidungsbaum({ werte, setze }) {
 
   return (
     <div className="space-y-2">
-      <Button variant="outline" size="sm" className="gap-2" disabled={laeuft || !(werte.info_grobuebersicht || '').trim()} onClick={starten}>
+      <Button variant="outline" size="sm" className="gap-2" disabled={laeuft || !(werte.foliensatz_status_quo ? werte.info_grafikassistent : werte.info_grobuebersicht || '').trim()} onClick={starten}>
         {laeuft ? <Loader2 className="h-4 w-4 animate-spin" /> : <GitCompare className="h-4 w-4" />}
         Abgleich mit dem Entscheidungsbaum und den Prüfregeln
       </Button>
