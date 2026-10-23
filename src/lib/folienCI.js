@@ -98,7 +98,7 @@ export const CI_SYMBOL_STIL = { hg: '#E3EEF9', farbe: '#1E3A6E', groesse: 40 };
 export const CI_SOZIALFORM = {
   EA: { name: 'Einzelarbeit', symbol: 'User' },
   PA: { name: 'Partnerarbeit', symbol: 'Users' },
-  GA: { name: 'Gruppenarbeit', symbol: 'UsersRound' },
+  GA: { name: 'Gruppenarbeit', symbol: 'Network' },
   PL: { name: 'Plenum', symbol: 'Presentation' },
 };
 export const CI_TAETIGKEIT = {
@@ -114,6 +114,20 @@ export const CI_TAETIGKEIT = {
   recherche: { name: 'Recherchieren', symbol: 'Search' },
   geraet:    { name: 'Am Gerät arbeiten', symbol: 'Tablet' },
   heft:      { name: 'Im Heft arbeiten', symbol: 'Notebook' },
+};
+
+// Organisatorische Tätigkeiten (Ablauf, Wechsel, Kontrolle).
+export const CI_ORGANISATION = {
+  partner:      { name: 'Partner finden', symbol: 'Handshake' },
+  vergleichen:  { name: 'Vergleichen', symbol: 'ArrowLeftRight' },
+  kontrollieren:{ name: 'Kontrollieren', symbol: 'CheckCheck' },
+  praesentieren:{ name: 'Präsentieren', symbol: 'Megaphone' },
+  feedback:     { name: 'Feedback geben', symbol: 'ThumbsUp' },
+  festhalten:   { name: 'Ergebnisse festhalten', symbol: 'ClipboardList' },
+  abgeben:      { name: 'Abgeben', symbol: 'Send' },
+  material:     { name: 'Material holen / aufräumen', symbol: 'Package' },
+  wechseln:     { name: 'Platz wechseln', symbol: 'Footprints' },
+  warten:       { name: 'Warten / Stillarbeit', symbol: 'Hourglass' },
 };
 
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';

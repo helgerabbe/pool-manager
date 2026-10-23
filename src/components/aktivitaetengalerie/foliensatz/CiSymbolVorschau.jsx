@@ -1,8 +1,8 @@
 import React from 'react';
-import { User, Users, UsersRound, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook } from 'lucide-react';
-import { CI_GRUND, CI_SYMBOL_STIL, CI_SOZIALFORM, CI_TAETIGKEIT } from '@/lib/folienCI';
+import { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass } from 'lucide-react';
+import { CI_GRUND, CI_SYMBOL_STIL, CI_SOZIALFORM, CI_TAETIGKEIT, CI_ORGANISATION } from '@/lib/folienCI';
 
-const ICONS = { User, Users, UsersRound, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook };
+const ICONS = { User, Users, Network, Presentation, BookOpen, PenLine, MessageCircle, Ear, Eye, Brain, Hand, Pencil, Calculator, Search, Tablet, Notebook, Handshake, ArrowLeftRight, CheckCheck, Megaphone, ThumbsUp, ClipboardList, Send, Package, Footprints, Hourglass };
 
 function Gruppe({ titel, eintraege }) {
   const s = CI_SYMBOL_STIL;
@@ -30,6 +30,7 @@ export default function CiSymbolVorschau() {
     <div className="space-y-4 rounded-xl p-4 ring-1 ring-border" style={{ background: CI_GRUND.hintergrund }}>
       <Gruppe titel="Sozialform (Ecke rechts oben)" eintraege={CI_SOZIALFORM} />
       <Gruppe titel="Tätigkeit (neben dem Arbeitsauftrag)" eintraege={CI_TAETIGKEIT} />
+      <Gruppe titel="Organisation (Ablauf, Wechsel, Kontrolle)" eintraege={CI_ORGANISATION} />
       <p className="text-xs text-muted-foreground">Höchstens ein Sozialform- und zwei Tätigkeitssymbole je Folie.</p>
     </div>
   );
