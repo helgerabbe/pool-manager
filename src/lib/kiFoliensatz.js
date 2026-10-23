@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 import { mitLangenTexten } from '@/lib/langerText';
 import { FOLIEN_VORLAGEN, vorlagenText, folieSchema } from '@/lib/folienVorlagen';
+import { BAUREGELN, musterText } from '@/lib/foliensatzBauregeln';
 
 // Grafikassistent (2026-10-23): EINE Anfrage für den ganzen Satz. Die KI wählt je Folie eine feste Vorlage
 // und füllt kurze Texte; das Aussehen kommt aus den Vorlagen im Code.
@@ -22,11 +23,13 @@ erklaerung: 1-2 Sätze, wozu die Folie dient. abfrage: was die Lehrkraft vorher 
 
 const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fertig', folientyp: FOLIEN_VORLAGEN[f.vorlage]?.folientyp || 'methode' });
 
-export async function planeFoliensatz(methode, fach, kanal) {
+export async function planeFoliensatz(methode, fach, kanal, ziel = 'divergierend') {
   const r = await base44.integrations.Core.InvokeLLM({
-    prompt: `Du bist der Grafikassistent. Lege den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz dieser Methode in Ablaufreihenfolge an (höchstens 8 Folien, Kanal "${kanal}").
+    prompt: `Du bist der Grafikassistent. Lege den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz dieser Methode in Ablaufreihenfolge an (höchstens 8 Folien, Kanal "${kanal}", Ziel "${ziel}").
 ${kontext(methode)}
-Neutrales Beispielthema. Wo eine fachliche Aufgabe eingeschoben wird: Vorlage "aufgabe". Nutze Standardfolien, wo sie passen.
+Ein durchgehendes Beispielthema. Nutze Standardfolien, wo sie passen.
+${BAUREGELN}
+${musterText(ziel)}
 ${regeln}`,
     response_json_schema: { type: 'object', properties: { thema: { type: 'string' }, folien: { type: 'array', items: folieSchema } } },
   });
@@ -39,6 +42,7 @@ export async function baueFolie(methode, fach, plan, folie) {
 ${kontext(methode)}
 Folge: ${plan.folien.map((f, i) => `${i + 1}. ${f.titel} (${f.vorlage})`).join(' · ')}
 Neu zu erzeugen: "${folie.titel}" (Phase ${folie.phase}, ${folie.kanal}). Du darfst eine passendere Vorlage wählen.
+${BAUREGELN}
 ${regeln}`,
     response_json_schema: folieSchema,
   });

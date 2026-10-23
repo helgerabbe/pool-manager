@@ -19,7 +19,7 @@ const t = { type: 'string' };
 export const folieSchema = { type: 'object', properties: {
   titel: t, phase: t, kanal: { type: 'string', enum: ['analog', 'digital'] }, freigabe: t, minuten: { type: 'number' },
   vorlage: { type: 'string', enum: Object.keys(FOLIEN_VORLAGEN) }, standard: t,
-  untertitel: t, sozialform: { type: 'string', enum: ['EA', 'PA', 'GA', 'PL'] }, auftrag: t, hinweis: t, satz: t, frage: t, methodisch: t, inhalt: t, leise: { type: 'boolean' }, partnersuche: { type: 'string', enum: ['frei', 'nachbar', 'los', 'duett'] },
+  untertitel: t, sozialform: { type: 'string', enum: ['EA', 'PA', 'GA', 'PL'] }, auftrag: t, hinweis: t, satz: t, frage: t, methodisch: t, inhalt: t, leise: { type: 'boolean' }, fluestern: { type: 'boolean' }, liegt: { type: 'array', items: t }, entscheidungen: { type: 'array', items: t }, partnersuche: { type: 'string', enum: ['frei', 'nachbar', 'los', 'duett'] },
   phasen: { type: 'array', items: { type: 'object', properties: { name: t, sozialform: t, satz: t } } },
   punkte: { type: 'array', items: t },
   erklaerung: t, abfrage: t,

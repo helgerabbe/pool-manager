@@ -35,7 +35,7 @@ export default function useFoliensatz(methode, werte, fachName, kanal, ziel) {
     setPlanen(true);
     let plan;
     try {
-      plan = await planeFoliensatz(m, fachName, kanal);
+      plan = await planeFoliensatz(m, fachName, kanal, ziel);
     } catch (e) {
       toast.error('Die Folienfolge konnte nicht geplant werden.');
       setPlanen(false);

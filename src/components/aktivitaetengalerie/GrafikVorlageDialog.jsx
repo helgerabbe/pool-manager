@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { FREIGABE_TEXT } from '@/lib/folienSymbole';
 import useFoliensatz from '@/hooks/useFoliensatz';
-import { ZIELE, hatZielWeiche } from '@/lib/standardFoliensaetze';
+import { ZIELE } from '@/lib/standardFoliensaetze';
 import FolienLeiste from './foliensatz/FolienLeiste';
 import FolieAnzeige from './foliensatz/FolieAnzeige';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
@@ -46,9 +46,9 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
               {k === 'analog' ? 'Analoge Folien' : 'Digitale Folien'}
             </Button>
           ))}
-          {hatZielWeiche(methode.name) && <span className="ml-2 flex gap-1 border-l pl-3">
+          <span className="ml-2 flex gap-1 border-l pl-3">
             {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
-          </span>}
+          </span>
           <Button size="sm" className="ml-auto gap-2" disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
