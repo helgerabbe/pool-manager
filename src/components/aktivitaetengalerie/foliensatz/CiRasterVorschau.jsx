@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CI_GRUND, CI_RASTER, CI_ZONEN_JE_TYP, CI_FOLIENTYPEN, CI_STEUERUNG } from '@/lib/folienCI';
+import { CI_GRUND, CI_RASTER, CI_ZONEN_JE_TYP, CI_FOLIENTYPEN, CI_STEUERUNG, CI_METHODE_ANZEIGE } from '@/lib/folienCI';
 
 const zone = 'absolute flex items-center justify-center rounded-lg border border-dashed text-[10px] text-center';
 
@@ -16,13 +16,13 @@ export default function CiRasterVorschau() {
         ))}
       </div>
       <div className="relative mx-auto aspect-video w-full max-w-2xl overflow-hidden rounded-xl bg-card ring-1 ring-border">
-        <div className="absolute inset-x-0 top-0 flex items-center border-b px-3 text-[10px] text-muted-foreground" style={{ height: `${kopf.hoehe}%` }}><img src={CI_RASTER.logo.url} alt="Logo" className="mr-2 rounded-sm object-contain opacity-80" style={{ height: `${CI_RASTER.logo.hoehe}%` }} />Erdkunde · Stadt und Land · Warum ziehen Menschen in die Städte?</div>
+        <div className="absolute inset-x-0 top-0 flex items-center border-b px-3 text-[10px] text-muted-foreground" style={{ height: `${kopf.hoehe}%` }}><img src={CI_RASTER.logo.url} alt="Logo" className="mr-2 rounded-sm object-contain opacity-80" style={{ height: `${CI_RASTER.logo.hoehe}%` }} />Erdkunde · Stadt und Land · Warum ziehen Menschen in die Städte?<span className="ml-auto rounded-full px-2 py-0.5 font-semibold" style={{ background: CI_METHODE_ANZEIGE.hg, color: CI_METHODE_ANZEIGE.text }}>{CI_METHODE_ANZEIGE.beispiel} · {CI_METHODE_ANZEIGE.schritt}</span></div>
         <div className={`${zone} border-primary/40 bg-primary/5 text-primary`} style={{ top: `${kopf.hoehe + 2}%`, left: '3%', right: z.oben ? `${oben.breite + 5}%` : '3%', bottom: '4%' }}>Inhaltsbereich</div>
         {z.oben && <div className={`${zone} bg-muted`} style={{ top: `${kopf.hoehe + 2}%`, right: '3%', width: `${oben.breite}%`, height: `${oben.hoehe}%` }}>{oben.inhalt}</div>}
         {z.unten && <div className={`${zone} bg-muted`} style={{ bottom: '4%', right: '3%', width: `${unten.breite}%`, height: `${unten.hoehe}%` }}>{unten.inhalt}</div>}
       </div>
       <p className="text-xs"><b>Steuerung – {CI_STEUERUNG.regel}:</b> Lehrkraft: {CI_STEUERUNG.lehrkraft} Schüler zurück: {CI_STEUERUNG.schueler_zurueck} Schüler vor: {CI_STEUERUNG.schueler_vor}</p>
-      <p className="text-xs text-muted-foreground">Die Ecken sind nur belegt, wenn der Folientyp sie braucht. Sonst gehört die Fläche dem Inhalt. Inhalte dürfen nie in eine belegte Zone ragen.</p>
+      <p className="text-xs text-muted-foreground">Die Ecken sind nur belegt, wenn der Folientyp sie braucht. Sonst gehört die Fläche dem Inhalt. Inhalte dürfen nie in eine belegte Zone ragen. Rechts in der Kopfleiste steht immer die laufende Methode mit dem aktuellen Schritt (nur Text, kein Symbol).</p>
     </div>
   );
 }

@@ -192,4 +192,18 @@ export const CI_NIVEAU = {
   rakete:  { name: 'Rakete', beschreibung: 'Knobelaufgabe für Schnelle', symbol: 'Rocket', anzahl: 1, hg: '#E7E4F3', text: '#4A4170' },
 };
 
+// Methodenanzeige: kein eigenes Symbol je Methode, nur der Name als ruhiges Schild rechts in der Kopfleiste.
+export const CI_METHODE_ANZEIGE = { hg: '#E7E4F3', text: '#4A4170', beispiel: 'Think-Pair-Share', schritt: 'Pair' };
+
+// Teil 12: Gruppenkennung. Feste Pastellfarbe + Buchstabe; erscheint auf dem Schülergerät und an der Tafel.
+export const CI_GRUPPEN = [
+  { kennung: 'A', name: 'Gruppe A', hg: '#E3EEF9', text: '#1E3A6E' },
+  { kennung: 'B', name: 'Gruppe B', hg: '#DCEBE1', text: '#24553A' },
+  { kennung: 'C', name: 'Gruppe C', hg: '#FBF3D5', text: '#6B4423' },
+  { kennung: 'D', name: 'Gruppe D', hg: '#F5E1DC', text: '#8A4B3C' },
+  { kennung: 'E', name: 'Gruppe E', hg: '#E7E4F3', text: '#4A4170' },
+  { kennung: 'F', name: 'Gruppe F', hg: '#D9EEEC', text: '#1F5550' },
+];
+export const CI_GRUPPEN_REGEL = 'Die Kennung steht in der Ecke rechts oben neben dem Sozialform-Symbol. Gruppenmitglieder sehen dieselbe Farbe, an der Tafel werden Ergebnisse in der Gruppenfarbe gezeigt.';
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
