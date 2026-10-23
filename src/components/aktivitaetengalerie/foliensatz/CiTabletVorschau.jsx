@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ChevronLeft, Lightbulb, Bot, ArrowRight } from 'lucide-react';
-import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE } from '@/lib/folienCI';
+import { ChevronLeft, Lightbulb, Bot, ArrowRight, Users } from 'lucide-react';
+import { CI_GRUND, CI_TABLET, CI_BOXEN, CI_BUTTONS, CI_METHODE_ANZEIGE, CI_TIMER, CI_SYMBOL_STIL, CI_GRUPPEN } from '@/lib/folienCI';
 
 /** Vorschau Teil 13: Schüleransicht auf dem iPad 11" mit iPadOS-Navigation. */
 export default function CiTabletVorschau() {
@@ -26,10 +26,20 @@ export default function CiTabletVorschau() {
           <div className="mx-auto mt-2 flex rounded-lg bg-neutral-200 p-0.5 text-[9px]">
             {['Aufgabe', 'Material'].map((s) => <button key={s} onClick={() => setSeg(s)} className={`rounded-md px-3 py-0.5 ${seg === s ? 'bg-white shadow-sm' : ''}`}>{s}</button>)}
           </div>
-          <div className="m-3 flex-1 rounded-lg border p-2 text-[10px]" style={{ background: CI_BOXEN.aufgabe.hg, borderColor: CI_BOXEN.aufgabe.rand, color: CI_BOXEN.aufgabe.text }}>
-            <b>{seg}</b><p>{seg === 'Aufgabe' ? 'Notiere zwei Gründe, warum Menschen in die Stadt ziehen.' : 'Text: Leben in der Großstadt'}</p>
+          <div className={`m-3 flex flex-1 gap-2 ${hoch ? 'flex-col' : ''}`}>
+            <div className={`flex gap-1 ${hoch ? 'order-first justify-end' : 'order-last flex-col items-end'}`}>
+              <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Users className="h-3 w-3" /></span>
+              <span className="flex h-5 w-5 items-center justify-center rounded-full text-[9px] font-bold" style={{ background: CI_GRUPPEN[1].hg, color: CI_GRUPPEN[1].text }}>{CI_GRUPPEN[1].kennung}</span>
+            </div>
+            <div className="flex-1 rounded-lg border p-2 text-[10px]" style={{ background: CI_BOXEN.aufgabe.hg, borderColor: CI_BOXEN.aufgabe.rand, color: CI_BOXEN.aufgabe.text }}>
+              <b>{seg}</b><p>{seg === 'Aufgabe' ? 'Notiere zwei Gründe, warum Menschen in die Stadt ziehen.' : 'Text: Leben in der Großstadt'}</p>
+            </div>
           </div>
-          <div className="flex justify-center pb-1"><span className="flex items-center gap-1 rounded-lg px-4 py-1 text-[10px] font-semibold" style={{ background: b.hg, color: b.text }}>{b.label}<ArrowRight className="h-3 w-3" /></span></div>
+          <div className="flex justify-end gap-1 px-3 pb-1">
+            <span className="rounded-lg border px-3 py-1 text-[10px] font-semibold" style={{ background: CI_BUTTONS.pruefen.hg, color: CI_BUTTONS.pruefen.text, borderColor: CI_BUTTONS.pruefen.rand }}>Prüfen</span>
+            <span className="flex items-center gap-1 rounded-lg px-3 py-1 text-[10px] font-semibold" style={{ background: b.hg, color: b.text }}>{b.label}<ArrowRight className="h-3 w-3" /></span>
+          </div>
           <div className="mx-auto mb-1 h-1 w-16 rounded-full bg-neutral-800" />
         </div>
       </div>

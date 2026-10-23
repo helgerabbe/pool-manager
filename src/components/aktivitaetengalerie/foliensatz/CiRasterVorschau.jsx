@@ -22,7 +22,7 @@ export default function CiRasterVorschau() {
         {z.unten && <div className={`${zone} bg-muted`} style={{ bottom: '4%', right: '3%', width: `${unten.breite}%`, height: `${unten.hoehe}%` }}>{unten.inhalt}</div>}
       </div>
       <p className="text-xs"><b>Steuerung – {CI_STEUERUNG.regel}:</b> Lehrkraft: {CI_STEUERUNG.lehrkraft} Schüler zurück: {CI_STEUERUNG.schueler_zurueck} Schüler vor: {CI_STEUERUNG.schueler_vor}</p>
-      <p className="text-xs text-muted-foreground">Die Ecken sind nur belegt, wenn der Folientyp sie braucht. Sonst gehört die Fläche dem Inhalt. Inhalte dürfen nie in eine belegte Zone ragen. Rechts in der Kopfleiste steht immer die laufende Methode mit dem aktuellen Schritt (nur Text, kein Symbol).</p>
+      <p className="text-xs text-muted-foreground">Dieses Raster gilt für die Tafel (16:9). Das iPad nutzt dieselben Ecken, nur mit eigener Leiste oben (Teil 13). Die Ecken sind nur belegt, wenn der Folientyp sie braucht. Sonst gehört die Fläche dem Inhalt. Inhalte dürfen nie in eine belegte Zone ragen. Rechts in der Kopfleiste steht immer die laufende Methode mit dem aktuellen Schritt (nur Text, kein Symbol).</p>
     </div>
   );
 }

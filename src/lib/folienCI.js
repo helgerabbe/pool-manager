@@ -58,7 +58,7 @@ export const CI_TIMER = {
   vorbei:  { hg: '#F5E1DC', text: '#8A4B3C', ring: '#EBC9BE' },
 };
 
-// Teil 4: Folienraster. Feste Zonen für Standardelemente; der Rest ist Inhaltsbereich.
+// Teil 4: Folienraster der TAFEL (Lehreransicht, 16:9). Das iPad übernimmt dieselben Zonen (siehe Teil 13). Feste Zonen für Standardelemente; der Rest ist Inhaltsbereich.
 // Angaben in Prozent der Folie (16:9). Zonen bleiben klein, damit Inhalte Platz haben.
 export const CI_RASTER = {
   kopf:  { name: 'Kopfleiste', hoehe: 6, inhalt: 'Logo (klein, links) · Fach · Einheit · Stunde (klein, grau)' },
@@ -227,13 +227,17 @@ export const CI_TABLET = {
   tippflaeche: 44,        // Mindestgröße jedes Bedienelements
   rand: 20,
   regeln: [
-    'Oben eine Navigationsleiste: links „‹ Zurück“, mittig der Titel (Methode · Schritt), rechts höchstens zwei Symbole (z. B. Hilfe, Tutor).',
+    'Gleiche Logik wie das Tafelraster (Teil 4): Die Navigationsleiste ersetzt die Kopfleiste; Logo, Fach und Einheit entfallen.',
+    'Oben eine Navigationsleiste: links „‹ Zurück“, mittig das Methodenschild (Methode · Schritt), rechts höchstens zwei Symbole (Tipp, Tutor).',
+    'Ecke rechts oben (unter der Leiste): Timer, Sozialform-Symbol, Gruppenkennung – wie an der Tafel.',
+    'Ecke rechts unten: Steuerung (Prüfen, Fertig, Weiter) – wie an der Tafel, gut mit dem Daumen erreichbar.',
+    'Hochformat: Die Ecken werden zu einer schmalen Leiste oben (Timer, Gruppe) und einer Leiste unten (Steuerung).',
     'Kein Burger-Menü: Es gibt nur einen Weg nach vorn und zurück, Inhalte liegen nicht in versteckten Menüs.',
     'Umschalten zwischen Ansichten mit einem Segment-Schalter (z. B. „Aufgabe | Material“), wie in Apple-Apps.',
     'Wischen vom linken Rand = zurück. Weiter nur über den Weiter-Knopf (Lehrkraft führt).',
     'Zusatzinhalte (Tipp, Tutor) öffnen als Blatt von unten, nicht als neue Seite.',
-    'Jedes Bedienelement mindestens 44 × 44 pt groß, unten mittig der Weiter-Knopf über dem Home-Balken.',
-    'Läuft im Quer- und Hochformat; im Hochformat stapeln sich die Inhalte untereinander.',
+    'Jedes Bedienelement mindestens 44 × 44 pt groß; nichts liegt auf dem Home-Balken.',
+    'Im Hochformat stapeln sich die Inhalte untereinander.',
   ],
 };
 
