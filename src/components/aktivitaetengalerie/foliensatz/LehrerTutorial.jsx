@@ -12,7 +12,7 @@ export default function LehrerTutorial({ folien }) {
   const bild = (titel, Icon, el) => (
     <div className="min-w-0 flex-1 space-y-1">
       <p className="flex items-center gap-1 text-xs font-semibold text-muted-foreground"><Icon className="h-3.5 w-3.5" />{titel}</p>
-      <div className="pointer-events-none">{el?.length ? <FolieVorschau elemente={el} /> : <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">Hier nichts zu sehen</p>}</div>
+      <div className="pointer-events-none">{el?.length ? <FolieVorschau elemente={el} folientyp={f.folientyp} /> : <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-xs text-muted-foreground">Hier nichts zu sehen</p>}</div>
     </div>
   );
   return (

@@ -3,6 +3,7 @@ import { folienBaukastenText } from '@/lib/folienBaukastenText';
 import { FOLIEN_ELEMENT } from '@/lib/folienElemente';
 import { VORGABEN } from '@/lib/folienStil';
 import { mitLangenTexten } from '@/lib/langerText';
+import { folienCIText } from '@/lib/folienCIText';
 
 // Grafikassistent (2026-10-21): baut aus der Anweisung einen Foliensatz, Folie für Folie.
 // Schritt 1 plant die Folienfolge, Schritt 2 baut jede Folie einzeln (parallel, einzeln neu baubar).
@@ -24,11 +25,12 @@ export async function planeFoliensatz(methode, fach, kanal) {
     model: 'claude_sonnet_4_6',
     prompt: `Du bist der Grafikassistent. Plane den Foliensatz dieser Methode, noch ohne Folieninhalt.
 ${kontext(methode, fach)}
-Wähle ein typisches Beispielthema aus dem Fach. Lege NUR den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz in Ablaufreihenfolge an (so wie die Anweisung ihn beschreibt), jede Folie mit Kanal "${kanal}". Je Folie: kurzer Titel, Phase der Methode (z. B. Think, Pair, Share), Kanal (analog oder digital), Freigabe (lehrkraft | zeit | alle_fertig | anteil | geloest | code) mit Minuten falls zeit, und eine knappe Beschreibung, was auf Tafel und Tablet zu sehen ist.`,
+${folienCIText()}
+Wähle ein neutrales, fächerübergreifendes Beispielthema (es geht nur um das Aussehen der Methode). Wo in der Methode eine fachliche Aufgabe oder ein Inhalt eingeschoben wird, lege eine eigene Folie mit platzhalter=true an (Folientyp aufgabe bzw. inhalt). Lege NUR den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz in Ablaufreihenfolge an (so wie die Anweisung ihn beschreibt), jede Folie mit Kanal "${kanal}". Je Folie: kurzer Titel, Folientyp (methode | aufgabe | sicherung | inhalt | organisation | reflexion), standard (Schlüssel der passenden Standardfolie oder leer), platzhalter (true/false), Phase der Methode (z. B. Think, Pair, Share), Kanal (analog oder digital), Freigabe (lehrkraft | zeit | alle_fertig | anteil | geloest | code) mit Minuten falls zeit, und eine knappe Beschreibung, was auf Tafel und Tablet zu sehen ist.`,
     response_json_schema: { type: 'object', properties: {
       thema: textFeld,
       folien: { type: 'array', items: { type: 'object', properties: {
-        titel: textFeld, phase: textFeld, kanal: { type: 'string', enum: ['analog', 'digital'] },
+        titel: textFeld, folientyp: textFeld, standard: textFeld, platzhalter: { type: 'boolean' }, phase: textFeld, kanal: { type: 'string', enum: ['analog', 'digital'] },
         freigabe: textFeld, minuten: { type: 'number' }, beschreibung: textFeld,
       } } },
     } },
@@ -55,7 +57,9 @@ export async function baueFolie(methode, fach, plan, folie) {
 ${kontext(methode, fach)}
 Beispielthema: ${plan.thema}
 Folienfolge: ${plan.folien.map((f, i) => `${i + 1}. ${f.titel} (${f.phase}, ${f.kanal})`).join(' · ')}
-DEINE FOLIE: Nr. ${nr} "${folie.titel}" · Phase ${folie.phase} · ${folie.kanal} · ${folie.beschreibung}
+DEINE FOLIE: Nr. ${nr} "${folie.titel}" · Folientyp ${folie.folientyp || 'methode'}${folie.standard ? ` · Standardfolie ${folie.standard}` : ''} · Phase ${folie.phase} · ${folie.kanal} · ${folie.beschreibung}
+${folie.platzhalter ? 'Dies ist ein PLATZHALTER für eine fachliche Aufgabe bzw. einen Inhalt: nur Rahmen (Aufgaben- bzw. Inhaltsbox mit Text „Hier steht die Aufgabe / der Inhalt“), Sozialform, Timer und Steuerung.' : ''}
+${folienCIText()}
 
 BAUKASTEN:
 ${folienBaukastenText()}

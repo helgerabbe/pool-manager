@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, Sparkles, Monitor, Tablet, RefreshCw, PenTool, Lock } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FAECHER } from '@/lib/stundenDesign';
 import { FREIGABE_TEXT } from '@/lib/folienSymbole';
 import useFoliensatz from '@/hooks/useFoliensatz';
 import FolienLeiste from './foliensatz/FolienLeiste';
@@ -18,7 +16,7 @@ const SCHRITTE = [['funktion', '1. Funktionsaufbau'], ['gestaltung', '2. Gestalt
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte }) {
   const navigate = useNavigate();
-  const [fach, setFach] = React.useState(FAECHER[0]);
+  const fach = 'Fächerübergreifend';
   const [ansicht, setAnsicht] = React.useState('lehrer');
   const [aktivId, setAktivId] = React.useState(null);
   const [kanal, setKanal] = React.useState('analog');
@@ -39,10 +37,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
         {schritt === 'tutorial' && <LehrerTutorial key={kanal + fach} folien={folien} />}
         {schritt === 'funktion' && <>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={fach} onValueChange={setFach}>
-            <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
-            <SelectContent>{FAECHER.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
-          </Select>
+          <span className="rounded-full border px-3 py-1 text-xs">Fächerübergreifende Vorlage · gestalteter Look</span>
           {['analog', 'digital'].map((k) => (
             <Button key={k} size="sm" variant={kanal === k ? 'default' : 'outline'} disabled={baut} onClick={() => { setKanal(k); setAktivId(null); setAnsicht('lehrer'); }}>
               {k === 'analog' ? 'Analoge Folien' : 'Digitale Folien'}
@@ -71,7 +66,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
               {folie.status === 'fertig' ? (
                 ansicht === 'schueler' && !folie.schueler?.length
                   ? <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">Analoge Folie: keine Tablet-Ansicht.</p>
-                  : <FolieVorschau elemente={folie[ansicht]} />
+                  : <FolieVorschau elemente={folie[ansicht]} folientyp={folie.folientyp} />
               ) : (
                 <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
                   {folie.status === 'fehler' ? 'Diese Folie konnte nicht gebaut werden. Bitte neu erzeugen.' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Folie wird gebaut …</>}
