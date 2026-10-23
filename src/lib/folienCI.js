@@ -84,4 +84,13 @@ export const CI_STEUERUNG = {
   schueler_vor: 'Nur bis zum Stand der Lehrkraft.',
 };
 
+// Teil 5: Bildrahmen, Abstände, Schatten (Werte in px bei 1280×720).
+export const CI_BILDRAHMEN = { rand: 6, randfarbe: '#FFFFFF', ecke: 12, unterschrift: { groesse: 14, farbe: '#6A7181' } };
+export const CI_ABSTAND = { folienrand: 40, zwischen_bloecken: 24, innen: 20, eng: 8 }; // 8er-Raster
+export const CI_SCHATTEN = {
+  keiner: 'none',                                  // Textfelder, Boxen
+  sanft: '0 4px 14px rgba(46,52,64,0.10)',         // Bilder, Karten
+  gehoben: '0 8px 24px rgba(46,52,64,0.16)',       // nur aktive/gezogene Elemente
+};
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
