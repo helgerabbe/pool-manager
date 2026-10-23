@@ -47,6 +47,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
+  sammlung: {
+    name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung',
+    schueler: 'Überschrift und Leitfrage der Sammlung, darunter eine offene Liste. Kein Merksatz-Kasten, weil noch nichts festgelegt ist: Es wird erst gesammelt, was aus der Arbeitsphase kommt.',
+    lehrer: 'Klassische Lehrersicherung: Während die Schüler vortragen bzw. sich melden, tippt die Lehrkraft live in das Textfeld; jeder Eintrag erscheint sofort als Punkt in der Liste (zweispaltig bei vielen Punkten). Optional liegt ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät.',
+  },
   lernort: {
     name: 'Lernort frei wählen', folientyp: 'organisation',
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
