@@ -1,5 +1,5 @@
 import React from 'react';
-import { PenLine, Lightbulb } from 'lucide-react';
+import { PenLine, Lightbulb, Route } from 'lucide-react';
 import { CI_BOXEN } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
 import AblaufKarten from './AblaufKarten';
@@ -40,6 +40,16 @@ export default function VorlagenInhalt({ f }) {
   if (f.vorlage === 'sicherung') return (
     <div className="flex flex-1 flex-col gap-5 pr-48"><Titel>{f.titel}</Titel>
       <Box art="merksatz"><ul className="space-y-2 text-[22px]">{(f.punkte || []).slice(0, 4).map((p, i) => <li key={i} className="line-clamp-1">• {p}</li>)}</ul></Box>
+    </div>
+  );
+  if (f.inhalt) return (
+    <div className="flex flex-1 flex-col gap-4 pr-48">
+      <Titel>{f.titel}</Titel>
+      <div className="flex items-start gap-3 rounded-lg border-l-4 border-[#9AA3B2] bg-[#EEF0F3] px-5 py-3 text-[#4A5363]">
+        <Route className="mt-1 h-6 w-6 shrink-0" />
+        <div><p className="text-sm font-semibold uppercase tracking-wide">So arbeitest du</p><p className="line-clamp-2 text-[20px] leading-snug">{f.methodisch}</p></div>
+      </div>
+      <Box art="aufgabe"><p className="line-clamp-4 text-[28px] font-semibold leading-snug">{f.inhalt}</p></Box>
     </div>
   );
   return (

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Lock, ArrowRight } from 'lucide-react';
+import { Lock, ArrowRight, VolumeX } from 'lucide-react';
 import { FOLIE_B, FOLIE_H } from '@/lib/kiFoliensatz';
 import { CI_GRUND, CI_FOLIENTYPEN, CI_TIMER, CI_BUTTONS } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
@@ -21,6 +21,7 @@ export default function VorlageRahmen({ folie, kopf, klein, children }) {
         {typ && <div className="absolute -right-32 -top-40 h-[480px] w-[480px] rounded-full" style={{ background: typ.farbe }} />}
         <div className="absolute left-10 top-4 text-sm text-[#6A7181]">{kopf}</div>
         <div className="absolute right-8 top-6 flex items-center gap-3">
+          {folie.leise && <span title="Bitte leise arbeiten" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><VolumeX className="h-7 w-7" /></span>}
           {folie.sozialform && <SozialSymbol form={folie.sozialform} />}
           {folie.minuten > 0 && <span className="rounded-full px-4 py-1.5 text-lg font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{folie.minuten}:00</span>}
         </div>
