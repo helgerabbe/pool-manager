@@ -70,7 +70,7 @@ export const CI_RASTER = {
 // Welche Zonen je Folientyp belegt sind (frei = gehört dem Inhalt).
 export const CI_ZONEN_JE_TYP = {
   inhalt:       { oben: false, unten: true },
-  methode:      { oben: false, unten: false },
+  methode:      { oben: false, unten: true },
   aufgabe:      { oben: true,  unten: true },
   organisation: { oben: true,  unten: true },
   sicherung:    { oben: false, unten: true },
