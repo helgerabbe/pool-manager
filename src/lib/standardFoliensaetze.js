@@ -54,11 +54,10 @@ const tps = (k) => [
     erklaerung: 'Methodenfolie der Share-Phase im Plenum. Oben die Arbeitsweise, darunter der klare Auftrag, was gemeinsam besprochen wird.',
     liegt: ['Methodische Anweisung im grauen Streifen „So arbeitest du“ (Arbeitsweise im Plenum)', 'Inhaltliche Aufgabe in der Aufgabenbox (was vorgestellt und besprochen wird)', 'Plenum-Symbol oben rechts'],
     entscheidungen: ['Wie lautet der genaue Auftrag für das Plenum (vorstellen, vergleichen, sammeln, bewerten)?', 'Wer stellt vor (freiwillig, ausgelost, alle Paare)?', 'Welcher Hinweis zur Arbeitsweise gilt (zuhören, melden, ergänzen)?'] }),
-  f('tps7', k, { vorlage: 'sicherung', titel: 'Das nehmen wir mit', phase: 'Share', freigabe: 'lehrkraft',
-    punkte: ['Wichtigste Idee 1', 'Wichtigste Idee 2', 'Wichtigste Idee 3'],
-    erklaerung: 'Die Lehrkraft hält die Ergebnisse fest.',
-    liegt: ['Merksatz-Box mit bis zu vier Stichpunkten'],
-    entscheidungen: ['Werden die Ergebnisse vorab erwartet (Erwartungshorizont) oder live gesammelt?'] }),
+  f('tps7', k, { vorlage: 'sammlung', titel: 'Unsere Sammlung', frage: 'Warum sind Menschen mit ihrem Beruf unzufrieden?', phase: 'Share', freigabe: 'lehrkraft',
+    erklaerung: 'Klassische Lehrersicherung: Während die Schüler vortragen, schreibt die Lehrkraft live mit. Noch keine Einigung, nur Sammeln. Kein Merksatz.',
+    liegt: ['Überschrift und Leitfrage der Sammlung', 'Offenes Textfeld, in das die Lehrkraft während der Vorträge tippt', 'Die Einträge erscheinen als Liste (zweispaltig bei vielen Punkten)'],
+    entscheidungen: ['Wie lautet die Leitfrage der Sammlung?', 'Soll ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät bereitliegen?'] }),
 ];
 
 export const STANDARD_FOLIENSAETZE = {

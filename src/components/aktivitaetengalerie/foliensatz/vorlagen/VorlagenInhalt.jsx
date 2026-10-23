@@ -5,6 +5,7 @@ import SozialSymbol from './SozialSymbol';
 import AblaufKarten from './AblaufKarten';
 import SatzZeilen from './SatzZeilen';
 import PartnersucheInhalt from './PartnersucheInhalt';
+import SammlungInhalt from './SammlungInhalt';
 
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
@@ -35,6 +36,7 @@ export default function VorlagenInhalt({ f }) {
     </div>
   );
   if (f.vorlage === 'partnersuche') return <PartnersucheInhalt f={f} />;
+  if (f.vorlage === 'sammlung') return <SammlungInhalt f={f} />;
   if (f.vorlage === 'fokus') return (
     <div className="relative flex flex-1 flex-col gap-6">
       {f.bild && <img src={f.bild} alt="" className="pointer-events-none absolute -bottom-24 -right-10 h-[95%] w-[58%] object-cover opacity-90" style={{ WebkitMaskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 75%, transparent)', WebkitMaskComposite: 'source-in', maskImage: 'linear-gradient(to left, black 55%, transparent), linear-gradient(to top, black 75%, transparent)', maskComposite: 'intersect' }} />}
