@@ -21,6 +21,7 @@ export default function GalerieListe({ liste, auswahlId, onWahl }) {
               <button key={m.id} onClick={() => onWahl(m.id)}
                 className={`flex w-full items-center gap-2 rounded-md px-3 py-1.5 text-left text-sm hover:bg-muted ${auswahlId === m.id ? 'bg-muted font-semibold' : ''}`}>
                 {m.bauplan_fertig ? <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" /> : <Circle className="h-4 w-4 shrink-0 text-muted-foreground" />}
+                {m.foliensatz_status_quo && <CheckCircle2 className="h-4 w-4 shrink-0 text-blue-600" title="Foliensatz als Status quo übernommen" />}
                 <span className="flex-1 truncate">{m.name}</span>
                 {m.stufe_pruefen && <span className="text-xs text-orange-600">prüfen</span>}
               </button>
