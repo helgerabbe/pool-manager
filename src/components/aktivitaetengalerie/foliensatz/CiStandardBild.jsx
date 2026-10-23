@@ -1,4 +1,5 @@
 import React from 'react';
+import PartnerAnalogBild from './standard/PartnerAnalogBild';
 import { Hand, Users, Network, User } from 'lucide-react';
 import { CI_TIMER } from '@/lib/folienCI';
 import EinzelarbeitTafel from './standard/EinzelarbeitTafel';
@@ -24,6 +25,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;
   if (art === 'lernort') return <LernortBild ansicht={ansicht} />;
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
+  if (art === 'partner_analog') return <PartnerAnalogBild />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
   if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <EinzelarbeitTafel />;
   if (art === 'partnerphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <Users className="inline h-3 w-3" />7 {timer}</p> : (
