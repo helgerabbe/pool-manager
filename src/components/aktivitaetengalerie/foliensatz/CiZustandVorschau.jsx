@@ -1,6 +1,6 @@
 import React from 'react';
 import { Hourglass, Lock, CheckCircle2, WifiOff } from 'lucide-react';
-import { CI_GRUND, CI_ZUSTAENDE } from '@/lib/folienCI';
+import { CI_GRUND, CI_ZUSTAENDE, CI_RASTER } from '@/lib/folienCI';
 
 const ICONS = { Hourglass, Lock, CheckCircle2, WifiOff };
 
@@ -15,6 +15,7 @@ export default function CiZustandVorschau() {
             <span className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: z.hg, color: z.text }}><Icon className="h-6 w-6" /></span>
             <p className="text-sm font-semibold" style={{ color: z.text }}>{z.titel}</p>
             <p className="text-xs text-muted-foreground">{z.satz}</p>
+            {k === 'warten' && <img src={CI_RASTER.logo.url} alt="Pool-Manager" className="mt-2 h-8 rounded-sm object-contain opacity-70" />}
           </div>
         );
       })}
