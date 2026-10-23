@@ -38,7 +38,11 @@ export default function TabletInhalt({ f }) {
   if (f.vorlage === 'sammlung') return (
     <div className="flex flex-1 flex-col gap-4 pr-48">
       <div><h2 className="text-[36px] font-bold leading-tight">{f.titel}</h2>{f.frage && <p className="text-xl text-[#3E5C8A]">{f.frage}</p>}</div>
-      <div className="flex flex-1 items-center justify-center rounded-xl border-2 border-dashed border-[#C9CED8] bg-white text-xl text-[#9AA1AE]">Die Sammlung erscheint hier live, während deine Lehrkraft mitschreibt.</div>
+      <div className="flex flex-1 flex-col rounded-xl border-2 border-[#E4E1DA] bg-white p-5">
+        <p className="mb-2 flex items-center gap-2 text-lg font-semibold text-[#6A7181]"><PenLine className="h-5 w-5" /> Deine Notizen</p>
+        <p className="flex-1 text-xl text-[#9AA1AE]">Hier steht, was du vorher aufgeschrieben hast. Die Sammlung siehst du an der Tafel.</p>
+      </div>
+      <button className="flex items-center gap-2 self-start rounded-xl bg-[#FBE3CF] px-6 py-3 text-xl font-semibold text-[#8A4B1E]"><Hand className="h-6 w-6" /> Ich möchte etwas sagen</button>
     </div>
   );
   return <VorlagenInhalt f={f} />;
