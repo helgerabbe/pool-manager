@@ -30,7 +30,7 @@ export const CI_STANDARDFOLIEN = {
   einzelphase: {
     name: 'Einzelarbeit läuft (Tafel)', folientyp: 'aufgabe',
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
-    lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Rakete-Aufgabe“.',
+    lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
 };
 
