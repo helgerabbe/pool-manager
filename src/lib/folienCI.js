@@ -10,9 +10,10 @@ export const CI_GRUND = {
 
 // Inhaltsboxen: immer gleiche Farbe, gleiches Symbol (lucide-Name), gleiche Überschrift.
 export const CI_BOXEN = {
-  aufgabe:  { titel: 'Aufgabe',  symbol: 'PenLine',   hg: '#E3EEF9', rand: '#B9D2EE', text: '#1E3A6E' },
-  merksatz: { titel: 'Merksatz', symbol: 'Lightbulb', hg: '#FBF3D5', rand: '#EBD9A0', text: '#6B4423' },
-  hinweis:  { titel: 'Hinweis zur Arbeitsweise', symbol: 'Info', hg: '#E6F2EA', rand: '#BFDCC9', text: '#24553A' },
+  // Standard (2026-10-23): jede Box trägt links eine kräftigere Akzentkante (leichte Tiefe).
+  aufgabe:  { titel: 'Aufgabe',  symbol: 'PenLine',   hg: '#E3EEF9', rand: '#B9D2EE', akzent: '#7FA6D6', text: '#1E3A6E' },
+  merksatz: { titel: 'Merksatz', symbol: 'Lightbulb', hg: '#FBF3D5', rand: '#EBD9A0', akzent: '#D4B45C', text: '#6B4423' },
+  hinweis:  { titel: 'Hinweis zur Arbeitsweise', symbol: 'Info', hg: '#E6F2EA', rand: '#BFDCC9', akzent: '#7DB592', text: '#24553A' },
 };
 
 // Folientyp-Kennung: eine weiche Form in der rechten oberen Ecke, sonst ruhiger Hintergrund.

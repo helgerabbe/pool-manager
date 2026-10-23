@@ -1,5 +1,5 @@
 import React from 'react';
-import { PenLine, Lightbulb, Route } from 'lucide-react';
+import { PenLine, Lightbulb, Info } from 'lucide-react';
 import { CI_BOXEN } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
 import AblaufKarten from './AblaufKarten';
@@ -8,10 +8,11 @@ import SatzZeilen from './SatzZeilen';
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
   const b = CI_BOXEN[art];
-  const Icon = art === 'merksatz' ? Lightbulb : PenLine;
+  const Icon = art === 'merksatz' ? Lightbulb : art === 'hinweis' ? Info : PenLine;
+  const klein = art === 'hinweis';
   return (
-    <div className="flex-1 rounded-xl border-2 p-6" style={{ background: b.hg, borderColor: b.rand, color: b.text }}>
-      <p className="mb-3 flex items-center gap-2 text-xl font-semibold"><Icon className="h-6 w-6" />{b.titel}</p>
+    <div className={`rounded-xl border-2 ${klein ? 'px-5 py-3' : 'flex-1 p-6'}`} style={{ background: b.hg, borderColor: b.rand, borderLeft: `6px solid ${b.akzent}`, color: b.text }}>
+      <p className={`flex items-center gap-2 font-semibold ${klein ? 'mb-1 text-base' : 'mb-3 text-xl'}`}><Icon className={klein ? 'h-5 w-5' : 'h-6 w-6'} />{b.titel}</p>
       {children}
     </div>
   );
@@ -46,10 +47,7 @@ export default function VorlagenInhalt({ f }) {
   if (f.inhalt) return (
     <div className="flex flex-1 flex-col gap-4 pr-16">
       <div className="pr-32"><Titel>{f.titel}</Titel></div>
-      <div className="flex items-start gap-3 rounded-lg border-l-4 border-[#9AA3B2] bg-[#EEF0F3] px-5 py-3 text-[#4A5363]">
-        <Route className="mt-1 h-6 w-6 shrink-0" />
-        <div className="min-w-0 flex-1"><p className="text-sm font-semibold uppercase tracking-wide">So arbeitest du</p><SatzZeilen text={f.methodisch} groesse={20} min={16} /></div>
-      </div>
+      <Box art="hinweis"><SatzZeilen text={f.methodisch} groesse={20} min={16} /></Box>
       <Box art="aufgabe"><SatzZeilen text={f.inhalt} groesse={28} min={20} className="font-semibold" /></Box>
     </div>
   );

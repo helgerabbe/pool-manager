@@ -21,7 +21,7 @@ export default function CiVorschau() {
         {Object.entries(CI_BOXEN).map(([k, b]) => {
           const Icon = ICONS[b.symbol];
           return (
-            <div key={k} className="rounded-xl border-2 p-3" style={{ background: b.hg, borderColor: b.rand, color: b.text }}>
+            <div key={k} className="rounded-xl border-2 p-3" style={{ background: b.hg, borderColor: b.rand, borderLeft: `6px solid ${b.akzent}`, color: b.text }}>
               <p className="flex items-center gap-2 text-sm font-bold"><Icon className="h-4 w-4" />{b.titel}</p>
               <p className="text-sm">{BEISPIEL[k]}</p>
             </div>
