@@ -206,4 +206,14 @@ export const CI_GRUPPEN = [
 ];
 export const CI_GRUPPEN_REGEL = 'Die Kennung steht in der Ecke rechts oben neben dem Sozialform-Symbol. Gruppenmitglieder sehen dieselbe Farbe, an der Tafel werden Ergebnisse in der Gruppenfarbe gezeigt.';
 
+// Teil 5b: Medien. Ein Rahmen für alles Sichtbare (Bild, Grafik, Video, Animation), keine Farbcodes.
+// Unterschieden wird nur durch ein kleines Zeichen, wo man etwas tun kann.
+export const CI_MEDIEN = {
+  bild:       { name: 'Bild / Grafik', zeichen: null },
+  video:      { name: 'Video', zeichen: 'Play', ort: 'mittig' },
+  animation:  { name: 'Interaktive Animation', zeichen: 'Hand', ort: 'Ecke rechts unten' },
+  audio:      { name: 'Audio', zeichen: 'Headphones', ort: 'eigene Abspielleiste statt Rahmen' },
+};
+export const CI_MEDIEN_REGEL = 'Gleicher weißer Rahmen, runde Ecken, sanfter Schatten, graue Unterschrift. Keine Rahmenfarben je Inhalt. Audio bekommt eine schmale Abspielleiste.';
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
