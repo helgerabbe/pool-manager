@@ -132,4 +132,25 @@ export const CI_ORGANISATION = {
   diskutieren:  { name: 'Diskutieren', symbol: 'MessagesSquare' },
 };
 
+// Teil 7: Interaktive Elemente. Alles, was man anfassen kann, ist eine weiße Karte mit Rand;
+// Ziehen hebt die Karte an (Schatten 'gehoben'), Ablagefelder sind gestrichelt.
+export const CI_INTERAKTIV = {
+  karte:     { name: 'Sortier-/Ziehkarte', hg: '#FFFFFF', rand: '#D6DCE5', text: '#2E3440', griff: '#9AA3B2' },
+  gezogen:   { name: 'Karte wird gezogen', rand: '#7FA6D6' },
+  ablage:    { name: 'Ablagefeld', hg: '#F3F1EC', rand: '#C9C4B8', aktiv: '#E3EEF9' },
+  auswahl:   { name: 'Auswahl (Ankreuzen)', hg: '#FFFFFF', rand: '#D6DCE5', gewaehlt_hg: '#E3EEF9', gewaehlt_rand: '#3E5C8A' },
+  notiz:     { name: 'Notizzettel / Pinnwand', hg: '#FBF3D5', rand: '#EBD9A0', text: '#6B4423' },
+  regler:    { name: 'Regler', spur: '#E4E1DA', fuellung: '#7FA6D6', knopf: '#3E5C8A' },
+};
+
+// Teil 8: Rückmeldungen nach „Prüfen“. Ruhig statt knallig: Pastellfläche + Symbol + kurzer Satz.
+// Falsch ist nie rot-alarmierend, sondern ein warmes Apricot mit Ermutigung.
+export const CI_RUECKMELDUNG = {
+  richtig:  { titel: 'Richtig!', symbol: 'CheckCircle2', hg: '#DCEBE1', rand: '#BFDCC9', text: '#24553A', satz: 'Gut gemacht.' },
+  teilweise:{ titel: 'Fast!', symbol: 'CircleDot', hg: '#FBF3D5', rand: '#EBD9A0', text: '#6B4423', satz: 'Einiges stimmt schon. Schau dir die markierten Stellen an.' },
+  falsch:   { titel: 'Noch nicht', symbol: 'RotateCcw', hg: '#FBEFEA', rand: '#EBC9BE', text: '#8A4B3C', satz: 'Versuch es noch einmal.' },
+  loesung:  { titel: 'Lösung', symbol: 'Eye', hg: '#E3EEF9', rand: '#B9D2EE', text: '#1E3A6E', satz: 'So sieht eine mögliche Lösung aus.' },
+};
+export const CI_RUECKMELDUNG_REGEL = 'Markiert wird am Element selbst (Rand in der Rückmeldefarbe), die Rückmeldebox erscheint unten über der Steuerung. Lösung erst nach zwei Versuchen oder auf Freigabe der Lehrkraft.';
+
 export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
