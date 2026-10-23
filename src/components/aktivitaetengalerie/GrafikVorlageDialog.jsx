@@ -64,7 +64,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             <div className="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto">
               <div className="flex flex-wrap items-center gap-2">
                 <Button variant={ansicht === 'lehrer' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('lehrer')}><Monitor /> Tafel</Button>
-                <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
+                <Button variant={ansicht === 'schueler' ? 'default' : 'outline'} size="sm" disabled={kanal === 'analog'} title={kanal === 'analog' ? 'Analoge Folien haben keine Tablet-Ansicht' : undefined} onClick={() => setAnsicht('schueler')}><Tablet /> Tablet</Button>
                 <div className="ml-auto flex gap-2">
                   <Button variant="outline" size="sm" disabled={folie.status === 'baut' || planen} onClick={() => folieNeu(folie)}><RefreshCw /> Folie neu erzeugen</Button>
                   <Button variant="outline" size="sm" disabled={folie.status !== 'fertig' || !!folie.vorlage} title={folie.vorlage ? 'Vorlagenfolien sind fest gestaltet' : undefined} onClick={() => navigate('/folien-designer', { state: { elemente: folie[ansicht] } })}><PenTool /> Im Folien-Designer öffnen</Button>
