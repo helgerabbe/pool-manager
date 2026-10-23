@@ -12,7 +12,7 @@ import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
 import BauFortschrittLeiste from './foliensatz/BauFortschrittLeiste';
 
-const SCHRITTE = [['funktion', '1. Funktionsaufbau'], ['gestaltung', '2. Gestaltete Vorlage'], ['tutorial', '3. Lehrer-Tutorial']];
+const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['gestaltung', '2. Layoutvorlagen'], ['tutorial', '3. Lehrer-Tutorial']];
 
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte }) {
@@ -76,7 +76,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
               )}
               <p className="flex items-center gap-2 text-sm text-accent"><Lock className="h-4 w-4" /> Weiter: {FREIGABE_TEXT[folie.freigabe] || 'Lehrkraft gibt frei'}{folie.freigabe === 'zeit' && folie.minuten ? ` (${folie.minuten} Min.)` : ''}</p>
             </div>
-            <FolieErklaerung folie={folie} />
+            <FolieErklaerung folie={folie} folien={folien} />
           </div>
         )}
         </>}
