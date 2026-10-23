@@ -12,11 +12,13 @@ import ZuhoerenBild from './standard/ZuhoerenBild';
 import LernortBild from './standard/LernortBild';
 import ReflexionBild from './standard/ReflexionBild';
 import StartBild from './standard/StartBild';
+import AnkuendigungBild from './standard/AnkuendigungBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 
 /** Skizze einer Standardfolie, je Ansicht (schueler | lehrer). */
 export default function CiStandardBild({ art, ansicht }) {
+  if (art === 'ankuendigung') return <AnkuendigungBild />;
   if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
   if (art === 'start') return <StartBild ansicht={ansicht} />;
   if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;

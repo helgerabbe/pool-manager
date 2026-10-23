@@ -12,6 +12,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Folgt direkt auf die Begrüßung. Oben klein Fach und Einheit, groß das Thema der Stunde. Von der Lehrkraft zuschaltbar: Stundenziel „Am Ende der Stunde kannst du …“ (gelbe Merksatz-Box) und ein kurzer Ablauf „Heute: 1 … 2 … 3 …“ als nummerierte Stichpunkte (höchstens vier). Kein ausführlicher Einstieg, nur Orientierung.',
     lehrer: 'Gleiche Folie an der Tafel. Auf dem Lehrergerät zwei Schalter: „Stundenziel zeigen“ und „Ablauf zeigen“.',
   },
+  ankuendigung: {
+    name: 'Inhaltliche Ankündigung', folientyp: 'inhalt',
+    schueler: 'Kündigt an, was in der nächsten Unterrichtsphase inhaltlich passiert. Große Überschrift, darunter ein freier Satz „Wir wollen herausfinden, …“ – keine Aufgabenbox, kein Sozialform-Symbol, kein Timer. Optional ein Bildimpuls: immer fotorealistisch (nie Comic), im unteren rechten Bereich im Hintergrund, leicht blass, weich auslaufend und über dem Folienart-Kreis liegend.',
+    lehrer: 'Gleiche Folie an der Tafel. Die Lehrkraft legt vorher fest: Überschrift, Fokus-Satz und ob es einen Bildimpuls gibt (mit Motiv).',
+  },
   zuhoeren: {
     name: 'Lehrkraft erklärt – zuhören', folientyp: 'organisation',
     schueler: 'Ohr- und Stille-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise, hör zu und stör die anderen nicht.“ Kein Weiter. Optional (von der Lehrkraft zuschaltbar): Knopf „Notiz machen“ öffnet einen gelben Notizzettel für Stichworte oder Fragen.',
