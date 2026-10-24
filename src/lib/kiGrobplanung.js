@@ -102,7 +102,7 @@ ${items.map((m) => `- ${m.name}: ${m.kurzbeschreibung || ''}`).join('\n')}`, { t
   return (r.namen || []).map((n) => items.find((m) => m.name === n)).filter(Boolean);
 }
 
-const PHASE = { type: 'object', properties: { name: { type: 'string' }, minuten: { type: 'number' }, lehrer: { type: 'string' }, schueler: { type: 'string' }, sozialform: { type: 'string' }, methode: { type: 'string' }, details: { type: 'string' }, achten: { type: 'string' }, grenzen: { type: 'string' } } };
+const PHASE = { type: 'object', properties: { name: { type: 'string' }, minuten: { type: 'number' }, lehrer: { type: 'string' }, schueler: { type: 'string' }, sozialform: { type: 'string' }, methode: { type: 'string' }, details: { type: 'string' }, achten: { type: 'string' }, grenzen: { type: 'string' }, aufgabe_art: { type: 'string', enum: ['keine', 'kern', 'teil'] }, aufgabe_titel: { type: 'string' } } };
 const SCHEMA = { type: 'object', properties: { kurz: { type: 'string' }, modell: { type: 'string', enum: STUNDEN_MODELLE.map((m) => m.key) }, hinweise: { type: 'array', items: { type: 'string' } }, phasen: { type: 'array', items: PHASE } } };
 
 /** Grobverlauf aus allen Vorgaben – oder Überarbeitung eines bestehenden Entwurfs. */
@@ -135,6 +135,7 @@ Regeln:
 - Je Phase: "lehrer" = was die Lehrkraft tut, "schueler" = was die Schüler tun (je 1–2 konkrete Sätze), "sozialform" (Plenum, Einzelarbeit, Partnerarbeit, Gruppenarbeit), "methode" falls genutzt, "details" = 1–2 Sätze, warum diese Phase/Methode hier gut passt, "achten" = 1–2 Sätze, worauf die Lehrkraft besonders achten muss, "grenzen" = 1 Satz, wann oder warum man es eher nicht so machen sollte.
 - "minuten" grob schätzen; ${k.minuten ? `die Summe ergibt ${k.minuten}.` : 'die Summe ergibt 45 oder 90 – entscheide, was das Vorhaben realistisch braucht, und nenne die Wahl samt kurzer Begründung in "hinweise".'} Die Lehrkraft sieht die Zeiten erst in der Feinplanung.
 - Es geht NUR um den methodischen Ablauf: noch nicht festlegen, ob digital oder analog, keine konkreten Arbeitsmaterialien, keine ausformulierten Arbeitsaufträge.
+- Bearbeiten die Schüler in einer Phase eine der oben abgestimmten Aufgaben, setze "aufgabe_art" ("kern" = Kernaufgabe, "teil" = Teilaufgabe) und "aufgabe_titel" (genau der Titel aus der Liste), sonst "aufgabe_art" = "keine". Benenne solche Phasen schlicht als "Übung" (bzw. "Übung: Kernaufgabe"), keine Fantasienamen.
 - "kurz": eine Zeile, was diese Stunde ausmacht. "hinweise" nur, wenn sich Vorgaben nicht stimmig umsetzen lassen.${bisher ? `
 
 ÜBERARBEITUNG – bisheriger Entwurf:
