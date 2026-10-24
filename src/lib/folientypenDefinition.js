@@ -1,0 +1,10 @@
+// Verbindliche Definition der Folientypen (2026-10-24, mit der Lehrkraft vereinbart).
+export const FOLIENTYPEN_DEFINITION = `FOLIENTYPEN (verbindlich, klare Trennlinie):
+- INHALTSFOLIE (inhalt): stellt Unterrichtsinhalt bereit, der erarbeitet werden soll. Rein informativ, erklärend, beschreibend (z. B. Thema der Stunde, Impuls, Erklärung, Grafik). Kein Timer.
+- ORGANISATIONSFOLIE (organisation): immer dann, wenn sich die Organisationsform ändert und die Schüler ihre Position oder Arbeitshaltung im Raum anpassen: Material bereitlegen, Partner suchen, Teams bilden, Sitzordnung ändern. Timer optional (z. B. „2 Minuten, um einen Partner zu finden“).
+- METHODENFOLIE (methode): erklärt, was die Schüler GLEICH tun werden und wie die Methode funktioniert (z. B. „Jetzt beginnt die Think-Phase: Du denkst allein und leise nach.“). Sie steuert, sie ist keine Aufgabe. Kein Timer.
+- AUFGABENFOLIE (aufgabe): ein konkreter Arbeitsauftrag, den die Schüler JETZT bearbeiten (die Aufgabe selbst, z. B. eine Matheaufgabe, oder ein Verweis auf Arbeitsheft oder Tablet-Übung). Timer ja. Stehen zusätzlich Hinweise zur Arbeitsweise darauf, kommen sie in den GRÜNEN Kasten („Wie arbeite ich?“), der BLAUE Kasten enthält immer, WAS bearbeitet wird.
+- SICHERUNGSFOLIE (sicherung): enthält Merksätze, also das, was die Schüler gesichert aus der Stunde mitnehmen müssen. Keine Umfrage, keine Sammlung. Kein Timer.
+- REFLEXIONSFOLIE (reflexion): Meta-Ebene: gemeinsames Rekapitulieren, Sammeln von Ergebnissen an der Tafel durch die Lehrkraft, Umfragen, Abstimmungen, individuelle Rückmeldungen („Wie hat es dir gefallen?“, „Was nimmst du mit?“). Timer ja.
+REIHENFOLGE JE PHASE: Methodenfolie (was kommt jetzt) -> ggf. Organisationsfolie (Wechsel im Raum) -> Aufgabenfolie (was konkret zu tun ist).
+Beispiel Think-Pair-Share: Methodenfolie Think -> Aufgabenfolie Think -> Methodenfolie Pair -> Organisationsfolie Partner finden -> Aufgabenfolie Pair -> Methodenfolie Share -> Reflexionsfolie (Sammlung) bzw. Sicherungsfolie (Merksatz).`;
