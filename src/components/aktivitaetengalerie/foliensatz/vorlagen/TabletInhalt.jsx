@@ -12,6 +12,7 @@ import RichtigFalschTabletInhalt from './RichtigFalschTabletInhalt';
 import MultipleChoiceTabletInhalt from './MultipleChoiceTabletInhalt';
 import BildbeschriftungTabletInhalt from './BildbeschriftungTabletInhalt';
 import ZuordnungstrainingTabletInhalt from './ZuordnungstrainingTabletInhalt';
+import KiQuizTabletInhalt from './KiQuizTabletInhalt';
 import MaterialaufgabeTabletInhalt from './MaterialaufgabeTabletInhalt';
 import SprechaufgabeTabletInhalt from './SprechaufgabeTabletInhalt';
 
@@ -41,6 +42,9 @@ function Inhalt({ f }) {
   );
   if (f.vorlage === 'materialaufgabe') return (
     <div className="flex min-h-0 flex-1 flex-col"><MaterialaufgabeTabletInhalt /></div>
+  );
+  if (f.vorlage === 'ki_quiz') return (
+    <div className="flex min-h-0 flex-1 flex-col"><KiQuizTabletInhalt /></div>
   );
   if (f.vorlage === 'zuordnungstraining') return (
     <div className="flex min-h-0 flex-1 flex-col"><ZuordnungstrainingTabletInhalt /></div>

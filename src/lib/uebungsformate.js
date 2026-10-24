@@ -7,7 +7,7 @@ export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. B
 // Noch aus dem Pool-Manager-Katalog zu übernehmende Formate (nur Übersicht, noch ohne Skizze).
 export const NOCH_OFFEN = [
   'Offene Aufgabe',
-  'KI-Quiz', 'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
+  'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
   'Text lesen', 'Video / Audio', 'Slideshow', 'Kompaktwissen', 'Lehrwerk/Quelle', 'Link / URL', 'Externer Inhalt',
 ];
 
@@ -53,6 +53,10 @@ export const UEBUNGSFORMATE = [
   { key: 'materialaufgabe', name: 'Materialaufgabe', digital: true, analog: false, tablet_vorlage: 'materialaufgabe',
     folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Arbeite mit dem Material', sozialform: 'EA', leise: true, minuten: 8, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Sieh dir das Material genau an und beantworte die Fragen.' },
     tablet: 'Material oben (Text, Bild, Audio oder Film), darunter Fragen mit Kurzantwort, Auswahl oder Richtig/Falsch; „Prüfen“ zeigt, was stimmt, „Neu“ setzt zurück.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer.' },
+  { key: 'ki_quiz', name: 'KI-Quiz', digital: true, analog: false, tablet_vorlage: 'ki_quiz',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Erkläre es in eigenen Worten', sozialform: 'EA', leise: true, minuten: 8, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Beantworte die Fragen in ganzen Sätzen. Du bekommst zu jeder Antwort eine Rückmeldung.' },
+    tablet: 'Offene Fragen untereinander mit Schreibfeld; „Abgeben“ schickt die Antwort einmal an die KI, die kurz zurückmeldet, was gelungen ist und was fehlt.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
