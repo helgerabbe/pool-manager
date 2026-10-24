@@ -1,5 +1,6 @@
 import React from 'react';
-import { Users, Network, Volume1, PlusCircle, Hand, Check } from 'lucide-react';
+import { Users, Network, PlusCircle, Hand, Check } from 'lucide-react';
+import { useLautstaerke } from './LautstaerkeLeiste';
 import { CI_SYMBOL_STIL, CI_TIMER, CI_GRUPPEN } from '@/lib/folienCI';
 
 const kreis = { background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe };
@@ -11,15 +12,16 @@ export default function TeamarbeitTafel({ art }) {
   const gruppe = art === 'gruppe';
   const teams = gruppe ? CI_GRUPPEN.slice(0, 4).map((g, i) => ({ n: g.kennung, p: [100, 60, 30, 80][i], g })) : PAARE.map(([n, p, m]) => ({ n, p, m }));
   const fertig = teams.filter((t) => t.p === 100).length;
+  const laut = useLautstaerke(gruppe ? 'GA' : 'PA');
   return (
     <div className="flex w-full flex-col gap-2 text-xs">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
-          <div className="flex gap-1.5">
+          <div className="flex items-center gap-1.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-full" style={kreis}>{gruppe ? <Network className="h-5 w-5" /> : <Users className="h-5 w-5" />}</span>
-            <span className="flex h-10 w-10 items-center justify-center rounded-full" style={kreis}><Volume1 className="h-5 w-5" /></span>
+            {laut.symbol}{laut.schalter}
           </div>
-          <p className="font-semibold">{gruppe ? 'Ihr arbeitet in eurer Gruppe. Bitte leise sprechen.' : 'Ihr arbeitet zu zweit. Bitte flüstern.'}</p>
+          <p className="font-semibold">{gruppe ? 'Ihr arbeitet in eurer Gruppe.' : 'Ihr arbeitet zu zweit.'} {laut.satz}</p>
           <p className="text-[10px] text-[#6A7181]">Aufgabe: Gründe für den Umzug in die Stadt sammeln</p>
           <p className="flex items-center gap-1 text-[10px] text-[#4A4170]"><PlusCircle className="h-3 w-3" />Fertig? Dann die Zusatzaufgabe.</p>
         </div>
@@ -37,6 +39,7 @@ export default function TeamarbeitTafel({ art }) {
           </div>
         ))}
       </div>
+      {laut.ampel}
     </div>
   );
 }
