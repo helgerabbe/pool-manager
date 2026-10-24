@@ -6,7 +6,7 @@ import { SCHRITTE, GEMISCHT, tauschen } from '@/lib/reihenfolgeBeispiel';
 export default function ReihenfolgeTabletInhalt() {
   const [ordnung, setOrdnung] = React.useState(GEMISCHT);
   return (
-    <div className="flex w-full max-w-3xl flex-col gap-2 self-start rounded-xl border-2 border-[#C9CED8] bg-white p-4">
+    <div className="m-auto flex w-full max-w-3xl flex-col gap-2 rounded-xl border-2 border-[#C9CED8] bg-white p-4">
       {ordnung.map((s, i) => (
         <div key={s} className="flex items-center gap-3 rounded-lg border-2 border-[#E4E1DA] px-3 py-1.5">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#2A4074] text-sm font-bold text-white">{i + 1}</span>

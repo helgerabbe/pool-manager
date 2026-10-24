@@ -16,7 +16,7 @@ export default function ZuordnenTabletInhalt() {
   const vergeben = Object.values(zu);
   const setzen = (i) => { if (!wahl) return; setZu({ ...Object.fromEntries(Object.entries(zu).filter(([, b]) => b !== wahl)), [i]: wahl }); setWahl(null); };
   return (
-    <div className="flex flex-col gap-3 self-start w-full max-w-3xl rounded-xl border-2 border-[#C9CED8] bg-white p-4">
+    <div className="m-auto flex flex-col gap-3 w-full max-w-3xl rounded-xl border-2 border-[#C9CED8] bg-white p-4">
       <div className="flex flex-col gap-2">
         {PAARE.map(([, erkl], i) => (
           <button key={i} type="button" onClick={() => setzen(i)} className={`flex items-center gap-3 rounded-lg border-2 px-3 py-1.5 text-left ${wahl ? 'border-[#F08A24] bg-[#FFF7EE]' : 'border-[#E4E1DA]'}`}>
