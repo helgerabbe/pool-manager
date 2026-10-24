@@ -74,7 +74,7 @@ export const CI_REGELN = {
     klaeren: ['Welches Übungsformat und welcher Inhalt?', 'Kommt danach eine Tablet-Phase mit demselben Format?'],
   },
   lueckentext: {
-    gestaltung: ['Tablet: Text mit Lücken, Wortspeicher darunter', 'Tafel: Text groß, große Antippflächen, unten Lösung prüfen, Zufallsschüler, Neu beginnen'],
+    gestaltung: ['Tablet: Text mit Lücken, Wortspeicher darunter', 'Tafel: Text groß, große Antippflächen, unten Lösung prüfen, Zufallsschüler, Neu beginnen', 'Tafel nie scrollbar: alles auf einen Blick; nur einzelne Elemente (z. B. langer Wortspeicher) scrollen in ihrer Box', 'Keine große Überschrift an der Tafel, nur ein kleines Etikett'],
     inhalt: ['Höchstens 4-6 Lücken', 'Wortspeicher mit einem Ablenker'],
     titel: ['Fülle die Lücken', 'Wir füllen die Lücken gemeinsam'],
     klaeren: ['Text und Lücken', 'Mit oder ohne Wortspeicher?'],

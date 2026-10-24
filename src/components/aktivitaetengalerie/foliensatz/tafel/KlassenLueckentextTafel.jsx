@@ -18,12 +18,12 @@ export default function KlassenLueckentextTafel() {
   const setzen = (i) => { if (wahl) { setLuecken({ ...luecken, [i]: wahl }); setWahl(null); } else if (luecken[i]) { const { [i]: _, ...rest } = luecken; setLuecken(rest); } setGeprueft(false); };
   let n = -1;
   return (
-    <div className="flex h-full flex-col gap-6 p-10 font-folie text-[#121721]">
-      <div className="flex items-center gap-3 pr-40">
-        <h2 className="flex-1 text-[40px] font-bold">Wir füllen die Lücken gemeinsam</h2>
-        {dran && <span className="rounded-full bg-[#FBE3CF] px-5 py-2 text-xl font-semibold text-[#8A4B1E]">Nr. {dran} kommt nach vorne</span>}
+    <div className="flex h-full flex-col gap-4 overflow-hidden px-10 pb-6 pt-5 font-folie text-[#121721]">
+      <div className="flex shrink-0 items-center gap-3 pr-40">
+        <span className="rounded-full bg-[#DCE7F5] px-4 py-1 text-lg font-semibold text-[#2A4074]">Lückentext · gemeinsam</span>
+        {dran && <span className="rounded-full bg-[#FBE3CF] px-4 py-1 text-lg font-semibold text-[#8A4B1E]">Nr. {dran} kommt nach vorne</span>}
       </div>
-      <p className="text-[32px] leading-[2.2]">
+      <p className="min-h-0 flex-1 overflow-y-auto text-[32px] leading-[2.2]">
         {teile.map((t, k) => {
           if (!t.startsWith('{')) return <span key={k}>{t}</span>;
           n += 1; const i = n; const w = luecken[i];
@@ -31,12 +31,12 @@ export default function KlassenLueckentextTafel() {
           return <button key={k} onClick={() => setzen(i)} className={`mx-1 inline-block min-w-[180px] rounded-lg border-b-4 px-3 align-middle leading-tight ${farbe}`}>{w || '\u00a0'}</button>;
         })}
       </p>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex max-h-[150px] shrink-0 flex-wrap gap-3 overflow-y-auto rounded-xl border-2 border-dashed border-[#C9CED8] p-3">
         {bank.filter((b) => !benutzt.includes(b)).map((b) => (
           <button key={b} onClick={() => setWahl(wahl === b ? null : b)} className={`rounded-xl border-2 px-6 py-3 text-2xl font-semibold ${wahl === b ? 'border-[#F59E2B] bg-[#FDEBD3]' : 'border-[#C9CED8] bg-white'}`}>{b}</button>
         ))}
       </div>
-      <div className="mt-auto flex gap-3">
+      <div className="flex shrink-0 gap-3">
         <button onClick={() => setGeprueft(true)} className={`${knopf} bg-[#2A4074] text-white`}><CheckCircle2 className="h-6 w-6" />Lösung prüfen</button>
         <button onClick={() => setDran(1 + Math.floor(Math.random() * 24))} className={`${knopf} bg-[#DCE7F5] text-[#2A4074]`}><Shuffle className="h-6 w-6" />Zufallsschüler</button>
         <button onClick={() => { setLuecken({}); setGeprueft(false); setWahl(null); }} className={`${knopf} bg-white text-[#6A7181] border-2`}><RotateCcw className="h-6 w-6" />Neu beginnen</button>
