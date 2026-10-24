@@ -19,7 +19,7 @@ export default function StartBild({ ansicht }) {
       {ablauf && <p><b>Heute:</b> {ABLAUF.map((a, i) => `${i + 1} ${a}`).join(' · ')}</p>}
       <div className="relative mt-2 h-28 overflow-hidden rounded-lg">
         <img src={BILD} alt="Jemand packt einen Umzugskarton" className="h-full w-full object-cover" />
-        <div className="absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/70 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white via-white/60 to-transparent" />
       </div>
     </div>
   );
