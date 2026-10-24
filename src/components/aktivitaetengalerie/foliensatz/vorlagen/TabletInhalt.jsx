@@ -4,6 +4,7 @@ import { CI_BOXEN } from '@/lib/folienCI';
 import VorlagenInhalt from './VorlagenInhalt';
 import TippHilfe from './TippHilfe';
 import SatzanfaengeTablet from './SatzanfaengeTablet';
+import SchrittFortschritt from './SchrittFortschritt';
 
 const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
@@ -15,8 +16,18 @@ const AufgabeOben = ({ f }) => (
   </div>
 );
 
-/** Tablet-Ansicht (Schülergerät): Aufgabe kompakt oben, Arbeitsfläche darunter, kein Scrollen. */
+/** Tablet-Ansicht (Schülergerät): optional Schrittfortschritt, Aufgabe kompakt oben, Arbeitsfläche darunter. */
 export default function TabletInhalt({ f }) {
+  if (!(f.schritte > 1)) return <Inhalt f={f} />;
+  return (
+    <div className="flex flex-1 flex-col">
+      <SchrittFortschritt schritt={f.schritt || 1} schritte={f.schritte} />
+      <div className="flex flex-1 flex-col"><Inhalt f={f} /></div>
+    </div>
+  );
+}
+
+function Inhalt({ f }) {
   if (f.vorlage === 'satzanfaenge') return <SatzanfaengeTablet f={f} />;
   if (f.vorlage === 'phase' && f.phase === 'Share') return (
     <div className="flex flex-1 flex-col gap-4 pr-48">
