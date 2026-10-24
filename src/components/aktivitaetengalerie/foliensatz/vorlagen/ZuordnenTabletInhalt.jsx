@@ -7,7 +7,7 @@ const PAARE = [
   ['Blatt', 'bildet mit Licht Zucker'],
   ['Blüte', 'dient der Fortpflanzung'],
 ];
-const BEGRIFFE = ['Blatt', 'Wurzel', 'Blüte', 'Stängel'];
+const BEGRIFFE = ['Blatt', 'Samen', 'Wurzel', 'Blüte', 'Knospe', 'Stängel'];
 
 /** Begriffe zuordnen im Tablet-Rahmen: Begriff antippen, dann die passende Erklärung antippen. */
 export default function ZuordnenTabletInhalt() {

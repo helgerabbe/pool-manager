@@ -7,7 +7,7 @@ import useEinpassen from './useEinpassen';
 const BEISPIEL = 'Die Pflanze nimmt mit den {Wurzeln} Wasser auf. In den {Blättern} entsteht mit Hilfe von {Licht} Zucker. Dabei wird {Sauerstoff} abgegeben.';
 const teile = BEISPIEL.split(/(\{[^}]+\})/).filter(Boolean);
 const loesungen = teile.filter((t) => t.startsWith('{')).map((t) => t.slice(1, -1));
-const bank = [...loesungen, 'Stängel'].sort();
+const bank = [...loesungen, 'Stängel', 'Blüte'].sort();
 const knopf = 'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold';
 
 /** Übung an der Tafel: kompakte Kopfleiste, Inhalt passt sich ohne Tafel-Scrollen ein. */

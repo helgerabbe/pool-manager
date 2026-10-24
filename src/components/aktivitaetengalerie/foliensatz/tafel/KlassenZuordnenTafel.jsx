@@ -8,7 +8,7 @@ const PAARE = [
   ['Blatt', 'bildet mit Licht Zucker'],
   ['Blüte', 'dient der Fortpflanzung'],
 ];
-const BEGRIFFE = ['Blatt', 'Wurzel', 'Blüte', 'Stängel'];
+const BEGRIFFE = ['Blatt', 'Samen', 'Wurzel', 'Blüte', 'Knospe', 'Stängel'];
 const knopf = 'flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold';
 
 /** Begriffe zuordnen gemeinsam an der Tafel: Begriff antippen, dann Erklärung antippen. */

@@ -7,7 +7,7 @@ export default function LueckentextTablet() {
     <div className="space-y-2 text-xs">
       <p className="leading-6">Die Pflanze nimmt mit den {luecke} Wasser auf. In den {luecke} entsteht mit {luecke} Zucker.</p>
       <div className="flex flex-wrap gap-1">
-        {['Blättern', 'Licht', 'Stängel', 'Wurzeln'].map((w) => <span key={w} className="rounded-md border bg-white px-2 py-0.5 font-semibold">{w}</span>)}
+        {['Blättern', 'Blüte', 'Licht', 'Stängel', 'Wurzeln'].map((w) => <span key={w} className="rounded-md border bg-white px-2 py-0.5 font-semibold">{w}</span>)}
       </div>
     </div>
   );
