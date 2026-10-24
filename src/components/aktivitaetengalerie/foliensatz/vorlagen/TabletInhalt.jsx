@@ -28,8 +28,8 @@ export default function TabletInhalt({ f }) {
   );
   if (f.vorlage === 'phase' || f.vorlage === 'impuls') return (
     <div className="flex flex-1 flex-col gap-4 pr-16">
-      <div className="relative h-1/4"><AufgabeOben f={f} />{f.tipps?.length > 0 && <TippHilfe tipps={f.tipps} />}</div>
-      <div className="flex flex-1 flex-col rounded-xl border-2 border-[#C9CED8] bg-white p-5">
+      <div className="relative shrink-0"><AufgabeOben f={f} />{f.tipps?.length > 0 && <TippHilfe tipps={f.tipps} />}</div>
+      <div className="flex min-h-[420px] flex-1 flex-col rounded-xl border-2 border-[#C9CED8] bg-white p-5">
         <p className="mb-2 flex items-center gap-2 text-lg font-semibold text-[#6A7181]"><PenLine className="h-5 w-5" />{f.phase === 'Pair' ? 'Gemeinsames Notizfeld (Partner 7)' : 'Meine Ideen'}</p>
         <textarea className="flex-1 resize-none bg-transparent text-xl outline-none" placeholder={f.phase === 'Pair' ? 'Haltet hier eure Einigung fest …' : 'Schreibe hier deine Ideen auf …'} />
       </div>

@@ -37,9 +37,9 @@ export default function VorlagenInhalt({ f }) {
     </div>
   );
   if (f.vorlage === 'impuls') return (
-    <div className="flex flex-1 items-center justify-center pb-6 pt-4">
+    <div className="flex min-h-0 flex-1 items-center justify-center py-4">
       {f.bild
-        ? <img src={f.bild} alt="" className="max-h-[560px] max-w-[85%] rounded-xl object-contain shadow-lg" />
+        ? <img src={f.bild} alt="" className="h-full max-w-[75%] rounded-xl object-contain shadow-lg" />
         : <p className="text-2xl text-[#9AA1AE]">Hier erscheint der Impuls (Bild, Gegenstand oder Text).</p>}
     </div>
   );

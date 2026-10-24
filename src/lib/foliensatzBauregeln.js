@@ -11,7 +11,9 @@ export const BAUREGELN = `BAUREGELN (verbindlich):
 6. Ergebnis hängt vom Ziel ab: DIVERGIEREND (Ideen sammeln) -> Vorlage "sammlung" (Lehrkraft schreibt live mit, kein Merksatz). KONVERGIEREND (sich einigen, gewichten, Rangfolge) -> Vorlage "sicherung" (Merksatz-Box mit dem Einigungsergebnis).
 7. Plenumsphase bekommt eine eigene Phasenfolie (Arbeitsweise im Plenum + was besprochen wird) VOR der Ergebnisfolie.
 8. Je Folie zusätzlich: "liegt" = 2-4 Stichpunkte, was auf der Folie zu sehen ist; "entscheidungen" = Fragen, die die Lehrkraft vor der Stunde beantworten muss (Aufgabe, Dauer, Art der Freigabe, Anzahl der Aspekte, Art der Partnerfindung ...). Leer, wenn nichts zu entscheiden ist.
-9. Keine Aufgabe ohne Thema: Nutze EIN durchgehendes Beispielthema für alle Folien.`;
+9. Keine Aufgabe ohne Thema: Nutze EIN durchgehendes Beispielthema für alle Folien.
+10. Tafel wie PowerPoint: nichts ragt über den Folienrand, kein Scrollen (außer innerhalb von Textfeldern). Zwischen allen Elementen bleibt sichtbarer Abstand, nichts überlappt; Inhalte halten Abstand zu den Symbolen oben rechts.
+11. Tablet darf nach unten länger als eine Bildschirmhöhe sein (Scrollen erlaubt). Der Weiter-Knopf schwebt nicht, sondern steht immer am Ende der Seite.`;
 
 const kurz = (f) => {
   const { id, kanal, status, bild, erklaerung, liegt, ...rest } = f;
