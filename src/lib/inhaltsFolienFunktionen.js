@@ -3,8 +3,8 @@
 export const INHALTS_FUNKTIONEN = [
   { key: 'f_aktivieren', name: 'Ankommen und aktivieren', text: 'Vorwissen, Erlebnisse oder eine erste Vermutung aufrufen.' },
   { key: 'f_irritieren', name: 'Irritieren und neugierig machen', text: 'Mit Bild, Frage oder Widerspruch einen Denkimpuls setzen.' },
-  { key: 'f_thema', name: 'Thema und Relevanz eröffnen', text: 'Benennen, worum es geht und warum es sich lohnt.', folie: 'ankuendigung' },
-  { key: 'f_orientierung', name: 'Orientierung geben', text: 'Lernziel, Leitfrage, Ablauf oder Kriterien sichtbar machen.', folie: 'start' },
+  { key: 'f_thema', name: 'Thema und Relevanz eröffnen', text: 'Benennen, worum es geht und warum es sich lohnt.' },
+  { key: 'f_orientierung', name: 'Orientierung geben', text: 'Leitfrage oder Kriterien mitten in der Stunde sichtbar machen.' },
   { key: 'f_begriffe', name: 'Begriffe und Vorwissen klären', text: 'Zentrale Wörter und Voraussetzungen klären.' },
   { key: 'f_erklaeren', name: 'Einen Sachverhalt erklären', text: 'Zusammenhänge, Ursachen oder Modelle verständlich machen.' },
   { key: 'f_beispiele', name: 'Beispiele zeigen und vergleichen', text: 'Einen Begriff an konkreten Fällen erschließen.' },
