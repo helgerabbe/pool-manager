@@ -15,7 +15,7 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
   const fragen = (basis, stufe, nachricht) => {
     setDenkt(true);
     onGespraech({ u: basis, stufe, nachricht }).then((r) => setWert({
-      ...basis, stufe, [stufe]: r.aufgaben || [],
+      ...basis, stufe, [stufe]: stufe === 'vorstufen' ? [...(basis.vorstufen || []), ...(r.aufgaben || [])].slice(0, 20) : r.aufgaben || [],
       gespraech: [...basis.gespraech, ...(nachricht ? [{ role: 'user', content: nachricht }] : []), { role: 'assistant', content: r.antwort }],
     })).finally(() => setDenkt(false));
   };
@@ -40,10 +40,16 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
       </div>
 
       <AufgabenKarten titel="Kernaufgaben" aufgaben={u.kern} onEntfernen={u.stufe === 'kern' ? entfernen('kern') : undefined} />
-      {u.stufe === 'vorstufen' && <AufgabenKarten titel="Hinführende Teilaufgaben" aufgaben={u.vorstufen} onEntfernen={entfernen('vorstufen')} />}
+      {u.stufe === 'vorstufen' && (
+        <>
+          <AufgabenKarten titel={`Mögliche Teilaufgaben (${u.vorstufen.length}/20) – bewerte sie mit Sternen`} aufgaben={u.vorstufen} onEntfernen={entfernen('vorstufen')}
+            onBewerten={(i, s) => setWert({ ...u, vorstufen: u.vorstufen.map((x, j) => (j === i ? { ...x, bewertung: s } : x)) })} />
+          <Button size="sm" variant="outline" disabled={denkt || u.vorstufen.length >= 20} onClick={() => fragen(u, 'vorstufen', 'Gib mir noch mehr Vorschläge für Teilaufgaben.')}><Sparkles /> Mehr Vorschläge</Button>
+        </>
+      )}
 
       <div className="space-y-2 rounded-xl border bg-card p-3">
-        <p className="text-sm font-semibold">{u.stufe === 'kern' ? 'Wenn du willst: Beschreibe eine typische Aufgabe, die die Schüler am Ende dieser Stunde lösen können sollen.' : 'Deine Rückmeldung zu den Teilaufgaben'}</p>
+        <p className="text-sm font-semibold">{u.stufe === 'kern' ? 'Wenn du willst: Beschreibe eine typische Aufgabe, die die Schüler am Ende dieser Stunde lösen können sollen.' : 'Wünsch dir eine bestimmte Art von Teilaufgabe, z. B. „Kann man nicht auch eine Teilaufgabe machen, die …?“'}</p>
         <FreitextMitSprache rows={3} value={text} onChange={setText} placeholder="z. B. „Ja, passt“, „Lieber ohne Sachkontext“ oder deine eigene Aufgabe …" />
         <p className="text-xs text-muted-foreground">Beispielaufgaben als PDF oder Bild hochladen oder mit Strg+V einfügen:</p>
         <MaterialUpload materialien={u.beispiele} onChange={(b) => setWert({ ...u, beispiele: b })} />
