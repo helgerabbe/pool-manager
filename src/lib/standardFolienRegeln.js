@@ -67,6 +67,12 @@ export const CI_REGELN = {
     titel: ['Jetzt bist du dran', 'Legt los'],
     klaeren: ['Aufgabenstellung bzw. Fundstelle', 'Sozialform', 'Lautstärke zu Beginn'],
   },
+  klassenmodus: {
+    gestaltung: ['Das Übungsformat groß an der Tafel, große Antippflächen', 'Unten: Lösung prüfen, Zufallsschüler, Neu beginnen'],
+    inhalt: ['Nur Formate, die an der Tafel gemeinsam lösbar sind (siehe Merkmal klasse_tafel)', 'Kurz halten: höchstens 4-6 Lücken bzw. Elemente'],
+    titel: ['Wir füllen die Lücken gemeinsam', 'Wer weiß es?'],
+    klaeren: ['Welches Übungsformat und welcher Inhalt?', 'Kommt danach eine Tablet-Phase mit demselben Format?'],
+  },
   sammlung: {
     gestaltung: ['Tafel: Leitfrage und offene Liste, die Lehrkraft schreibt live mit', 'Tablet: eigene Notizen des Schülers, Meldeknopf', 'Kein Merksatz'],
     inhalt: ['Leitfrage als direkte Frage an die Klasse'],
