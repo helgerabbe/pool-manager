@@ -1,11 +1,12 @@
 import React from 'react';
-import { ArrowLeft, ArrowRight, Loader2, Sparkles, Send, Check, Plus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Sparkles, Send, Check, Plus, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
 import AufgabenKarten from './AufgabenKarten';
 import DifferenzierungKarten from './DifferenzierungKarten';
 import AufklappBox from './AufklappBox';
+import AssistentFenster from './AssistentFenster';
 
 const WUNSCH = {
   kern: 'Eigene Rückmeldung zur Kernaufgabe oder eigene Aufgabe eingeben',
@@ -19,6 +20,7 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
   const u = { kern: [], vorstufen: [], beispiele: [], gespraech: [], stufe: 'kern', ...(wert || {}) };
   const [text, setText] = React.useState('');
   const [denkt, setDenkt] = React.useState(false);
+  const [fenster, setFenster] = React.useState(null);
 
   const fragen = (basis, stufe, nachricht) => {
     setDenkt(true);
@@ -65,6 +67,17 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
         <Button size="sm" variant="outline" disabled={denkt} onClick={() => fragen(u, 'kern', 'Schlage mir zusätzlich eine zweite Kernaufgabe vor; die erste bleibt unverändert.')}><Plus /> Zweite Kernaufgabe hinzufügen</Button>
       )}
       {u.stufe !== 'kern' && <DifferenzierungKarten kern={u.kern} />}
+      {(u.stufe === 'kern' || u.stufe === 'diff') && u.kern.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {u.kern.map((k, i) => (
+            <Button key={i} size="sm" variant="secondary" onClick={() => setFenster({ titel: `${u.stufe === 'kern' ? 'Kernaufgabe' : 'Differenzierung'} ${u.kern.length > 1 ? i + 1 : ''} besprechen`, bezug: `Zu ${u.stufe === 'kern' ? '' : 'der Differenzierung von '}Kernaufgabe ${i + 1} („${k.titel}“)` })}>
+              <MessageCircle /> {u.stufe === 'kern' ? 'Über die Kernaufgabe' : 'Über die Differenzierung'}{u.kern.length > 1 ? ` ${i + 1}` : ''} sprechen
+            </Button>
+          ))}
+        </div>
+      )}
+      <AssistentFenster offen={!!fenster} onSchliessen={() => setFenster(null)} titel={fenster?.titel} bezug={fenster?.bezug} gespraech={u.gespraech} denkt={denkt}
+        onSenden={(n) => fragen(u, u.stufe, n)} key={fenster?.bezug || 'zu'} />
       {u.stufe === 'vorstufen' && (
         <>
           <AufgabenKarten titel={`Mögliche Teilaufgaben (${u.vorstufen.length}/20) – bewerte sie mit Sternen`} aufgaben={u.vorstufen.map((x) => (u.kern.length > 1 && x.kern ? { ...x, titel: `[K${x.kern}] ${x.titel}` } : x))} onEntfernen={entfernen('vorstufen')}
