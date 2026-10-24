@@ -1,5 +1,7 @@
 import React from 'react';
-import { Users, Network, PlusCircle, Hand, Check } from 'lucide-react';
+import { Users, Network, PlusCircle } from 'lucide-react';
+import TeamKachel from './TeamKachel';
+import useTeamRueckmeldung from './useTeamRueckmeldung';
 import { useLautstaerke } from './LautstaerkeLeiste';
 import { CI_SYMBOL_STIL, CI_TIMER, CI_GRUPPEN } from '@/lib/folienCI';
 
@@ -13,13 +15,14 @@ export default function TeamarbeitTafel({ art }) {
   const teams = gruppe ? CI_GRUPPEN.slice(0, 4).map((g, i) => ({ n: g.kennung, p: [100, 60, 30, 80][i], g })) : PAARE.map(([n, p, m]) => ({ n, p, m }));
   const fertig = teams.filter((t) => t.p === 100).length;
   const laut = useLautstaerke(gruppe ? 'GA' : 'PA');
+  const rm = useTeamRueckmeldung(gruppe ? 'Gruppe' : 'Paar');
   return (
     <div className="flex w-full flex-col gap-2 text-xs">
       <div className="flex items-center gap-3">
         <div className="flex flex-1 flex-col items-center gap-1 text-center">
           <div className="flex items-center gap-1.5">
             <span className="flex h-10 w-10 items-center justify-center rounded-full" style={kreis}>{gruppe ? <Network className="h-5 w-5" /> : <Users className="h-5 w-5" />}</span>
-            {laut.symbol}{laut.schalter}
+            {laut.symbol}{laut.schalter}{rm.schalter}
           </div>
           <p className="font-semibold">{gruppe ? 'Ihr arbeitet in eurer Gruppe.' : 'Ihr arbeitet zu zweit.'} {laut.satz}</p>
           <p className="text-[10px] text-[#6A7181]">Aufgabe: Gründe für den Umzug in die Stadt sammeln</p>
@@ -32,13 +35,11 @@ export default function TeamarbeitTafel({ art }) {
       </div>
       <div className={`grid gap-1 ${gruppe ? 'grid-cols-4' : 'grid-cols-6'}`}>
         {teams.map((t) => (
-          <div key={t.n} className="rounded-md border bg-white p-1 text-[9px]" style={t.g ? { background: t.g.hg, color: t.g.text, borderColor: t.g.hg } : undefined}>
-            <b className="flex items-center gap-0.5">{gruppe ? <Network className="h-2.5 w-2.5" /> : <Users className="h-2.5 w-2.5" />}{t.n}
-              {t.m && <Hand className="ml-auto h-2.5 w-2.5 text-[#8A4B3C]" />}{t.p === 100 && <Check className="ml-auto h-2.5 w-2.5 text-[#24553A]" />}</b>
-            <div className="mt-1 h-1 rounded bg-[#E4E1DA]"><div className="h-1 rounded bg-[#7FA6D6]" style={{ width: `${t.p}%` }} /></div>
-          </div>
+          <TeamKachel key={t.n} t={t} gruppe={gruppe} rueckmeldung={rm.an} sterne={rm.sterne[t.n]}
+            onStern={() => rm.senden(t.n, 'stern')} onLeise={() => rm.senden(t.n, 'leise')} />
         ))}
       </div>
+      {rm.vorschau}
       {laut.ampel}
     </div>
   );
