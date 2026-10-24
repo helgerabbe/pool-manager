@@ -6,7 +6,7 @@ export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. B
 
 // Noch aus dem Pool-Manager-Katalog zu übernehmende Formate (nur Übersicht, noch ohne Skizze).
 export const NOCH_OFFEN = [
-  'Materialaufgabe', 'Offene Aufgabe',
+  'Offene Aufgabe',
   'KI-Quiz', 'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
   'Text lesen', 'Video / Audio', 'Slideshow', 'Kompaktwissen', 'Lehrwerk/Quelle', 'Link / URL', 'Externer Inhalt',
 ];
@@ -49,6 +49,10 @@ export const UEBUNGSFORMATE = [
   { key: 'sprechaufgabe', name: 'Sprechaufgabe', digital: true, analog: false, tablet_vorlage: 'sprechaufgabe',
     folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Sprich es aus', sozialform: 'EA', leise: false, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein, sprich leise in dein Gerät.', inhalt: 'Nimm deine Antwort auf. Du bekommst sofort eine Rückmeldung.' },
     tablet: 'Aufgabe oben, darunter ein großes Mikrofon; antippen startet, erneut antippen stoppt die Aufnahme. Danach zeigt die KI, was gelungen ist und was fehlt; begrenzte Versuche.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer.' },
+  { key: 'materialaufgabe', name: 'Materialaufgabe', digital: true, analog: false, tablet_vorlage: 'materialaufgabe',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Arbeite mit dem Material', sozialform: 'EA', leise: true, minuten: 8, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Sieh dir das Material genau an und beantworte die Fragen.' },
+    tablet: 'Material oben (Text, Bild, Audio oder Film), darunter Fragen mit Kurzantwort, Auswahl oder Richtig/Falsch; „Prüfen“ zeigt, was stimmt, „Neu“ setzt zurück.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
