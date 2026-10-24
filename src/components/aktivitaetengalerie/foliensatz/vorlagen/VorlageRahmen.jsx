@@ -3,6 +3,7 @@ import { Lock, ArrowRight, VolumeX, Volume1 } from 'lucide-react';
 import { FOLIE_B, FOLIE_H } from '@/lib/kiFoliensatz';
 import { CI_GRUND, CI_FOLIENTYPEN, CI_TIMER, CI_BUTTONS } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
+import FolienTimer from './FolienTimer';
 
 /** Fester Folienrahmen: Off-White, Folientyp-Ecke, Kopfleiste, Status oben rechts, Steuerung unten rechts. */
 export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) {
@@ -29,7 +30,7 @@ export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) 
           {folie.leise && <span title="Bitte leise arbeiten" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><VolumeX className="h-7 w-7" /></span>}
           {folie.fluestern && <span title="Bitte mit Flüsterstimme sprechen" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><Volume1 className="h-7 w-7" /></span>}
           {folie.sozialform && <SozialSymbol form={folie.sozialform} />}
-          {folie.minuten > 0 && !['methode', 'inhalt', 'sicherung'].includes(folie.folientyp) && <span className="rounded-full px-4 py-1.5 text-lg font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{folie.minuten}:00</span>}
+          {(['aufgabe', 'reflexion'].includes(folie.folientyp) || (folie.folientyp === 'organisation' && folie.minuten > 0)) && <FolienTimer key={folie.id || folie.titel} start={folie.minuten || 5} />}
         </div>
         {tablet
           ? <div className="relative flex flex-col gap-6 px-10 pb-6 pt-24" style={{ minHeight: FOLIE_H }}><div className="flex flex-1 flex-col">{children}</div><Knopf knopf={knopf} /></div>
