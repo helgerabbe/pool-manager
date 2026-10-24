@@ -12,12 +12,12 @@ export default function KiQuizTabletInhalt() {
   const [status, setStatus] = React.useState({});
   const senden = (id) => { setStatus((s) => ({ ...s, [id]: 'laedt' })); setTimeout(() => setStatus((s) => ({ ...s, [id]: 'fertig' })), 900); };
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-xl border-2 border-[#C9CED8] bg-white p-4">
-      <div className="grid min-h-0 flex-1 grid-cols-2 gap-3">
+    <div className="flex flex-1 flex-col gap-3 rounded-xl border-2 border-[#C9CED8] bg-white p-4">
+      <div className="flex flex-col gap-3">
       {FRAGEN.map((f, i) => {
         const st = status[f.id];
         return (
-          <div key={f.id} className="min-h-0 overflow-y-auto rounded-xl bg-[#F6F7F9] p-3">
+          <div key={f.id} className="rounded-xl bg-[#F6F7F9] p-3">
             <p className="mb-2 text-lg font-semibold text-[#121721]">{i + 1}. {f.frage}</p>
             <textarea rows={3} disabled={!!st} value={antw[f.id] || ''} onChange={(e) => setAntw((a) => ({ ...a, [f.id]: e.target.value }))} placeholder="Schreibe deine Antwort …" className="w-full resize-none rounded-lg border-2 border-[#DCDFE4] bg-white px-3 py-2 text-base outline-none disabled:opacity-70" />
             {!st && <button type="button" disabled={!(antw[f.id] || '').trim()} onClick={() => senden(f.id)} className="mt-2 flex items-center gap-1 rounded-lg bg-[#2A4074] px-4 py-1.5 font-semibold text-white disabled:opacity-40"><Send className="h-4 w-4" /> Abgeben</button>}
