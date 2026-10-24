@@ -16,7 +16,7 @@ import { kiGespraechSchritt, kiGespraechHintergrund } from '@/lib/kiPlanungsGesp
 import KernschrittListe from '@/components/planungsgespraech/KernschrittListe';
 import VorgabenPopup from '@/components/planungsgespraech/VorgabenPopup';
 import UebungsformateSchritt from '@/components/uebungsplanung/UebungsformateSchritt';
-import { kiUebungsVorschlaege } from '@/lib/kiUebungsformate';
+import { kiUebungsGespraech } from '@/lib/kiUebungsformate';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
@@ -162,7 +162,7 @@ export default function StundenplanerVorschau() {
           )}
           {phase === 'uebung' && (
             <>
-              <UebungsformateSchritt wert={v.uebungen} setWert={setze('uebungen')} laedt={laedt} onVorschlaege={() => kiUebungsVorschlaege({ ...k(), vorgaben: v })}
+              <UebungsformateSchritt wert={v.uebungen} setWert={setze('uebungen')} laedt={laedt} onGespraech={(a) => kiUebungsGespraech({ ...k(), vorgaben: v, ...a })}
                 onZurueck={() => setPhase('grob')} onWeiter={uebungWeiter} />
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
             </>
