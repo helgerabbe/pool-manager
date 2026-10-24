@@ -12,6 +12,7 @@ export const FOLIEN_VORLAGEN = {
   sammlung: { name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung', felder: 'titel (max. 30), frage (max. 80, Leitfrage der Sammlung). Die Liste bleibt leer und wird im Unterricht live von der Lehrkraft gefüllt.' },
   abstimmung: { name: 'Abstimmung (optional nach Sammlung)', folientyp: 'sicherung', felder: 'titel (max. 30), abstimmung = gewichten | bewerten | auswaehlen; punkte = die gesammelten Einträge (werden im Unterricht automatisch übernommen). Nicht zum Ordnen oder Merksatz-Formulieren.' },
   sicherung: { name: 'Sicherung', folientyp: 'sicherung', felder: 'titel (max. 30), punkte: 2-4 Stichpunkte (je max. 60)' },
+  einschub: { name: 'Einschub: Folien aus dem Unterricht', folientyp: 'organisation', felder: 'titel (max. 40, z. B. „Erarbeitung im Unterricht“), satz (max. 110: was hier eingefügt wird, z. B. Lehrerimpuls, Erarbeitung, Übung). Platzhalter für mehrere Unterrichtsfolien, die später der Unterrichtsassistent einsetzt.' },
   standard: { name: 'Standardfolie', folientyp: 'organisation', felder: `standard = einer von ${Object.keys(CI_STANDARDFOLIEN).join(', ')}` },
 };
 

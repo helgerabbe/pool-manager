@@ -13,7 +13,8 @@ export const BAUREGELN = `BAUREGELN (verbindlich):
 8. Je Folie zusätzlich: "liegt" = 2-4 Stichpunkte, was auf der Folie zu sehen ist; "entscheidungen" = Fragen, die die Lehrkraft vor der Stunde beantworten muss (Aufgabe, Dauer, Art der Freigabe, Anzahl der Aspekte, Art der Partnerfindung ...). Leer, wenn nichts zu entscheiden ist.
 9. Keine Aufgabe ohne Thema: Nutze EIN durchgehendes Beispielthema für alle Folien.
 10. Tafel wie PowerPoint: nichts ragt über den Folienrand, kein Scrollen (außer innerhalb von Textfeldern). Zwischen allen Elementen bleibt sichtbarer Abstand, nichts überlappt; Inhalte halten Abstand zu den Symbolen oben rechts.
-11. Tablet darf nach unten länger als eine Bildschirmhöhe sein (Scrollen erlaubt). Der Weiter-Knopf schwebt nicht, sondern steht immer am Ende der Seite.`;
+11. Tablet darf nach unten länger als eine Bildschirmhöhe sein (Scrollen erlaubt). Der Weiter-Knopf schwebt nicht, sondern steht immer am Ende der Seite.
+12. Methoden, die sich über die ganze Stunde spannen (Anfang und späterer Rückgriff, z. B. provokante These): Dort, wo der Unterricht mit eigenen Inhaltsfolien weitergeht, steht GENAU EINE Folie der Vorlage "einschub" (Platzhalter für mehrere Unterrichtsfolien: Lehrerimpuls, Erarbeitung o. Ä.). Danach geht die Methode weiter.`;
 
 const kurz = (f) => {
   const { id, kanal, status, bild, erklaerung, liegt, ...rest } = f;

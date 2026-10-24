@@ -7,6 +7,7 @@ import SatzZeilen from './SatzZeilen';
 import PartnersucheInhalt from './PartnersucheInhalt';
 import SammlungInhalt from './SammlungInhalt';
 import AbstimmungInhalt from './AbstimmungInhalt';
+import EinschubInhalt from './EinschubInhalt';
 
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
@@ -43,6 +44,7 @@ export default function VorlagenInhalt({ f }) {
         : <p className="text-2xl text-[#9AA1AE]">Hier erscheint der Impuls (Bild, Gegenstand oder Text).</p>}
     </div>
   );
+  if (f.vorlage === 'einschub') return <EinschubInhalt f={f} />;
   if (f.vorlage === 'partnersuche') return <PartnersucheInhalt f={f} />;
   if (f.vorlage === 'sammlung') return <SammlungInhalt f={f} />;
   if (f.vorlage === 'abstimmung') return <AbstimmungInhalt f={f} />;

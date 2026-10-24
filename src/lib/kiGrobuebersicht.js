@@ -4,7 +4,7 @@ import { setzeTeil } from '@/lib/kiGrafikAnweisung';
 const mitZeitlimit = (p) => Promise.race([p, new Promise((_, nein) => setTimeout(() => nein(new Error('Zeitlimit')), 90000))]);
 const KOEPFE = ['GROB · TAFEL', 'GROB · TABLET'];
 const ART = {
-  tafel: 'Erstelle eine GROBÜBERSICHT des Foliensatzes für die TAFEL. Es ist EIN gemeinsamer Satz; Folien, die es nur bei digitaler Durchführung zusätzlich gibt, bekommen den Zusatz "(nur digital)".\nNur die Folienfolge: je Folie eine Zeile "Folie N: Name – ein bis zwei Sätze, was an der Tafel passiert".',
+  tafel: 'Erstelle eine GROBÜBERSICHT des Foliensatzes für die TAFEL. Es ist EIN gemeinsamer Satz; Folien, die es nur bei digitaler Durchführung zusätzlich gibt, bekommen den Zusatz "(nur digital)". Spannt sich die Methode über die ganze Stunde (Anfang und späterer Rückgriff), setze dort, wo der Unterricht mit eigenen Inhaltsfolien weitergeht, eine Folie "Einschub: Folien aus dem Unterricht" als Platzhalter.\nNur die Folienfolge: je Folie eine Zeile "Folie N: Name – ein bis zwei Sätze, was an der Tafel passiert".',
   tablet: 'Erstelle eine GROBÜBERSICHT der TABLET-ANSICHT: Was sehen und tun die Schüler auf ihrem Tablet, während die jeweilige Tafelfolie gezeigt wird?\nJe Tafelfolie eine Zeile "Folie N: Name – ein bis zwei Sätze, was auf dem Tablet zu sehen ist". Gleiche Nummern und Namen wie in der Tafel-Übersicht.',
 };
 
