@@ -28,6 +28,8 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner_analog') return <PartnerAnalogBild />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
+  const ANALOG = { einzelphase_analog: 'EA', partnerphase_analog: 'PA', gruppenphase_analog: 'GA' };
+  if (ANALOG[art]) return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · Aufgabe auf Arbeitsblatt, im Heft oder im Buch</p> : <TafelVorschau><ArbeitsphaseTafel sozialform={ANALOG[art]} analog /></TafelVorschau>;
   if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <TafelVorschau><ArbeitsphaseTafel sozialform="EA" /></TafelVorschau>;
   if (art === 'partnerphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <Users className="inline h-3 w-3" />7 {timer}</p> : <TafelVorschau><ArbeitsphaseTafel sozialform="PA" /></TafelVorschau>;
   return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <Network className="inline h-3 w-3" />B {timer}</p> : <TafelVorschau><ArbeitsphaseTafel sozialform="GA" /></TafelVorschau>;

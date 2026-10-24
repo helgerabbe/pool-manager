@@ -5,10 +5,10 @@ import { aktionenFuer } from '@/lib/tafelWerkzeuge';
 const ICON = { herschauen: Eye, zwischenstopp: PauseCircle, zeit_plus: Plus, endspurt: Hourglass, tipp: Lightbulb, zufall: Shuffle };
 
 /** Schmale Kopfleiste mit den Aktionen: nur für die Lehrkraft, deshalb klein und dezent. */
-export default function AktionsLeiste({ sozialform, onAktion }) {
+export default function AktionsLeiste({ sozialform, analog, onAktion }) {
   return (
     <div className="flex flex-wrap justify-end gap-1">
-      {aktionenFuer(sozialform).map((a) => {
+      {aktionenFuer(sozialform, analog).map((a) => {
         const Icon = ICON[a.key];
         return (
           <button key={a.key} type="button" onClick={() => onAktion(a.key)} title={a.name}

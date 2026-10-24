@@ -47,6 +47,21 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
+  einzelphase_analog: {
+    name: 'Einzelarbeit läuft (analog)', folientyp: 'aufgabe',
+    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
+    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer und Lärmampel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
+  },
+  partnerphase_analog: {
+    name: 'Partnerarbeit läuft (analog)', folientyp: 'aufgabe',
+    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
+    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
+  },
+  gruppenphase_analog: {
+    name: 'Gruppenarbeit läuft (analog)', folientyp: 'aufgabe',
+    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
+    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
+  },
   sammlung: {
     name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung',
     schueler: 'Überschrift und Leitfrage der Sammlung, darunter eine offene Liste. Kein Merksatz-Kasten, weil noch nichts festgelegt ist: Es wird erst gesammelt, was aus der Arbeitsphase kommt.',

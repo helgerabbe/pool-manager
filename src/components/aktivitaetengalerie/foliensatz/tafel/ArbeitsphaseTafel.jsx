@@ -21,10 +21,11 @@ const chip = 'flex items-center gap-1 rounded-full bg-white px-2 py-0.5 text-[10
 
 /** Digitale Funktionstafel für Arbeitsphasen: Die Aufgabe steht auf den Schülergeräten,
  *  die Tafel zeigt groß nur Sozialform + Lautstärke. Anzeigen im Menü oben links, Aktionen oben rechts. */
-export default function ArbeitsphaseTafel({ sozialform }) {
+// analog = Schüler arbeiten ohne Geräte: nur Anzeigen/Aktionen, die die Lehrkraft allein bedient.
+export default function ArbeitsphaseTafel({ sozialform, analog = false }) {
   const team = sozialform !== 'EA';
   const teams = sozialform === 'PA' ? PAARE : sozialform === 'GA' ? GRUPPEN : null;
-  const [an, setAn] = React.useState(() => startWerkzeuge(sozialform));
+  const [an, setAn] = React.useState(() => startWerkzeuge(sozialform, analog));
   const [zeit, setZeit] = React.useState(480);
   const [hinweis, setHinweis] = React.useState(null);
   const [tipps, setTipps] = React.useState(0);
@@ -48,8 +49,8 @@ export default function ArbeitsphaseTafel({ sozialform }) {
     // Links und unten = Nahzone (für die Lehrkraft, aus der Nähe): Hilfe, Stimmung, Lärmampel, Teams. Kopfleiste = Bedienung.
     <div className="relative flex h-full w-full flex-col gap-2 overflow-hidden p-4 text-xs">
       <div className="flex items-center justify-between gap-2 pr-[16%]">
-        <WerkzeugMenue sozialform={sozialform} an={an} setAn={setAn} />
-        <AktionsLeiste sozialform={sozialform} onAktion={aktion} />
+        <WerkzeugMenue sozialform={sozialform} analog={analog} an={an} setAn={setAn} />
+        <AktionsLeiste sozialform={sozialform} analog={analog} onAktion={aktion} />
       </div>
       <div className="grid min-h-0 flex-1 grid-cols-[1fr_2.2fr_1fr] gap-2">
         <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
