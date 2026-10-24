@@ -6,7 +6,7 @@ export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. B
 
 // Noch aus dem Pool-Manager-Katalog zu übernehmende Formate (nur Übersicht, noch ohne Skizze).
 export const NOCH_OFFEN = [
-  'Zuordnungstraining', 'Sprechaufgabe', 'Materialaufgabe', 'Offene Aufgabe',
+  'Sprechaufgabe', 'Materialaufgabe', 'Offene Aufgabe',
   'KI-Quiz', 'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
   'Text lesen', 'Video / Audio', 'Slideshow', 'Kompaktwissen', 'Lehrwerk/Quelle', 'Link / URL', 'Externer Inhalt',
 ];
@@ -42,6 +42,10 @@ export const UEBUNGSFORMATE = [
     tablet: 'Bild mit nummerierten Markierungen, daneben die Begriffe; Begriff antippen, dann Markierung antippen. „Neu“ setzt zurück.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
     tafel_analog: 'Bild groß an der Tafel, Begriff antippen, dann Markierung antippen. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
+  { key: 'zuordnungstraining', name: 'Zuordnungstraining', digital: true, analog: false, tablet_vorlage: 'zuordnungstraining',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Trainiere die Paare', sozialform: 'EA', leise: true, minuten: 8, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ordne jedem Begriff die richtige Bedeutung zu, bis alles sitzt.' },
+    tablet: 'Ein Begriff groß, darunter vier Antworten; jedes Paar muss zweimal richtig sein, ein Fehler setzt es zurück. Geübt wird in Runden zu je vier Paaren, ein Balken zeigt, wie viele sitzen.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
 ];
