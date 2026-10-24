@@ -7,6 +7,7 @@ import TafelVorschau from './tafel/TafelVorschau';
 import AnalogArbeitsTafel from './tafel/AnalogArbeitsTafel';
 import KlassenLueckentextTafel from './tafel/KlassenLueckentextTafel';
 import LueckentextTablet from './standard/LueckentextTablet';
+import KlassenZuordnenTafel from './tafel/KlassenZuordnenTafel';
 
 const timer = <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>;
 import PartnerSchueler from './standard/PartnerSchueler';
@@ -35,6 +36,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
   if (art === 'klassenmodus') return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · die Klasse löst gemeinsam an der Tafel</p> : <div className="flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed border-[#7FA6D6] bg-white/70"><p className="text-sm font-bold text-[#7FA6D6]">Hier liegt die Übung, die wir gemeinsam lösen</p></div>;
   if (art === 'lueckentext') return ansicht === 'schueler' ? <LueckentextTablet /> : <TafelVorschau><KlassenLueckentextTafel /></TafelVorschau>;
+  if (art === 'zuordnen') return <TafelVorschau><KlassenZuordnenTafel /></TafelVorschau>;
   if (art === 'arbeitsphase_analog') return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · die Aufgabe steht an der Tafel</p> : <TafelVorschau><AnalogArbeitsTafel /></TafelVorschau>;
   if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <TafelVorschau><ArbeitsphaseTafel sozialform="EA" /></TafelVorschau>;
   if (art === 'partnerphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <Users className="inline h-3 w-3" />7 {timer}</p> : <TafelVorschau><ArbeitsphaseTafel sozialform="PA" /></TafelVorschau>;
