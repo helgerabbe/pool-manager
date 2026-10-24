@@ -1,5 +1,6 @@
 import { CI_GRUND, CI_BOXEN, CI_FOLIENTYPEN, CI_BUTTONS, CI_RASTER, CI_TEXT, CI_SOZIALFORM } from '@/lib/folienCI';
 import { CI_STANDARDFOLIEN, CI_STANDARD_REGEL } from '@/lib/folienCIStandard';
+import { tafelElementeText } from '@/lib/folienCITafel';
 
 // Gestaltungsregeln (Teil 1-15) als Text für den Grafikassistenten, damit der Funktionsaufbau sofort im fertigen Look entsteht.
 export function folienCIText() {
@@ -14,5 +15,7 @@ Raster: Kopfleiste oben (${CI_RASTER.kopf.hoehe}% Höhe, klein Fach/Einheit). Ec
 Folientypen: ${typen}.
 STANDARDFOLIEN (verwende sie, wo sie passen, statt neu zu gestalten):
 ${standard}
-${CI_STANDARD_REGEL}`;
+${CI_STANDARD_REGEL}
+ELEMENTE DER FUNKTIONSTAFEL (immer genau so gestalten, auch auf anderen Folien):
+${tafelElementeText()}`;
 }
