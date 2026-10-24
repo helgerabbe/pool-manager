@@ -58,7 +58,7 @@ export const CI_STANDARDFOLIEN = {
     lehrer: 'Kopfleiste: Sozialform-Symbol (Einzel/Partner/Gruppe umschaltbar), Lautstärke-Symbol, Lärmampel, Aktionen (Alle herschauen, Zwischenstopp, +2 Min., Endspurt), kleiner Timer oben rechts. Der ganze übrige Platz zeigt groß die Aufgabe (oder den Hinweis auf die Buchseite).',
   },
   klassenmodus: {
-    name: 'Klassenmodus (Übungsformat an der Tafel)', folientyp: 'aufgabe',
+    name: 'Übung an der Tafel', folientyp: 'aufgabe',
     schueler: 'Kein Gerät: Die Klasse löst das Übungsformat gemeinsam an der Tafel.',
     lehrer: 'Das Übungsformat (z. B. Lückentext) liegt groß an der Tafel: Wort antippen, dann Lücke antippen; Lücke erneut antippen leert sie. Knöpfe: Lösung prüfen (grün/rot), Zufallsschüler, Neu beginnen. Ergebnisse werden nicht gespeichert, nur gemeinsam gesichert.',
   },
