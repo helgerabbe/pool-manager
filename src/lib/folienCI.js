@@ -259,4 +259,4 @@ export const CI_TABLET = {
   ],
 };
 
-export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Weißer Rahmen, runde Ecken, sanfter Schatten.';
+export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Zwei Standards: Freistehende Bilder mit weißem Rahmen, runden Ecken und sanftem Schatten. Verblassende Bilder (laufen weich in den Hintergrund aus) ohne Rahmen, ohne runde Ecken, ohne Schatten.';

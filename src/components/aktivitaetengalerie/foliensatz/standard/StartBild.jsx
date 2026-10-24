@@ -17,10 +17,8 @@ export default function StartBild({ ansicht }) {
       <p className="text-base font-bold">Warum ziehen Menschen in die Stadt?</p>
       {ziel && <div className="rounded-lg border px-2 py-1" style={{ background: m.hg, borderColor: m.rand, color: m.text }}>Am Ende der Stunde kannst du drei Gründe für den Umzug in die Stadt erklären.</div>}
       {ablauf && <p><b>Heute:</b> {ABLAUF.map((a, i) => `${i + 1} ${a}`).join(' · ')}</p>}
-      <div className="relative mt-2 h-28 overflow-hidden rounded-lg">
-        <img src={BILD} alt="Jemand packt einen Umzugskarton" className="h-full w-full object-cover" />
-        <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-white via-white/60 to-transparent" />
-      </div>
+      <img src={BILD} alt="Jemand packt einen Umzugskarton" className="mt-2 h-28 w-full object-cover"
+        style={{ WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 60%)', maskImage: 'linear-gradient(to bottom, transparent 0%, black 60%)' }} />
     </div>
   );
 }
