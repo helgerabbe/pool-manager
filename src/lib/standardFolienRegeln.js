@@ -76,7 +76,7 @@ export const CI_REGELN = {
   lueckentext: {
     gestaltung: ['Tablet: Text mit Lücken, Wortspeicher darunter', 'Tafel: Text groß, große Antippflächen, unten Lösung prüfen, Zufallsschüler, Neu beginnen'],
     inhalt: ['Höchstens 4-6 Lücken', 'Wortspeicher mit einem Ablenker'],
-    titel: ['Füll die Lücken', 'Wir füllen die Lücken gemeinsam'],
+    titel: ['Fülle die Lücken', 'Wir füllen die Lücken gemeinsam'],
     klaeren: ['Text und Lücken', 'Mit oder ohne Wortspeicher?'],
   },
   sammlung: {
