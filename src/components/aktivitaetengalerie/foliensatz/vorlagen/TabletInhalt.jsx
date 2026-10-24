@@ -12,6 +12,7 @@ import RichtigFalschTabletInhalt from './RichtigFalschTabletInhalt';
 import MultipleChoiceTabletInhalt from './MultipleChoiceTabletInhalt';
 import BildbeschriftungTabletInhalt from './BildbeschriftungTabletInhalt';
 import ZuordnungstrainingTabletInhalt from './ZuordnungstrainingTabletInhalt';
+import SprechaufgabeTabletInhalt from './SprechaufgabeTabletInhalt';
 
 const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
@@ -33,6 +34,9 @@ function Inhalt({ f }) {
   if (f.vorlage === 'satzanfaenge') return <SatzanfaengeTablet f={f} />;
   if (f.vorlage === 'lueckentext') return (
     <div className="flex min-h-0 flex-1 flex-col"><LueckentextTabletInhalt /></div>
+  );
+  if (f.vorlage === 'sprechaufgabe') return (
+    <div className="flex min-h-0 flex-1 flex-col"><SprechaufgabeTabletInhalt /></div>
   );
   if (f.vorlage === 'zuordnungstraining') return (
     <div className="flex min-h-0 flex-1 flex-col"><ZuordnungstrainingTabletInhalt /></div>
