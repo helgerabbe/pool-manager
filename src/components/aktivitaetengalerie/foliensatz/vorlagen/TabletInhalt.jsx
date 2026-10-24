@@ -7,6 +7,7 @@ import SatzanfaengeTablet from './SatzanfaengeTablet';
 import SchrittFortschritt from './SchrittFortschritt';
 import LueckentextTabletInhalt from './LueckentextTabletInhalt';
 import ZuordnenTabletInhalt from './ZuordnenTabletInhalt';
+import ReihenfolgeTabletInhalt from './ReihenfolgeTabletInhalt';
 
 const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
@@ -28,6 +29,9 @@ function Inhalt({ f }) {
   if (f.vorlage === 'satzanfaenge') return <SatzanfaengeTablet f={f} />;
   if (f.vorlage === 'lueckentext') return (
     <div className="flex min-h-0 flex-1 flex-col"><LueckentextTabletInhalt /></div>
+  );
+  if (f.vorlage === 'reihenfolge') return (
+    <div className="flex min-h-0 flex-1 flex-col"><ReihenfolgeTabletInhalt /></div>
   );
   if (f.vorlage === 'zuordnen') return (
     <div className="flex min-h-0 flex-1 flex-col"><ZuordnenTabletInhalt /></div>

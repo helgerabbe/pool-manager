@@ -15,6 +15,11 @@ export const UEBUNGSFORMATE = [
     folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Was passt zusammen?', sozialform: 'EA', leise: true, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ordne jedem Begriff die passende Erklärung zu.' },
     tablet: 'Erklärungen untereinander, darunter die Begriffe; Begriff antippen, dann die passende Erklärung antippen. Erneut antippen tauscht, „Neu“ setzt zurück.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.' },
+  { key: 'reihenfolge', name: 'Reihenfolge sortieren', digital: true, analog: true, tablet_vorlage: 'reihenfolge',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Bring es in die richtige Reihenfolge', sozialform: 'EA', leise: true, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Sortiere die Schritte in die richtige Reihenfolge.' },
+    tablet: 'Nummerierte Karten untereinander; mit den Pfeilen nach oben oder unten schieben, „Neu“ mischt zurück.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
+    tafel_analog: 'Karten groß an der Tafel, mit Pfeilen verschieben. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
 ];
