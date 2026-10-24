@@ -9,8 +9,7 @@ import AufklappBox from './AufklappBox';
 import AssistentFenster from './AssistentFenster';
 
 const WUNSCH = {
-  kern: 'Eigene Rückmeldung zur Kernaufgabe oder eigene Aufgabe eingeben',
-  diff: 'Rückmeldung zur Differenzierung geben',
+  kern: 'Eigenen Vorschlag oder eigene Beschreibung für eine Kernaufgabe eingeben',
   vorstufen: 'Bestimmte Art von Teilaufgabe wünschen',
 };
 const ZURUECK = { kern: null, diff: 'kern', vorstufen: 'diff' };
@@ -46,12 +45,12 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
         <p className="text-sm text-muted-foreground">Wir schlüsseln die Stunde an den Aufgaben auf: erst die Kernaufgabe (was sollen die Schüler am Schluss können?), dann ihre Differenzierung, dann mögliche Teilaufgaben, die dorthin führen.</p>
       </div>
 
-      <AufklappBox titel={WUNSCH[u.stufe]}>
+      {WUNSCH[u.stufe] && <AufklappBox titel={WUNSCH[u.stufe]}>
         <FreitextMitSprache rows={3} value={text} onChange={setText} placeholder="z. B. „Ja, aber es muss mehr in Richtung … gehen“ oder deine eigene Aufgabe …" />
         <p className="text-xs text-muted-foreground">Beispielaufgaben als PDF oder Bild hochladen oder mit Strg+V einfügen:</p>
         <MaterialUpload materialien={u.beispiele} onChange={(b) => setWert({ ...u, beispiele: b })} />
         <Button size="sm" disabled={denkt || (!text.trim() && !u.beispiele.length)} onClick={senden}><Send /> Senden</Button>
-      </AufklappBox>
+      </AufklappBox>}
 
       {letzte && (
         <AufklappBox titel="Hinweise des Assistenten">
