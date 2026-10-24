@@ -4,8 +4,8 @@ import { Textarea } from '@/components/ui/textarea';
 import GrafikAnweisungAssistent from './GrafikAnweisungAssistent';
 import WuenscheFeld from './WuenscheFeld';
 import AbgleichEntscheidungsbaum from './AbgleichEntscheidungsbaum';
-import { kiMethodenBeschreibung, kiGrafikAnalog, kiGrafikDigital, kiGrafikGemeinsam } from '@/lib/kiGrafikAnweisung';
-import { kiGrobAnalog, kiGrobDigital } from '@/lib/kiGrobuebersicht';
+import { kiMethodenBeschreibung, kiGrafikTafel, kiGrafikTablet } from '@/lib/kiGrafikAnweisung';
+import { kiGrobTafel, kiGrobTablet } from '@/lib/kiGrobuebersicht';
 
 const FELDER = [
   ['wuensche'],
@@ -17,13 +17,12 @@ const FELDER = [
 const KI = {
   info_methodenbeschreiber: { erzeugen: kiMethodenBeschreibung, knopf: 'Bereich befüllen', hinweis: 'Der Methodenbeschreiber erstellt eine Foliensatz-Expertise und berücksichtigt dabei, was dir wichtig ist.' },
   info_grobuebersicht: { knoepfe: [
-    { label: '1. Grob analog', erzeugen: kiGrobAnalog },
-    { label: '2. Grob digital', erzeugen: kiGrobDigital },
+    { label: '1. Grober Foliensatz Tafel', erzeugen: kiGrobTafel },
+    { label: '2. Grobe Tablet-Ansicht', erzeugen: kiGrobTablet },
   ], hinweis: 'Nur die Folienfolge mit kurzer Beschreibung je Folie. Prüfe und bessere hier nach, bevor die Feinplanung entsteht.' },
   info_grafikassistent: { knoepfe: [
-    { label: '1. Analoge Folien', erzeugen: kiGrafikAnalog },
-    { label: '2. Digitale Folien', erzeugen: kiGrafikDigital },
-    { label: '3. Abfragen & Vergleich', erzeugen: kiGrafikGemeinsam },
+    { label: '1. Tafelfolien', erzeugen: kiGrafikTafel },
+    { label: '2. Tablet-Ansicht', erzeugen: kiGrafikTablet },
   ], hinweis: 'Feinplanung auf Grundlage der Grobübersicht: alle Elemente, Funktionen, Organisation und Steuerung.' },
 };
 
@@ -46,7 +45,6 @@ export default function AssistentenInfos({ werte, setze }) {
             gesperrt={k === 'info_grafikassistent' && !(werte.info_grobuebersicht || '').trim()}
             hinweis={k === 'info_grafikassistent' && !(werte.info_grobuebersicht || '').trim() ? 'Erstelle zuerst die Grobübersicht.' : KI[k].hinweis} />}
           <Textarea rows={KI[k] ? 16 : 10} value={werte[k] || ''} onChange={(e) => setze(k, e.target.value)} />
-          {k === 'info_grobuebersicht' && <AbgleichEntscheidungsbaum werte={werte} setze={setze} />}
         </div>
       ))}
     </div>

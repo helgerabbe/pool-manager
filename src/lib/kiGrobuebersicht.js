@@ -2,7 +2,11 @@ import { base44 } from '@/api/base44Client';
 import { setzeTeil } from '@/lib/kiGrafikAnweisung';
 
 const mitZeitlimit = (p) => Promise.race([p, new Promise((_, nein) => setTimeout(() => nein(new Error('Zeitlimit')), 90000))]);
-const KOEPFE = ['GROB · ANALOGE FOLIEN', 'GROB · DIGITALE FOLIEN'];
+const KOEPFE = ['GROB · TAFEL', 'GROB · TABLET'];
+const ART = {
+  tafel: 'Erstelle eine GROBÜBERSICHT des Foliensatzes für die TAFEL. Es ist EIN gemeinsamer Satz; Folien, die es nur bei digitaler Durchführung zusätzlich gibt, bekommen den Zusatz "(nur digital)".\nNur die Folienfolge: je Folie eine Zeile "Folie N: Name – ein bis zwei Sätze, was an der Tafel passiert".',
+  tablet: 'Erstelle eine GROBÜBERSICHT der TABLET-ANSICHT: Was sehen und tun die Schüler auf ihrem Tablet, während die jeweilige Tafelfolie gezeigt wird?\nJe Tafelfolie eine Zeile "Folie N: Name – ein bis zwei Sätze, was auf dem Tablet zu sehen ist". Gleiche Nummern und Namen wie in der Tafel-Übersicht.',
+};
 
 /** Macht aus der gesprochenen Eingabe eine kompakte Punkteliste. */
 export async function kiWuenscheStrukturieren(roh) {
@@ -12,11 +16,12 @@ export async function kiWuenscheStrukturieren(roh) {
   return String(text || '').trim();
 }
 
-/** Grobübersicht: nur Folienfolge mit kurzer Beschreibung, getrennt für analog und digital. */
-async function grob(methode, art) {
+/** Grobübersicht: Folienfolge an der Tafel bzw. passende Tablet-Ansicht je Folie. */
+async function grob(methode, art, bisher) {
   const text = await mitZeitlimit(base44.integrations.Core.InvokeLLM({
-    prompt: `Erstelle eine GROBÜBERSICHT des ${art === 'analog' ? 'ANALOGEN (nur Tafel, keine Schüleransicht)' : 'DIGITALEN (Tafel + Schüleransicht auf dem Gerät)'} Foliensatzes für die Methode "${methode.name}".
-Nur die Folienfolge: je Folie eine Zeile "Folie N: Name – ein bis zwei Sätze, was auf der Folie passiert". Keine Elemente, keine Designdetails.
+    prompt: `Methode: "${methode.name}".
+${ART[art]} Keine Elemente, keine Designdetails.
+${art === 'tablet' ? `\nTAFEL-ÜBERSICHT (verbindlich):\n${bisher || methode.info_grobuebersicht || '(keine)'}\n` : ''}
 
 FOLIENSATZ-EXPERTISE DES METHODENBESCHREIBERS:
 ${methode.info_methodenbeschreiber || '(keine)'}
@@ -30,9 +35,9 @@ Antworte nur mit der Liste.`,
   return String(text || '').trim();
 }
 
-export async function kiGrobAnalog(args) {
-  return { text: setzeTeil(args.bisher, KOEPFE[0], await grob(args.methode, 'analog'), KOEPFE) };
+export async function kiGrobTafel(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[0], await grob(args.methode, 'tafel'), KOEPFE) };
 }
-export async function kiGrobDigital(args) {
-  return { text: setzeTeil(args.bisher, KOEPFE[1], await grob(args.methode, 'digital'), KOEPFE) };
+export async function kiGrobTablet(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[1], await grob(args.methode, 'tablet', args.bisher), KOEPFE) };
 }

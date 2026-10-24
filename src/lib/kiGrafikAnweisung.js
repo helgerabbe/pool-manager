@@ -67,8 +67,8 @@ Konkret und knapp, keine Allgemeinplätze. Bei komplexen Methoden besonders gena
 
 /** Erster Grafikassistent: macht aus der Methodenbeschreibung eine Anweisung für die grafische Funktionalität. */
 // Kleinschrittig (2026-10-21): erst die Folienliste planen, dann jeder Abschnitt und jede Folie als eigene kurze Anfrage.
-// Drei Knöpfe (2026-10-21): analog, digital, Gesamtbeschreibung; jeder ersetzt nur seinen Teil im Text.
-const KOEPFE = ['TEIL I · ANALOGER FOLIENSATZ', 'TEIL II · DIGITALER FOLIENSATZ', 'GEMEINSAM'];
+// Zwei Knöpfe (2026-10-24): Tafelfolien und Tablet-Ansicht; jeder ersetzt nur seinen Teil im Text.
+const KOEPFE = ['TEIL I · TAFELFOLIEN', 'TEIL II · TABLET-ANSICHT'];
 
 export function setzeTeil(bisher, kopf, neu, koepfe = KOEPFE) {
   const teile = {};
@@ -84,14 +84,14 @@ export function setzeTeil(bisher, kopf, neu, koepfe = KOEPFE) {
 
 async function baueSatz(args, art) {
   args.fortschritt?.('Folienliste wird geplant …');
-  const plan = await planeFolien(args.methode);
-  const namen = plan[art] || [];
-  const gross = art === 'analog' ? 'ANALOGEN' : 'DIGITALEN';
-  const liste = `Folienliste ${art}: ${namen.map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
-  const schritte = [
-    `Schreibe NUR Abschnitt A (Organisation) für den ${gross} Foliensatz.`,
-    ...namen.map((n, i) => `Schreibe NUR Abschnitt B für die ${gross} Folie ${i + 1} "${n}"${art === 'analog' ? ' (keine Schüleransicht)' : ''}.`),
-    ...(art === 'digital' ? ['Schreibe NUR Abschnitt C (Datenfluss) des digitalen Foliensatzes.'] : []),
+  const namen = (await planeFolien(args.methode)).folien || [];
+  const liste = `Folienliste (ein gemeinsamer Satz): ${namen.map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
+  const schritte = art === 'tafel' ? [
+    'Schreibe NUR Abschnitt A (Organisation) und am Ende Abschnitt D (Abfragen vor der Stunde).',
+    ...namen.map((n, i) => `Schreibe NUR Abschnitt B (TAFEL) für Folie ${i + 1} "${n}". Keine Schüleransicht.`),
+  ] : [
+    ...namen.map((n, i) => `Schreibe NUR Abschnitt B (TABLET) für Folie ${i + 1} "${n}": was die Schüler in diesem Moment auf dem Tablet sehen und tun. Nur die Schüleransicht.`),
+    'Schreibe NUR Abschnitt C (Datenfluss).',
   ];
   let fertig = 0;
   args.fortschritt?.(`0 von ${schritte.length} Teilen fertig`);
@@ -101,43 +101,21 @@ async function baueSatz(args, art) {
   return teile.join('\n\n');
 }
 
-export async function kiGrafikAnalog(args) {
-  return { text: setzeTeil(args.bisher, KOEPFE[0], await baueSatz(args, 'analog')) };
+export async function kiGrafikTafel(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[0], await baueSatz(args, 'tafel')) };
 }
-export async function kiGrafikDigital(args) {
-  return { text: setzeTeil(args.bisher, KOEPFE[1], await baueSatz(args, 'digital')) };
-}
-export async function kiGrafikGemeinsam(args) {
-  const r = await grafikTeil(args, 'Schreibe NUR die Abschnitte D, E und F.');
-  return { text: setzeTeil(args.bisher, KOEPFE[2], r.text || '') };
+export async function kiGrafikTablet(args) {
+  return { text: setzeTeil(args.bisher, KOEPFE[1], await baueSatz(args, 'tablet')) };
 }
 
 async function planeFolien(methode) {
   return mitZeitlimit(base44.integrations.Core.InvokeLLM({
-    prompt: `Übernimm aus der bestätigten GROBÜBERSICHT die Folienliste für den analogen und den digitalen Foliensatz, je Folie ein kurzer Name, in genau dieser Reihenfolge. Nichts hinzufügen oder weglassen.
+    prompt: `Übernimm aus der bestätigten GROBÜBERSICHT die Folienliste des Foliensatzes, je Folie ein kurzer Name (Zusätze wie "nur digital" behalten), in genau dieser Reihenfolge. Nichts hinzufügen oder weglassen.
 GROBÜBERSICHT:
 ${methode.info_grobuebersicht || ''}`,
     model: 'claude_sonnet_4_6',
-    response_json_schema: { type: 'object', properties: {
-      analog: { type: 'array', items: { type: 'string' } }, digital: { type: 'array', items: { type: 'string' } },
-    } },
+    response_json_schema: { type: 'object', properties: { folien: { type: 'array', items: { type: 'string' } } } },
   }));
-}
-
-export async function kiGrafikAnweisung(args) {
-  const plan = await planeFolien(args.methode);
-  const liste = `Folienliste analog: ${(plan.analog || []).map((n, i) => `${i + 1}. ${n}`).join(' · ')}\nFolienliste digital: ${(plan.digital || []).map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
-  const schritte = [
-    ['TEIL I · ANALOGER FOLIENSATZ', 'Schreibe NUR Abschnitt A (Organisation) für den ANALOGEN Foliensatz.'],
-    ...(plan.analog || []).map((n, i) => [null, `Schreibe NUR Abschnitt B für die ANALOGE Folie ${i + 1} "${n}" (keine Schüleransicht).`]),
-    ['TEIL II · DIGITALER FOLIENSATZ', 'Schreibe NUR Abschnitt A (Organisation) für den DIGITALEN Foliensatz.'],
-    ...(plan.digital || []).map((n, i) => [null, `Schreibe NUR Abschnitt B für die DIGITALE Folie ${i + 1} "${n}".`]),
-    [null, 'Schreibe NUR Abschnitt C (Datenfluss) des digitalen Foliensatzes.'],
-    ['GEMEINSAM', 'Schreibe NUR die Abschnitte D, E und F.'],
-  ];
-  const teile = await Promise.all(schritte.map(([, t]) => grafikTeil(args, `${t}\n${liste}`)));
-  const text = schritte.map(([kopf], i) => `${kopf ? `${kopf}\n\n` : ''}${teile[i].text || ''}`).join('\n\n');
-  return { text, kurz: '' };
 }
 
 // Klartext statt JSON (2026-10-21): das JSON-Antwortformat schnitt lange Texte ab.
@@ -168,19 +146,17 @@ ${folienBaukastenText()}
 
 ${auftrag(bisher, wunsch, verlauf)}
 
-PFLICHT: Beschreibe IMMER zwei Foliensätze, einen für die ANALOGE und einen für die DIGITALE Durchführung. Analog: Die Folien zeigen nur, was die Klasse sehen muss (Auftrag, Symbole, Timer, Phasenwechsel); gearbeitet wird im Heft, auf Papier oder im Gespräch, es gibt keine Schüleransicht. Digital: zusätzlich die Schüleransicht mit den interaktiven und kollaborativen Elementen. Starre Folien, die in beiden gleich sind, beim digitalen Foliensatz nur mit "wie analog" kennzeichnen.
+PFLICHT: Es gibt EINEN gemeinsamen Foliensatz für die Tafel. Folien, die es nur bei digitaler Durchführung gibt, sind zusätzliche Folien und tragen den Zusatz "nur digital". Zu jeder Tafelfolie gehört eine Tablet-Ansicht: was die Schüler in diesem Moment auf ihrem Gerät sehen und tun.
 
-Form der Bauanleitung (Klartext, Deutsch, nummeriert, keine Programmiersprache). Teil I = ANALOGER FOLIENSATZ (Abschnitte A–B), Teil II = DIGITALER FOLIENSATZ (Abschnitte A–C), danach gemeinsam D–F:
+Form der Bauanleitung (Klartext, Deutsch, nummeriert, keine Programmiersprache). Teil I = TAFELFOLIEN (Abschnitte A, B Tafel, D), Teil II = TABLET-ANSICHT (Abschnitte B Tablet, C):
 A. ORGANISATION DES FOLIENSATZES: Zuteilung (Art, Verfahren, Gruppengröße/Rollen, Wechsel), Freigabe, Ablauf der Folien, Steuerung der Lehrkraft (Timer, Fertig melden, Partner nach Fertig-Meldung) – jeweils mit kurzer Begründung aus der Methode.
 B. FOLIE FÜR FOLIE: Für jede Folie
-   - Nummer, Name, Folienart (Starre Folie / Aufgabenfolie), bei Aufgabenfolien Durchführung analog oder digital (bzw. beide Varianten)
+   - Nummer, Name, Folienart (Starre Folie / Aufgabenfolie), ggf. Zusatz "nur digital"
    - LEHRERANSICHT (Tafel): jedes Element mit Name aus dem Baukasten, Lage (oben/mitte/unten, links/rechts), Inhalt und Kennzeichnung [Fest] / [Abfrage] (die Lehrkraft gibt es vorher ein) / [Frei] (die KI füllt es passend zur Stunde); Symbole (Piktogramme) für Sozialform und Tätigkeit
-   - SCHÜLERANSICHT (Gerät), nur wenn digital: jedes Element mit Name, Inhalt, Kennzeichnung, Art (Interaktiv/Kollaborativ), Funktion (Übung, Präsentation, Weiterführung allein/in die Gruppe mit Ziel, Weitergabe, Rückmeldung, Kollaboration), Einzel- oder Gruppenmodus (mit Gruppenkennung), Sichtbarkeit und Ergebnisanzeige
+   - SCHÜLERANSICHT (Tablet): jedes Element mit Name, Inhalt, Kennzeichnung, Art (Interaktiv/Kollaborativ), Funktion (Übung, Präsentation, Weiterführung allein/in die Gruppe mit Ziel, Weitergabe, Rückmeldung, Kollaboration), Einzel- oder Gruppenmodus (mit Gruppenkennung), Sichtbarkeit und Ergebnisanzeige
    - UMSCHALTEN: Freigabebedingung dieser Folie (mit Zeit, Anteil oder Code), wer auslöst und was dann bei Lehrkraft und Schülern passiert
    - BEDIENELEMENTE DER LEHRKRAFT auf dieser Folie (z. B. Timer starten, Ergebnisse zeigen, Partner bilden)
 C. DATENFLUSS: welche Eingabe wohin weiterwandert (z. B. Think-Eingabe erscheint in der Pair-Folie beim Partner).
 D. ABFRAGEN VOR DER STUNDE: alle [Abfrage]-Felder als Liste mit Standardwert.
-E. VERGLEICH ANALOG / DIGITAL: Was ist der digitale Mehrwert, was geht analog besser, wann empfiehlst du welche Variante?
-F. OFFENE PUNKTE: was der Baukasten noch nicht abdeckt.
 Jeder Schritt der Methodenbeschreibung muss sich in den Folien wiederfinden. Keine Farben oder Dekoration.`);
 }
