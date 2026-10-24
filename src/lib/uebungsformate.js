@@ -6,7 +6,7 @@ export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. B
 
 export const UEBUNGSFORMATE = [
   { key: 'lueckentext', name: 'Lückentext', digital: true, analog: true,
-    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Fülle die Lücken', sozialform: 'EA', leise: true, minuten: 5, methodisch: 'Arbeite allein und leise.', inhalt: 'Ergänze die Lücken im Text mit den Wörtern aus dem Wortspeicher.' },
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Fülle die Lücken', sozialform: 'EA', leise: true, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ergänze die Lücken im Text mit den Wörtern aus dem Wortspeicher.' },
     tablet: 'Text mit Lücken, darunter der Wortspeicher; Wort antippen, dann Lücke antippen.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
     tafel_analog: 'Text groß an der Tafel, Wort antippen, dann Lücke antippen. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },

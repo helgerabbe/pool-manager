@@ -20,7 +20,7 @@ const VORLAGEN_FOLIEN = [
     inhalt: ['Aufgabe sagt, wie viele Satzanfänge gewählt werden', 'Satzanfänge passen genau zur Aufgabe und enden mit „…“'],
     titel: ['Schreib deine Gedanken auf', 'Vervollständige …'],
     klaeren: ['Welche Satzanfänge (2-4)', 'Wie viele die Schüler ergänzen'],
-    folie: { vorlage: 'satzanfaenge', folientyp: 'aufgabe', titel: 'Schreib deine Gedanken auf', sozialform: 'EA', minuten: 4, inhalt: 'Wähle zwei Satzanfänge und ergänze sie.', satzimpulse: ['Ich finde, dass …', 'Ein Grund dafür ist …', 'Dagegen spricht …'] } },
+    folie: { vorlage: 'satzanfaenge', folientyp: 'aufgabe', titel: 'Schreib deine Gedanken auf', sozialform: 'EA', leise: true, minuten: 4, schritt: 1, schritte: 3, inhalt: 'Wähle zwei Satzanfänge und ergänze sie.', satzimpulse: ['Ich finde, dass …', 'Ein Grund dafür ist …', 'Dagegen spricht …'] } },
 ];
 
 // Aufgabenfolien in fester Reihenfolge: Einzel-, Partner-, Gruppenarbeit.
