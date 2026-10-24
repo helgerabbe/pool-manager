@@ -19,13 +19,8 @@ const AufgabeOben = ({ f }) => (
 
 /** Tablet-Ansicht (Schülergerät): optional Schrittfortschritt, Aufgabe kompakt oben, Arbeitsfläche darunter. */
 export default function TabletInhalt({ f }) {
-  if (!(f.schritte > 1)) return <Inhalt f={f} />;
-  return (
-    <div className="flex flex-1 flex-col">
-      <SchrittFortschritt schritt={f.schritt || 1} schritte={f.schritte} />
-      <div className="flex flex-1 flex-col"><Inhalt f={f} /></div>
-    </div>
-  );
+  // Schrittfortschritt sitzt kompakt in der Kopfleiste (VorlageRahmen → SchrittPunkte).
+  return <Inhalt f={f} />;
 }
 
 function Inhalt({ f }) {
