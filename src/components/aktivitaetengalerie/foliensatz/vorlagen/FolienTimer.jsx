@@ -5,7 +5,14 @@ import { CI_TIMER } from '@/lib/folienCI';
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 /** Live einstellbarer Timer: Zeit antippen = Minuten einstellen, Start/Pause per Klick. */
-export default function FolienTimer({ start = 5 }) {
+export default function FolienTimer({ start = 5, nurAnzeige }) {
+  if (nurAnzeige) return (
+    <span title="Die Zeit steuert deine Lehrkraft" className="flex h-9 items-center rounded-full px-3 text-base font-semibold tabular-nums" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{fmt(start * 60)}</span>
+  );
+  return <SteuerTimer start={start} />;
+}
+
+function SteuerTimer({ start }) {
   const [rest, setRest] = React.useState(start * 60);
   const [laeuft, setLaeuft] = React.useState(false);
   const [stellen, setStellen] = React.useState(false);

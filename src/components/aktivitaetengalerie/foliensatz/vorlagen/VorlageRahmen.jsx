@@ -4,6 +4,7 @@ import { FOLIE_B, FOLIE_H } from '@/lib/kiFoliensatz';
 import { CI_GRUND, CI_FOLIENTYPEN, CI_TIMER, CI_BUTTONS } from '@/lib/folienCI';
 import SozialSymbol from './SozialSymbol';
 import FolienTimer from './FolienTimer';
+import TabletKopfAktionen from './TabletKopfAktionen';
 
 /** Fester Folienrahmen: Off-White, Folientyp-Ecke, Kopfleiste, Status oben rechts, Steuerung unten rechts. */
 export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) {
@@ -26,14 +27,15 @@ export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) 
         {tablet && hoehe > FOLIE_H + 2 && <div className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-[#9AA1AE]" style={{ top: FOLIE_H }}><span className="absolute right-4 top-1 text-sm text-[#6A7181]">Bildschirmende · darunter wird gescrollt</span></div>}
         {typ && <div className="absolute -right-32 -top-40 h-[480px] w-[480px] rounded-full" style={{ background: typ.farbe }} />}
         <div className="absolute left-10 top-4 text-sm text-[#6A7181]">{kopf}</div>
-        <div className="absolute right-8 top-6 flex items-center gap-3">
-          {folie.leise && <span title="Bitte leise arbeiten" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><VolumeX className="h-7 w-7" /></span>}
-          {folie.fluestern && <span title="Bitte mit Flüsterstimme sprechen" className="flex h-12 w-12 items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A]"><Volume1 className="h-7 w-7" /></span>}
-          {folie.sozialform && <SozialSymbol form={folie.sozialform} />}
-          {(['aufgabe', 'reflexion'].includes(folie.folientyp) || (folie.folientyp === 'organisation' && folie.minuten > 0)) && <FolienTimer key={folie.id || folie.titel} start={folie.minuten || 5} />}
+        <div className={`absolute flex items-center ${tablet ? 'right-6 top-3 z-20 gap-2' : 'right-8 top-6 gap-3'}`}>
+          {tablet && folie.folientyp === 'aufgabe' && <TabletKopfAktionen folie={folie} />}
+          {folie.leise && <span title="Bitte leise arbeiten" className={`flex items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A] ${tablet ? 'h-9 w-9' : 'h-12 w-12'}`}><VolumeX className={tablet ? 'h-5 w-5' : 'h-7 w-7'} /></span>}
+          {folie.fluestern && <span title="Bitte mit Flüsterstimme sprechen" className={`flex items-center justify-center rounded-full bg-[#E3EFE6] text-[#24553A] ${tablet ? 'h-9 w-9' : 'h-12 w-12'}`}><Volume1 className={tablet ? 'h-5 w-5' : 'h-7 w-7'} /></span>}
+          {folie.sozialform && <span className={tablet ? 'origin-right scale-75' : ''}><SozialSymbol form={folie.sozialform} /></span>}
+          {(['aufgabe', 'reflexion'].includes(folie.folientyp) || (folie.folientyp === 'organisation' && folie.minuten > 0)) && <FolienTimer key={folie.id || folie.titel} start={folie.minuten || 5} nurAnzeige={tablet} />}
         </div>
         {tablet
-          ? <div className="relative flex flex-col gap-6 px-10 pb-6 pt-24" style={{ minHeight: FOLIE_H }}><div className="flex flex-1 flex-col">{children}</div><Knopf knopf={knopf} /></div>
+          ? <div className={`relative flex flex-col gap-4 px-10 pb-5 pt-16 ${folie.kein_scroll ? 'overflow-hidden' : ''}`} style={folie.kein_scroll ? { height: FOLIE_H } : { minHeight: FOLIE_H }}><div className="flex flex-1 flex-col">{children}</div><Knopf knopf={knopf} /></div>
           : <><div className="absolute inset-x-10 bottom-24 top-16 flex flex-col">{children}</div><div className="absolute bottom-6 right-8"><Knopf knopf={knopf} /></div></>}
       </div>
     </div>

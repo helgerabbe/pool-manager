@@ -37,7 +37,7 @@ export default function UebungsformateReiter() {
         </div>
         <div className="grid gap-4 lg:grid-cols-2">
           {m === 'digital' ? <>
-            <StandardFolieAnsicht s={{ ...s, ci: false, folie: f.folie ? { ...f.folie, vorlage: 'lueckentext' } : s.folie, schueler: f.tablet || b.schueler }} ansicht="schueler" />
+            <StandardFolieAnsicht s={{ ...s, ci: false, folie: f.folie ? { ...f.folie, vorlage: 'lueckentext', kein_scroll: true } : s.folie, schueler: f.tablet || b.schueler }} ansicht="schueler" />
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Lehrkraft (Tafel)</p>
               <AufgabeTafelUmschalter s={s} />
