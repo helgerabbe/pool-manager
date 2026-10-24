@@ -8,6 +8,7 @@ import { GESTALTUNG_VARIANTEN } from '@/lib/gestaltungVarianten';
 import { EINSTIEG_VARIANTEN } from '@/lib/einstiegVarianten';
 import { PRAESENTATION_VARIANTEN } from '@/lib/praesentationVarianten';
 import { wirksameGrundstruktur } from '@/components/grobplanung/GrundstrukturWahl';
+import { uebungenText } from '@/lib/kiUebungsformate';
 import { modellName } from '@/components/unterrichtsplanung/StundenmodellVorschlag';
 
 export const STUNDENTYPEN = [
@@ -116,6 +117,7 @@ Lerngruppe: Arbeitstempo ${gruppe.fit}/5, Selbstständigkeit ${gruppe.stark}/5, 
 ${vorgaben.punkte?.length ? `Didaktisch-methodische Vorgaben (von der Lehrkraft bestätigt, unbedingt berücksichtigen):\n${vorgaben.punkte.map((p) => `- [${GEWICHTE[p.gewicht]}] ${p.text}`).join('\n')}` : ''}
 ${grundstrukturText(vorgaben)}
 ${gespraechText(vorgaben)}
+${uebungenText(vorgaben.uebungen)}
 ${methode ? `Methodenwunsch (unbedingt einbauen): ${methode.name}${methode.kurzbeschreibung ? ` – ${methode.kurzbeschreibung}` : ''}` : 'Kein besonderer Methodenwunsch.'}
 ${ritual ? `Festes Ritual (als eigene Phase einplanen, meist am Anfang): ${ritual.name}${ritual.kurzbeschreibung ? ` – ${ritual.kurzbeschreibung}` : ''}` : ''}
 

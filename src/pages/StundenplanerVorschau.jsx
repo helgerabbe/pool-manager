@@ -15,13 +15,15 @@ import PlanungsGespraech from '@/components/planungsgespraech/PlanungsGespraech'
 import { kiGespraechSchritt, kiGespraechHintergrund } from '@/lib/kiPlanungsGespraech';
 import KernschrittListe from '@/components/planungsgespraech/KernschrittListe';
 import VorgabenPopup from '@/components/planungsgespraech/VorgabenPopup';
+import UebungsformateSchritt from '@/components/uebungsplanung/UebungsformateSchritt';
+import { kiUebungsVorschlaege } from '@/lib/kiUebungsformate';
 import ProtoAbschluss from '@/components/stundenplanerPrototyp/ProtoAbschluss';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern, kiSparring, kiTippCenter } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Fundament & weitere Informationen', 'Grobplanung & Gespräch', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament & weitere Informationen', 'Grobplanung & Gespräch', 'Übungsformate', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
@@ -69,7 +71,8 @@ export default function StundenplanerVorschau() {
     return r;
   };
   const listeZeigen = () => { setPunkte([]); setPopup(true); lauf(kiPlanungsVorgaben({ ...k(), vorgaben: v }), setPunkte); };
-  const bauen = () => lauf(kiGrobverlauf({ ...k(), vorgaben: { ...v, punkte } }), (e) => { setEntwurf(e); setPhase('methodik'); });
+  const bauen = () => { setPopup(false); setPhase('uebung'); };
+  const uebungWeiter = (u) => { setze('uebungen')(u); lauf(kiGrobverlauf({ ...k(), vorgaben: { ...v, uebungen: u, punkte } }), (e) => { setEntwurf(e); setPhase('methodik'); }); };
   const phaseAendern = (index, wunsch) => kiPhaseAendern({ ...k(), entwurf, index, wunsch }).then(setEntwurf);
   const modell = STUNDEN_MODELLE.find((m) => m.key === entwurf?.modell) || STUNDEN_MODELLE[0];
   const annahmen = [
@@ -90,7 +93,7 @@ export default function StundenplanerVorschau() {
     setPhase(leer.phase); setMinuten(leer.minuten); setPause(false); setV(leer.v); setPunkte([]); setEntwurf(null); setFehler('');
     if (stundeId) speichern(leer, 'Neue Stunde');
   };
-  const stufe = { start: 0, gespraech: 1, grob: 0, methodik: 2, fein: 3, aufbereitung: 4, fertig: 4 }[phase];
+  const stufe = { start: 0, gespraech: 1, grob: 0, uebung: 2, methodik: 3, fein: 4, aufbereitung: 5, fertig: 5 }[phase];
 
   return (
     <div className="h-full overflow-y-auto">
@@ -157,10 +160,17 @@ export default function StundenplanerVorschau() {
               <VorgabenPopup offen={popup} onSchliessen={() => setPopup(false)} punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />
             </>
           )}
+          {phase === 'uebung' && (
+            <>
+              <UebungsformateSchritt wert={v.uebungen} setWert={setze('uebungen')} laedt={laedt} onVorschlaege={() => kiUebungsVorschlaege({ ...k(), vorgaben: v })}
+                onZurueck={() => setPhase('gespraech')} onWeiter={uebungWeiter} />
+              {fehler && <p className="text-xs text-destructive">{fehler}</p>}
+            </>
+          )}
           {phase === 'methodik' && entwurf && (
             <MethodischeGestaltung entwurf={entwurf} setEntwurf={setEntwurf} onPhaseAendern={phaseAendern}
               onSparring={(verlauf, fokus) => kiSparring({ ...k(), entwurf, verlauf, fokus })}
-              onTipps={() => kiTippCenter({ ...k(), entwurf })} onZurueck={() => setPhase('gespraech')} onWeiter={() => setPhase('fein')}
+              onTipps={() => kiTippCenter({ ...k(), entwurf })} onZurueck={() => setPhase('uebung')} onWeiter={() => setPhase('fein')}
                 pruefung={<GrobentwurfPruefung entwurf={entwurf} modellPhasen={modell.phasen} minuten={netto ?? summe} ziel={v.ziel.haupt} annahmen={annahmen}
                   onVorschlag={(hinweis) => generieren(entwurf, `Die Passungsprüfung meldet: "${hinweis}". Baue die Stunde so um, dass dieses Problem behoben ist, und erkläre in "hinweise" in einfachen Worten, was der Hinweis bedeutet, was du geändert hast und warum.`)}
                   onUebernehmen={setEntwurf}
