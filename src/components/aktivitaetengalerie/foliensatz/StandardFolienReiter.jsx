@@ -2,6 +2,7 @@ import React from 'react';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import { CI_FOLIENTYPEN } from '@/lib/folienCI';
 import { CI_STANDARD_REGEL } from '@/lib/folienCIStandard';
+import { EINSATZ, FOLIEN_EINSATZ } from '@/lib/standardFolienEinsatz';
 import StandardFolienRegeln from './StandardFolienRegeln';
 import StandardFolieAnsicht from './StandardFolieAnsicht';
 
@@ -21,7 +22,7 @@ export default function StandardFolienReiter() {
               <p className="mb-1 flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold" style={{ background: t.farbe }}>{t.name}n <span className="ml-auto font-normal">{gruppe.length}</span></p>
               {gruppe.map((x) => (
                 <button key={x.key} onClick={() => setKey(x.key)} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${x.key === key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: t.farbe }} />{x.name}
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: t.farbe }} /><span className="flex-1">{x.name}</span><span className={`rounded px-1 text-[10px] font-semibold ${EINSATZ[FOLIEN_EINSATZ[x.key]].klasse}`}>{EINSATZ[FOLIEN_EINSATZ[x.key]].kurz}</span>
                 </button>
               ))}
             </div>
@@ -29,7 +30,8 @@ export default function StandardFolienReiter() {
         })}
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
-        <div><p className="font-display text-lg font-bold">{s.name}</p><p className="text-sm text-muted-foreground">{CI_FOLIENTYPEN[s.folientyp]?.name || s.folientyp}</p></div>
+        <div><p className="font-display text-lg font-bold">{s.name}</p><p className="text-sm text-muted-foreground">{CI_FOLIENTYPEN[s.folientyp]?.name || s.folientyp}</p>
+          <p className={`mt-1 inline-block rounded-md px-2 py-1 text-sm font-medium ${EINSATZ[FOLIEN_EINSATZ[s.key]].klasse}`}>{EINSATZ[FOLIEN_EINSATZ[s.key]].name}: {EINSATZ[FOLIEN_EINSATZ[s.key]].text}</p></div>
         <div className="grid gap-4 lg:grid-cols-2">
           <StandardFolieAnsicht s={s} ansicht="schueler" />
           <StandardFolieAnsicht s={s} ansicht="lehrer" />

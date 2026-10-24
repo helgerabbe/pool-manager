@@ -33,17 +33,17 @@ export const CI_STANDARDFOLIEN = {
     lehrer: 'Gleiche Folie an der Tafel, keine Zuordnung und keine Partnernummer. Die Lehrkraft wählt die Art vor der Stunde oder spontan in der Stunde.',
   },
   partnerphase: {
-    name: 'Partnerarbeit läuft (Lehreransicht)', folientyp: 'aufgabe',
+    name: 'Partnerarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Normale Aufgabenfolie, oben rechts Partner-Symbol + Zahl, optional Timer daneben.',
     lehrer: 'Raster aller Paare: je Kachel Zahl, Namen, Fortschrittsbalken, Status (arbeitet / fertig / meldet sich). Meldung = Hand-Symbol in Apricot.',
   },
   gruppenphase: {
-    name: 'Gruppenarbeit läuft (Lehreransicht)', folientyp: 'aufgabe',
+    name: 'Gruppenarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Normale Aufgabenfolie, oben rechts Gruppen-Symbol + Buchstabe in Gruppenfarbe, optional Timer daneben.',
     lehrer: 'Je Gruppe eine große Kachel in ihrer Gruppenfarbe: Buchstabe, Mitglieder, Fortschritt, aktuelles Zwischenergebnis. Klick öffnet die Ergebnisse der Gruppe.',
   },
   einzelphase: {
-    name: 'Einzelarbeit läuft (Tafel)', folientyp: 'aufgabe',
+    name: 'Einzelarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },

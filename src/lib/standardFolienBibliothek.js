@@ -4,6 +4,7 @@
 // Geklärt wird von der Lehrkraft oder vom Unterrichtsassistenten. Der Grafikassistent greift zuerst auf diese Folien zurück.
 import { CI_STANDARDFOLIEN } from '@/lib/folienCIStandard';
 import { CI_REGELN } from '@/lib/standardFolienRegeln';
+import { EINSATZ, FOLIEN_EINSATZ } from '@/lib/standardFolienEinsatz';
 
 const VORLAGEN_FOLIEN = [
   { key: 'notizen', name: 'Eigene Notizen machen', folientyp: 'aufgabe',
@@ -28,4 +29,4 @@ export const STANDARD_FOLIEN = [...CI_FOLIEN, ...VORLAGEN_FOLIEN];
 
 const liste = (a = []) => a.join('; ');
 export const standardFolienText = () => STANDARD_FOLIEN.map((s) =>
-  `- ${s.key} (${s.name}): ${s.ci ? `vorlage "standard", standard "${s.key}"` : `vorlage "${s.folie.vorlage}"`}\n  Gestaltung: ${liste(s.gestaltung)}\n  Inhalt: ${liste(s.inhalt)}\n  Titel im Stil von: ${(s.titel || []).map((x) => `„${x}“`).join(', ')}\n  Muss geklärt werden (in "entscheidungen" übernehmen): ${liste(s.klaeren)}`).join('\n');
+  `- ${s.key} (${s.name}): ${s.ci ? `vorlage "standard", standard "${s.key}"` : `vorlage "${s.folie.vorlage}"`}, Einsatz: ${EINSATZ[FOLIEN_EINSATZ[s.key]].name}\n  Gestaltung: ${liste(s.gestaltung)}\n  Inhalt: ${liste(s.inhalt)}\n  Titel im Stil von: ${(s.titel || []).map((x) => `„${x}“`).join(', ')}\n  Muss geklärt werden (in "entscheidungen" übernehmen): ${liste(s.klaeren)}`).join('\n');
