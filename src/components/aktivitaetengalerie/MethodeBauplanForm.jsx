@@ -85,6 +85,9 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
     <div className="mx-auto max-w-5xl space-y-5 p-6">
       <div className="sticky top-0 z-20 -mx-6 -mt-6 border-b bg-background/95 px-6 py-2 backdrop-blur">
         <h2 className="inline-block rounded-lg bg-primary px-3 py-1 font-display text-lg font-bold text-primary-foreground">{methode.name}</h2>
+        <Button variant="outline" size="sm" className="float-right gap-2" onClick={() => setVorlageOffen(true)}>
+          <Palette className="h-4 w-4" /> Grafische Vorlage
+        </Button>
       </div>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
@@ -133,9 +136,6 @@ export default function MethodeBauplanForm({ methode, onGespeichert }) {
             {strukturiert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Eingaben strukturiert übernehmen
           </Button>
         )}
-        <Button variant="outline" className="gap-2" onClick={() => setVorlageOffen(true)}>
-          <Palette className="h-4 w-4" /> Grafische Vorlage
-        </Button>
         <Button className="gap-2" disabled={speichert || strukturiert} onClick={speichern}>
           {speichert ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Speichern
         </Button>
