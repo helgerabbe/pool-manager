@@ -4,6 +4,13 @@
 // analog: Übung an der Tafel; Tablets zeigen nur den Hinweis nach vorne.
 export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. Bitte richte deine Aufmerksamkeit dorthin.';
 
+// Noch aus dem Pool-Manager-Katalog zu übernehmende Formate (nur Übersicht, noch ohne Skizze).
+export const NOCH_OFFEN = [
+  'Bildbeschriftung', 'Zuordnungstraining', 'Sprechaufgabe', 'Materialaufgabe', 'Offene Aufgabe',
+  'KI-Quiz', 'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
+  'Text lesen', 'Video / Audio', 'Slideshow', 'Kompaktwissen', 'Lehrwerk/Quelle', 'Link / URL', 'Externer Inhalt',
+];
+
 export const UEBUNGSFORMATE = [
   { key: 'lueckentext', name: 'Lückentext', digital: true, analog: true,
     folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Fülle die Lücken', sozialform: 'EA', leise: true, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ergänze die Lücken im Text mit den Wörtern aus dem Wortspeicher.' },

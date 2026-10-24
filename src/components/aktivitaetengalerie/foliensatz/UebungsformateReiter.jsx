@@ -2,7 +2,7 @@ import AnalogTabletHinweis from './AnalogTabletHinweis';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
-import { UEBUNGSFORMATE, ANALOG_HINWEIS } from '@/lib/uebungsformate';
+import { UEBUNGSFORMATE, ANALOG_HINWEIS, NOCH_OFFEN } from '@/lib/uebungsformate';
 import StandardFolieAnsicht from './StandardFolieAnsicht';
 import AufgabeTafelUmschalter from './AufgabeTafelUmschalter';
 
@@ -27,6 +27,8 @@ export default function UebungsformateReiter() {
             {x.analog && <span className="rounded bg-amber-100 px-1 text-[10px] font-semibold text-amber-800">A</span>}
           </button>
         ))}
+        <p className="px-2 pb-1 pt-4 text-xs font-semibold uppercase text-muted-foreground">Noch zu übernehmen ({NOCH_OFFEN.length})</p>
+        {NOCH_OFFEN.map((n) => <p key={n} className="px-2 py-1 text-sm text-muted-foreground">{n}</p>)}
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
         <div className="flex flex-wrap items-center gap-2">
