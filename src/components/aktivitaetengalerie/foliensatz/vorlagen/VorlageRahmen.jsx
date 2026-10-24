@@ -32,7 +32,7 @@ export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) 
           {folie.minuten > 0 && folie.folientyp !== 'sicherung' && <span className="rounded-full px-4 py-1.5 text-lg font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>{folie.minuten}:00</span>}
         </div>
         {tablet
-          ? <div className="flex flex-col gap-6 px-10 pb-6 pt-24" style={{ minHeight: FOLIE_H }}><div className="flex flex-1 flex-col">{children}</div><Knopf knopf={knopf} /></div>
+          ? <div className="relative flex flex-col gap-6 px-10 pb-6 pt-24" style={{ minHeight: FOLIE_H }}><div className="flex flex-1 flex-col">{children}</div><Knopf knopf={knopf} /></div>
           : <><div className="absolute inset-x-10 bottom-24 top-16 flex flex-col">{children}</div><div className="absolute bottom-6 right-8"><Knopf knopf={knopf} /></div></>}
       </div>
     </div>
