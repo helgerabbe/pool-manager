@@ -46,8 +46,8 @@ export default function ArbeitsphaseTafel({ sozialform }) {
     // Tafel 3 m × 1,5 m (2:1). Drei Lesezonen:
     // Mitte groß = Fernzone (letzte Reihe): Sozialform, Lautstärke, Satz. Rechts = Timer und „fertig“ (auch von hinten lesbar).
     // Links und unten = Nahzone (für die Lehrkraft, aus der Nähe): Hilfe, Stimmung, Lärmampel, Teams. Kopfleiste = Bedienung.
-    <div className="relative flex aspect-[2/1] w-full flex-col gap-1.5 overflow-hidden rounded-lg bg-[#FAF8F4] p-2 text-xs">
-      <div className="flex items-center justify-between gap-2 border-b pb-1">
+    <div className="relative flex h-full w-full flex-col gap-2 overflow-hidden p-4 text-xs">
+      <div className="flex items-center justify-between gap-2 pr-[16%]">
         <WerkzeugMenue sozialform={sozialform} an={an} setAn={setAn} />
         <AktionsLeiste sozialform={sozialform} onAktion={aktion} />
       </div>
@@ -59,10 +59,10 @@ export default function ArbeitsphaseTafel({ sozialform }) {
         </div>
         <div className="flex flex-col items-center justify-center gap-2 text-center">
           <div className="flex items-center gap-3">
-            <span className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Symbol className="h-9 w-9" /></span>
+            <span className="flex h-24 w-24 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Symbol className="h-14 w-14" /></span>
             {laut.symbol}
           </div>
-          <p className="text-2xl font-bold leading-tight">{SATZ[sozialform]}<br />{laut.satz}</p>
+          <p className="text-4xl font-bold leading-tight text-[#121721]">{SATZ[sozialform]}<br />{laut.satz}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {tipps > 0 && <span className={chip}><Lightbulb className="h-3 w-3 text-[#C98A12]" />Tipp {tipps} ist freigeschaltet</span>}
             {auswahl && <span className={chip}><Shuffle className="h-3 w-3" />Als Erstes: {sozialform === 'GA' ? 'Gruppe' : 'Paar'} {auswahl}</span>}
