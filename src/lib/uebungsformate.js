@@ -20,6 +20,11 @@ export const UEBUNGSFORMATE = [
     tablet: 'Nummerierte Karten untereinander; mit den Pfeilen nach oben oder unten schieben, „Neu“ mischt zurück.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
     tafel_analog: 'Karten groß an der Tafel, mit Pfeilen verschieben. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
+  { key: 'richtig_falsch', name: 'Richtig oder falsch', digital: true, analog: true, tablet_vorlage: 'richtig_falsch',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Stimmt das?', sozialform: 'EA', leise: true, minuten: 4, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Entscheide bei jeder Aussage: richtig oder falsch?' },
+    tablet: 'Aussagen untereinander; je Aussage „Richtig“ oder „Falsch“ antippen, „Neu“ setzt zurück.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
+    tafel_analog: 'Aussagen groß an der Tafel, je Aussage Richtig oder Falsch antippen. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
 ];
