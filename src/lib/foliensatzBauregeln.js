@@ -14,7 +14,8 @@ export const BAUREGELN = `BAUREGELN (verbindlich):
 9. Keine Aufgabe ohne Thema: Nutze EIN durchgehendes Beispielthema für alle Folien.
 10. Tafel wie PowerPoint: nichts ragt über den Folienrand, kein Scrollen (außer innerhalb von Textfeldern). Zwischen allen Elementen bleibt sichtbarer Abstand, nichts überlappt; Inhalte halten Abstand zu den Symbolen oben rechts.
 11. Tablet darf nach unten länger als eine Bildschirmhöhe sein (Scrollen erlaubt). Der Weiter-Knopf schwebt nicht, sondern steht immer am Ende der Seite.
-12. Methoden, die sich über die ganze Stunde spannen (Anfang und späterer Rückgriff, z. B. provokante These): Dort, wo der Unterricht mit eigenen Inhaltsfolien weitergeht, steht GENAU EINE Folie der Vorlage "einschub" (Platzhalter für mehrere Unterrichtsfolien: Lehrerimpuls, Erarbeitung o. Ä.). Danach geht die Methode weiter.`;
+12. Methoden, die sich über die ganze Stunde spannen (Anfang und späterer Rückgriff, z. B. provokante These): Dort, wo der Unterricht mit eigenen Inhaltsfolien weitergeht, steht GENAU EINE Folie der Vorlage "einschub" (Platzhalter für mehrere Unterrichtsfolien: Lehrerimpuls, Erarbeitung o. Ä.). Danach geht die Methode weiter.
+13. Timer: Methoden- und Inhaltsfolien haben NIE einen Timer. Timer gibt es bei Aufgabenfolien, optional bei Organisationsfolien (z. B. Partner finden) sowie bei Abstimmungs- und Reflexionsfolien.`;
 
 const kurz = (f) => {
   const { id, kanal, status, bild, erklaerung, liegt, ...rest } = f;
