@@ -11,6 +11,7 @@ import KlassenZuordnenTafel from './tafel/KlassenZuordnenTafel';
 import KlassenReihenfolgeTafel from './tafel/KlassenReihenfolgeTafel';
 import KlassenRichtigFalschTafel from './tafel/KlassenRichtigFalschTafel';
 import KlassenMultipleChoiceTafel from './tafel/KlassenMultipleChoiceTafel';
+import KlassenBildbeschriftungTafel from './tafel/KlassenBildbeschriftungTafel';
 
 const timer = <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>;
 import PartnerSchueler from './standard/PartnerSchueler';
@@ -39,6 +40,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
   if (art === 'klassenmodus') return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · die Klasse löst gemeinsam an der Tafel</p> : <div className="flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed border-[#7FA6D6] bg-white/70"><p className="text-sm font-bold text-[#7FA6D6]">Hier liegt die Übung, die wir gemeinsam lösen</p></div>;
   if (art === 'lueckentext') return ansicht === 'schueler' ? <LueckentextTablet /> : <TafelVorschau><KlassenLueckentextTafel /></TafelVorschau>;
+  if (art === 'bildbeschriftung') return <TafelVorschau><KlassenBildbeschriftungTafel /></TafelVorschau>;
   if (art === 'multiple_choice') return <TafelVorschau><KlassenMultipleChoiceTafel /></TafelVorschau>;
   if (art === 'richtig_falsch') return <TafelVorschau><KlassenRichtigFalschTafel /></TafelVorschau>;
   if (art === 'reihenfolge') return <TafelVorschau><KlassenReihenfolgeTafel /></TafelVorschau>;

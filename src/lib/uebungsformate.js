@@ -6,7 +6,7 @@ export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. B
 
 // Noch aus dem Pool-Manager-Katalog zu übernehmende Formate (nur Übersicht, noch ohne Skizze).
 export const NOCH_OFFEN = [
-  'Bildbeschriftung', 'Zuordnungstraining', 'Sprechaufgabe', 'Materialaufgabe', 'Offene Aufgabe',
+  'Zuordnungstraining', 'Sprechaufgabe', 'Materialaufgabe', 'Offene Aufgabe',
   'KI-Quiz', 'KI-Check', 'KI-Tutor Aufgabe (Brian)', 'Aufgabensequenz', 'Test', 'Bearbeitung bestätigen',
   'Text lesen', 'Video / Audio', 'Slideshow', 'Kompaktwissen', 'Lehrwerk/Quelle', 'Link / URL', 'Externer Inhalt',
 ];
@@ -37,6 +37,11 @@ export const UEBUNGSFORMATE = [
     tablet: 'Fragen untereinander, je vier Antworten als Kacheln; eine Antwort antippen, „Neu“ setzt zurück.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
     tafel_analog: 'Eine Frage groß an der Tafel, Antworten als Kacheln, mit Pfeilen zur nächsten Frage. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
+  { key: 'bildbeschriftung', name: 'Bildbeschriftung', digital: true, analog: true, tablet_vorlage: 'bildbeschriftung',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Beschrifte das Bild', sozialform: 'EA', leise: true, minuten: 4, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ordne jeder Nummer im Bild den passenden Begriff zu.' },
+    tablet: 'Bild mit nummerierten Markierungen, daneben die Begriffe; Begriff antippen, dann Markierung antippen. „Neu“ setzt zurück.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
+    tafel_analog: 'Bild groß an der Tafel, Begriff antippen, dann Markierung antippen. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
 ];
