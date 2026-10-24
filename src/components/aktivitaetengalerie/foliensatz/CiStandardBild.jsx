@@ -12,6 +12,7 @@ import PartnerLehrer from './standard/PartnerLehrer';
 import { CI_GRUPPEN } from '@/lib/folienCI';
 import BegruessungBild from './standard/BegruessungBild';
 import ZuhoerenBild from './standard/ZuhoerenBild';
+import AufgabenerklaerungBild from './standard/AufgabenerklaerungBild';
 import LernortBild from './standard/LernortBild';
 import ReflexionBild from './standard/ReflexionBild';
 import StartBild from './standard/StartBild';
@@ -26,6 +27,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'start') return <StartBild ansicht={ansicht} />;
   if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;
   if (art === 'lernort') return <LernortBild ansicht={ansicht} />;
+  if (art === 'aufgabenerklaerung') return <AufgabenerklaerungBild ansicht={ansicht} />;
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner_analog') return <PartnerAnalogBild />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;

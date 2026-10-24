@@ -25,6 +25,12 @@ export const CI_REGELN = {
     titel: ['Hör gut zu'],
     klaeren: ['Darf eine Notiz gemacht werden?'],
   },
+  aufgabenerklaerung: {
+    gestaltung: ['Tafel: die Aufgabe groß, sonst nichts', 'Tablet: Tafel- und Augen-Symbol, ein fester Satz, kein Weiter'],
+    inhalt: ['Aufgabe genau so, wie sie danach bearbeitet wird', 'Satz auf dem Tablet ist fest'],
+    titel: ['Das ist eure Aufgabe', 'Schaut mal her'],
+    klaeren: ['Welche Aufgabe wird erklärt?'],
+  },
   partner: {
     gestaltung: ['Tablet: Satz, Eingabefeld mit Namensvorschlägen, grüne Bestätigung', 'Tafel: festes Raster „Wer arbeitet mit wem?“ (6 × 3 Kacheln)'],
     inhalt: ['Kein eigener Text, die Folie ist vollständig festgelegt'],

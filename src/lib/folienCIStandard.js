@@ -22,6 +22,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Ohr- und Stille-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise, hör zu und stör die anderen nicht.“ Kein Weiter. Optional (von der Lehrkraft zuschaltbar): Knopf „Notiz machen“ öffnet einen gelben Notizzettel für Stichworte oder Fragen.',
     lehrer: 'Tafel zeigt den eigentlichen Inhalt; die Schülergeräte zeigen nur die Zuhör-Folie.',
   },
+  aufgabenerklaerung: {
+    name: 'Aufgabenerklärung', folientyp: 'aufgabe',
+    schueler: 'Tafel- und Augen-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir gerade die Aufgabe. Bitte schau nach vorne.“ Kein Weiter.',
+    lehrer: 'Die Tafel zeigt groß die Aufgabe, die Lehrkraft erklärt sie; die Schülergeräte lenken den Blick nach vorne.',
+  },
   partner: {
     name: 'Partner finden', folientyp: 'organisation',
     schueler: 'Satz „Such dir einen Partner.“ Eingabefeld „Mit wem arbeitest du?“ mit Namensvorschlägen aus der Klasse. Erst wenn beide sich gegenseitig eingetragen haben, erscheint grün „Ihr seid Partner 7“. Zusatzoptionen (von der Lehrkraft zuschaltbar): „Wir sind zu dritt“ und „Ich arbeite allein“. Allein ist nur eine Anfrage, die Lehrkraft entscheidet.',
