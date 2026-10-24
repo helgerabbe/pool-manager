@@ -48,17 +48,17 @@ export const CI_STANDARDFOLIEN = {
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
   einzelphase_analog: {
-    name: 'Einzelarbeit läuft (analog)', folientyp: 'aufgabe',
+    name: 'Einzelarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
     lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer und Lärmampel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
   },
   partnerphase_analog: {
-    name: 'Partnerarbeit läuft (analog)', folientyp: 'aufgabe',
+    name: 'Partnerarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
     lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
   },
   gruppenphase_analog: {
-    name: 'Gruppenarbeit läuft (analog)', folientyp: 'aufgabe',
+    name: 'Gruppenarbeit läuft', folientyp: 'aufgabe',
     schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
     lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
   },
