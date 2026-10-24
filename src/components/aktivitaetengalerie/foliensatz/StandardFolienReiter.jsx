@@ -1,6 +1,7 @@
 import React from 'react';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import FolieAnzeige from './FolieAnzeige';
+import StandardFolienRegeln from './StandardFolienRegeln';
 
 /** Reiter „Standardfolien“: wiederkehrende Folien, auf die der Grafikassistent zurückgreift. */
 export default function StandardFolienReiter() {
@@ -11,8 +12,9 @@ export default function StandardFolienReiter() {
         <div key={s.key} className="space-y-2 rounded-xl border p-4">
           <div>
             <p className="font-display font-bold">{s.name}</p>
-            <p className="text-sm text-muted-foreground">{s.wann} · <span className="font-medium text-foreground">Lehrkraft entscheidet:</span> {s.lehrkraft}</p>
+            <p className="text-sm text-muted-foreground">{s.wann}</p>
           </div>
+          <StandardFolienRegeln s={s} />
           <div className="grid gap-4 lg:grid-cols-2">
             <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Tafel</p><FolieAnzeige folie={{ id: s.key, ...s.folie }} ansicht="lehrer" /></div>
             <div><p className="mb-1 text-xs font-semibold uppercase text-muted-foreground">Tablet</p><FolieAnzeige folie={{ id: s.key, ...s.folie }} ansicht="schueler" /></div>
