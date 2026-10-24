@@ -8,6 +8,7 @@ import PartnersucheInhalt from './PartnersucheInhalt';
 import SammlungInhalt from './SammlungInhalt';
 import AbstimmungInhalt from './AbstimmungInhalt';
 import EinschubInhalt from './EinschubInhalt';
+import SatzImpulse from './SatzImpulse';
 
 const Titel = ({ children }) => <h2 className="line-clamp-1 text-[40px] font-bold leading-tight">{children}</h2>;
 const Box = ({ art, children }) => {
@@ -45,6 +46,12 @@ export default function VorlagenInhalt({ f }) {
     </div>
   );
   if (f.vorlage === 'einschub') return <EinschubInhalt f={f} />;
+  if (f.vorlage === 'satzanfaenge') return (
+    <div className="flex flex-1 flex-col gap-6 pr-48">
+      <Titel>{f.titel}</Titel>
+      <Box art="aufgabe"><p className="mb-6 line-clamp-2 text-[24px] leading-snug">{f.inhalt}</p><SatzImpulse impulse={f.satzimpulse} /></Box>
+    </div>
+  );
   if (f.vorlage === 'partnersuche') return <PartnersucheInhalt f={f} />;
   if (f.vorlage === 'sammlung') return <SammlungInhalt f={f} />;
   if (f.vorlage === 'abstimmung') return <AbstimmungInhalt f={f} />;

@@ -13,8 +13,9 @@ import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
 import BauFortschrittLeiste from './foliensatz/BauFortschrittLeiste';
 import StatusQuoButton from './foliensatz/StatusQuoButton';
+import StandardFolienReiter from './foliensatz/StandardFolienReiter';
 
-const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['gestaltung', '2. Layoutvorlagen'], ['tutorial', '3. Lehrer-Tutorial']];
+const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['standard', '2. Standardfolien'], ['gestaltung', '3. Layoutvorlagen'], ['tutorial', '4. Lehrer-Tutorial']];
 
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte, setze, onGespeichert }) {
@@ -37,6 +38,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
         <div className="flex gap-2 border-b pb-2">
           {SCHRITTE.map(([k, l]) => <Button key={k} size="sm" variant={schritt === k ? 'secondary' : 'ghost'} onClick={() => setSchritt(k)}>{l}</Button>)}
         </div>
+        {schritt === 'standard' && <StandardFolienReiter />}
         {schritt === 'gestaltung' && <GestaltungPlatzhalter />}
         {schritt === 'tutorial' && <LehrerTutorial key={kanal + ziel + fach} folien={folien} />}
         {schritt === 'funktion' && <>

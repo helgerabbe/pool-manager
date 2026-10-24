@@ -2,6 +2,7 @@
 // Ziel: Neue Foliensätze sollen genauso aufgebaut sein wie das Muster.
 import { STANDARD_FOLIENSAETZE } from '@/lib/standardFoliensaetze';
 import { FOLIENTYPEN_DEFINITION } from '@/lib/folientypenDefinition';
+import { standardFolienText } from '@/lib/standardFolienBibliothek';
 
 export const BAUREGELN = `${FOLIENTYPEN_DEFINITION}
 
@@ -21,7 +22,10 @@ BAUREGELN (verbindlich):
 13. Timer: Methoden-, Inhalts- und Sicherungsfolien haben NIE einen Timer. Timer gibt es bei Aufgaben- und Reflexionsfolien, optional bei Organisationsfolien. Die Lehrkraft stellt die Dauer LIVE im Unterricht am Timer ein und kann ihn anhalten; "minuten" ist nur ein Startvorschlag. Die Timerdauer ist deshalb NIE eine Frage an die Lehrkraft und NIE eine Entscheidung „vorher“.
 14. Schülersprache statt Planungssprache: Alles, was auf Tafel oder Tablet steht (titel, satz, thema, Aufgaben), enthält NIE den Namen der Methode (z. B. „Provokante These“, „Think-Pair-Share“) und NIE Begriffe der Stundenplanung (Einstieg, Erarbeitung, Sicherung, Konfrontation, Phase ...). Diese Begriffe gehören nur in "phase", "erklaerung" und die Hinweise für die Lehrkraft. Titel sprechen die Schüler animierend an, z. B. „Was meinst du dazu?“, „Letztens habe ich gelesen …“, „Kurz auf den Punkt gebracht:“. Das gilt für JEDEN Folientitel: kein Lehrersprech wie „Individuelle Bedenkzeit“, „Erste Abstimmung“, „Sammlung im Plenum“, „Ergebnissicherung“, sondern direkte Ansprache, die ins Tun holt, z. B. „Mach dir mal Gedanken …“, „Was denkst du?“, „Und, wie stimmst du ab?“, „Was habt ihr herausgefunden?“. Die Schüler sollen nie die Stundenplanung sehen, sondern in die Aktivität hineingeholt werden. Auch nichts verraten, was später kommt (z. B. „Erste Abstimmung“ kündigt eine zweite an), stattdessen etwa „Wie stehst du gerade dazu?“.
 16. Abstimmungen und andere interaktive Elemente (Umfrage, Wortwolke ...) laufen über die App: Schlüsselcode, Zugang oder Abstimmungstool sind NIE eine Frage an die Lehrkraft. Die Lehrkraft entscheidet vorher nur die GRANULARITÄT der Abstimmung, z. B. 2 Stufen (Zustimmung / Ablehnung), 3 Stufen (+ unentschieden) oder 5 Stufen (Zustimmung / eher Zustimmung / unentschieden / eher Ablehnung / Ablehnung); als Frage an die Lehrkraft heißt sie „Abstufung der Abstimmung“. Der Satz auf der Folie passt zur Art: bei Positionen „Wie stehst du dazu? Wähle deine Antwort.“, nicht „Wähle den Punkt, der dir am wichtigsten ist“.
-15. Inhalt statt Stundenziel: Verlangt die Methode einen konkreten Impuls (z. B. eine These), steht auf der Folie genau dieser Impuls als Beispiel zum Thema oder der Platzhalter „Hier steht deine These.“ Keine Stundenziel-Sätze wie „Wir wollen jetzt herausfinden, …“ an seiner Stelle.`;
+15. Inhalt statt Stundenziel: Verlangt die Methode einen konkreten Impuls (z. B. eine These), steht auf der Folie genau dieser Impuls als Beispiel zum Thema oder der Platzhalter „Hier steht deine These.“ Keine Stundenziel-Sätze wie „Wir wollen jetzt herausfinden, …“ an seiner Stelle.
+17. STANDARDFOLIEN ZUERST: Passt eine dieser Standardfolien, wird sie genommen und nur ihr Inhalt gefüllt:
+${standardFolienText()}
+18. Tafel und Tablet passen immer zusammen: Was die Tafel verlangt, muss auf dem Tablet möglich sein. Arbeitet die Aufgabe mit Satzanfängen, ist es IMMER die Vorlage "satzanfaenge" (Satzanfänge in "satzimpulse"); der Hinweis „Wähle einen Satzimpuls“ steht nie auf einer Folie ohne Satzanfänge, und die Aufgabe passt zu den Satzanfängen.`;
 
 const kurz = (f) => {
   const { id, kanal, status, bild, erklaerung, liegt, ...rest } = f;

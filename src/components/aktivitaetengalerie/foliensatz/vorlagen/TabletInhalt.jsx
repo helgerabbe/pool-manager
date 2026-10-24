@@ -3,6 +3,7 @@ import { PenLine, Hand, Users } from 'lucide-react';
 import { CI_BOXEN } from '@/lib/folienCI';
 import VorlagenInhalt from './VorlagenInhalt';
 import TippHilfe from './TippHilfe';
+import SatzanfaengeTablet from './SatzanfaengeTablet';
 
 const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
@@ -16,6 +17,7 @@ const AufgabeOben = ({ f }) => (
 
 /** Tablet-Ansicht (Schülergerät): Aufgabe kompakt oben, Arbeitsfläche darunter, kein Scrollen. */
 export default function TabletInhalt({ f }) {
+  if (f.vorlage === 'satzanfaenge') return <SatzanfaengeTablet f={f} />;
   if (f.vorlage === 'phase' && f.phase === 'Share') return (
     <div className="flex flex-1 flex-col gap-4 pr-48">
       <AufgabeOben f={f} />

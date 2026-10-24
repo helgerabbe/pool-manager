@@ -12,6 +12,7 @@ export const FOLIEN_VORLAGEN = {
   sammlung: { name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'reflexion', felder: 'titel (max. 30), frage (max. 80, Leitfrage der Sammlung). Die Liste bleibt leer und wird im Unterricht live von der Lehrkraft gefüllt.' },
   abstimmung: { name: 'Abstimmung (optional nach Sammlung)', folientyp: 'reflexion', felder: 'titel (max. 30), abstimmung = gewichten | bewerten | auswaehlen; punkte = die gesammelten Einträge (werden im Unterricht automatisch übernommen). Nicht zum Ordnen oder Merksatz-Formulieren.' },
   sicherung: { name: 'Sicherung', folientyp: 'sicherung', felder: 'titel (max. 30), punkte: 2-4 Stichpunkte (je max. 60)' },
+  satzanfaenge: { name: 'Satzanfänge ergänzen', folientyp: 'aufgabe', felder: 'titel (animierende Ansprache, max. 30), sozialform, minuten, inhalt (max. 80, z. B. „Wähle zwei Satzanfänge und ergänze sie.“), satzimpulse: 2-4 Satzanfänge. Tafel zeigt die Satzanfänge, auf dem Tablet tippt der Schüler einen an und schreibt den Satz zu Ende.' },
   einschub: { name: 'Einschub: Folien aus dem Unterricht', folientyp: 'organisation', felder: 'titel (max. 40, z. B. „Erarbeitung im Unterricht“), satz (max. 110: was hier eingefügt wird, z. B. Lehrerimpuls, Erarbeitung, Übung). Platzhalter für mehrere Unterrichtsfolien, die später der Unterrichtsassistent einsetzt.' },
   standard: { name: 'Standardfolie', folientyp: 'organisation', felder: `standard = einer von ${Object.keys(CI_STANDARDFOLIEN).join(', ')}` },
 };
@@ -24,6 +25,6 @@ export const folieSchema = { type: 'object', properties: {
   vorlage: { type: 'string', enum: Object.keys(FOLIEN_VORLAGEN) }, standard: t,
   untertitel: t, sozialform: { type: 'string', enum: ['EA', 'PA', 'GA', 'PL'] }, auftrag: t, hinweis: t, satz: t, frage: t, methodisch: t, inhalt: t, leise: { type: 'boolean' }, fluestern: { type: 'boolean' }, liegt: { type: 'array', items: t }, entscheidungen: { type: 'array', items: t }, partnersuche: { type: 'string', enum: ['frei', 'nachbar', 'los', 'duett'] }, abstimmung: { type: 'string', enum: ['gewichten', 'bewerten', 'auswaehlen'] },
   phasen: { type: 'array', items: { type: 'object', properties: { name: t, sozialform: t, satz: t } } },
-  punkte: { type: 'array', items: t },
+  punkte: { type: 'array', items: t }, satzimpulse: { type: 'array', items: t },
   erklaerung: t, abfrage: t,
 } };
