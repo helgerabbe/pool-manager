@@ -3,6 +3,7 @@
 // und entwickelt mit der Lehrkraft live 4–6 Kernschritte der Stunde.
 import { base44 } from '@/api/base44Client';
 import { kontextText, kiMitMaterial, grundstrukturText, stundentypName } from '@/lib/kiGrobplanung';
+import { uebungenText } from '@/lib/kiUebungsformate';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
@@ -39,6 +40,7 @@ Grobes Stundenziel: ${vorgaben.ziel.haupt || 'noch offen'}
 Stundentyp: ${vorgaben.ziel.stundentyp ? stundentypName(vorgaben.ziel.stundentyp) : 'offen'}
 Lerngruppe: Tempo ${vorgaben.gruppe.fit}/5, Selbstständigkeit ${vorgaben.gruppe.stark}/5, Leistung ${vorgaben.gruppe.leistung ?? 3}/5 (3 = normal)
 ${grundstrukturText(vorgaben)}
+${uebungenText(vorgaben.uebungen) ? `${uebungenText(vorgaben.uebungen)}\nGreif diese Übungen im Gespräch aktiv auf: Was müssen die Schüler vorher verstanden haben, und gehört die Übung in die Stunde oder in die Hausaufgabe?` : ''}
 WICHTIG: Hier geht es NUR um die Dramaturgie der Stunde (was passiert in welcher Reihenfolge und warum). Sprich NIEMALS über Methoden, Sozialformen, Materialien oder Medien und biete keine Methoden als Optionen an. Das kommt erst im nächsten Schritt "Methodische Gestaltung". Fragt die Lehrkraft selbst nach einer Methode, sag kurz, dass ihr das im nächsten Schritt klärt.
 ${vorgaben.anker.materialien.length ? '' : 'Die Lehrkraft hat noch kein Material angegeben.'}
 

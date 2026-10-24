@@ -21,7 +21,7 @@ export default function UebungsformateSchritt({ wert, setWert, onVorschlaege, la
     <div className="space-y-5">
       <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-        <p className="text-sm text-muted-foreground">Bevor wir die Stunde methodisch gestalten: Was sollen die Schüler am Ende konkret bearbeiten können? Gemeint sind inhaltliche Übungen, z. B. „Dezimalzahlen der Größe nach sortieren“, nicht Methoden wie Think-Pair-Share. Du kannst das auch offenlassen oder überspringen.</p>
+        <p className="text-sm text-muted-foreground">Bevor wir über den Stundenverlauf sprechen: Was sollen die Schüler am Ende konkret bearbeiten können? Gemeint sind inhaltliche Übungen, z. B. „Dezimalzahlen der Größe nach sortieren“, nicht Methoden wie Think-Pair-Share. Du kannst das auch offenlassen oder überspringen.</p>
       </div>
 
       <div className="space-y-2">
@@ -61,11 +61,11 @@ export default function UebungsformateSchritt({ wert, setWert, onVorschlaege, la
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Button variant="ghost" onClick={onZurueck}><ArrowLeft /> Zurück zum Gespräch</Button>
+        <Button variant="ghost" onClick={onZurueck}><ArrowLeft /> Zurück zu den Informationen</Button>
         <div className="flex gap-2">
           <Button variant="ghost" disabled={laedt} onClick={() => weiter('uebersprungen')}><SkipForward /> Überspringen</Button>
           <Button variant="outline" disabled={laedt} onClick={() => weiter('offen')}>Noch offen lassen</Button>
-          <Button disabled={laedt || !liste.length} onClick={() => weiter('gewaehlt')}>{laedt ? <Loader2 className="animate-spin" /> : <ArrowRight />} Weiter zur Methodik</Button>
+          <Button disabled={laedt || !liste.length} onClick={() => weiter('gewaehlt')}><ArrowRight /> Weiter zum Planungsgespräch</Button>
         </div>
       </div>
     </div>
