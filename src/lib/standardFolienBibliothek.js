@@ -23,7 +23,10 @@ const VORLAGEN_FOLIEN = [
     folie: { vorlage: 'satzanfaenge', folientyp: 'aufgabe', titel: 'Schreib deine Gedanken auf', sozialform: 'EA', minuten: 4, inhalt: 'Wähle zwei Satzanfänge und ergänze sie.', satzimpulse: ['Ich finde, dass …', 'Ein Grund dafür ist …', 'Dagegen spricht …'] } },
 ];
 
-const CI_FOLIEN = Object.entries(CI_STANDARDFOLIEN).map(([key, v]) => ({ key, ...v, ...CI_REGELN[key], ci: true }));
+// Aufgabenfolien in fester Reihenfolge: Einzel-, Partner-, Gruppenarbeit.
+const VORNE = ['einzelphase', 'partnerphase', 'gruppenphase'];
+const rang = (k) => (VORNE.includes(k) ? VORNE.indexOf(k) : VORNE.length);
+const CI_FOLIEN = Object.entries(CI_STANDARDFOLIEN).sort(([a], [b]) => rang(a) - rang(b)).map(([key, v]) => ({ key, ...v, ...CI_REGELN[key], ci: true }));
 
 export const STANDARD_FOLIEN = [...CI_FOLIEN, ...VORLAGEN_FOLIEN];
 
