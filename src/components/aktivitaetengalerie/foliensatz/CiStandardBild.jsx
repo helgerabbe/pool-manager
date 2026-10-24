@@ -2,8 +2,7 @@ import React from 'react';
 import PartnerAnalogBild from './standard/PartnerAnalogBild';
 import { Hand, Users, Network, User } from 'lucide-react';
 import { CI_TIMER } from '@/lib/folienCI';
-import EinzelarbeitTafel from './standard/EinzelarbeitTafel';
-import TeamarbeitTafel from './standard/TeamarbeitTafel';
+import ArbeitsphaseTafel from './tafel/ArbeitsphaseTafel';
 
 const timer = <span className="rounded-full px-1.5 font-semibold" style={{ background: CI_TIMER.normal.hg, color: CI_TIMER.normal.text }}>4:30</span>;
 import PartnerSchueler from './standard/PartnerSchueler';
@@ -28,7 +27,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'zuhoeren') return <ZuhoerenBild ansicht={ansicht} />;
   if (art === 'partner_analog') return <PartnerAnalogBild />;
   if (art === 'partner') return ansicht === 'schueler' ? <PartnerSchueler /> : <PartnerLehrer />;
-  if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <EinzelarbeitTafel />;
-  if (art === 'partnerphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <Users className="inline h-3 w-3" />7 {timer}</p> : <TeamarbeitTafel art="partner" />;
-  return ansicht === 'schueler' ? <p className="text-xs">Aufgabenfolie · oben rechts <Network className="inline h-3 w-3" />B {timer}</p> : <TeamarbeitTafel art="gruppe" />;
+  if (art === 'einzelphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <User className="inline h-3 w-3" /> {timer}</p> : <ArbeitsphaseTafel sozialform="EA" />;
+  if (art === 'partnerphase') return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <Users className="inline h-3 w-3" />7 {timer}</p> : <ArbeitsphaseTafel sozialform="PA" />;
+  return ansicht === 'schueler' ? <p className="text-xs">Aufgabe auf dem Gerät · oben rechts <Network className="inline h-3 w-3" />B {timer}</p> : <ArbeitsphaseTafel sozialform="GA" />;
 }
