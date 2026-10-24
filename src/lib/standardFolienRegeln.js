@@ -38,16 +38,16 @@ export const CI_REGELN = {
     klaeren: ['Art der Partnersuche: frei, Sitznachbar, Losen oder Lerntempo-Duett'],
   },
   partnerphase: {
-    gestaltung: ['Tablet: normale Aufgabenfolie, Partner-Symbol und Zahl oben rechts', 'Lehrergerät: Raster aller Paare mit Fortschritt und Meldungen'],
-    inhalt: ['Aufgabe als konkrete Leitfragen', 'Flüsterstimme in der Arbeitsweise'],
+    gestaltung: ['Tafel wie „Einzelarbeit läuft“: Partner- und Flüster-Symbol, kurzes Stichwort, großer Timer, „x von y Paaren fertig“', 'Darunter je Paar eine Kachel: optional Fortschrittsbalken, Haken bei fertig, Hand bei Meldung', 'Optional: „Fertig? Dann die Zusatzaufgabe.“', 'Tablet: normale Aufgabenfolie, Partner-Symbol und Zahl oben rechts'],
+    inhalt: ['Aufgabe als konkrete Leitfragen', 'Fester Satz „Ihr arbeitet zu zweit. Bitte flüstern.“'],
     titel: ['Tauscht euch aus', 'Was denkt ihr zu zweit?'],
-    klaeren: ['Aufgabe der Partnerarbeit', 'Läuft ein Timer?'],
+    klaeren: ['Aufgabe der Partnerarbeit', 'Hat die Aufgabe mehrere Schritte (Fortschrittsbalken) oder nur einen (nur fertig)?', 'Gibt es eine Zusatzaufgabe für schnelle Paare?'],
   },
   gruppenphase: {
-    gestaltung: ['Tablet: normale Aufgabenfolie, Gruppen-Symbol und Buchstabe in Gruppenfarbe', 'Lehrergerät: je Gruppe eine farbige Kachel mit Fortschritt'],
+    gestaltung: ['Tafel wie „Einzelarbeit läuft“: Gruppen- und Leise-Symbol, kurzes Stichwort, großer Timer, „x von y Gruppen fertig“', 'Darunter je Gruppe eine Kachel in Gruppenfarbe: optional Fortschrittsbalken, Haken bei fertig', 'Optional: „Fertig? Dann die Zusatzaufgabe.“', 'Tablet: normale Aufgabenfolie, Gruppen-Symbol und Buchstabe in Gruppenfarbe'],
     inhalt: ['Aufgabe als konkrete Leitfragen', 'Rollen nur, wenn die Methode sie vorsieht'],
     titel: ['Legt los als Team', 'Was findet ihr heraus?'],
-    klaeren: ['Aufgabe der Gruppe', 'Gruppengröße und Einteilung', 'Läuft ein Timer?'],
+    klaeren: ['Aufgabe der Gruppe', 'Gruppengröße und Einteilung', 'Hat die Aufgabe mehrere Schritte (Fortschrittsbalken) oder nur einen (nur fertig)?', 'Gibt es eine Zusatzaufgabe für schnelle Gruppen?'],
   },
   einzelphase: {
     gestaltung: ['Tafel: Einzelarbeit- und Stille-Symbol, kurzes Stichwort, großer Timer, anonymer Fortschritt', 'Tablet: normale Aufgabenfolie'],
