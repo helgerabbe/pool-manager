@@ -5,6 +5,7 @@ import VorlagenInhalt from './VorlagenInhalt';
 import TippHilfe from './TippHilfe';
 import SatzanfaengeTablet from './SatzanfaengeTablet';
 import SchrittFortschritt from './SchrittFortschritt';
+import LueckentextTabletInhalt from './LueckentextTabletInhalt';
 
 const auf = CI_BOXEN.aufgabe;
 const AufgabeOben = ({ f }) => (
@@ -29,6 +30,9 @@ export default function TabletInhalt({ f }) {
 
 function Inhalt({ f }) {
   if (f.vorlage === 'satzanfaenge') return <SatzanfaengeTablet f={f} />;
+  if (f.vorlage === 'lueckentext') return (
+    <div className="flex flex-1 flex-col gap-4 pr-16"><AufgabeOben f={f} /><LueckentextTabletInhalt /></div>
+  );
   if (f.vorlage === 'phase' && f.phase === 'Share') return (
     <div className="flex flex-1 flex-col gap-4 pr-48">
       <AufgabeOben f={f} />
