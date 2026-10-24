@@ -24,7 +24,7 @@ const VORLAGEN_FOLIEN = [
 ];
 
 // Aufgabenfolien in fester Reihenfolge: Einzel-, Partner-, Gruppenarbeit.
-const VORNE = ['einzelphase', 'partnerphase', 'gruppenphase', 'einzelphase_analog', 'partnerphase_analog', 'gruppenphase_analog'];
+const VORNE = ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog'];
 const rang = (k) => (VORNE.includes(k) ? VORNE.indexOf(k) : VORNE.length);
 const CI_FOLIEN = Object.entries(CI_STANDARDFOLIEN).sort(([a], [b]) => rang(a) - rang(b)).map(([key, v]) => ({ key, ...v, ...CI_REGELN[key], ci: true }));
 

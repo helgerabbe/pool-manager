@@ -55,23 +55,11 @@ export const CI_REGELN = {
     titel: ['Jetzt bist du dran', 'Mach dir mal Gedanken …'],
     klaeren: ['Aufgabe der Einzelarbeit', 'Gibt es eine Zusatzaufgabe für Schnelle?', 'Lautstärke zu Beginn: totale Stille oder Flüsterstimme (live umschaltbar, Lärmampel live zuschaltbar)'],
   },
-  einzelphase_analog: {
-    gestaltung: ['Funktionstafel (analog): groß nur Sozialform, Lautstärke und der feste Satz', 'Menü oben links: nur Timer und Lärmampel', 'Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp', 'Kein Fortschritt, keine Hilfe-Warteschlange, keine Stimmung (brauchen Geräte)'],
-    inhalt: ['Aufgabe auf Arbeitsblatt, Heft oder Buch', 'Fester Satz „Jeder arbeitet für sich.“ + Satz der Lautstärke'],
-    titel: ['Jetzt bist du dran'],
-    klaeren: ['Wo steht die Aufgabe (Arbeitsblatt, Buchseite)?', 'Lautstärke zu Beginn: totale Stille oder Flüsterstimme'],
-  },
-  partnerphase_analog: {
-    gestaltung: ['Funktionstafel (analog): groß nur Sozialform, Lautstärke und der feste Satz', 'Menü oben links: nur Timer, Lärmampel und Klassenziel', 'Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp', 'Keine Paar-Kacheln, kein Fortschritt, keine Warteschlange (brauchen Geräte)'],
-    inhalt: ['Aufgabe auf Arbeitsblatt, Heft oder Buch', 'Fester Satz „Ihr arbeitet zu zweit.“ + Satz der Lautstärke'],
-    titel: ['Tauscht euch aus'],
-    klaeren: ['Wo steht die Aufgabe?', 'Lautstärke zu Beginn: Flüsterstimme oder „Achtet auf eure Lautstärke“'],
-  },
-  gruppenphase_analog: {
-    gestaltung: ['Funktionstafel (analog): groß nur Sozialform, Lautstärke und der feste Satz', 'Menü oben links: nur Timer, Lärmampel und Klassenziel', 'Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp', 'Keine Gruppen-Kacheln, kein Fortschritt, keine Warteschlange (brauchen Geräte)'],
-    inhalt: ['Aufgabe auf Arbeitsblatt, Heft oder Buch', 'Fester Satz „Ihr arbeitet in eurer Gruppe.“ + Satz der Lautstärke'],
-    titel: ['Legt los als Team'],
-    klaeren: ['Wo steht die Aufgabe?', 'Gruppengröße und Einteilung', 'Lautstärke zu Beginn'],
+  arbeitsphase_analog: {
+    gestaltung: ['Eine Folie für Einzel-, Partner- und Gruppenarbeit; nur das Sozialform-Symbol wechselt', 'Kopfleiste: Sozialform, Lautstärke-Symbol, Lärmampel, Alle herschauen, Zwischenstopp, +2 Min., Endspurt, kleiner Timer oben rechts', 'Der übrige Platz gehört ganz der Aufgabe', 'Kein Fortschritt, keine Warteschlange, keine Stimmung, kein Tipp-Freischalten (brauchen Geräte)'],
+    inhalt: ['Aufgabenstellung groß und gut lesbar an der Tafel', 'Oder ein Hinweis, wo die Aufgabe steht (z. B. „Buch S. 42, Nr. 3“)'],
+    titel: ['Jetzt bist du dran', 'Legt los'],
+    klaeren: ['Aufgabenstellung bzw. Fundstelle', 'Sozialform', 'Lautstärke zu Beginn'],
   },
   sammlung: {
     gestaltung: ['Tafel: Leitfrage und offene Liste, die Lehrkraft schreibt live mit', 'Tablet: eigene Notizen des Schülers, Meldeknopf', 'Kein Merksatz'],

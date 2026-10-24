@@ -47,20 +47,10 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Normale Aufgabenfolie, oben rechts Einzelarbeit-Symbol, optional Timer daneben.',
     lehrer: 'Tafel zeigt NICHT die ganze Aufgabe, sondern eine ruhige Arbeitsfolie: großes Einzelarbeit- und Stille-Symbol, Satz „Jeder arbeitet für sich. Bitte leise.“, die Aufgabe nur als kurzes Stichwort, großer Timer und Klassenfortschritt („12 von 24 fertig“, anonym). Optional: Hinweis „Fertig? → Zusatzaufgabe“.',
   },
-  einzelphase_analog: {
-    name: 'Einzelarbeit läuft', folientyp: 'aufgabe',
-    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
-    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer und Lärmampel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
-  },
-  partnerphase_analog: {
-    name: 'Partnerarbeit läuft', folientyp: 'aufgabe',
-    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
-    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
-  },
-  gruppenphase_analog: {
-    name: 'Gruppenarbeit läuft', folientyp: 'aufgabe',
-    schueler: 'Kein Gerät: Die Aufgabe steht auf dem Arbeitsblatt, im Heft oder im Buch.',
-    lehrer: 'Funktionstafel ohne Geräte-Funktionen: groß Sozialform, Lautstärke und fester Satz; zuschaltbar nur Timer, Lärmampel und Klassenziel. Aktionen: Alle herschauen, Zwischenstopp, +2 Min., Endspurt, Tipp.',
+  arbeitsphase_analog: {
+    name: 'Arbeitsphase läuft', folientyp: 'aufgabe',
+    schueler: 'Kein Gerät: Die Schüler lesen die Aufgabe an der Tafel.',
+    lehrer: 'Kopfleiste: Sozialform-Symbol (Einzel/Partner/Gruppe umschaltbar), Lautstärke-Symbol, Lärmampel, Aktionen (Alle herschauen, Zwischenstopp, +2 Min., Endspurt), kleiner Timer oben rechts. Der ganze übrige Platz zeigt groß die Aufgabe (oder den Hinweis auf die Buchseite).',
   },
   sammlung: {
     name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung',

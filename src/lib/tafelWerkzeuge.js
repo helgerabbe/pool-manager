@@ -21,7 +21,7 @@ export const AKTIONEN = [
   { key: 'zwischenstopp', name: 'Zwischenstopp', fuer: ALLE, analog: true },
   { key: 'zeit_plus', name: '+2 Min.', fuer: ALLE, analog: true },
   { key: 'endspurt', name: 'Endspurt', fuer: ALLE, analog: true },
-  { key: 'tipp', name: 'Tipp freigeben', fuer: ALLE, analog: true },
+  { key: 'tipp', name: 'Tipp freigeben', fuer: ALLE },
   { key: 'zufall', name: 'Zufallsauswahl', fuer: TEAM },
 ];
 
