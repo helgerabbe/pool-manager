@@ -68,10 +68,16 @@ export const CI_REGELN = {
     klaeren: ['Aufgabenstellung bzw. Fundstelle', 'Sozialform', 'Lautstärke zu Beginn'],
   },
   klassenmodus: {
-    gestaltung: ['Das Übungsformat groß an der Tafel, große Antippflächen', 'Unten: Lösung prüfen, Zufallsschüler, Neu beginnen'],
-    inhalt: ['Nur Formate, die an der Tafel gemeinsam lösbar sind (siehe Merkmal klasse_tafel)', 'Kurz halten: höchstens 4-6 Lücken bzw. Elemente'],
-    titel: ['Wir füllen die Lücken gemeinsam', 'Wer weiß es?'],
+    gestaltung: ['Rahmenfolie: die Leerstelle wird mit der Tafel-Fassung eines Übungsformats gefüllt', 'Kein Schülergerät'],
+    inhalt: ['Nur Formate, die an der Tafel gemeinsam lösbar sind (Merkmal klasse_tafel)'],
+    titel: ['Wir lösen das gemeinsam', 'Wer weiß es?'],
     klaeren: ['Welches Übungsformat und welcher Inhalt?', 'Kommt danach eine Tablet-Phase mit demselben Format?'],
+  },
+  lueckentext: {
+    gestaltung: ['Tablet: Text mit Lücken, Wortspeicher darunter', 'Tafel: Text groß, große Antippflächen, unten Lösung prüfen, Zufallsschüler, Neu beginnen'],
+    inhalt: ['Höchstens 4-6 Lücken', 'Wortspeicher mit einem Ablenker'],
+    titel: ['Füll die Lücken', 'Wir füllen die Lücken gemeinsam'],
+    klaeren: ['Text und Lücken', 'Mit oder ohne Wortspeicher?'],
   },
   sammlung: {
     gestaltung: ['Tafel: Leitfrage und offene Liste, die Lehrkraft schreibt live mit', 'Tablet: eigene Notizen des Schülers, Meldeknopf', 'Kein Merksatz'],

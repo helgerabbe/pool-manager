@@ -8,6 +8,6 @@ export const EINSATZ = {
 export const FOLIEN_EINSATZ = {
   begruessung: 'beide', start: 'beide', ankuendigung: 'beide', zuhoeren: 'digital', aufgabenerklaerung: 'beide',
   partner: 'digital', partner_analog: 'analog', partnerphase: 'digital', gruppenphase: 'digital',
-  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', sammlung: 'beide', abstimmung: 'digital', lernort: 'digital', reflexion: 'digital',
+  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', abstimmung: 'digital', lernort: 'digital', reflexion: 'digital',
   notizen: 'beide', satzanfaenge: 'beide',
 };

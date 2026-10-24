@@ -60,7 +60,12 @@ export const CI_STANDARDFOLIEN = {
   klassenmodus: {
     name: 'Übung an der Tafel', folientyp: 'aufgabe',
     schueler: 'Kein Gerät: Die Klasse löst das Übungsformat gemeinsam an der Tafel.',
-    lehrer: 'Das Übungsformat (z. B. Lückentext) liegt groß an der Tafel: Wort antippen, dann Lücke antippen; Lücke erneut antippen leert sie. Knöpfe: Lösung prüfen (grün/rot), Zufallsschüler, Neu beginnen. Ergebnisse werden nicht gespeichert, nur gemeinsam gesichert.',
+    lehrer: 'Rahmenfolie: Hier liegt groß die Übung (Tafel-Fassung eines Übungsformats), die die Klasse gemeinsam löst. Ergebnisse werden nicht gespeichert, nur gemeinsam gesichert.',
+  },
+  lueckentext: {
+    name: 'Lückentext', folientyp: 'aufgabe',
+    schueler: 'Tablet-Fassung: Text mit Lücken, darunter der Wortspeicher; Wort antippen, dann Lücke antippen.',
+    lehrer: 'Tafel-Fassung (für „Übung an der Tafel“): Text groß, Wort antippen, dann Lücke antippen; Lücke erneut antippen leert sie. Knöpfe: Lösung prüfen (grün/rot), Zufallsschüler, Neu beginnen.',
   },
   sammlung: {
     name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung',

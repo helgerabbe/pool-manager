@@ -6,6 +6,13 @@ import { EINSATZ, FOLIEN_EINSATZ } from '@/lib/standardFolienEinsatz';
 import StandardFolienRegeln from './StandardFolienRegeln';
 import StandardFolieAnsicht from './StandardFolieAnsicht';
 
+// Rahmenfolien = wer sieht was wo (mit Leerstelle); Übungsformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
+const GRUPPEN = [
+  { typ: 'rahmen', name: 'Rahmenfolien', farbe: '#DCE7F5', keys: ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog', 'aufgabenerklaerung', 'klassenmodus'] },
+  { typ: 'format', name: 'Übungsformate', farbe: '#FDEBD3', keys: ['lueckentext', 'notizen', 'satzanfaenge'] },
+];
+const SONDER = GRUPPEN.flatMap((g) => g.keys);
+
 /** Standardfolien-Galerie: links alle Standardsituationen, rechts Tablet, Tafel und Regeln der gewählten Folie. */
 export default function StandardFolienReiter() {
   const [key, setKey] = React.useState(STANDARD_FOLIEN[0].key);
@@ -14,12 +21,13 @@ export default function StandardFolienReiter() {
     <div className="flex min-h-0 flex-1 gap-4">
       <div className="w-64 shrink-0 overflow-y-auto rounded-xl border p-2">
         <p className="px-2 pb-2 text-xs font-semibold uppercase text-muted-foreground">{STANDARD_FOLIEN.length} Standardfolien</p>
-        {Object.entries(CI_FOLIENTYPEN).map(([typ, t]) => {
-          const gruppe = STANDARD_FOLIEN.filter((x) => x.folientyp === typ);
+        {[...GRUPPEN, ...Object.entries(CI_FOLIENTYPEN).map(([typ, t]) => ({ typ, name: `${t.name}n`, farbe: t.farbe }))].map(({ typ, name, farbe, keys }) => {
+          const t = { name, farbe };
+          const gruppe = STANDARD_FOLIEN.filter((x) => (keys ? keys.includes(x.key) : x.folientyp === typ && !SONDER.includes(x.key)));
           if (!gruppe.length) return null;
           return (
             <div key={typ} className="mb-3">
-              <p className="mb-1 flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold" style={{ background: t.farbe }}>{t.name}n <span className="ml-auto font-normal">{gruppe.length}</span></p>
+              <p className="mb-1 flex items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold" style={{ background: t.farbe }}>{t.name} <span className="ml-auto font-normal">{gruppe.length}</span></p>
               {gruppe.map((x) => (
                 <button key={x.key} onClick={() => setKey(x.key)} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${x.key === key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: t.farbe }} /><span className="flex-1">{x.name}</span><span className={`rounded px-1 text-[10px] font-semibold ${EINSATZ[FOLIEN_EINSATZ[x.key]].klasse}`}>{EINSATZ[FOLIEN_EINSATZ[x.key]].kurz}</span>
