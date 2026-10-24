@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, ArrowRight, Loader2, Sparkles, Send, Check, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
 import AufgabenKarten from './AufgabenKarten';
 
@@ -44,7 +44,7 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
 
       <div className="space-y-2 rounded-xl border bg-card p-3">
         <p className="text-sm font-semibold">{u.stufe === 'kern' ? 'Wenn du willst: Beschreibe eine typische Aufgabe, die die Schüler am Ende dieser Stunde lösen können sollen.' : 'Deine Rückmeldung zu den Teilaufgaben'}</p>
-        <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="z. B. „Ja, passt“, „Lieber ohne Sachkontext“ oder deine eigene Aufgabe …" />
+        <FreitextMitSprache rows={3} value={text} onChange={setText} placeholder="z. B. „Ja, passt“, „Lieber ohne Sachkontext“ oder deine eigene Aufgabe …" />
         <p className="text-xs text-muted-foreground">Beispielaufgaben als PDF oder Bild hochladen oder mit Strg+V einfügen:</p>
         <MaterialUpload materialien={u.beispiele} onChange={(b) => setWert({ ...u, beispiele: b })} />
         <Button size="sm" disabled={denkt || (!text.trim() && !u.beispiele.length)} onClick={senden}><Send /> Antworten</Button>
