@@ -8,7 +8,7 @@ const BUCHSTABEN = ['A', 'B', 'C', 'D'];
 export default function MultipleChoiceTabletInhalt() {
   const [wahl, setWahl] = React.useState({});
   return (
-    <div className="m-auto flex w-full max-w-3xl flex-col gap-3 rounded-xl border-2 border-[#C9CED8] bg-white p-4">
+    <div className="m-auto flex max-h-full min-h-0 overflow-y-auto w-full max-w-3xl flex-col gap-3 rounded-xl border-2 border-[#C9CED8] bg-white p-4">
       {FRAGEN.map((f, i) => (
         <div key={i} className="flex flex-col gap-1.5">
           <p className="text-base font-semibold">{i + 1}. {f.frage}</p>
