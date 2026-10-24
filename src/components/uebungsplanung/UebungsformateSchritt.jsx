@@ -29,7 +29,7 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
     <div className="space-y-5">
       <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-        <p className="text-sm text-muted-foreground">Bevor wir über den Stundenverlauf sprechen, legen wir das Aufgabenportfolio fest: zuerst die Kernaufgabe, an der die Schüler am Ende zeigen, was sie gelernt haben, danach kleinere Übungen, die dorthin führen.</p>
+        <p className="text-sm text-muted-foreground">Bevor wir über den Stundenverlauf sprechen, schlüsseln wir die Stunde an den Aufgaben auf: Was sollen die Schüler am Schluss können (Kernaufgabe), und welche Teilaufgaben müssen sie beherrschen, um diese Schlussaufgabe zu lösen?</p>
       </div>
 
       <div className="space-y-2">

@@ -23,7 +23,7 @@ import { entwurfsWarnungen } from '@/lib/stundenEntwurfsRegeln';
 import useStundenplanerKontext from '@/hooks/useStundenplanerKontext';
 import { ankerVorhanden, kiAnkerPruefen, kiGrobZiel, kiGrobThema, kiGrobverlauf, kiPlanungsVorgaben, kiPhaseAendern, kiSparring, kiTippCenter } from '@/lib/kiGrobplanung';
 
-const SCHRITTE = ['Fundament & weitere Informationen', 'Übungsformate', 'Planungsgespräch', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
+const SCHRITTE = ['Fundament & weitere Informationen', 'Kernaufgaben', 'Planungsgespräch', 'Methodische Gestaltung', 'Feinplanung', 'Aufbereitung'];
 const START = {
   anker: { abschnitte: [], text: '', vorwissen: '', materialien: [], richtung: '', schulform: 'Integrierte Gesamtschule' },
   ziel: { haupt: '', alternativen: [], vonKi: true, stundentyp: '' },
@@ -142,7 +142,7 @@ export default function StundenplanerVorschau() {
               <VorgabenRaster v={v} setze={setze} verlauf={kontext.verlauf} assistent={assistent} onZielVorschlag={(ziel, korrektur) => kiGrobZiel({ ...k(), stundentyp: ziel.stundentyp, bisher: ziel.haupt, korrektur, vorgaben: v })}
                 onThemaVorschlag={(bisher, korrektur) => kiGrobThema({ ...k(), bisher, korrektur })} />
               <div className="flex flex-wrap gap-2">
-                <Button disabled={!ankerVorhanden(v.anker)} onClick={() => setPhase('uebung')}><Sparkles /> Weiter zu den Übungsformaten</Button>
+                <Button disabled={!ankerVorhanden(v.anker)} onClick={() => setPhase('uebung')}><Sparkles /> Weiter zu den Kernaufgaben</Button>
                 <Button variant="ghost" disabled={!ankerVorhanden(v.anker)} onClick={listeZeigen}>Ohne Gespräch: Worauf achten wir?</Button>
               </div>
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
@@ -156,7 +156,7 @@ export default function StundenplanerVorschau() {
                 <PlanungsGespraech verlauf={v.gespraech || []} setVerlauf={setze('gespraech')} onListe={listeZeigen} onSchritt={gespraechSchritt} anstoss={anstoss} onLaedt={setGLaedt} />
               </div>
               {fehler && <p className="text-xs text-destructive">{fehler}</p>}
-              <Button variant="ghost" onClick={() => setPhase('uebung')}><ArrowLeft /> Zurück zu den Übungsformaten</Button>
+              <Button variant="ghost" onClick={() => setPhase('uebung')}><ArrowLeft /> Zurück zu den Kernaufgaben</Button>
               <VorgabenPopup offen={popup} onSchliessen={() => setPopup(false)} punkte={punkte} setPunkte={setPunkte} laedt={laedt} onBauen={bauen} />
             </>
           )}
