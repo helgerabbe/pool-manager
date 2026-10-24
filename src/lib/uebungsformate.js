@@ -10,6 +10,10 @@ export const UEBUNGSFORMATE = [
     tablet: 'Text mit Lücken, darunter der Wortspeicher; Wort antippen, dann Lücke antippen.',
     tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.',
     tafel_analog: 'Text groß an der Tafel, Wort antippen, dann Lücke antippen. Knöpfe: Lösung prüfen, Zufallsschüler, Neu beginnen.' },
+  { key: 'zuordnen', name: 'Begriffe zuordnen', digital: true, analog: false, tablet_vorlage: 'zuordnen',
+    folie: { vorlage: 'phase', folientyp: 'aufgabe', titel: 'Was passt zusammen?', sozialform: 'EA', leise: true, minuten: 5, schritt: 1, schritte: 3, methodisch: 'Arbeite allein und leise.', inhalt: 'Ordne jedem Begriff die passende Erklärung zu.' },
+    tablet: 'Erklärungen untereinander, darunter die Begriffe; Begriff antippen, dann die passende Erklärung antippen. Erneut antippen tauscht, „Neu“ setzt zurück.',
+    tafel_digital: 'Arbeitsauftrag: Titel, Arbeitsweise, Auftrag, Timer. Per Knopf umschaltbar zur interaktiven Tafel.' },
   { key: 'notizen', name: 'Eigene Notizen machen', digital: true, analog: false },
   { key: 'satzanfaenge', name: 'Satzanfänge ergänzen', digital: true, analog: false },
 ];
