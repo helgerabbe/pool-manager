@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, ArrowRight, Loader2, Sparkles, Send, Check, SkipForward } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Sparkles, Send, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 import MaterialUpload from '@/components/unterrichtsplanung/MaterialUpload';
@@ -59,8 +59,6 @@ export default function UebungsformateSchritt({ wert, setWert, onGespraech, laed
       <div className="flex flex-wrap items-center justify-between gap-2">
         <Button variant="ghost" onClick={u.stufe === 'kern' ? onZurueck : () => setWert({ ...u, stufe: 'kern' })}><ArrowLeft /> {u.stufe === 'kern' ? 'Zurück zu den Informationen' : 'Zurück zu den Kernaufgaben'}</Button>
         <div className="flex gap-2">
-          <Button variant="ghost" disabled={laedt} onClick={() => onWeiter({ ...u, status: 'uebersprungen' })}><SkipForward /> Überspringen</Button>
-          <Button variant="outline" disabled={laedt} onClick={() => onWeiter({ ...u, status: 'offen' })}>Noch offen lassen</Button>
           {u.stufe === 'kern'
             ? <Button disabled={denkt || !u.kern.length} onClick={() => fragen(u, 'vorstufen')}><Check /> Kernaufgaben passen, weiter zu Teilaufgaben</Button>
             : <Button disabled={denkt || laedt} onClick={() => onWeiter({ ...u, status: 'gewaehlt' })}><ArrowRight /> Weiter zum Planungsgespräch</Button>}
