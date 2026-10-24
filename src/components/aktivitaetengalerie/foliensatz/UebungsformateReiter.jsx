@@ -1,3 +1,4 @@
+import AnalogTabletHinweis from './AnalogTabletHinweis';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
@@ -46,7 +47,7 @@ export default function UebungsformateReiter() {
           </> : <>
             <div className="space-y-1">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Schüler (Tablet)</p>
-              <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed p-6 text-center text-sm">{ANALOG_HINWEIS}</div>
+              <AnalogTabletHinweis text={ANALOG_HINWEIS} folientyp={s.folientyp} />
               <p className="text-xs text-muted-foreground">Kein Gerät nötig; im digitalen Unterricht steht nur dieser Hinweis.</p>
             </div>
             <StandardFolieAnsicht s={{ ...s, ci: true, lehrer: f.tafel_analog }} ansicht="lehrer" />
