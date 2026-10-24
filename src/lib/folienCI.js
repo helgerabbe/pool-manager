@@ -259,4 +259,4 @@ export const CI_TABLET = {
   ],
 };
 
-export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Zwei Standards: Freistehende Bilder mit weißem Rahmen, runden Ecken und sanftem Schatten. Verblassende Bilder (laufen weich in den Hintergrund aus) ohne Rahmen, ohne runde Ecken, ohne Schatten.';
+export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Zwei Standards: Freistehende Bilder mit weißem Rahmen, runden Ecken und sanftem Schatten. Verblassende Bilder (laufen weich in den Hintergrund aus) ohne Rahmen, ohne runde Ecken, ohne Schatten. Verblassende Bilder gibt es in zwei Lagen: (1) Streifen am unteren Rand, nach oben verwaschen; (2) Ecke rechts unten, nach oben und nach links verwaschen.';
