@@ -15,7 +15,7 @@ export default function UebungsformateReiter() {
   const f = UEBUNGSFORMATE.find((x) => x.key === key);
   const b = basis(key);
   const m = f[modus] ? modus : 'digital';
-  const s = { ...b, key, folie: f.folie || b.folie, tablet_format: true };
+  const s = { ...b, key, folientyp: b.folientyp || f.folie?.folientyp, folie: f.folie || b.folie, tablet_format: true };
   return (
     <div className="flex min-h-0 flex-1 gap-4">
       <div className="w-64 shrink-0 overflow-y-auto rounded-xl border p-2">
