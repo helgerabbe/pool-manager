@@ -20,13 +20,13 @@ export default function KlassenMultipleChoiceTafel() {
   };
   const wechseln = (n) => { setNr(n); setGeprueft(false); };
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden px-6 pb-4 pt-3 font-folie text-[#121721]">
+    <div className="flex flex-1 flex-col gap-3 px-6 pb-4 pt-3 font-folie text-[#121721]">
       <div className="flex shrink-0 items-center gap-3">
         <span className="text-base font-bold text-[#2A4074]">Multiple Choice · Frage {nr + 1} von {FRAGEN.length}</span>
         {dran && <span className="rounded-full bg-[#FBE3CF] px-3 py-0.5 text-sm font-semibold text-[#8A4B1E]">Nr. {dran} kommt nach vorne</span>}
         <span className="ml-auto origin-right scale-75"><SozialSymbol form="PL" /></span>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col justify-center gap-4">
+      <div className="flex flex-1 flex-col justify-center gap-4">
         <p className="text-2xl font-bold">{f.frage}</p>
         <div className="grid grid-cols-2 gap-3">
           {f.antworten.map((a, j) => (

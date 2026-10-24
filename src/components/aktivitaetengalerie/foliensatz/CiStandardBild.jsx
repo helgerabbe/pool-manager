@@ -41,8 +41,8 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'klassenmodus') return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · die Klasse löst gemeinsam an der Tafel</p> : <div className="flex h-24 w-full items-center justify-center rounded-xl border-2 border-dashed border-[#7FA6D6] bg-white/70"><p className="text-sm font-bold text-[#7FA6D6]">Hier liegt die Übung, die wir gemeinsam lösen</p></div>;
   if (art === 'lueckentext') return ansicht === 'schueler' ? <LueckentextTablet /> : <TafelVorschau><KlassenLueckentextTafel /></TafelVorschau>;
   if (art === 'bildbeschriftung') return <TafelVorschau><KlassenBildbeschriftungTafel /></TafelVorschau>;
-  if (art === 'multiple_choice') return <TafelVorschau><KlassenMultipleChoiceTafel /></TafelVorschau>;
-  if (art === 'richtig_falsch') return <TafelVorschau><KlassenRichtigFalschTafel /></TafelVorschau>;
+  if (art === 'multiple_choice') return <TafelVorschau scroll><KlassenMultipleChoiceTafel /></TafelVorschau>;
+  if (art === 'richtig_falsch') return <TafelVorschau scroll><KlassenRichtigFalschTafel /></TafelVorschau>;
   if (art === 'reihenfolge') return <TafelVorschau><KlassenReihenfolgeTafel /></TafelVorschau>;
   if (art === 'zuordnen') return <TafelVorschau><KlassenZuordnenTafel /></TafelVorschau>;
   if (art === 'arbeitsphase_analog') return ansicht === 'schueler' ? <p className="text-xs">Kein Gerät · die Aufgabe steht an der Tafel</p> : <TafelVorschau><AnalogArbeitsTafel /></TafelVorschau>;

@@ -13,13 +13,13 @@ export default function KlassenRichtigFalschTafel() {
   const [dran, setDran] = React.useState(null);
   const setzen = (i, w) => { setAntwort({ ...antwort, [i]: w }); setGeprueft(false); };
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden px-6 pb-4 pt-3 font-folie text-[#121721]">
+    <div className="flex flex-1 flex-col gap-3 px-6 pb-4 pt-3 font-folie text-[#121721]">
       <div className="flex shrink-0 items-center gap-3">
         <span className="text-base font-bold text-[#2A4074]">Richtig oder falsch</span>
         {dran && <span className="rounded-full bg-[#FBE3CF] px-3 py-0.5 text-sm font-semibold text-[#8A4B1E]">Nr. {dran} kommt nach vorne</span>}
         <span className="ml-auto origin-right scale-75"><SozialSymbol form="PL" /></span>
       </div>
-      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
+      <div className="flex flex-1 flex-col gap-2">
         {AUSSAGEN.map((a, i) => {
           const rahmen = !geprueft || antwort[i] === undefined ? 'border-[#E4E1DA]' : antwort[i] === a.richtig ? 'border-emerald-600 bg-emerald-50' : 'border-red-500 bg-red-50';
           return (
