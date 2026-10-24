@@ -25,13 +25,7 @@ export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onLi
 
   return (
     <div className="space-y-3 rounded-xl border bg-card p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-display font-bold">Planungsgespräch</p>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={onListe}><ListChecks /> Worauf würdest du achten?</Button>
-          <Button size="sm" onClick={onListe}><Rocket /> Leg los</Button>
-        </div>
-      </div>
+      <p className="font-display font-bold">Planungsgespräch</p>
       <div className="max-h-[28rem] space-y-2 overflow-y-auto">
         {verlauf.map((m, i) => (
           <div key={i} className={`flex gap-2 ${m.role === 'user' ? 'justify-end' : ''}`}>
@@ -47,6 +41,10 @@ export default function PlanungsGespraech({ verlauf, setVerlauf, onSchritt, onLi
       <div className="flex items-end gap-2">
         <div className="flex-1"><FreitextMitSprache rows={2} value={text} onChange={setText} placeholder="Oder sag es in deinen Worten …" /></div>
         <Button variant="outline" disabled={!text.trim() || laedt} onClick={() => senden(text.trim())}><Send /></Button>
+      </div>
+      <div className="flex justify-end gap-2 border-t pt-3">
+        <Button variant="outline" onClick={onListe}><ListChecks /> Worauf würdest du achten?</Button>
+        <Button onClick={onListe}><Rocket /> Leg los</Button>
       </div>
     </div>
   );
