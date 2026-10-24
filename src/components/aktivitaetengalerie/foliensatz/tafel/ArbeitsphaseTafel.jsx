@@ -43,31 +43,39 @@ export default function ArbeitsphaseTafel({ sozialform }) {
   };
 
   return (
-    <div className="relative flex w-full flex-col gap-2 rounded-lg bg-[#FAF8F4] p-2 text-xs">
-      <div className="flex items-start justify-between gap-2">
+    // Tafel 3 m × 1,5 m (2:1). Drei Lesezonen:
+    // Mitte groß = Fernzone (letzte Reihe): Sozialform, Lautstärke, Satz. Rechts = Timer und „fertig“ (auch von hinten lesbar).
+    // Links und unten = Nahzone (für die Lehrkraft, aus der Nähe): Hilfe, Stimmung, Lärmampel, Teams. Kopfleiste = Bedienung.
+    <div className="relative flex aspect-[2/1] w-full flex-col gap-1.5 overflow-hidden rounded-lg bg-[#FAF8F4] p-2 text-xs">
+      <div className="flex items-center justify-between gap-2 border-b pb-1">
         <WerkzeugMenue sozialform={sozialform} an={an} setAn={setAn} />
         <AktionsLeiste sozialform={sozialform} onAktion={aktion} />
       </div>
-      <div className="flex items-center gap-3 py-1">
-        <div className="flex flex-1 flex-col items-center gap-2 text-center">
-          <div className="flex items-center gap-2">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Symbol className="h-6 w-6" /></span>
+      <div className="grid min-h-0 flex-1 grid-cols-[1fr_2.2fr_1fr] gap-2">
+        <div className="flex min-h-0 flex-col gap-1.5 overflow-hidden">
+          {an.warteschlange && <HilfeWarteschlange team={team} />}
+          {an.stimmung && <Stimmungsbarometer />}
+          {an.laermampel && <Laermampel />}
+        </div>
+        <div className="flex flex-col items-center justify-center gap-2 text-center">
+          <div className="flex items-center gap-3">
+            <span className="flex h-16 w-16 items-center justify-center rounded-full" style={{ background: CI_SYMBOL_STIL.hg, color: CI_SYMBOL_STIL.farbe }}><Symbol className="h-9 w-9" /></span>
             {laut.symbol}
           </div>
-          <p className="text-base font-bold leading-tight">{SATZ[sozialform]} {laut.satz}</p>
+          <p className="text-2xl font-bold leading-tight">{SATZ[sozialform]}<br />{laut.satz}</p>
           <div className="flex flex-wrap justify-center gap-1">
             {tipps > 0 && <span className={chip}><Lightbulb className="h-3 w-3 text-[#C98A12]" />Tipp {tipps} ist freigeschaltet</span>}
             {auswahl && <span className={chip}><Shuffle className="h-3 w-3" />Als Erstes: {sozialform === 'GA' ? 'Gruppe' : 'Paar'} {auswahl}</span>}
-            {an.klassenziel && <span className={chip}><Star className="h-3 w-3 fill-[#C98A12] text-[#C98A12]" />Klassenziel: {rm.gesamt} von 10 Sternen</span>}
           </div>
         </div>
-        {an.timer && <div className="flex flex-col items-center gap-1"><TafelTimer sekunden={zeit} />{an.fortschritt && <span className="text-[10px]">{fertig} von {teams ? teams.length : 24} fertig</span>}</div>}
+        <div className="flex flex-col items-center justify-center gap-1.5">
+          {an.timer && <TafelTimer sekunden={zeit} />}
+          {an.fortschritt && <span className="text-sm font-bold">{fertig} von {teams ? teams.length : 24} fertig</span>}
+          {an.klassenziel && <span className={chip}><Star className="h-3 w-3 fill-[#C98A12] text-[#C98A12]" />{rm.gesamt} / 10 Sterne</span>}
+        </div>
       </div>
       {an.fortschritt && <TafelFortschritt teams={teams} gruppe={sozialform === 'GA'} an={an} rm={rm} />}
-      {rm.vorschau}
-      {an.warteschlange && <HilfeWarteschlange team={team} />}
-      {an.laermampel && <Laermampel />}
-      {an.stimmung && <Stimmungsbarometer />}
+      {rm.vorschau && <div className="absolute right-2 top-10 z-[5] max-w-[40%]">{rm.vorschau}</div>}
       {hinweis && <AktionsHinweis art={hinweis} onEnde={() => setHinweis(null)} />}
     </div>
   );

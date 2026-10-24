@@ -26,4 +26,4 @@ export const AKTIONEN = [
 
 export const werkzeugeFuer = (sf) => WERKZEUGE.filter((w) => w.fuer.includes(sf));
 export const aktionenFuer = (sf) => AKTIONEN.filter((a) => a.fuer.includes(sf));
-export const startWerkzeuge = (sf) => Object.fromEntries(werkzeugeFuer(sf).map((w) => [w.key, !!w.start]));
+export const startWerkzeuge = (sf) => Object.fromEntries(werkzeugeFuer(sf).map((w) => [w.key, true]));
