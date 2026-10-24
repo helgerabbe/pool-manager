@@ -9,9 +9,10 @@ import StandardFolieAnsicht from './StandardFolieAnsicht';
 // Rahmenfolien = wer sieht was wo (mit Leerstelle); Übungsformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
 const GRUPPEN = [
   { typ: 'rahmen', name: 'Rahmenfolien', farbe: '#DCE7F5', keys: ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog', 'aufgabenerklaerung', 'klassenmodus'] },
-  { typ: 'format', name: 'Übungsformate', farbe: '#FDEBD3', keys: ['lueckentext', 'notizen', 'satzanfaenge'] },
 ];
-const SONDER = GRUPPEN.flatMap((g) => g.keys);
+// Übungsformate haben einen eigenen Bereich (UebungsformateReiter) und erscheinen hier nicht.
+const FORMATE = ['lueckentext', 'notizen', 'satzanfaenge'];
+const SONDER = [...GRUPPEN.flatMap((g) => g.keys), ...FORMATE];
 
 /** Standardfolien-Galerie: links alle Standardsituationen, rechts Tablet, Tafel und Regeln der gewählten Folie. */
 export default function StandardFolienReiter() {
