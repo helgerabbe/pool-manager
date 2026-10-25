@@ -29,15 +29,16 @@ export async function planeFoliensatz(methode, fach, kanal, ziel = 'divergierend
   const r = await base44.integrations.Core.InvokeLLM({
     prompt: `Du bist der Grafikassistent. Lege den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz dieser Methode in Ablaufreihenfolge an. Lege JEDE Folie aus der Grobübersicht bzw. der Anweisung für den Grafikassistenten an, die zu diesem Kanal gehört, in genau dieser Reihenfolge; nichts zusammenfassen, nichts weglassen (Kanal "${kanal}", Ziel "${ziel}").
 ${kontext(methode)}
-Ein durchgehendes Beispielthema. Nutze Standardfolien, wo sie passen.
+Ein durchgehendes Beispielthema. Nutze Standardfolien und feste Vorlagen, wo sie wirklich passen.
+Passt keine (z. B. „[Noch keine Standardfolie – neu erstellen]“), baue die Folie NICHT, sondern lege sie als Vorlage "entwurf" an: titel + beschreibung mit der vollständigen Beschreibung dieser Folie aus der Anweisung.
 ${BAUREGELN}
 ${musterText(ziel)}
 ${regeln}`,
     response_json_schema: { type: 'object', properties: { thema: { type: 'string' }, folien: { type: 'array', items: folieSchema } } },
     model: 'claude_sonnet_4_6',
   });
-  // Unbekannte Vorlage: Folie behalten und als Fokusfolie darstellen statt still zu verwerfen.
-  return { thema: r.thema, folien: (r.folien || []).map((f) => (FOLIEN_VORLAGEN[f.vorlage] ? f : { ...f, vorlage: 'fokus' })).map(fertig) };
+  // Unbekannte Vorlage: als Bauauftrag behalten statt still zu verwerfen.
+  return { thema: r.thema, folien: (r.folien || []).map((f) => (FOLIEN_VORLAGEN[f.vorlage] ? f : { ...f, vorlage: 'entwurf' })).map(fertig) };
 }
 
 export async function baueFolie(methode, fach, plan, folie) {
@@ -45,10 +46,13 @@ export async function baueFolie(methode, fach, plan, folie) {
     prompt: `Du bist der Grafikassistent. Erzeuge GENAU diese eine Folie neu, passend zur Folge.
 ${kontext(methode)}
 Folge: ${plan.folien.map((f, i) => `${i + 1}. ${f.titel} (${f.vorlage})`).join(' · ')}
-Neu zu erzeugen: "${folie.titel}" (Phase ${folie.phase}, ${folie.kanal}). Du darfst eine passendere Vorlage wählen.
+Neu zu erzeugen: "${folie.titel}" (Phase ${folie.phase}, ${folie.kanal}). Du darfst eine passendere Vorlage wählen.${folie.beschreibung ? `
+BAUAUFTRAG: Baue die Folie genau nach dieser Beschreibung aus den Vorlagen (nicht "entwurf"), so nah wie möglich:
+${folie.beschreibung}` : ''}
 ${BAUREGELN}
 ${regeln}`,
     response_json_schema: folieSchema,
   });
-  return fertig({ ...r, id: folie.id, kanal: folie.kanal }, 0);
+  // beschreibung bleibt erhalten, damit der Bauauftrag erneut genutzt werden kann.
+  return fertig({ ...r, vorlage: r.vorlage === 'entwurf' && folie.beschreibung ? 'fokus' : r.vorlage, id: folie.id, kanal: folie.kanal, beschreibung: folie.beschreibung }, 0);
 }
