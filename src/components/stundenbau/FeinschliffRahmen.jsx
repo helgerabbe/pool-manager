@@ -41,8 +41,11 @@ export default function FeinschliffRahmen({ aktiv, anpassungen = [], onAendern, 
   const bewegen = (e) => {
     const z = zug.current; if (!z) return;
     const w = root.current.offsetWidth;
-    setze(z.pfad, { dx: z.dx + (e.clientX - z.x) / w, dy: z.dy + (e.clientY - z.y) / w });
+    z.ndx = z.dx + (e.clientX - z.x) / w; z.ndy = z.dy + (e.clientY - z.y) / w;
+    const el = elVon(root.current, z.pfad); if (el) el.style.transform = `translate(${z.ndx * w}px, ${z.ndy * w}px)`;
   };
+  // Gespeichert wird erst beim Loslassen, nicht bei jeder Bewegung.
+  const hoch = () => { const z = zug.current; zug.current = null; if (z?.ndx != null) setze(z.pfad, { dx: z.ndx, dy: z.ndy }); };
   const doppel = (e) => {
     if (!aktiv || e.target.children.length) return;
     const el = e.target, pfad = pfadVon(root.current, el);
@@ -53,7 +56,7 @@ export default function FeinschliffRahmen({ aktiv, anpassungen = [], onAendern, 
 
   return (
     <div>
-      <div ref={root} onPointerDownCapture={runter} onPointerMove={bewegen} onPointerUp={() => { zug.current = null; }} onDoubleClick={doppel}
+      <div ref={root} onPointerDownCapture={runter} onPointerMove={bewegen} onPointerUp={hoch} onDoubleClick={doppel}
         onClickCapture={(e) => aktiv && e.preventDefault()} className={aktiv ? 'cursor-move rounded ring-2 ring-accent/50 [&_*]:!pointer-events-auto' : ''}>
         {children}
       </div>
