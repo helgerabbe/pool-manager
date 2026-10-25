@@ -9,9 +9,10 @@ export default function BegruessungBild({ ansicht }) {
   const [offen, setOffen] = useState(false);
   return (
     <div className="text-center">
+      <p className="mb-1 inline-block rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-[#3E5C8A]">Erdkunde</p>
       <p className="text-2xl font-bold">Guten Morgen!</p>
       <p className="text-xs text-[#6A7181]">Heute: Warum ziehen Menschen in die Städte?</p>
-      {ansicht !== 'lehrer' && <StoppHinweis />}
+      {ansicht !== 'lehrer' && <StoppHinweis text="Gleich geht es los. Deine Lehrkraft gibt frei." />}
       {ansicht === 'lehrer' && (
         <div className="mt-2 space-y-1 text-[10px]">
           <span>18 von 24 angemeldet · </span>
