@@ -11,6 +11,8 @@ export const FOLIE_H = 576;
 
 const kontext = (roh, m = mitLangenTexten(roh)) => `Methode: ${m.name}. Fächerübergreifend, Jahrgang 7, Deutsch.
 Kurzbeschreibung: ${m.kurzbeschreibung || ''}
+Grobübersicht (Folienfolge verbindlich):
+${m.info_grobuebersicht || '(keine)'}
 Ablauf (Methodenbeschreiber):
 ${m.info_methodenbeschreiber || m.ablauf || ''}
 Anweisung für den Grafikassistenten:
@@ -25,15 +27,17 @@ const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fer
 
 export async function planeFoliensatz(methode, fach, kanal, ziel = 'divergierend') {
   const r = await base44.integrations.Core.InvokeLLM({
-    prompt: `Du bist der Grafikassistent. Lege den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz dieser Methode in Ablaufreihenfolge an (höchstens 8 Folien, Kanal "${kanal}", Ziel "${ziel}").
+    prompt: `Du bist der Grafikassistent. Lege den ${kanal === 'digital' ? 'DIGITALEN' : 'ANALOGEN'} Foliensatz dieser Methode in Ablaufreihenfolge an. Lege JEDE Folie aus der Grobübersicht bzw. der Anweisung für den Grafikassistenten an, die zu diesem Kanal gehört, in genau dieser Reihenfolge; nichts zusammenfassen, nichts weglassen (Kanal "${kanal}", Ziel "${ziel}").
 ${kontext(methode)}
 Ein durchgehendes Beispielthema. Nutze Standardfolien, wo sie passen.
 ${BAUREGELN}
 ${musterText(ziel)}
 ${regeln}`,
     response_json_schema: { type: 'object', properties: { thema: { type: 'string' }, folien: { type: 'array', items: folieSchema } } },
+    model: 'claude_sonnet_4_6',
   });
-  return { thema: r.thema, folien: (r.folien || []).filter((f) => FOLIEN_VORLAGEN[f.vorlage]).map(fertig) };
+  // Unbekannte Vorlage: Folie behalten und als Fokusfolie darstellen statt still zu verwerfen.
+  return { thema: r.thema, folien: (r.folien || []).map((f) => (FOLIEN_VORLAGEN[f.vorlage] ? f : { ...f, vorlage: 'fokus' })).map(fertig) };
 }
 
 export async function baueFolie(methode, fach, plan, folie) {
