@@ -86,7 +86,7 @@ export const CI_REGELN = {
     klaeren: ['Leitfrage der Sammlung', 'Gibt es einen Erwartungshorizont als Spickzettel?'],
   },
   kartenabfrage: {
-    gestaltung: ['Tablet: Leitfrage, eine Karte zum Beschreiben, Knopf „Karte abschicken“, Zähler „x von y Karten“', 'Tafel: Zähler der eingegangenen Karten, dann Pinnwand, dann Clustern mit Oberbegriffen', 'Karten anonym, in Pastellfarben'],
+    gestaltung: ['Interaktive Aufgabenfolie in zwei Schritten: Karten schreiben, dann Clustern', 'Tablet: Leitfrage, eine Karte zum Beschreiben, Knopf „Nächste Karte“, eigene Karten bleiben sichtbar, Zähler „x von y Karten“', 'Tafel: füllt sich live mit den Karten, jede mit Namen; Knopf „Clustern“ für Oberbegriffe', 'Karten in Pastellfarben'],
     inhalt: ['Leitfrage als direkte Frage an die Klasse', 'Ein Gedanke pro Karte, kurz (höchstens 60 Zeichen)'],
     titel: ['Was fällt dir dazu ein?', 'Worum könnte es gehen?'],
     klaeren: ['Leitfrage der Kartenabfrage', 'Wie viele Karten darf jeder höchstens schreiben?', 'Wie lange ist die Schreibzeit?'],

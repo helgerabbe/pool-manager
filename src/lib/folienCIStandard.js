@@ -74,8 +74,8 @@ export const CI_STANDARDFOLIEN = {
   },
   kartenabfrage: {
     name: 'Digitale Kartenabfrage', folientyp: 'aufgabe',
-    schueler: 'Leitfrage oben, darunter eine digitale Karte: ein Gedanke pro Karte, Knopf „Karte abschicken“. Danach ist eine neue, leere Karte bereit, bis die Höchstzahl erreicht ist (z. B. „2 von 3 Karten“). Abgeschickte Karten sind anonym.',
-    lehrer: 'Drei Zustände an der Tafel: (1) Schreiben: Zähler „23 Karten eingegangen“, Timer. (2) Pinnwand: alle Karten ungeordnet in Pastellfarben. (3) Clustern: Die Lehrkraft legt Oberbegriffe an und ordnet die Karten per Antippen bzw. Ziehen zu; Karten ohne Gruppe bleiben sichtbar.',
+    schueler: 'INTERAKTIVE AUFGABENFOLIE (keine Rahmenfolie): Tafel und Tablets wirken direkt aufeinander. Schritt 1: Leitfrage oben, darunter eine digitale Karte, ein Gedanke pro Karte. Knopf „Nächste Karte“: Die Karte erscheint sofort an der Tafel und bleibt beim Schüler sichtbar, eine neue leere Karte ist bereit, bis die Höchstzahl erreicht ist (z. B. „2 von 3 Karten“).',
+    lehrer: 'Schritt 1: Die Tafel füllt sich live mit den Karten, jede mit dem Namen des Schreibers, Zähler „23 Karten eingegangen“. Schritt 2: Knopf „Clustern“: Die Lehrkraft legt Oberbegriffe an und ordnet die Karten per Antippen bzw. Ziehen zu; Karten ohne Gruppe bleiben sichtbar.',
   },
   abstimmung: {
     name: 'Abstimmung (nach der Sammlung)', folientyp: 'sicherung',
