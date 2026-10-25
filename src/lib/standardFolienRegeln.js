@@ -85,6 +85,12 @@ export const CI_REGELN = {
     titel: ['Was habt ihr herausgefunden?', 'Was denkt ihr?'],
     klaeren: ['Leitfrage der Sammlung', 'Gibt es einen Erwartungshorizont als Spickzettel?'],
   },
+  kartenabfrage: {
+    gestaltung: ['Tablet: Leitfrage, eine Karte zum Beschreiben, Knopf „Karte abschicken“, Zähler „x von y Karten“', 'Tafel: Zähler der eingegangenen Karten, dann Pinnwand, dann Clustern mit Oberbegriffen', 'Karten anonym, in Pastellfarben'],
+    inhalt: ['Leitfrage als direkte Frage an die Klasse', 'Ein Gedanke pro Karte, kurz (höchstens 60 Zeichen)'],
+    titel: ['Was fällt dir dazu ein?', 'Worum könnte es gehen?'],
+    klaeren: ['Leitfrage der Kartenabfrage', 'Wie viele Karten darf jeder höchstens schreiben?', 'Wie lange ist die Schreibzeit?'],
+  },
   abstimmung: {
     gestaltung: ['Tablet: Karten bzw. große Antwortknöpfe', 'Tafel: anonyme Balken, die Lehrkraft deckt auf'],
     inhalt: ['Satz passt zur Art: bei Positionen „Wie stehst du dazu? Wähle deine Antwort.“', 'Nichts verraten, was später kommt (nicht „Erste Abstimmung“)', 'Zugang, Code oder Tool sind nie Thema, das läuft über die App'],

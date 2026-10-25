@@ -72,6 +72,11 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Überschrift und Leitfrage der Sammlung, darunter eine offene Liste. Kein Merksatz-Kasten, weil noch nichts festgelegt ist: Es wird erst gesammelt, was aus der Arbeitsphase kommt.',
     lehrer: 'Klassische Lehrersicherung: Während die Schüler vortragen bzw. sich melden, tippt die Lehrkraft live in das Textfeld; jeder Eintrag erscheint sofort als Punkt in der Liste (zweispaltig bei vielen Punkten). Optional liegt ein Erwartungshorizont als Spickzettel bereit.',
   },
+  kartenabfrage: {
+    name: 'Digitale Kartenabfrage', folientyp: 'aufgabe',
+    schueler: 'Leitfrage oben, darunter eine digitale Karte: ein Gedanke pro Karte, Knopf „Karte abschicken“. Danach ist eine neue, leere Karte bereit, bis die Höchstzahl erreicht ist (z. B. „2 von 3 Karten“). Abgeschickte Karten sind anonym.',
+    lehrer: 'Drei Zustände an der Tafel: (1) Schreiben: Zähler „23 Karten eingegangen“, Timer. (2) Pinnwand: alle Karten ungeordnet in Pastellfarben. (3) Clustern: Die Lehrkraft legt Oberbegriffe an und ordnet die Karten per Antippen bzw. Ziehen zu; Karten ohne Gruppe bleiben sichtbar.',
+  },
   abstimmung: {
     name: 'Abstimmung (nach der Sammlung)', folientyp: 'sicherung',
     schueler: 'Optional im Anschluss an eine Sammlung: Die gesammelten Punkte erscheinen als Karten. Drei Arten: Gewichten (drei Stimmen verteilen), Bewerten (je Punkt stimmt / teils / stimmt nicht), Auswählen (eine Stimme). Ordnen und Merksatz formulieren gehen nicht per Abstimmung.',

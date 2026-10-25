@@ -8,12 +8,12 @@ export const EINSATZ = {
 export const FOLIEN_EINSATZ = {
   begruessung: 'beide', start: 'beide', ankuendigung: 'beide', zuhoeren: 'digital', aufgabenerklaerung: 'beide',
   partner: 'digital', partner_analog: 'analog', partnerphase: 'digital', gruppenphase: 'digital',
-  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', abstimmung: 'digital', lernort: 'digital', positionierung: 'beide', sammlung_procontra: 'beide', einschub: 'beide', irritieren: 'beide', reflexion: 'digital',
+  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', kartenabfrage: 'digital', abstimmung: 'digital', lernort: 'digital', positionierung: 'beide', sammlung_procontra: 'beide', einschub: 'beide', irritieren: 'beide', reflexion: 'digital',
   notizen: 'beide', satzanfaenge: 'beide',
 };
 
 // Scrollbarkeit (2026-10-25): darf die Folie nach unten über den Bildschirm hinaus wachsen? Nicht aufgeführt = nicht scrollbar.
-export const FOLIEN_SCROLLBAR = ['partner', 'sammlung', 'sammlung_procontra', 'abstimmung', 'reflexion', 'lernort', 'lueckentext', 'notizen', 'satzanfaenge'];
+export const FOLIEN_SCROLLBAR = ['partner', 'sammlung', 'kartenabfrage', 'sammlung_procontra', 'abstimmung', 'reflexion', 'lernort', 'lueckentext', 'notizen', 'satzanfaenge'];
 export const istScrollbar = (key) => FOLIEN_SCROLLBAR.includes(key);
 // Hängt vom gezeigten Inhalt ab (z. B. Aufgabenart).
 export const FOLIEN_SCROLL_ABHAENGIG = { aufgabenerklaerung: 'scrollbar je nach Aufgabenart', klassenmodus: 'scrollbar je nach Aufgabenformat' };
