@@ -3,13 +3,14 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import UmsetzungsPhase from './UmsetzungsPhase';
 import { mitBasismethode } from '@/lib/freieMethode';
+import { normUmsetzung } from '@/lib/kiUmsetzung';
 
 /** Feinplanung, Teil 1: je Phase analog, digital oder gemischt. */
 export default function UmsetzungsWahlSchritt({ entwurf, setEntwurf, onVorschlag, onZurueck, onWeiter }) {
   const [laedt, setLaedt] = React.useState(false);
   const [fehler, setFehler] = React.useState('');
   const setzePhase = (i, daten) => setEntwurf((e) => ({ ...e, phasen: e.phasen.map((p, j) => (j === i ? { ...p, ...daten } : p)) }));
-  React.useEffect(() => { setEntwurf((e) => ({ ...e, phasen: mitBasismethode(e.phasen) })); }, []);
+  React.useEffect(() => { setEntwurf((e) => ({ ...e, phasen: mitBasismethode(e.phasen.map((p) => ({ ...p, umsetzung: normUmsetzung(p.umsetzung) }))) })); }, []);
   const vorschlagen = () => {
     setLaedt(true); setFehler('');
     onVorschlag()
@@ -22,7 +23,7 @@ export default function UmsetzungsWahlSchritt({ entwurf, setEntwurf, onVorschlag
     <div className="space-y-4">
       <div className="flex gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
         <Sparkles className="h-5 w-5 shrink-0 text-primary" />
-        <p className="text-sm text-muted-foreground">Jetzt entscheiden wir für jede Phase, ob sie analog, digital oder gemischt läuft. Digital lohnt sich vor allem, wenn es echten Mehrwert bringt, etwa sofortige Rückmeldung oder Ergebnisse sammeln.</p>
+        <p className="text-sm text-muted-foreground">Jetzt entscheiden wir für jede Phase, ob nur die Tafel genutzt wird oder ob die Schüler an ihrem Gerät arbeiten. Arbeit am Gerät lohnt sich vor allem, wenn es echten Mehrwert bringt, etwa sofortige Rückmeldung oder Ergebnisse sammeln.</p>
       </div>
       <Button variant="outline" disabled={laedt} onClick={vorschlagen}>{laedt ? <Loader2 className="animate-spin" /> : <Sparkles />} Vorschlag machen lassen</Button>
       {fehler && <p className="text-xs text-destructive">{fehler}</p>}

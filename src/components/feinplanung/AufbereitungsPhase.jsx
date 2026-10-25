@@ -1,11 +1,11 @@
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { AUFBEREITUNG_FELDER } from '@/lib/kiAufbereitung';
-import { UMSETZUNGEN } from '@/lib/kiUmsetzung';
+import { UMSETZUNGEN, normUmsetzung } from '@/lib/kiUmsetzung';
 
 /** Eine Phase mit bearbeitbarem Impuls, Arbeitsauftrag und Material. */
 export default function AufbereitungsPhase({ phase, nr, onAendern }) {
-  const umsetzung = UMSETZUNGEN.find((u) => u.key === phase.umsetzung)?.name;
+  const umsetzung = UMSETZUNGEN.find((u) => u.key === normUmsetzung(phase.umsetzung))?.name;
   return (
     <div className="space-y-2 rounded-xl border bg-card p-3">
       <p className="text-sm font-semibold">{nr}. {phase.name}

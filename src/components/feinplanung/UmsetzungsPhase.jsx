@@ -12,11 +12,12 @@ export default function UmsetzungsPhase({ phase, nr, onWahl }) {
       {phase.methode && <p className="text-xs"><span className="font-medium">Methode:</span> {phase.methode}</p>}
       {phase.schueler && <p className="text-xs text-muted-foreground">{phase.schueler}</p>}
       {frei && <p className="text-xs text-muted-foreground">Die Freie Methode läuft immer analog, mit Arbeitsauftrag und/oder Material.</p>}
-      <div className="grid grid-cols-3 gap-1.5">
+      <div className="grid grid-cols-2 gap-1.5">
         {UMSETZUNGEN.map((u) => (
           <button key={u.key} disabled={frei && u.key !== 'analog'} onClick={() => onWahl(u.key)}
-            className={`rounded-md border px-2 py-1.5 text-xs font-medium disabled:opacity-40 ${phase.umsetzung === u.key ? 'border-primary bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}>
-            {u.name}
+            className={`rounded-md border px-3 py-2 text-left disabled:opacity-40 ${phase.umsetzung === u.key ? 'border-primary bg-primary text-primary-foreground' : 'bg-background hover:bg-muted'}`}>
+            <span className="block text-xs font-semibold">{u.name}</span>
+            <span className="block text-[11px] opacity-80">{u.hinweis}</span>
           </button>
         ))}
       </div>
