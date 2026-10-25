@@ -15,7 +15,7 @@ const SKIZZE = ['positionierung', 'abstimmung', 'sammlung', 'sammlung_procontra'
 export default function FolieAnzeige({ folie, ansicht = 'lehrer', klein, kopf }) {
   if (!folie.vorlage) return <FolieVorschau elemente={folie[ansicht]} folientyp={folie.folientyp} klein={klein} />;
   return (
-    <VorlageRahmen folie={folie} klein={klein} tablet={ansicht === 'schueler' && folie.vorlage !== 'standard'} kopf={[kopf?.einheit || 'Name der Einheit', kopf?.thema || 'Thema der Stunde', folie.phase].filter(Boolean).join(' · ')}>
+    <VorlageRahmen folie={folie} klein={klein} tablet={ansicht === 'schueler' && folie.vorlage !== 'standard'} kopf={[kopf?.einheit || 'Fach', kopf?.thema || 'Thema der Einheit'].filter(Boolean).join(' · ')}>
       {folie.vorlage === 'standard' && folie.standard === 'partner' && ansicht === 'lehrer'
         ? <PartnerTafel />
         : folie.vorlage === 'standard' && folie.standard === 'ankuendigung'

@@ -23,7 +23,8 @@ export default function StundenbauAssistent() {
   const staende = stunde.stundenbau?.phasen || {};
   const stand = staende[aktiv];
   const phase = phasen[aktiv];
-  const kopf = { einheit: stunde.arbeitstitel, thema: stunde.planer_stand?.v?.anker?.thema };
+  // Kopfzeile der Folien: nur Fach und Thema der Unterrichtseinheit.
+  const kopf = { einheit: stunde.fach, thema: einheitTitel };
 
   const setzeStand = async (patch) => {
     const neu = { ...stunde.stundenbau, phasen: { ...staende, [aktiv]: { ...stand, ...patch } } };
