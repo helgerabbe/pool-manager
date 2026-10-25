@@ -19,12 +19,6 @@ export const CI_REGELN = {
     titel: ['Wir sammeln jetzt unsere Eindrücke', 'Was meinst du dazu?'],
     klaeren: ['Gibt es ein Motivbild, und wenn ja, was ist darauf zu sehen?'],
   },
-  zuhoeren: {
-    gestaltung: ['Tablet: Ohr- und Stille-Symbol im Pastellkreis, ein fester Satz, kein Weiter', 'Tafel zeigt den eigentlichen Inhalt'],
-    inhalt: ['Satz ist fest, wird nicht verändert'],
-    titel: ['Hör gut zu'],
-    klaeren: ['Darf eine Notiz gemacht werden?'],
-  },
   aufgabenerklaerung: {
     gestaltung: ['Tafel: die Aufgabe groß, sonst nichts', 'Tablet: Tafel- und Augen-Symbol, ein fester Satz, kein Weiter'],
     inhalt: ['Aufgabe genau so, wie sie danach bearbeitet wird', 'Satz auf dem Tablet ist fest'],

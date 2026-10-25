@@ -25,7 +25,8 @@ Regeln:
 - Je Seite kurz (max. 120 Zeichen), was zu sehen ist. Bleibt eine Seite gleich: "unverändert (wie Schritt N)". Hat eine Seite nichts: "nichts".
 - Folienart je Seite getrennt: ${Object.entries(CI_FOLIENTYPEN).map(([k, v]) => `${k} = ${v.name}`).join(', ')}. Wähle sie nach der Funktion der Folie, nicht pauschal.
 - Standardfolie je Seite NUR, wenn die Feinplanung sie ausdrücklich nennt (Schlüssel: ${Object.keys(CI_STANDARDFOLIEN).join(', ')}), sonst leer. Im Zweifel leer.
-- Inhaltsfolien an der Tafel: Das Tablet zeigt dann meist "zuhoeren".`,
+- Inhaltsfolien an der Tafel: Das Tablet zeigt dabei automatisch den Zuhören-Hinweis; trage dafür KEINE Standardfolie ein (tablet_typ "inhalt", tablet_standard leer).
+- Zeigt die Lehrkraft einen Gegenstand (Buch, Bild, Objekt) und lenkt den Fokus darauf, ist das eine Inhaltsfolie mit der Funktion "Impuls setzen".`,
     response_json_schema: { type: 'object', properties: { schritte: { type: 'array', items: { type: 'object', properties: {
       phase: t, tafel_typ: typ, tafel_standard: t, tafel: t, tablet_typ: typ, tablet_standard: t, tablet: t,
     } } } } },

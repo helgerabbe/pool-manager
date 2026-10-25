@@ -4,6 +4,7 @@ const B = 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/';
 export const INHALTS_FUNKTIONEN = [
   { key: 'f_aktivieren', name: 'Ankommen und aktivieren', text: 'Vorwissen, Erlebnisse oder eine erste Vermutung aufrufen.', symbol: `${B}e3cd5c504_generated_image.png` },
   { key: 'f_irritieren', name: 'Irritieren und neugierig machen', text: 'Mit Bild, Frage oder Widerspruch einen Denkimpuls setzen.', symbol: `${B}9d7ed35a8_generated_image.png` },
+  { key: 'f_impuls', name: 'Impuls setzen', text: 'Den Fokus auf den Unterrichtsgegenstand lenken (Buch, Bild, Objekt) und sagen, was gleich damit getan wird.', symbol: `${B}9d7ed35a8_generated_image.png` },
   { key: 'f_thema', name: 'Thema und Relevanz eröffnen', text: 'Benennen, worum es geht und warum es sich lohnt.', symbol: `${B}279db98f8_generated_image.png` },
   { key: 'f_orientierung', name: 'Orientierung geben', text: 'Leitfrage oder Kriterien mitten in der Stunde sichtbar machen.', symbol: `${B}a1fb19d7d_generated_image.png` },
   { key: 'f_begriffe', name: 'Begriffe und Vorwissen klären', text: 'Zentrale Wörter und Voraussetzungen klären.', symbol: `${B}830afad1e_generated_image.png` },

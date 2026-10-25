@@ -17,11 +17,6 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Kündigt an, was in der nächsten Unterrichtsphase inhaltlich passiert. Große Überschrift, darunter ein freier Satz, der IMMER ein Signalwort für den nächsten Schritt enthält („jetzt“ oder „als Nächstes“), z. B. „Wir wollen jetzt herausfinden, …“ oder „Als Nächstes wollen wir untersuchen, …“ – keine Aufgabenbox, kein Sozialform-Symbol, kein Timer. Optional ein Bildimpuls: immer fotorealistisch (nie Comic), im unteren rechten Bereich im Hintergrund, leicht blass, weich auslaufend und über dem Folienart-Kreis liegend.',
     lehrer: 'Gleiche Folie an der Tafel. Die Lehrkraft legt vorher fest: Überschrift, Fokus-Satz und ob es einen Bildimpuls gibt (mit Motiv).',
   },
-  zuhoeren: {
-    name: 'Lehrkraft erklärt – zuhören', folientyp: 'organisation',
-    schueler: 'Ohr- und Stille-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise, hör zu und stör die anderen nicht.“ Kein Weiter. Optional (von der Lehrkraft zuschaltbar): Knopf „Notiz machen“ öffnet einen gelben Notizzettel für Stichworte oder Fragen.',
-    lehrer: 'Tafel zeigt den eigentlichen Inhalt; die Schülergeräte zeigen nur die Zuhör-Folie.',
-  },
   aufgabenerklaerung: {
     name: 'Aufgabenerklärung', folientyp: 'aufgabe',
     schueler: 'Tafel- und Augen-Symbol im Pastellkreis, Satz „Deine Lehrkraft erklärt dir gerade die Aufgabe. Bitte schau nach vorne.“ Kein Weiter.',
