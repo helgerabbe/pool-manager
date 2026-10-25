@@ -259,4 +259,4 @@ export const CI_TABLET = {
   ],
 };
 
-export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Zwei Standards: Freistehende Bilder mit weißem Rahmen, runden Ecken und sanftem Schatten. Verblassende Bilder (laufen weich in den Hintergrund aus) ohne Rahmen, ohne runde Ecken, ohne Schatten. Verblassende Bilder gibt es in zwei Lagen: (1) Streifen am unteren Rand, nach oben verwaschen; (2) Ecke rechts unten, nach oben und nach links verwaschen.';
+export const CI_BILD = 'Fotorealistisch, keine Comicfiguren. Zwei Standards: Freistehende Bilder mit weißem Rahmen, runden Ecken und sanftem Schatten. Verblassende Bilder (laufen weich in den Hintergrund aus) ohne Rahmen, ohne runde Ecken, ohne Schatten. Verblassende Bilder gibt es in zwei Lagen: (1) Streifen am unteren Rand, nach oben verwaschen; (2) Ecke rechts unten, nach oben und nach links verwaschen. Grundregel: Verblassende Bilder haben keinen Abstand zum Folienrand; sie beginnen direkt am Rand (ragen sogar leicht darüber hinaus, wie der Folienart-Kreis oben rechts) und laufen in die Folie hinein, sodass nie eine Bildecke oder -kante sichtbar ist. Freistehende Bilder mit Rahmen behalten ihren Abstand.';

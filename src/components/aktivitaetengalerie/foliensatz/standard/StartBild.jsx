@@ -23,7 +23,7 @@ export default function StartBild({ ansicht }) {
           <ol className="ml-4 list-decimal">{ABLAUF.map((a) => <li key={a}>{a}</li>)}</ol>
         </div>
       )}
-      <img src={BILD} alt="Jemand packt einen Umzugskarton" className="absolute bottom-0 right-0 h-24 w-40 object-cover"
+      <img src={BILD} alt="Jemand packt einen Umzugskarton" className="absolute -bottom-5 -right-5 h-28 w-48 object-cover"
         style={{ WebkitMaskImage: ECKE, maskImage: ECKE }} />
     </div>
   );
