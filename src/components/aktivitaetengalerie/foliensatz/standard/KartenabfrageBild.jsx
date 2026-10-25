@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Eye, X } from 'lucide-react';
 
 const FARBEN = ['bg-[#FFF4C2]', 'bg-[#DCEBFA]', 'bg-[#E3F4E1]', 'bg-[#FBE3CF]'];
 const START = [
@@ -14,6 +14,7 @@ export default function KartenabfrageBild({ ansicht }) {
   const [text, setText] = useState('');
   const [modus, setModus] = useState('pinnwand');
   const [gruppe, setGruppe] = useState('');
+  const [sichtbar, setSichtbar] = useState([]);
 
   if (ansicht === 'schueler') {
     const naechste = () => { setMeine([...meine, text.trim()]); setKarten([...karten, { t: text.trim(), n: 'Du', g: '' }]); setText(''); };
@@ -36,7 +37,17 @@ export default function KartenabfrageBild({ ansicht }) {
 
   const gruppen = [...new Set(karten.map((k) => k.g).filter(Boolean))];
   const zuordnen = (i) => gruppe && setKarten(karten.map((k, j) => (j === i ? { ...k, g: k.g === gruppe ? '' : gruppe } : k)));
-  const kachel = (k, i, extra = '') => <span className={`block rounded px-1.5 py-1 shadow-sm ${FARBEN[i % 4]} ${extra}`}>{k.t}<span className="block text-[7px] text-[#6A7181]">{k.n}</span></span>;
+  const loeschen = (i) => setKarten(karten.filter((_, j) => j !== i));
+  const kachel = (k, i) => (
+    <span className={`group relative block rounded px-1.5 py-1 pr-6 shadow-sm ${FARBEN[i % 4]}`}>
+      {k.t}
+      {sichtbar.includes(i) && <span className="block text-[7px] text-[#6A7181]">{k.n}</span>}
+      <span className="absolute right-0.5 top-0.5 flex gap-0.5" onClick={(e) => e.stopPropagation()}>
+        <Eye title="Wer hat das geschrieben?" onClick={() => setSichtbar(sichtbar.includes(i) ? sichtbar.filter((x) => x !== i) : [...sichtbar, i])} className="h-2.5 w-2.5 cursor-pointer text-[#6A7181]" />
+        <X title="Karte von der Tafel nehmen" onClick={() => loeschen(i)} className="h-2.5 w-2.5 cursor-pointer text-[#C0392B]" />
+      </span>
+    </span>
+  );
   return (
     <div className="w-full text-[9px]">
       <div className="mb-1 flex items-center gap-1">
