@@ -11,7 +11,7 @@ export const ANKUENDIGUNG_BEISPIEL = {
 /** Standardfolie „Inhaltliche Ankündigung“: kündigt an, was in der nächsten Phase herausgefunden werden soll. */
 export default function AnkuendigungBild() {
   return (
-    <div className="w-full">
+    <div className="-m-4 w-[calc(100%+2rem)] [&>div]:rounded-none [&>div]:ring-0">
       <VorlageRahmen folie={ANKUENDIGUNG_BEISPIEL} klein kopf="Name der Einheit · Thema der Stunde · Einstieg">
         <VorlagenInhalt f={ANKUENDIGUNG_BEISPIEL} />
       </VorlageRahmen>
