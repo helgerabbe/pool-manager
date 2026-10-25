@@ -5,6 +5,7 @@ import { Hand, CheckCircle2, Ear } from 'lucide-react';
 import { useLiveRaum } from '@/hooks/useLiveRaum';
 import { melden } from '@/lib/liveRaum';
 import LiveCodeEingabe from '@/components/praesentation/LiveCodeEingabe';
+import NotizHeft from '@/components/aktivitaetengalerie/foliensatz/vorlagen/NotizHeft';
 
 /** Schülergerät im Präsentationsmodus: Code eingeben, dann folgt das Tablet der Tafel. */
 export default function LiveMitmachen() {
@@ -31,7 +32,8 @@ export default function LiveMitmachen() {
         <span className="font-medium text-foreground truncate">{raum.titel}</span>
         <button type="button" onClick={verlassen} className="ml-auto hover:underline">Verlassen</button>
       </div>
-      <div className="flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+      <div className="relative flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
+        {nr >= 0 && <NotizHeft gross />}
         {nr < 0 ? <p className="text-lg">Du bist dabei. Gleich geht es los …</p> : (
           <>
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">{schritt.titel}</p>

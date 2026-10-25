@@ -4,6 +4,7 @@ import CiStandardBild from './CiStandardBild';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import FolieAnzeige from './FolieAnzeige';
 import AufgabeTafelUmschalter from './AufgabeTafelUmschalter';
+import NotizHeft from './vorlagen/NotizHeft';
 
 // Fester Tablet-Teil jeder Inhaltsfolie (keine eigene Standardfolie mehr, 2026-10-25).
 const ZUHOEREN = { key: 'zuhoeren', ci: true, folientyp: 'organisation', schueler: 'Bei Inhaltsfolien zeigt das Tablet automatisch: „Deine Lehrkraft erklärt dir jetzt etwas. Sei leise und hör zu.“' };
@@ -21,6 +22,7 @@ export default function StandardFolieAnsicht({ s, ansicht }) {
           {s.symbol && <img src={s.symbol} alt="" className="absolute right-[3%] top-[4%] h-[22%] object-contain mix-blend-multiply" />}
           {/* Randbild-Folien (z. B. Stundenstart): Bild sitzt am Folienrand, daher kein eigener Bezugsrahmen. */}
           <div className={`flex w-full justify-center ${s.key === 'start' ? '' : 'relative'}`}><CiStandardBild art={s.key} ansicht={ansicht} /></div>
+          {ansicht === 'schueler' && <NotizHeft />}
         </div>
       ) : ansicht === 'lehrer' && s.tablet_format ? <AufgabeTafelUmschalter s={s} /> : <FolieAnzeige folie={{ id: s.key, ...s.folie }} ansicht={ansicht} />}
       <p className="text-xs text-muted-foreground">{ansicht === 'schueler' ? s.schueler : s.lehrer}</p>

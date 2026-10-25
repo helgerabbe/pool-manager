@@ -6,6 +6,7 @@ import SozialSymbol from './SozialSymbol';
 import FolienTimer from './FolienTimer';
 import TabletKopfAktionen from './TabletKopfAktionen';
 import SchrittPunkte from './SchrittPunkte';
+import NotizHeft from './NotizHeft';
 
 /** Fester Folienrahmen: Off-White, Folientyp-Ecke, Kopfleiste, Status oben rechts, Steuerung unten rechts. */
 export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) {
@@ -25,6 +26,7 @@ export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) 
   return (
     <div ref={ref} className={`relative w-full overflow-hidden ring-1 ring-border ${tablet ? '' : 'aspect-video'} ${klein ? 'rounded-md' : 'rounded-xl shadow-lg'}`} style={tablet ? { height: hoehe * faktor } : undefined}>
       <div ref={innen} className="absolute left-0 top-0 origin-top-left font-inter" style={{ width: FOLIE_B, height: tablet ? undefined : FOLIE_H, minHeight: FOLIE_H, transform: `scale(${faktor})`, background: CI_GRUND.hintergrund, color: CI_GRUND.text }}>
+        {tablet && <NotizHeft gross />}
         {tablet && hoehe > FOLIE_H + 2 && <div className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-[#9AA1AE]" style={{ top: FOLIE_H }}><span className="absolute right-4 top-1 text-sm text-[#6A7181]">Bildschirmende · darunter wird gescrollt</span></div>}
         {typ && <div className="absolute -right-32 -top-40 h-[480px] w-[480px] rounded-full" style={{ background: typ.farbe }} />}
         <div className="absolute left-10 top-4 text-sm text-[#6A7181]">{kopf}</div>
