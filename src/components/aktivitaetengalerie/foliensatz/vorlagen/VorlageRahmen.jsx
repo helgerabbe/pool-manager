@@ -2,6 +2,7 @@ import React from 'react';
 import { Lock, ArrowRight, VolumeX, Volume1 } from 'lucide-react';
 import { FOLIE_B, FOLIE_H } from '@/lib/kiFoliensatz';
 import { CI_GRUND, CI_FOLIENTYPEN, CI_TIMER, CI_BUTTONS } from '@/lib/folienCI';
+import { CI_STANDARDFOLIEN } from '@/lib/folienCIStandard';
 import SozialSymbol from './SozialSymbol';
 import FolienTimer from './FolienTimer';
 import TabletKopfAktionen from './TabletKopfAktionen';
@@ -21,7 +22,8 @@ export default function VorlageRahmen({ folie, kopf, klein, tablet, children }) 
     ri.observe(innen.current);
     return () => { ro.disconnect(); ri.disconnect(); };
   }, []);
-  const typ = CI_FOLIENTYPEN[folie.folientyp];
+  // Standardfolien behalten immer die Folienart aus dem Katalog (z. B. Impuls setzen = Inhaltsfolie, Türkis).
+  const typ = CI_FOLIENTYPEN[(folie.vorlage === 'standard' && CI_STANDARDFOLIEN[folie.standard]?.folientyp) || folie.folientyp];
   const knopf = folie.freigabe === 'lehrkraft' || !folie.freigabe ? CI_BUTTONS.weiter_gesperrt : CI_BUTTONS.weiter;
   return (
     <div ref={ref} className={`relative w-full overflow-hidden ring-1 ring-border ${tablet ? '' : 'aspect-video'} ${klein ? 'rounded-md' : 'rounded-xl shadow-lg'}`} style={tablet ? { height: hoehe * faktor } : undefined}>

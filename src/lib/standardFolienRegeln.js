@@ -119,7 +119,7 @@ export const CI_REGELN = {
     gestaltung: ['Oben klein der Einleitungssatz „Wir schauen uns jetzt etwas genauer an:“', 'Groß der Gegenstand (z. B. „Buch S. 45, Quelle M2“ oder „Hard Land“ von Benedict Wells)', 'Darunter in einer Box mit Lupe der Untersuchungsimpuls', 'Optional Bild des Materials; bei Realia genügt der Name'],
     inhalt: ['Gegenstand genau benennen (Titel, Fundstelle oder Objekt)', 'Untersuchungsimpuls als 2-4 konkrete Handlungen in Du-Form (anschauen, in die Hand nehmen, durchblättern, auf sich wirken lassen)', 'Noch keine Arbeitsaufgabe, nur erste Begegnung'],
     titel: ['Wir schauen uns jetzt etwas genauer an:', 'Darum geht es jetzt:'],
-    klaeren: ['Welcher Gegenstand (Text, Bild, Buch, Objekt, Experiment)?', 'Fundstelle bzw. Titel', 'Wie sollen die Schüler ihm zuerst begegnen?'],
+    klaeren: ['Welcher Gegenstand (Text, Bild, Buch, Objekt, Experiment)?', 'Fundstelle bzw. Titel', 'Wie sollen die Schüler ihm zuerst begegnen?', 'Soll ein Bild des Materials gezeigt werden?'],
   },
   lernort: {
     gestaltung: ['Tablet: ein Satz und große Antippkarten der Orte', 'Liste nach Orten'],

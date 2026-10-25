@@ -1,5 +1,6 @@
 import React from 'react';
-import { Layers, ListChecks } from 'lucide-react';
+import { Layers, PenLine, PlusCircle } from 'lucide-react';
+import { CI_REGELN } from '@/lib/standardFolienRegeln';
 
 const Liste = ({ titel, icon: Icon, punkte }) => punkte?.length ? (
   <div>
@@ -9,21 +10,22 @@ const Liste = ({ titel, icon: Icon, punkte }) => punkte?.length ? (
 ) : null;
 
 const alsListe = (x) => (Array.isArray(x) ? x : x ? [x] : []);
+// Ja/Nein-Fragen („Soll …?“, „Gibt es …?“) sind zuschaltbare Zusätze, alles andere muss befüllt werden.
+const istOptional = (f) => /^(soll|sollen|gibt es|wird|werden|ist .* zuschaltbar)/i.test(f.trim());
 
-/** Rechte Spalte: was auf der Folie liegt, was die Lehrkraft vorher entscheidet, plus alle Entscheidungen der Methode. */
-export default function FolieErklaerung({ folie, folien = [] }) {
-  const alle = [...new Set(folien.flatMap((f) => alsListe(f.entscheidungen || f.abfrage)))];
+/** Rechte Spalte: was auf der Folie liegt, welche variablen Elemente befüllt werden, welche Inhalte optional sind. */
+export default function FolieErklaerung({ folie }) {
+  // Standardfolien: Fragen aus dem festen Regelwerk statt aus dem Bauvorschlag (keine Dopplungen, nichts Fremdes).
+  const fragen = [...new Set(CI_REGELN[folie.standard]?.klaeren || alsListe(folie.entscheidungen || folie.abfrage))];
+  const pflicht = fragen.filter((f) => !istOptional(f));
+  const optional = fragen.filter(istOptional);
   return (
     <aside className="w-72 shrink-0 space-y-4 overflow-y-auto rounded-xl border bg-muted/30 p-3">
       {folie.erklaerung && <p className="text-sm italic text-muted-foreground">{folie.erklaerung}</p>}
       <Liste titel="Was auf der Folie liegt" icon={Layers} punkte={alsListe(folie.liegt)} />
-      <Liste titel="Lehrkraft entscheidet vorher" icon={ListChecks} punkte={alsListe(folie.entscheidungen || folie.abfrage)} />
-      {!alsListe(folie.entscheidungen || folie.abfrage).length && <p className="text-xs text-muted-foreground">Auf dieser Folie muss die Lehrkraft nichts entscheiden.</p>}
-      {alle.length > 0 && (
-        <div className="border-t pt-3">
-          <Liste titel={`Alle Fragen an die Lehrkraft (${alle.length}) – Grundlage für den Unterrichtsassistenten`} icon={ListChecks} punkte={alle} />
-        </div>
-      )}
+      <Liste titel="Variable Elemente – müssen befüllt werden" icon={PenLine} punkte={pflicht} />
+      <Liste titel="Optionale Inhalte – können dazugenommen werden" icon={PlusCircle} punkte={optional} />
+      {!fragen.length && <p className="text-xs text-muted-foreground">Diese Folie hat keine variablen Elemente.</p>}
     </aside>
   );
 }

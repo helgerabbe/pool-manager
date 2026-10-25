@@ -45,7 +45,7 @@ export default function CiStandardBild({ art, ansicht }) {
   if (art === 'sammlung_procontra') return <ProContraBild ansicht={ansicht} />;
   if (art === 'einschub') return <EinschubBild ansicht={ansicht} />;
   if (art === 'irritieren') return <IrritierenBild ansicht={ansicht} />;
-  if (art === 'impuls') return <div className="relative aspect-video w-full"><ImpulsSetzenTafel /></div>;
+  if (art === 'impuls') return <div className="relative aspect-video w-full [container-type:inline-size]"><ImpulsSetzenTafel /></div>;
   if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
   if (art === 'start') return <StartBild ansicht={ansicht} />;
   if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;

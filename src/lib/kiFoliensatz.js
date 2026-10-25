@@ -25,7 +25,7 @@ erklaerung: 1-2 Sätze, wozu die Folie dient. abfrage: was die Lehrkraft vorher 
 PHASENEINLEITUNG (Einführungs-/Ankündigungsfolie): Nie den Methodennamen als Überschrift, sondern eine aktivierende Ansprache an die Schüler, die sagt, was jetzt inhaltlich passiert (z. B. „Wir sammeln jetzt unsere Eindrücke“). Auf der Folie liegt außer Überschrift, Ablauf und Symbolen auch ein Motivbild. Die Lehrkraft entscheidet nur: ob es ein Motivbild gibt und was darauf zu sehen ist. NICHT fragen, ob der Methodenname gezeigt wird, und NICHT nach der Gesamtdauer der Methode (die regelt der Stundenbau).`;
 
 // Bei leeren Folien (entwurf) zählt die geplante Folienart, sonst die der Vorlage.
-const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fertig', folientyp: (f.vorlage === 'entwurf' ? f.folientyp : FOLIEN_VORLAGEN[f.vorlage]?.folientyp) || f.folientyp || 'methode' });
+const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fertig', folientyp: (f.vorlage === 'standard' && CI_STANDARDFOLIEN[f.standard]?.folientyp) || (f.vorlage === 'entwurf' ? f.folientyp : FOLIEN_VORLAGEN[f.vorlage]?.folientyp) || f.folientyp || 'methode' });
 
 /** Leere Folien direkt aus der gespeicherten Schrittfolge (ohne KI). */
 const ausSchrittfolge = (schritte) => schritte.map((s, i) => fertig({
