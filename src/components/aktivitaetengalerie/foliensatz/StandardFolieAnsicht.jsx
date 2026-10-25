@@ -1,11 +1,14 @@
 import React from 'react';
 import { CI_GRUND, CI_FOLIENTYPEN } from '@/lib/folienCI';
 import CiStandardBild from './CiStandardBild';
+import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import FolieAnzeige from './FolieAnzeige';
 import AufgabeTafelUmschalter from './AufgabeTafelUmschalter';
 
 /** Eine Ansicht (Tablet oder Tafel) einer Standardfolie mit kurzer Beschreibung darunter. */
 export default function StandardFolieAnsicht({ s, ansicht }) {
+  // Grundregel: Bei allen Inhaltsfolien zeigt das Schülertablet „Lehrkraft erklärt – zuhören“.
+  if (s.folientyp === 'inhalt' && ansicht === 'schueler') return <StandardFolieAnsicht s={STANDARD_FOLIEN.find((x) => x.key === 'zuhoeren')} ansicht="schueler" />;
   return (
     <div className="space-y-1">
       <p className="text-xs font-semibold uppercase text-muted-foreground">{ansicht === 'schueler' ? 'Schüler (Tablet)' : 'Lehrkraft (Tafel)'}</p>

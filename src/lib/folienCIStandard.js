@@ -115,4 +115,4 @@ export const CI_IDEEN = [
   'Dauer-Zusatzpaket „Pluspunkte“: Wer fertig ist, arbeitet an einem festen, fachlich sinnvollen Aufgabenpaket weiter (z. B. Wochenknobelei, Wortschatz-Sammlung, Kopfrechen-Leiter, Lesepass). Jede erledigte Einheit füllt ein Sammelbild bzw. einen Fortschrittsbalken; ist es voll, gibt es eine Belohnung (Abzeichen, Urkunde, Extrapunkte). Kein Zeitdruck, freiwillig, nur sichtbar für Schüler und Lehrkraft.',
 ];
 
-export const CI_STANDARD_REGEL = 'Standardfolien werden nicht neu gestaltet, sondern nur mit Text gefüllt. Organisationsfolien (lila Ecke) zeigen immer ein großes Symbol mittig und genau einen Satz.';
+export const CI_STANDARD_REGEL = 'Standardfolien werden nicht neu gestaltet, sondern nur mit Text gefüllt. Organisationsfolien (lila Ecke) zeigen immer ein großes Symbol mittig und genau einen Satz. Grundregel Inhaltsfolien: Inhalt passiert vorne an der Tafel, das Schülertablet zeigt immer „Lehrkraft erklärt – zuhören“. Sollen Schüler selbst etwas tun (z. B. eine Quelle erschließen), ist das eine Aufgabenfolie (Einzel-, Partner- oder Gruppenarbeit).';

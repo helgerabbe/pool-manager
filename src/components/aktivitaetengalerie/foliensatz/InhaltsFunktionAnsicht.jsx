@@ -1,5 +1,6 @@
 import React from 'react';
 import { CI_GRUND, CI_FOLIENTYPEN } from '@/lib/folienCI';
+import StandardFolieAnsicht from './StandardFolieAnsicht';
 
 /** Leere Vorlagenfolie einer Inhaltsfunktion: nur das Symbolbild rechts oben. */
 function LeereFolie({ f, ansicht }) {
@@ -23,7 +24,7 @@ export default function InhaltsFunktionAnsicht({ f }) {
         <div><p className="font-display text-lg font-bold">{f.name}</p><p className="text-sm text-muted-foreground">Inhaltsfolie nach Funktion · {f.text}</p></div>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        <LeereFolie f={f} ansicht="schueler" />
+        <StandardFolieAnsicht s={{ folientyp: 'inhalt' }} ansicht="schueler" />
         <LeereFolie f={f} ansicht="lehrer" />
       </div>
     </div>
