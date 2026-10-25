@@ -84,7 +84,11 @@ export function setzeTeil(bisher, kopf, neu, koepfe = KOEPFE) {
 
 async function baueSatz(args, art) {
   args.fortschritt?.('Folienliste wird geplant …');
-  const namen = (await planeFolien(args.methode)).folien || [];
+  // Gespeicherte Folienliste hat Vorrang: keine erneute Auslese aus dem Text (verhinderte doppelte Folien).
+  const fest = args.methode.info_folienliste || [];
+  const namen = fest.length
+    ? fest.map((f) => `${f.name}${f.nur_digital ? ' (nur digital)' : ''}${f[art === 'tafel' ? 'tafel_standard' : 'tablet_standard'] ? ` [Standardfolie: ${f[art === 'tafel' ? 'tafel_standard' : 'tablet_standard']}]` : ''}`)
+    : (await planeFolien(args.methode)).folien || [];
   const liste = `Folienliste (ein gemeinsamer Satz): ${namen.map((n, i) => `${i + 1}. ${n}`).join(' · ')}`;
   const schritte = art === 'tafel' ? [
     'Schreibe NUR Abschnitt A (Organisation) und am Ende Abschnitt D (Abfragen vor der Stunde).',

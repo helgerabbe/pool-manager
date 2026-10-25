@@ -29,7 +29,7 @@ const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fer
 /** Leere Folien direkt aus der gespeicherten Schrittfolge (ohne KI). */
 const ausSchrittfolge = (schritte) => schritte.map((s, i) => fertig({
   vorlage: 'entwurf', phase: s.phase, kanal: 'beide',
-  titel: (s.tafel || '').slice(0, 60), beschreibung: s.tafel, folientyp: s.tafel_typ,
+  titel: (s.tafel || '').slice(0, 60), beschreibung: s.tafel, folientyp: CI_STANDARDFOLIEN[s.tafel_standard]?.folientyp || s.tafel_typ,
   standard: s.tafel_standard || s.tablet_standard || '',
   tablet_entwurf: { titel: (s.tablet || '').slice(0, 60), beschreibung: s.tablet, folientyp: s.tablet_typ, standard: s.tablet_standard || '' },
 }, i));

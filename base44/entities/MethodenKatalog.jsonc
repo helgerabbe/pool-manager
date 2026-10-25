@@ -1,7 +1,7 @@
 {
   "name": "MethodenKatalog",
   "type": "object",
-  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. LANGE TEXTE: Seit 2026-10-21 bzw. 2026-10-22 liegen Grafik-Anweisung, Methodenbeschreibung und Grob\u00fcbersicht in St\u00fccken in '<feld>_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Feinplanung (info_grafikassistent) -> Schrittfolge (info_schrittfolge, 2026-10-25). STATUS QUO (2026-10-23): Ist der Foliensatz fertig, kann er als Status quo \u00fcbernommen werden (foliensatz_status_quo=true): info_grafikassistent enth\u00e4lt dann die genaue Beschreibung des fertigen Satzes, die Vorstufen sind geleert. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
+  "description": "METHODENKATALOG (2026-10-04): Unterrichtsmethoden f\u00fcr die Stundenplanung (z. B. Galeriegang, Gruppenpuzzle). Enth\u00e4lt zus\u00e4tzlich die digitalen Aktivit\u00e4ten der Poolzeit (quelle='poolzeit', Verweis in poolzeit_aktivitaeten); diese gelten als AUFGABENFORMATE, nicht als Methoden, und erscheinen nicht in der Methodengalerie (2026-10-07). 'modus': D = nur digital, D(A) = Standard digital, A(D) = Standard analog, A(+D) = analog mit digitaler Unterst\u00fctzung, A = nur analog. BAUPLAN: Die Lehrkraft beschreibt die Methode frei in 'bauplan_rohtext'; die KI verteilt den Text auf die strukturierten Felder. ASSISTENTEN (2026-10-05): 'info_unterrichtsassistent' und 'info_grafikassistent'; seit 2026-10-19 zus\u00e4tzlich 'info_methodenbeschreiber'. LANGE TEXTE: Seit 2026-10-21 bzw. 2026-10-22 liegen Grafik-Anweisung, Methodenbeschreibung und Grob\u00fcbersicht in St\u00fccken in '<feld>_teile' (siehe src/lib/langerText.js). ABLAUF (2026-10-22): W\u00fcnsche der Lehrkraft (info_wuensche_roh -> info_wuensche) -> Methodenbeschreiber -> Grob\u00fcbersicht (info_grobuebersicht) -> Folienliste (info_folienliste, 2026-10-25, verbindliches R\u00fcckgrat) -> Feinplanung (info_grafikassistent) -> Schrittfolge (info_schrittfolge, 2026-10-25). STATUS QUO (2026-10-23): Ist der Foliensatz fertig, kann er als Status quo \u00fcbernommen werden (foliensatz_status_quo=true): info_grafikassistent enth\u00e4lt dann die genaue Beschreibung des fertigen Satzes, die Vorstufen sind geleert. GRAFISCHE VORLAGEN (2026-10-05): 'grafik_vorlagen' je Fach. METHODENRASTER (2026-10-07): 'stufe' 1-6, 'auch_kurzform', 'ausbaubar', 'stufe_pruefen'. FACHBEZUG (2026-10-07): 'fachbezug' + 'faecher'. STOLPERSTEINE (2026-10-14).",
   "properties": {
     "name": {
       "type": "string"
@@ -209,6 +209,31 @@
       "default": [],
       "description": "Grob\u00fcbersicht des Foliensatzes in St\u00fccken zu je max. 15.000 Zeichen."
     },
+    "info_folienliste": {
+      "type": "array",
+      "default": [],
+      "description": "Verbindliche Folienliste aus der Grob\u00fcbersicht (2026-10-25): eine Zeile je Folie. Feinplanung und Schrittfolge lesen die Folien nicht mehr selbst aus dem Text, sondern \u00fcbernehmen diese Liste.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "nur_digital": {
+            "type": "boolean"
+          },
+          "tafel_standard": {
+            "type": "string"
+          },
+          "tablet_standard": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "info_grafikassistent": {
       "type": "string",
       "description": "@legacy: Kurzfassung bzw. Altbestand; neue Speicherungen nutzen info_grafikassistent_teile."
@@ -224,7 +249,7 @@
     "info_schrittfolge": {
       "type": "array",
       "default": [],
-      "description": "Schrittfolge des Foliensatzes aus der Feinplanung (2026-10-25). Ein Schritt = jede Ver\u00e4nderung an Tafel ODER Tablet. Je Seite Folienart, Standardfolie (Schl\u00fcssel oder leer) und kurz, was zu sehen ist. Grundlage f\u00fcr 'Foliensatz neu bauen'.",
+      "description": "Schrittfolge des Foliensatzes aus der Feinplanung (2026-10-25). Ein Schritt = jede Ver\u00e4nderung an Tafel ODER Tablet. Je Seite Folienart, Standardfolie (Schl\u00fcssel oder leer) und kurz, was zu sehen ist. Mit Standardfolie ist die Folienart fest aus dem Katalog. Grundlage f\u00fcr 'Foliensatz neu bauen'.",
       "items": {
         "type": "object",
         "properties": {
