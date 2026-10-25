@@ -94,6 +94,7 @@ export const CI_STANDARDFOLIEN = {
   },
   irritieren: {
     name: 'Irritieren und neugierig machen', folientyp: 'inhalt',
+    symbol: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/9d7ed35a8_generated_image.png',
     schueler: 'Der Impuls allein: eine These, Frage oder ein Widerspruch groß in der Mitte, sonst nichts (kein Titel, keine Aufgabe, kein Symbol, kein Timer). Optional ein stimmungsvolles Foto, weich in den Hintergrund auslaufend.',
     lehrer: 'Gleiche Folie an der Tafel, kommentarlos gezeigt. Lehrergerät: Hinweis „Stille aushalten“. Dieselbe Folie kann später unverändert wiederkehren (Rückbezug).',
   },
