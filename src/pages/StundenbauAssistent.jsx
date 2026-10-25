@@ -55,6 +55,10 @@ export default function StundenbauAssistent() {
               <p className="text-xs uppercase tracking-wider text-accent font-semibold">Phase {aktiv + 1} von {phasen.length}{phase.methode ? ` · ${phase.methode}` : ''}</p>
               <h1 className="text-2xl font-display font-bold">{phase.name}</h1>
               <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>
+              <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                <span className="rounded-full border bg-card px-3 py-1">Methode: <b>{phase.methode || 'keine feste Methode'}</b>{phase.sozialform ? ` · ${phase.sozialform}` : ''}</span>
+                {phase.minuten > 0 && <span className="rounded-full border bg-card px-3 py-1" title="Nur ein Richtwert zur Orientierung">Richtwert: ca. {phase.minuten} Min.</span>}
+              </div>
             </div>
             {!stand?.fragen ? (
               <Button onClick={planen} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Diese Phase planen</Button>
