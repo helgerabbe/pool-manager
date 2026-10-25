@@ -34,6 +34,9 @@ const Aktivitaetengalerie = lazyWithRetry(() => import('@/pages/Aktivitaetengale
 const Fachregister = lazyWithRetry(() => import('@/pages/Fachregister'));
 const FachregisterEinheitDetail = lazyWithRetry(() => import('@/pages/FachregisterEinheitDetail'));
 const FolienDesigner = lazyWithRetry(() => import('@/pages/FolienDesigner'));
+const Praesentationsmodus = lazyWithRetry(() => import('@/pages/Praesentationsmodus'));
+const PraesentationTafel = lazyWithRetry(() => import('@/pages/PraesentationTafel'));
+const LiveMitmachen = lazyWithRetry(() => import('@/pages/LiveMitmachen'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const StundenPlayerLehrer = lazyWithRetry(() => import('@/pages/StundenPlayerLehrer'));
 const StundenEditor = lazyWithRetry(() => import('@/pages/StundenEditor'));
@@ -175,6 +178,9 @@ const AuthenticatedApp = () => {
           <Route path="/fachregister" element={<ErrorBoundary fallback="Das Fachregister konnte nicht geladen werden."><Fachregister /></ErrorBoundary>} />
           <Route path="/fachregister/:id" element={<ErrorBoundary fallback="Die Einheit konnte nicht geladen werden."><FachregisterEinheitDetail /></ErrorBoundary>} />
           <Route path="/folien-designer" element={<ErrorBoundary fallback="Der Folien-Designer konnte nicht geladen werden."><FolienDesigner /></ErrorBoundary>} />
+          <Route path="/praesentation" element={<ErrorBoundary fallback="Der Präsentationsmodus konnte nicht geladen werden."><Praesentationsmodus /></ErrorBoundary>} />
+          <Route path="/praesentation/:id" element={<ErrorBoundary fallback="Die Tafel konnte nicht geladen werden."><PraesentationTafel /></ErrorBoundary>} />
+          <Route path="/mitmachen" element={<ErrorBoundary fallback="Mitmachen konnte nicht geladen werden."><LiveMitmachen /></ErrorBoundary>} />
           <Route path="/basismodule" element={<ErrorBoundary fallback="Basismodule konnte nicht geladen werden."><BasismoduleListe /></ErrorBoundary>} />
           <Route path="/basismodule/:id" element={<ErrorBoundary fallback="Basismodul konnte nicht geladen werden."><BasismodulViewManager /></ErrorBoundary>} />
           <Route path="/docs" element={<ErrorBoundary fallback="Dokumentation konnte nicht geladen werden."><DocsLayout /></ErrorBoundary>}>

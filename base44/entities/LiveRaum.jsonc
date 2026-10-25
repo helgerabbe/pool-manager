@@ -1,0 +1,107 @@
+{
+  "name": "LiveRaum",
+  "type": "object",
+  "description": "PR\u00c4SENTATIONSMODUS (2026-10-25): Ein Live-Raum einer laufenden Unterrichtsstunde. Die Lehrkraft startet ihn, an der Tafel steht der sechsstellige Raum-Code, die Sch\u00fcler treten mit dem Code bei. 'schritte' ist ein Schnappschuss des Ablaufs beim Start (Sch\u00fcler brauchen so keinen Zugriff auf die Planung). 'aktueller_schritt' steuert Tafel und Tablets gleichzeitig (Echtzeit \u00fcber subscribe).",
+  "properties": {
+    "code": {
+      "type": "string"
+    },
+    "stunde_id": {
+      "type": "string"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "lehrer_email": {
+      "type": "string"
+    },
+    "schritte": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "titel": {
+            "type": "string"
+          },
+          "minuten": {
+            "type": "number"
+          },
+          "tafel": {
+            "type": "string"
+          },
+          "tablet": {
+            "type": "string"
+          },
+          "sozialform": {
+            "type": "string"
+          },
+          "methode": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "aktueller_schritt": {
+      "type": "number",
+      "default": -1,
+      "description": "-1 = Beitrittsbildschirm mit Code."
+    },
+    "aktiv": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "code",
+    "lehrer_email"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "schueler"
+          }
+        }
+      ]
+    },
+    "create": {
+      "data.lehrer_email": "{{user.email}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "data.lehrer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.lehrer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

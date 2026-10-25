@@ -1,7 +1,7 @@
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import TutorialSlideshow from '@/components/onboarding/TutorialSlideshow';
-import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles, Shapes, Presentation } from 'lucide-react';
+import { Home, User, LogOut, ChevronRight, BookOpen, Settings, FileText, Send, Cpu, GraduationCap, LifeBuoy, Inbox, Sparkles, Shapes, Presentation, MonitorPlay } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useRBAC } from '@/hooks/useRBAC';
 import { useSystemSettings } from '@/hooks/useSystemSettings';
@@ -212,6 +212,7 @@ export default function AppLayout() {
               {permissions.kannBenutzerVerwalten && (
                 <NavIconLink to="/aktivitaetengalerie" icon={Shapes} label="Methodengalerie" isActive={isActive('/aktivitaetengalerie')} />
               )}
+              <NavIconLink to="/praesentation" icon={MonitorPlay} label="Präsentationsmodus" isActive={isActive('/praesentation')} />
               <NavIconLink to="/fachregister" icon={BookOpen} label="Fachregister" isActive={isActive('/fachregister')} />
               <NavIconLink to="/folien-designer" icon={Presentation} label="Folien-Designer" isActive={isActive('/folien-designer')} />
 

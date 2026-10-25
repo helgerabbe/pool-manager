@@ -1,0 +1,94 @@
+{
+  "name": "LiveMeldung",
+  "type": "object",
+  "description": "PR\u00c4SENTATIONSMODUS (2026-10-25): Nachricht eines Sch\u00fclers an die Lehrkraft im Live-Raum: beitritt, fertig (mit Schritt-Nummer) oder melden (Meldehand). Die Tafel z\u00e4hlt sie live mit.",
+  "properties": {
+    "raum_id": {
+      "type": "string"
+    },
+    "lehrer_email": {
+      "type": "string"
+    },
+    "art": {
+      "type": "string",
+      "enum": [
+        "beitritt",
+        "fertig",
+        "melden"
+      ]
+    },
+    "schritt": {
+      "type": "number"
+    },
+    "schueler_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "raum_id",
+    "art"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.lehrer_email": "{{user.email}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "schueler"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.lehrer_email": "{{user.email}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
