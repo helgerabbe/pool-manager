@@ -11,6 +11,7 @@ import InhaltsFunktionAnsicht from './InhaltsFunktionAnsicht';
 // Rahmenfolien = wer sieht was wo (mit Leerstelle); Aufgabenformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
 const GRUPPEN = [
   { typ: 'rahmen', name: 'Rahmenfolien', farbe: '#DCE7F5', keys: ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog', 'aufgabenerklaerung', 'klassenmodus'] },
+  { typ: 'interaktiv', name: 'Interaktive Aufgabenfolien', farbe: '#DCE8F5', keys: ['kartenabfrage'] },
 ];
 // Aufgabenformate haben einen eigenen Bereich (UebungsformateReiter) und erscheinen hier nicht.
 const FORMATE = ['lueckentext', 'notizen', 'satzanfaenge'];
