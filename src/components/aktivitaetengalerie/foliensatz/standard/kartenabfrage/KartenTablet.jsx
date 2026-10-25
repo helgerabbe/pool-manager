@@ -13,10 +13,10 @@ export default function KartenTablet({ onSenden }) {
         <p className="font-display text-[11px] font-bold">Was fällt dir dazu ein?</p>
         {meine.length < 3 ? (
           <>
-            <KarteVorlage farbe={KARTEN_FARBEN[meine.length]} className="-rotate-1">
-              <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={60} rows={3} placeholder="Ein Gedanke pro Karte …" className="w-full resize-none bg-transparent font-hand text-[13px] leading-[1.45em] outline-none placeholder:text-[#6A7181]/60" />
+            <KarteVorlage farbe={KARTEN_FARBEN[meine.length]} className="w-[62%] -rotate-1">
+              <textarea value={text} onChange={(e) => setText(e.target.value)} maxLength={60} rows={5} placeholder="Ein Gedanke pro Karte …" className="w-full resize-none bg-transparent font-hand text-[13px] leading-[1.45em] outline-none placeholder:text-[#6A7181]/60" />
             </KarteVorlage>
-            <div className="flex items-center justify-between">
+            <div className="flex w-[62%] items-center justify-between">
               <span className="text-[#6A7181]">Karte {meine.length + 1} von 3 · {60 - text.length} Zeichen</span>
               <button disabled={!text.trim()} onClick={senden} className="inline-flex items-center gap-1 rounded-full bg-[#2A4074] px-2.5 py-1 text-white disabled:opacity-40">An die Tafel <Send className="h-3 w-3" /></button>
             </div>

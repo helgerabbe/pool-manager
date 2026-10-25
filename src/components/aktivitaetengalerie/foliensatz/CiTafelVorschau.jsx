@@ -9,6 +9,8 @@ import HilfeWarteschlange from './tafel/HilfeWarteschlange';
 import Stimmungsbarometer from './tafel/Stimmungsbarometer';
 import Laermampel from './standard/Laermampel';
 import TeamKachel from './standard/TeamKachel';
+import KarteVorlage from './standard/kartenabfrage/KarteVorlage';
+import KartenStapel from './standard/kartenabfrage/KartenStapel';
 
 /** Vorschau Teil 17: Elemente der Funktionstafel – dieselben Bausteine wie auf der Standardfolie. */
 export default function CiTafelVorschau() {
@@ -34,6 +36,10 @@ export default function CiTafelVorschau() {
         <TeamKachel t={{ n: 1, p: 100 }} rueckmeldung experte />
         <TeamKachel t={{ n: 2, p: 40, m: true }} rueckmeldung sterne={2} />
         <TeamKachel t={{ n: 3, p: 70 }} rueckmeldung />
+      </div>
+      <div className="flex items-end gap-6 text-[10px]">
+        <KarteVorlage className="w-28 -rotate-1"><span className="font-hand text-sm">Es geht um Freundschaft</span><br /><br /></KarteVorlage>
+        <KartenStapel anzahl={4} />
       </div>
       <ul className="list-disc space-y-0.5 pl-5 text-xs">{CI_TAFEL_ELEMENTE.map((e) => <li key={e.typ}><b>{e.name}:</b> {e.regel}</li>)}</ul>
     </div>

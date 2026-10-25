@@ -21,7 +21,7 @@ export default function StandardFolieAnsicht({ s, ansicht }) {
           <div className="pointer-events-none absolute -right-[12.5%] -top-[27.8%] aspect-square w-[47%] rounded-full" style={{ background: CI_FOLIENTYPEN[s.folientyp]?.farbe }} />
           {s.symbol && <img src={s.symbol} alt="" className="absolute right-[3%] top-[4%] h-[22%] object-contain mix-blend-multiply" />}
           {/* Randbild-Folien (z. B. Stundenstart): Bild sitzt am Folienrand, daher kein eigener Bezugsrahmen. */}
-          <div className={`flex w-full justify-center ${s.key === 'start' ? '' : 'relative'}`}><CiStandardBild art={s.key} ansicht={ansicht} /></div>
+          <div className={`flex w-full justify-center ${s.key === 'start' || (s.key === 'kartenabfrage' && ansicht !== 'schueler') ? '' : 'relative'}`}><CiStandardBild art={s.key} ansicht={ansicht} /></div>
           {ansicht === 'schueler' && <NotizHeft />}
         </div>
       ) : ansicht === 'lehrer' && s.tablet_format ? <AufgabeTafelUmschalter s={s} /> : <FolieAnzeige folie={{ id: s.key, ...s.folie }} ansicht={ansicht} />}
