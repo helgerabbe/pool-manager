@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarDays, ChevronRight, PlaySquare } from 'lucide-react';
+import { CalendarDays, ChevronRight, PlaySquare, ClipboardList } from 'lucide-react';
 import StundeLoeschenButton from '@/components/unterrichtsstunden/StundeLoeschenButton';
 import VeroeffentlichenButton from '@/components/bibliothek/VeroeffentlichenButton';
 
@@ -32,6 +32,12 @@ export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
             </div>
             <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
           </Link>
+          {s.planer_stand && (
+            <Link to={`/unterrichtseinheit/${s.unterrichtseinheit_id}/stundenplaner?stunde=${s.id}`} title="Planung der Stunde öffnen"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+              <ClipboardList className="w-3.5 h-3.5" /> Planung
+            </Link>
+          )}
           <VeroeffentlichenButton art="stunde" quelle={s} unterrichtseinheit={unterrichtseinheit} />
           <StundeLoeschenButton stunde={s} />
         </div>
