@@ -12,8 +12,6 @@ export const CI_TAFEL_ELEMENTE = [
   { typ: 'zaehler', name: 'Zähler-Pille', regel: 'Weiße Pille mit Symbol und Zahl, z. B. Stern + „0 / 10 Sterne“ (Klassenziel).' },
   { typ: 'teamkachel', name: 'Team-Kachel mit Fortschritt', regel: 'Weiße Karte je Paar/Gruppe (bei Gruppen in Gruppenfarbe): Symbol + Nummer, dünner Fortschrittsbalken (#7FA6D6 auf #E4E1DA), fertig = grüner Haken, Hinweis „kann helfen“ in Grün. Unten zwei kleine Knöpfe: Stern (Apricot) und Leise-Hinweis (Grün). Kacheln in einer Reihe am unteren Rand.' },
   { typ: 'vollbildhinweis', name: 'Vollbild-Hinweis (Aktion läuft)', regel: 'Deckt die ganze Tafel in Dunkelblau (#2A4074, leicht transparent): großes Symbol, Titel, ein Satz, weißer Knopf zum Beenden.' },
-  { typ: 'moderationskarte', name: 'Moderationskarte', regel: 'Hochformatiges, liniertes Kärtchen in Pastellfarbe mit oranger Kopflinie, leicht schräg, Text in Handschrift. Ein Gedanke pro Karte.' },
-  { typ: 'kartenstapel', name: 'Kartenstapel', regel: 'Mehrere versetzte, helle Kartenrückseiten (Creme #F7F1E1, Rand #C9BFA6) mit zartem Muster, darunter der Zähler. Als Gruppe mit Oberbegriff darüber; Antippen zeigt die Karten darin.' },
   { typ: 'miniatur', name: 'Miniatur mit Vergrößern', regel: 'Große Ansichten werden als verkleinerte Miniatur gezeigt; unten rechts weiße Pille „Vergrößern“. Klick öffnet die bedienbare Großansicht.' },
 ];
 
