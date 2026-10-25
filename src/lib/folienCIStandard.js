@@ -98,6 +98,12 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Der Impuls allein: eine These, Frage oder ein Widerspruch groß in der Mitte, sonst nichts (kein Titel, keine Aufgabe, kein Symbol, kein Timer). Optional ein stimmungsvolles Foto, weich in den Hintergrund auslaufend.',
     lehrer: 'Gleiche Folie an der Tafel, kommentarlos gezeigt. Dieselbe Folie kann später unverändert wiederkehren (Rückbezug).',
   },
+  impuls: {
+    name: 'Impuls setzen (Material/Quelle)', folientyp: 'inhalt',
+    symbol: 'https://media.base44.com/images/public/69cb7e99726da2a1d81bee50/56a9503eb_generated_image.png',
+    schueler: 'Inhaltsfolie: Das Tablet zeigt „Lehrkraft erklärt – zuhören“.',
+    lehrer: 'Oben klein „Wir schauen uns jetzt genauer an:“, groß der Gegenstand (Titel, Fundstelle oder Objekt), darunter in einer Box mit Lupe der Untersuchungsimpuls. Optional rechts ein Bild des Materials im weißen Fotorahmen.',
+  },
   lernort: {
     name: 'Lernort frei wählen', folientyp: 'organisation',
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',

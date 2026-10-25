@@ -8,7 +8,7 @@ export const EINSATZ = {
 export const FOLIEN_EINSATZ = {
   begruessung: 'beide', start: 'beide', ankuendigung: 'beide', aufgabenerklaerung: 'beide',
   partner: 'digital', partner_analog: 'analog', partnerphase: 'digital', gruppenphase: 'digital',
-  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', kartenabfrage: 'digital', abstimmung: 'digital', lernort: 'digital', positionierung: 'beide', sammlung_procontra: 'beide', einschub: 'beide', irritieren: 'beide', reflexion: 'digital',
+  einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', kartenabfrage: 'digital', abstimmung: 'digital', lernort: 'digital', positionierung: 'beide', sammlung_procontra: 'beide', einschub: 'beide', irritieren: 'beide', impuls: 'beide', reflexion: 'digital',
   notizen: 'beide', satzanfaenge: 'beide',
 };
 
