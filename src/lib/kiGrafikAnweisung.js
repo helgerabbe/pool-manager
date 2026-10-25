@@ -124,6 +124,8 @@ async function grafikTeil(args, teil) {
   return { text: String(text || '').trim() };
 }
 
+import { standardFolienKatalogText } from '@/lib/standardFolienKatalogText';
+
 function grafikPrompt({ methode, wunsch, verlauf }, teil) {
   const bisher = '';
   return (`${teil}
@@ -140,6 +142,9 @@ ${methode.info_wuensche || methode.info_wuensche_roh || '(nichts angegeben)'}
 
 BESTÄTIGTE GROBÜBERSICHT (Folienfolge verbindlich):
 ${methode.info_grobuebersicht || '(keine)'}
+
+STANDARDFOLIEN: Ist eine Folie in der Grobübersicht mit "[Standardfolie: …]" markiert, beschreibe sie NICHT neu. Nenne nur die Standardfolie und die variablen Inhalte (Texte, Leitfrage, Bild, Zeit, zuschaltbare Optionen). Nur Folien mit "[Noch keine Standardfolie …]" beschreibst du vollständig.
+${standardFolienKatalogText()}
 
 BAUKASTEN DES FOLIEN-DESIGNERS:
 ${folienBaukastenText()}

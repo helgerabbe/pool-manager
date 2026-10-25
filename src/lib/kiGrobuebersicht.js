@@ -1,5 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { setzeTeil } from '@/lib/kiGrafikAnweisung';
+import { standardFolienKatalogText, STANDARD_REGEL_GROB } from '@/lib/standardFolienKatalogText';
 
 const mitZeitlimit = (p) => Promise.race([p, new Promise((_, nein) => setTimeout(() => nein(new Error('Zeitlimit')), 90000))]);
 const KOEPFE = ['GROB · TAFEL', 'GROB · TABLET'];
@@ -21,6 +22,10 @@ async function grob(methode, art, bisher) {
   const text = await mitZeitlimit(base44.integrations.Core.InvokeLLM({
     prompt: `Methode: "${methode.name}".
 ${ART[art]} Keine Elemente, keine Designdetails.
+${STANDARD_REGEL_GROB}${art === 'tablet' ? ' Übernimm die Standardfolien-Angaben der Tafel-Übersicht.' : ''}
+
+VORHANDENE STANDARDFOLIEN (Katalog):
+${standardFolienKatalogText()}
 ${art === 'tablet' ? `\nTAFEL-ÜBERSICHT (verbindlich):\n${bisher || methode.info_grobuebersicht || '(keine)'}\n` : ''}
 
 FOLIENSATZ-EXPERTISE DES METHODENBESCHREIBERS:
