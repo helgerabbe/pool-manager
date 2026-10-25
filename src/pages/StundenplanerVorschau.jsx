@@ -188,7 +188,7 @@ export default function StundenplanerVorschau() {
             <AufbereitungSchritt entwurf={entwurf} setEntwurf={setEntwurf} onErstellen={() => kiAufbereitung({ assistent, einheit, anker: v.anker, entwurf })}
               onZurueck={() => setPhase('fein')} onWeiter={() => setPhase('fertig')} />
           )}
-          {phase === 'fertig' && <ProtoAbschluss name={titel} onAnsehen={() => setPhase('aufbereitung')} onFeinplanung={() => setPhase('fein')} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
+          {phase === 'fertig' && <ProtoAbschluss name={titel} onAnsehen={() => setPhase('aufbereitung')} onFeinplanung={() => setPhase('fein')} onStundenbau={stundeId ? () => navigate(`/unterrichtsstunde/${stundeId}/stundenbau`) : null} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
       </div>
     </div>

@@ -1,109 +1,86 @@
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Wand2, ArrowLeft } from 'lucide-react';
-import { methodenSatz, vorschlaegeZurPhase, fuelleVorlage, vorschlagAnpassen, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
-import PhasenLeisteBau from '@/components/stundenbau/PhasenLeisteBau';
-import PhasenFragen from '@/components/stundenbau/PhasenFragen';
-import PhasenEditor from '@/components/stundenbau/PhasenEditor';
+import { Loader2, ArrowLeft, Layers, Clock, RefreshCw } from 'lucide-react';
+import useStundenbaukasten from '@/hooks/useStundenbaukasten';
+import { neuerBaustein, summeMinuten, ueberfuehren, kiStunde, alsPhase } from '@/lib/stundenbaukasten';
+import { vorschlagen, fuellen, mitVorlage } from '@/lib/kiBaukasten';
+import { folieAusWunsch } from '@/lib/kiStundenbau';
+import AblaufZeitleiste from '@/components/baukasten/AblaufZeitleiste';
+import BausteinPalette from '@/components/baukasten/BausteinPalette';
+import FundamentPanel from '@/components/baukasten/FundamentPanel';
+import AssistentLeiste from '@/components/baukasten/AssistentLeiste';
+import VorschlagsBereich from '@/components/baukasten/VorschlagsBereich';
+import BausteinDetail from '@/components/baukasten/BausteinDetail';
+import AltinhalteHinweis from '@/components/baukasten/AltinhalteHinweis';
 
-/** Stundenbau-Assistent: baut den Foliensatz der Stunde Phase für Phase. */
+/** Stundenbaukasten: Fundament + vertikaler Ablauf aus Methoden, Inhaltsfolien und Übungen. */
 export default function StundenbauAssistent() {
   const { id } = useParams();
-  const [stunde, setStunde] = React.useState(null);
-  const [aktiv, setAktiv] = React.useState(0);
+  const { stunde, bk, einheitTitel, aendern } = useStundenbaukasten(id);
+  const [fundOffen, setFundOffen] = React.useState(false);
+  const [detail, setDetail] = React.useState(null);
   const [laedt, setLaedt] = React.useState(false);
+  const [ersetzen, setErsetzen] = React.useState(false);
+  if (!stunde) return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
-  const [einheitTitel, setEinheitTitel] = React.useState('');
-  React.useEffect(() => { base44.entities.Unterrichtsstunde.get(id).then(setStunde); }, [id]);
-  React.useEffect(() => {
-    if (stunde?.unterrichtseinheit_id) base44.entities.Unterrichtseinheit.get(stunde.unterrichtseinheit_id).then((e) => setEinheitTitel(e?.titel || ''));
-  }, [stunde?.unterrichtseinheit_id]);
-  if (!stunde) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
-
-  const phasen = stunde.planer_stand?.entwurf?.phasen || [];
-  const staende = stunde.stundenbau?.phasen || {};
-  const stand = staende[aktiv];
-  const phase = phasen[aktiv];
-  // Kopfzeile der Folien: nur Fach und Thema der Unterrichtseinheit.
   const kopf = { einheit: stunde.fach, thema: einheitTitel };
-
-  const setzeStand = async (patch) => {
-    const neu = { ...stunde.stundenbau, phasen: { ...staende, [aktiv]: { ...stand, ...patch } } };
-    setStunde((s) => ({ ...s, stundenbau: neu }));
-    await base44.entities.Unterrichtsstunde.update(stunde.id, { stundenbau: neu });
-  };
+  const bausteine = bk.bausteine || [];
   const mitLaden = async (fn) => { setLaedt(true); try { await fn(); } catch { toast.error('Der Assistent hat nicht geantwortet. Bitte noch einmal versuchen.'); } finally { setLaedt(false); } };
-
-  // 1. Planen: Vorlage der Methode sofort zeigen (ohne KI). Ohne Vorlage gleich zu den Vorschlägen.
-  const planen = () => mitLaden(async () => {
-    const satz = await methodenSatz(phase.methode, stunde.fach);
-    const folien = (satz || []).map((f, i) => ({ ...f, id: `v${Date.now()}${i}`, phase: phase.name }));
-    const basis = { vorlage: true, vorlage_folien: folien, folien, fragen: null, einleitung: '', annahmen: [], fertig: false };
-    if (folien.length) return setzeStand(basis);
-    const r = await vorschlaegeZurPhase(stunde, phase, []);
-    await setzeStand({ ...basis, einleitung: r.einleitung, fragen: r.fragen || [] });
-  });
-  // 2. Füllen lassen: Vorschläge zu allen Entscheidungen holen.
-  const vorschlaege = () => mitLaden(async () => { const r = await vorschlaegeZurPhase(stunde, phase, stand.vorlage_folien); await setzeStand({ einleitung: r.einleitung, fragen: r.fragen || [] }); });
-  // 3. Mit den bestätigten bzw. geänderten Entscheidungen füllen.
-  const bauen = (entscheidungen) => mitLaden(async () => {
-    const r = stand.vorlage_folien?.length
-      ? { folien: await fuelleVorlage(stunde, phase, stand.vorlage_folien, entscheidungen), annahmen: [] }
-      : await bauePhase(stunde, phase, [], entscheidungen);
-    await setzeStand({ antworten: entscheidungen, vorlage: false, fragen: null, ...r });
-  });
-  const einfuegen = async (pos, art, wunsch) => {
-    const f = await folieAusWunsch(stunde, phase, art, wunsch, stand.folien);
-    const folien = [...stand.folien]; folien.splice(pos, 0, f);
-    await setzeStand({ folien });
+  const setzeBaustein = (b) => aendern({ bausteine: bausteine.map((x) => (x.id === b.id ? b : x)) });
+  const hinzu = async (art, daten) => aendern({ bausteine: [...bausteine, await mitVorlage(neuerBaustein(art, daten), stunde.fach)] });
+  const vorschlag = (wunsch) => mitLaden(async () => { setErsetzen(!wunsch && !bausteine.length ? false : !wunsch); await aendern({ vorschlaege: await vorschlagen(stunde, bk, wunsch) }); });
+  const entscheiden = (vid, ja) => {
+    const v = bk.vorschlaege.find((x) => x.id === vid);
+    aendern({ vorschlaege: bk.vorschlaege.filter((x) => x.id !== vid), ...(ja ? { bausteine: [...bausteine, v] } : {}) });
   };
-  const fertig = async () => { await setzeStand({ fertig: true }); if (aktiv < phasen.length - 1) setAktiv(aktiv + 1); };
+  const alle = (ja) => aendern({ vorschlaege: [], ...(ja ? { bausteine: ersetzen ? bk.vorschlaege : [...bausteine, ...bk.vorschlaege] } : {}) });
+  const offenB = bausteine.find((b) => b.id === detail?.id);
 
   return (
-    <div className="h-full flex">
-      <aside className="w-64 shrink-0 border-r p-3 overflow-y-auto space-y-3">
-        <Link to="/unterricht" className="text-xs text-muted-foreground flex items-center gap-1 hover:underline"><ArrowLeft className="w-3 h-3" /> Mein Unterricht</Link>
-        <p className="text-sm font-semibold">{stunde.arbeitstitel}</p>
-        <PhasenLeisteBau phasen={phasen} staende={staende} aktiv={aktiv} onWahl={setAktiv} />
-      </aside>
-      <main className="flex-1 min-w-0 overflow-y-auto p-6 space-y-4">
-        {!phase ? <p className="text-sm text-muted-foreground">Diese Stunde hat noch keinen Ablauf. Plane sie zuerst im Stundenplaner.</p> : (
-          <>
-            <div>
-              <p className="text-xs uppercase tracking-wider text-accent font-semibold">Phase {aktiv + 1} von {phasen.length}{phase.methode ? ` · ${phase.methode}` : ''}</p>
-              <h1 className="text-2xl font-display font-bold">{phase.name}</h1>
-              <p className="text-sm text-muted-foreground">{phase.aktivitaet}</p>
-              <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                <span className="rounded-full border bg-card px-3 py-1">Methode: <b>{phase.methode || 'keine feste Methode'}</b>{phase.sozialform ? ` · ${phase.sozialform}` : ''}</span>
-                {phase.minuten > 0 && <span className="rounded-full border bg-card px-3 py-1" title="Nur ein Richtwert zur Orientierung">Richtwert: ca. {phase.minuten} Min.</span>}
-              </div>
-            </div>
-            {!stand?.folien?.length && !(stand?.vorlage && stand?.fragen?.length) ? (
-              <Button onClick={planen} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Diese Phase planen</Button>
-            ) : (
-              <>
-                {stand.vorlage && !stand.fragen?.length && stand.folien?.length > 0 && (
-                  <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
-                    <span>Das ist die <b>Vorlage</b> der Methode. Soll ich sie mit den Inhalten dieser Stunde füllen?</span>
-                    <Button size="sm" className="ml-auto" onClick={vorschlaege} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Mit Inhalten füllen</Button>
-                  </div>
-                )}
-                {stand.folien?.length > 0 && (
-                  <PhasenEditor key={aktiv} stand={stand} kopf={kopf} onFolien={(folien) => setzeStand({ folien })} onEinfuegen={einfuegen}
-                    onFertig={fertig} onNeu={planen} letztePhase={aktiv === phasen.length - 1} />
-                )}
-                {stand.vorlage && stand.fragen?.length > 0 && (
-                  <PhasenFragen key={`f${aktiv}`} stand={stand} onBauen={bauen} baut={laedt} onFragen={(fragen) => setzeStand({ fragen })}
-                    onAnpassen={(f, w) => vorschlagAnpassen(stunde, f.frage, f.vorschlag, w)} />
-                )}
-              </>
-            )}
-          </>
-        )}
+    <div className="flex h-full">
+      <main className="min-w-0 flex-1 overflow-y-auto">
+        <header className="sticky top-0 z-10 flex flex-wrap items-center gap-3 border-b bg-background/90 px-8 py-4 backdrop-blur">
+          <Link to="/unterricht" className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></Link>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">Stundenbau · {stunde.fach}</p>
+            <h1 className="truncate font-display text-xl font-bold">{bk.fundament.thema || stunde.arbeitstitel}</h1>
+          </div>
+          <span className="ml-auto flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground" title="Grober Richtwert aus den Bausteinen">
+            <Clock className="h-3 w-3" /> geschätzt ca. {summeMinuten(bausteine)} Min.
+          </span>
+          <Button variant="outline" size="sm" onClick={() => setFundOffen(true)}><Layers className="h-4 w-4" /> Fundament</Button>
+        </header>
+        <div className="mx-auto max-w-5xl space-y-5 px-8 py-6">
+          {offenB ? (
+            <BausteinDetail b={offenB} kopf={kopf} startFolie={detail.folie} laedt={laedt} onAendern={setzeBaustein} onFertig={() => setDetail(null)}
+              onFuellen={() => mitLaden(async () => setzeBaustein(await fuellen(stunde, bk, offenB)))}
+              onEinfuegen={async (pos, art, wunsch) => { const f = await folieAusWunsch(kiStunde(stunde, bk), alsPhase(offenB), art, wunsch, offenB.folien); const l = [...offenB.folien]; l.splice(pos, 0, f); setzeBaustein({ ...offenB, folien: l }); }} />
+          ) : (
+            <>
+              <AssistentLeiste laedt={laedt} leer={!bausteine.length} onVorschlag={vorschlag} />
+              <VorschlagsBereich vorschlaege={bk.vorschlaege} kopf={kopf} onEntscheiden={entscheiden} onAlle={alle} ersetzen={ersetzen} onErsetzen={setErsetzen} />
+              <AltinhalteHinweis offen={bk.offen}
+                onUebernehmen={(i) => aendern({ bausteine: [...bausteine, neuerBaustein('inhalt', { titel: bk.offen[i].titel, folien: bk.offen[i].folien })], offen: bk.offen.filter((_, j) => j !== i) })}
+                onVerwerfen={(i) => aendern({ offen: bk.offen.filter((_, j) => j !== i) })} />
+              <AblaufZeitleiste bausteine={bausteine} kopf={kopf} onReihenfolge={(l) => aendern({ bausteine: l })}
+                onOeffnen={(bid, folie) => setDetail({ id: bid, folie })} onEntfernen={(bid) => aendern({ bausteine: bausteine.filter((b) => b.id !== bid) })} />
+              {stunde.planer_stand?.entwurf?.phasen?.length > 0 && (
+                <button onClick={() => window.confirm('Ablauf und Fundament aus der Planung neu übernehmen? Der jetzige Ablauf wird ersetzt.') && aendern(ueberfuehren(stunde))}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><RefreshCw className="h-3 w-3" /> Aus der Planung neu übernehmen</button>
+              )}
+            </>
+          )}
+        </div>
       </main>
+      {!offenB && (
+        <aside className="w-72 shrink-0 overflow-y-auto border-l bg-card/50 p-4">
+          <p className="mb-4 font-display font-bold">Bausteine</p>
+          <BausteinPalette fundament={bk.fundament} onHinzu={hinzu} />
+        </aside>
+      )}
+      <FundamentPanel offen={fundOffen} onOffen={setFundOffen} fundament={bk.fundament} onAendern={(fundament) => aendern({ fundament })} />
     </div>
   );
 }
