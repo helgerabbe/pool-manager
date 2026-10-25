@@ -14,10 +14,10 @@ export const CI_REGELN = {
     klaeren: ['Wird das Stundenziel gezeigt?', 'Wird der Ablauf gezeigt, mit welchen Punkten?'],
   },
   ankuendigung: {
-    gestaltung: ['Große Überschrift und ein Satz', 'Keine Aufgabenbox, kein Sozialform-Symbol, kein Timer', 'Optional ein fotorealistischer Bildimpuls'],
-    inhalt: ['Satz mit Signalwort „jetzt“ oder „als Nächstes“', 'Verlangt die Methode einen Impuls, steht der Impuls selbst da'],
-    titel: ['Was meinst du dazu?', 'Schau mal genau hin'],
-    klaeren: ['Überschrift und Fokus-Satz', 'Gibt es einen Bildimpuls, mit welchem Motiv?'],
+    gestaltung: ['Große Überschrift und ein Satz', 'Keine Aufgabenbox, kein Sozialform-Symbol, kein Timer', 'Motivbild (fotorealistisch), wenn die Lehrkraft es wünscht'],
+    inhalt: ['Überschrift ist eine aktivierende Ansprache an die Schüler, nie der Methodenname', 'Satz mit Signalwort „jetzt“ oder „als Nächstes“, sagt, was inhaltlich passiert (z. B. „Wir sammeln jetzt unsere Eindrücke“)', 'Verlangt die Methode einen Impuls, steht der Impuls selbst da'],
+    titel: ['Wir sammeln jetzt unsere Eindrücke', 'Was meinst du dazu?'],
+    klaeren: ['Gibt es ein Motivbild, und wenn ja, was ist darauf zu sehen?'],
   },
   zuhoeren: {
     gestaltung: ['Tablet: Ohr- und Stille-Symbol im Pastellkreis, ein fester Satz, kein Weiter', 'Tafel zeigt den eigentlichen Inhalt'],
