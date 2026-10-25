@@ -32,8 +32,8 @@ export default function BausteinPalette({ fundament, onHinzu }) {
       <p className="pt-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">★ Häufig genutzt</p>
       <div className="flex flex-wrap gap-1.5">
         {favoriten.map((s) => (
-          <button key={s.key} onClick={() => onHinzu('standard', { titel: s.name, folien: [{ ...alsFolie(s), id: `${s.key}${Date.now()}` }] })}
-            className="rounded-full border bg-card px-2.5 py-1 text-xs hover:border-chart-4 hover:text-chart-4">{s.name}</button>
+          <button key={s.key} draggable onDragStart={(e) => e.dataTransfer.setData('text/standardfolie', s.key)} title="In eine Kiste ziehen oder klicken für neue Kiste" onClick={() => onHinzu('standard', { titel: s.name, folien: [{ ...alsFolie(s), id: `${s.key}${Date.now()}` }] })}
+            className="cursor-grab rounded-full border bg-card px-2.5 py-1 text-xs hover:border-chart-4 hover:text-chart-4">{s.name}</button>
         ))}
       </div>
       <Dialog open={!!wahl} onOpenChange={(o) => !o && setWahl(null)}>

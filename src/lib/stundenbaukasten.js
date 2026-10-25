@@ -14,6 +14,21 @@ import { istFreieMethode } from '@/lib/freieMethode';
 /** Echte Methode? Freie Methode = Kiste ohne Methode. */
 export const hatMethode = (b) => b.art === 'methode' && !istFreieMethode(b);
 
+// Folien, für die Schüler ihr Gerät brauchen.
+const GERAETE_FOLIEN = ['kartenabfrage', 'abstimmung', 'positionierung', 'sammlung', 'sammlung_procontra', 'einzelphase', 'partnerphase', 'gruppenphase', 'lueckentext', 'partner'];
+export const mitGeraeten = (b) => b.geraet === 'geraet' || (b.folien || []).some((f) => GERAETE_FOLIEN.includes(f.standard) || (f.vorlage && f.vorlage !== 'standard' && f.folientyp === 'aufgabe'));
+
+// Folien, die eine Methode tragen.
+const METHODEN_FOLIEN = { kartenabfrage: 'Digitale Kartenabfrage', abstimmung: 'Digitale Abstimmung', positionierung: 'Positionierung', sammlung_procontra: 'Pro-Contra-Sammlung' };
+
+/** Angezeigter Methodenname: Katalogname, sonst aus den Folien abgeleitet; '' = keine Methode, null = Methode noch offen. */
+export function methodeAnzeige(b, katalogNamen) {
+  if (b.art !== 'methode' || istFreieMethode(b)) return '';
+  const ausFolie = (b.folien || []).map((f) => METHODEN_FOLIEN[f.standard]).find(Boolean);
+  if (ausFolie) return ausFolie;
+  return katalogNamen.includes(b.methode) ? b.methode : null;
+}
+
 /** Name der Standardfolie, sonst der Folientitel. */
 export const folienName = (f) => {
   const s = STANDARD_FOLIEN.find((x) => (f.vorlage === 'standard' ? x.key === f.standard : !x.ci && x.folie?.vorlage === f.vorlage));
