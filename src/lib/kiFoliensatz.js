@@ -23,7 +23,16 @@ ${vorlagenText()}
 Freigabe: lehrkraft | zeit | alle_fertig | anteil | geloest | code (minuten bei zeit).
 erklaerung: 1-2 Sätze, wozu die Folie dient. abfrage: was die Lehrkraft vorher einträgt (leer, wenn nichts).`;
 
-const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fertig', folientyp: FOLIEN_VORLAGEN[f.vorlage]?.folientyp || f.folientyp || 'methode' });
+// Bei leeren Folien (entwurf) zählt die geplante Folienart, sonst die der Vorlage.
+const fertig = (f, i) => ({ ...f, id: f.id || `f${Date.now()}${i}`, status: 'fertig', folientyp: (f.vorlage === 'entwurf' ? f.folientyp : FOLIEN_VORLAGEN[f.vorlage]?.folientyp) || f.folientyp || 'methode' });
+
+/** Leere Folien direkt aus der gespeicherten Schrittfolge (ohne KI). */
+const ausSchrittfolge = (schritte) => schritte.map((s, i) => fertig({
+  vorlage: 'entwurf', phase: s.phase, kanal: 'beide',
+  titel: (s.tafel || '').slice(0, 60), beschreibung: s.tafel, folientyp: s.tafel_typ,
+  standard: s.tafel_standard || s.tablet_standard || '',
+  tablet_entwurf: { titel: (s.tablet || '').slice(0, 60), beschreibung: s.tablet, folientyp: s.tablet_typ, standard: s.tablet_standard || '' },
+}, i));
 
 const t = { type: 'string' };
 const geruestSchema = { type: 'object', properties: { thema: t, folien: { type: 'array', items: { type: 'object', properties: {
@@ -33,13 +42,14 @@ const geruestSchema = { type: 'object', properties: { thema: t, folien: { type: 
 
 /** Schritt 1: nur die Folienfolge als leere Folien. */
 export async function planeFoliensatz(methode, fach, kanal) {
+  if (methode.info_schrittfolge?.length) return { thema: methode.name, folien: ausSchrittfolge(methode.info_schrittfolge) };
   const r = await base44.integrations.Core.InvokeLLM({
     prompt: `Du bist der Grafikassistent. Lies die Anweisung und gib NUR die Folienfolge zurück, keine Gestaltung.
 ${kontext(methode)}
 Lege JEDE Folie der Anweisung in genau dieser Reihenfolge an, nichts zusammenfassen, nichts weglassen. Je Folie:
 - titel: kurz, was auf der Folie passiert (max. 50 Zeichen)
 - folientyp: ${Object.entries(CI_FOLIENTYPEN).map(([k, v]) => `${k} (${v.name})`).join(', ')}
-- standard: Schlüssel der Standardfolie, falls die Anweisung eine nennt oder eine genau passt (${Object.keys(CI_STANDARDFOLIEN).join(', ')}), sonst leer
+- standard: Schlüssel der Standardfolie, NUR wenn die Anweisung sie ausdrücklich nennt (${Object.keys(CI_STANDARDFOLIEN).join(', ')}), sonst leer
 - phase, kanal
 - beschreibung: 1-2 Sätze, worum es auf der Folie geht
 thema: das durchgehende Beispielthema.`,
@@ -56,6 +66,7 @@ export async function baueFolie(methode, fach, plan, folie) {
 ${kontext(methode)}
 Folge: ${plan.folien.map((f, i) => `${i + 1}. ${f.titel}`).join(' · ')}
 Zu bauen: Folie ${nr} „${folie.titel}“ (Phase ${folie.phase || ''}, ${folie.kanal || ''}). ${folie.beschreibung || ''}
+${folie.tablet_entwurf ? `Tablet in diesem Schritt: ${folie.tablet_entwurf.beschreibung || 'nichts'}.` : ''}
 Nimm die Beschreibung genau dieser Folie aus der Anweisung als Bauanleitung.
 ${folie.standard ? `Dies ist die Standardfolie "${folie.standard}": nutze vorlage "standard" mit standard="${folie.standard}" (oder die gleichnamige feste Vorlage) und fülle nur die veränderlichen Inhalte.` : 'Wähle die feste Vorlage, die der Bauanleitung am nächsten kommt (nicht "entwurf").'}
 Thema: ${plan.thema || ''}
@@ -65,5 +76,5 @@ ${regeln}`,
     response_json_schema: folieSchema,
   });
   const vorlage = FOLIEN_VORLAGEN[r.vorlage] && r.vorlage !== 'entwurf' ? r.vorlage : 'fokus';
-  return fertig({ ...r, vorlage, id: folie.id, kanal: folie.kanal, beschreibung: folie.beschreibung, standard: folie.standard || r.standard }, 0);
+  return fertig({ ...r, vorlage, id: folie.id, kanal: folie.kanal, beschreibung: folie.beschreibung, tablet_entwurf: folie.tablet_entwurf, standard: folie.standard || r.standard }, 0);
 }

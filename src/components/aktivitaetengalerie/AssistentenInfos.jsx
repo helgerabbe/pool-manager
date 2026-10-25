@@ -3,6 +3,7 @@ import { Palette, ListOrdered, LayoutList } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import GrafikAnweisungAssistent from './GrafikAnweisungAssistent';
 import WuenscheFeld from './WuenscheFeld';
+import SchrittfolgeTabelle from './SchrittfolgeTabelle';
 import AbgleichEntscheidungsbaum from './AbgleichEntscheidungsbaum';
 import { kiMethodenBeschreibung, kiGrafikTafel, kiGrafikTablet } from '@/lib/kiGrafikAnweisung';
 import { kiGrobTafel, kiGrobTablet } from '@/lib/kiGrobuebersicht';
@@ -47,6 +48,7 @@ export default function AssistentenInfos({ werte, setze }) {
           <Textarea rows={KI[k] ? 16 : 10} value={werte[k] || ''} onChange={(e) => setze(k, e.target.value)} />
         </div>
       ))}
+      <SchrittfolgeTabelle werte={werte} setze={setze} />
     </div>
   );
 }

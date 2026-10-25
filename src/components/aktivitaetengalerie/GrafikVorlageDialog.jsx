@@ -74,7 +74,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
               {folie.status === 'fertig' ? (
                 ansicht === 'schueler' && (folie.kanal === 'analog' || (!folie.vorlage && !folie.schueler?.length))
                   ? <p className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">Analoge Folie: keine Tablet-Ansicht.</p>
-                  : <FolieAnzeige folie={folie} ansicht={ansicht} kopf={{ thema: satz?.thema }} />
+                  : <FolieAnzeige folie={ansicht === 'schueler' && folie.vorlage === 'entwurf' && folie.tablet_entwurf ? { ...folie, ...folie.tablet_entwurf } : folie} ansicht={ansicht} kopf={{ thema: satz?.thema }} />
               ) : (
                 <div className="flex aspect-video items-center justify-center rounded-xl border border-dashed text-sm text-muted-foreground">
                   {folie.status === 'fehler' ? 'Diese Folie konnte nicht gebaut werden. Bitte neu erzeugen.' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Folie wird gebaut …</>}
