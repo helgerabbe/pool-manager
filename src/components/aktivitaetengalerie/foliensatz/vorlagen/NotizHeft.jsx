@@ -11,7 +11,7 @@ export default function NotizHeft({ gross }) {
   const [neu, setNeu] = useState('');
   const speichern = (n) => { setNotizen(n); localStorage.setItem(KEY, JSON.stringify(n)); };
   const hinzu = () => { if (!neu.trim()) return; speichern([...notizen, neu.trim()]); setNeu(''); };
-  const s = gross ? 'h-12 w-12' : 'h-8 w-8';
+  const s = gross ? 'h-9 w-9' : 'h-6 w-6';
   return (
     <div className="absolute bottom-3 left-3 z-30 text-left" onClick={(e) => e.stopPropagation()}>
       {offen && (
@@ -33,7 +33,7 @@ export default function NotizHeft({ gross }) {
         </div>
       )}
       <button title="Mein Notizheft" onClick={() => setOffen(!offen)} className={`relative flex items-center justify-center rounded-full border border-[#EBD9A0] bg-[#FBF3D5] text-[#6B4423] ${s}`}>
-        <NotebookPen className={gross ? 'h-6 w-6' : 'h-4 w-4'} />
+        <NotebookPen className={gross ? 'h-4 w-4' : 'h-3 w-3'} />
         {notizen.length > 0 && <span className="absolute -right-1 -top-1 rounded-full bg-[#6B4423] px-1 text-[9px] text-white">{notizen.length}</span>}
       </button>
     </div>
