@@ -8,6 +8,10 @@ import StandardFolieAnsicht from './StandardFolieAnsicht';
 import { INHALTS_FUNKTIONEN } from '@/lib/inhaltsFolienFunktionen';
 import InhaltsFunktionAnsicht from './InhaltsFunktionAnsicht';
 
+// Fertige Inhaltsfolien stehen oben bei den Inhaltsfolien und verschwinden aus „nach Funktion“.
+const FERTIG = new Set(STANDARD_FOLIEN.filter((s) => s.folientyp === 'inhalt').map((s) => s.name));
+const OFFENE_FUNKTIONEN = INHALTS_FUNKTIONEN.filter((f) => !FERTIG.has(f.name));
+
 // Rahmenfolien = wer sieht was wo (mit Leerstelle); Aufgabenformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
 const GRUPPEN = [
   { typ: 'rahmen', name: 'Rahmenfolien', farbe: '#DCE7F5', keys: ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog', 'aufgabenerklaerung', 'klassenmodus'] },
@@ -42,8 +46,8 @@ export default function StandardFolienReiter() {
             </div>
           );
         })}
-        <p className="mb-1 rounded-md bg-[#F3E8D6] px-2 py-1 text-xs font-semibold">Inhaltsfolien nach Funktion <span className="float-right font-normal">{INHALTS_FUNKTIONEN.length}</span></p>
-        {INHALTS_FUNKTIONEN.map((x) => (
+        <p className="mb-1 rounded-md bg-[#F3E8D6] px-2 py-1 text-xs font-semibold">Inhaltsfolien nach Funktion <span className="float-right font-normal">{OFFENE_FUNKTIONEN.length}</span></p>
+        {OFFENE_FUNKTIONEN.map((x) => (
           <button key={x.key} onClick={() => { setFunktion(x); if (x.folie) setKey(x.folie); }} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${funktion?.key === x.key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
             <img src={x.symbol} alt="" className="h-5 w-5 shrink-0 rounded-full bg-white object-contain" /><span className="flex-1">{x.name}</span>
           </button>
