@@ -8,11 +8,11 @@ import StandardFolieAnsicht from './StandardFolieAnsicht';
 import { INHALTS_FUNKTIONEN } from '@/lib/inhaltsFolienFunktionen';
 import InhaltsFunktionAnsicht from './InhaltsFunktionAnsicht';
 
-// Rahmenfolien = wer sieht was wo (mit Leerstelle); Übungsformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
+// Rahmenfolien = wer sieht was wo (mit Leerstelle); Aufgabenformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
 const GRUPPEN = [
   { typ: 'rahmen', name: 'Rahmenfolien', farbe: '#DCE7F5', keys: ['einzelphase', 'partnerphase', 'gruppenphase', 'arbeitsphase_analog', 'aufgabenerklaerung', 'klassenmodus'] },
 ];
-// Übungsformate haben einen eigenen Bereich (UebungsformateReiter) und erscheinen hier nicht.
+// Aufgabenformate haben einen eigenen Bereich (UebungsformateReiter) und erscheinen hier nicht.
 const FORMATE = ['lueckentext', 'notizen', 'satzanfaenge'];
 const SONDER = [...GRUPPEN.flatMap((g) => g.keys), ...FORMATE];
 

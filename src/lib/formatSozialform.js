@@ -1,4 +1,4 @@
-// Übungsformate im Unterricht (2026-10-24): Merkmal je Format aus dem AktivitaetenKatalog (Schlüssel = name).
+// Aufgabenformate im Unterricht (2026-10-24): Merkmal je Format aus dem AktivitaetenKatalog (Schlüssel = name).
 // sozialform: 'allein' = nur Einzelarbeit sinnvoll | 'tauschbar' = auch zu zweit / in der Gruppe (ein Gerät oder mehrere).
 // klasse_tafel: true = lässt sich an der Tafel gemeinsam mit der Klasse bearbeiten (Klassenmodus, z. B. Jg. 5-7 ohne Geräte).
 // unterricht: false = gehört in die selbstständige Lernphase, nicht als Unterrichtsfolie.

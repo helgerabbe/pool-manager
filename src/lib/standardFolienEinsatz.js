@@ -16,5 +16,5 @@ export const FOLIEN_EINSATZ = {
 export const FOLIEN_SCROLLBAR = ['partner', 'sammlung', 'sammlung_procontra', 'abstimmung', 'reflexion', 'lernort', 'lueckentext', 'notizen', 'satzanfaenge'];
 export const istScrollbar = (key) => FOLIEN_SCROLLBAR.includes(key);
 // Hängt vom gezeigten Inhalt ab (z. B. Aufgabenart).
-export const FOLIEN_SCROLL_ABHAENGIG = { aufgabenerklaerung: 'scrollbar je nach Aufgabenart', klassenmodus: 'scrollbar je nach Übungsformat' };
+export const FOLIEN_SCROLL_ABHAENGIG = { aufgabenerklaerung: 'scrollbar je nach Aufgabenart', klassenmodus: 'scrollbar je nach Aufgabenformat' };
 export const scrollText = (key) => FOLIEN_SCROLL_ABHAENGIG[key] || istScrollbar(key) ? 'scrollbar' : 'nicht scrollbar';

@@ -91,7 +91,7 @@ export const EINORDNUNG_PROBE = {
   'Brainstorming / Mindmap': {
     induktiv: { passung: 2, phasen: { 'Beobachten & erkunden': 'teil', 'Vermutungen bilden': 'kern' }, hinweis: 'Sammelt Beobachtungen und Ideen, die Mindmap ordnet sie zu ersten Mustern.' },
     deduktiv: { passung: 2, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'kern', 'Ergebnis sichern': 'teil' }, hinweis: 'Aktiviert Vorwissen. Als Mindmap zur Sicherung der Begriffsstruktur geeignet.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 4, phasen: { 'Übungsfokus klären': 'bedingt' }, hinweis: 'Höchstens als schnelle Begriffssammlung vorab.' },
     uebung_lang: { passung: 4, phasen: { 'Arbeitsplan & Orientierung': 'bedingt' }, hinweis: 'Trägt kaum zur Orientierung bei.' },
     wiederholung: { passung: 1, phasen: { 'Vorwissen reaktivieren': 'kern', 'Lücken bestimmen': 'teil', 'Abschlussreflexion': 'bedingt' }, hinweis: 'Die Mindmap macht Zusammenhänge und fehlende Äste sichtbar.' },
@@ -139,7 +139,7 @@ export const EINORDNUNG_PROBE = {
   'Positionslinie / Meinungsbarometer': {
     induktiv: { passung: 3, phasen: { 'Vermutungen bilden': 'kern', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Schüler positionieren sich zu einer Vermutung und prüfen am Ende, ob sie umziehen würden.' },
     deduktiv: { passung: 3, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'kern' }, hinweis: 'Macht Vorannahmen sichtbar, bevor die Regel eingeführt wird.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 3, phasen: { 'Rückmeldung / Selbstkontrolle': 'teil', 'Nächste Schritte': 'teil' }, hinweis: 'Als Selbsteinschätzung: Wie sicher fühle ich mich?' },
     uebung_lang: { passung: 3, phasen: { 'Abschlussbilanz': 'teil' }, hinweis: 'Schnelles, sichtbares Stimmungsbild am Ende.' },
     wiederholung: { passung: 2, phasen: { 'Vorwissen reaktivieren': 'teil', 'Lücken bestimmen': 'kern' }, hinweis: 'Zeigt auf einen Blick, wo die Gruppe unsicher ist.' },
@@ -175,7 +175,7 @@ export const EINORDNUNG_PROBE = {
   'Demonstration / Experiment vorführen': {
     induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Beobachten & erkunden': 'kern', 'Vermutungen prüfen': 'teil' }, hinweis: 'Das Phänomen wird sichtbar. Vorher Vermutungen sammeln, damit die Beobachtung gezielt wird.' },
     deduktiv: { passung: 2, phasen: { 'Regel einführen': 'teil', 'Verstehen & klären': 'kern' }, hinweis: 'Veranschaulicht und bestätigt die eingeführte Regel.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 4, phasen: { 'Übungsfokus klären': 'bedingt' }, hinweis: 'Höchstens als kurzes Vormachen der Arbeitstechnik.' },
     uebung_lang: { passung: 3, phasen: { 'Arbeitsplan & Orientierung': 'teil' }, hinweis: 'Vormachen eines Verfahrens, das danach selbst geübt wird.' },
     wiederholung: { passung: 3, phasen: { 'Vorwissen reaktivieren': 'teil' }, hinweis: 'Erneutes Zeigen ruft Wissen wach.' },
@@ -223,7 +223,7 @@ export const EINORDNUNG_PROBE = {
   'Gedankenexperiment': {
     induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Vermutungen bilden': 'kern', 'Vermutungen prüfen': 'teil' }, hinweis: 'Die Folgen durchdenken führt zur Erkenntnis. Wo möglich am realen Fall prüfen.' },
     deduktiv: { passung: 2, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'teil', 'Selbstständiger Transfer': 'kern' }, hinweis: 'Eröffnet eine Ausgangsfrage oder prüft am Ende, ob die Regel auch im gedachten Fall trägt.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 4, phasen: { 'Nächste Schritte': 'bedingt' }, hinweis: 'Höchstens als kurzer Denkanstoß zum Abschluss.' },
     uebung_lang: { passung: 4, phasen: { 'Längere Übungszeit': 'bedingt' }, hinweis: 'Allenfalls als Zusatzaufgabe für Schnelle.' },
     wiederholung: { passung: 3, phasen: { 'Weiterführende Aufgabe': 'teil' }, hinweis: 'Wendet Wiederholtes auf eine neue Situation an.' },
@@ -319,7 +319,7 @@ export const EINORDNUNG_PROBE = {
   'Expertenrunde': {
     induktiv: { passung: 3, phasen: { 'Regel formulieren': 'teil', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Experten berichten Ergebnisse, daraus wird die Regel gebündelt.' },
     deduktiv: { passung: 3, phasen: { 'Verstehen & klären': 'teil', 'Ergebnis sichern': 'teil' }, hinweis: 'Schüler erklären Teilaspekte der Regel.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 3, phasen: { 'Rückmeldung / Selbstkontrolle': 'teil' }, hinweis: 'Schüler, die fertig sind, helfen als Experten.' },
     uebung_lang: { passung: 2, phasen: { 'Längere Übungszeit': 'teil', 'Kontrolle & Korrektur': 'kern' }, hinweis: 'Expertenhilfe entlastet die Lehrkraft in langen Übungsphasen.' },
     wiederholung: { passung: 2, phasen: { 'Wiederholen & üben': 'kern', 'Lücken bestimmen': 'teil' }, hinweis: 'Experten beraten bei erkannten Lücken.' },
@@ -367,7 +367,7 @@ export const EINORDNUNG_PROBE = {
   'Placemat': {
     induktiv: { passung: 2, phasen: { 'Vermutungen bilden': 'kern', 'Regel formulieren': 'teil' }, hinweis: 'Jeder notiert eigene Vermutungen, die Mitte bündelt sie zur gemeinsamen Regel.' },
     deduktiv: { passung: 2, phasen: { 'Vorwissen aktivieren / Ausgangsfrage': 'kern', 'Ergebnis sichern': 'teil' }, hinweis: 'Aktiviert Vorwissen jedes Einzelnen und sichert das Gruppenergebnis.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 4, phasen: { 'Rückmeldung / Selbstkontrolle': 'bedingt' }, hinweis: 'Höchstens zum Vergleich von Lösungswegen.' },
     uebung_lang: { passung: 4, phasen: { 'Abschlussbilanz': 'bedingt' }, hinweis: 'Kann Erkenntnisse am Ende bündeln.' },
     wiederholung: { passung: 1, phasen: { 'Vorwissen reaktivieren': 'kern', 'Lücken bestimmen': 'kern' }, hinweis: 'Einzelfelder zeigen, was jeder weiß, die Mitte zeigt, was fehlt.' },
@@ -417,7 +417,7 @@ export const EINORDNUNG_PROBE = {
     deduktiv: { passung: 2, phasen: { 'Angeleitetes Anwenden': 'kern', 'Ergebnis sichern': 'teil' }, hinweis: 'Ein eingeführtes Verfahren wird in die richtige Schrittfolge gebracht.' },
     uebung_kurz: { passung: 1, phasen: { 'Individuell üben': 'kern' }, hinweis: 'Kurz, klar und digital sofort ausgewertet.' },
     uebung_mittel: { passung: 1, phasen: { 'Individuelle Arbeitsphase': 'kern', 'Rückmeldung / Selbstkontrolle': 'teil' }, hinweis: 'Gut für Abläufe, Chronologien und Verfahrensschritte.' },
-    uebung_lang: { passung: 2, phasen: { 'Längere Übungszeit': 'teil', 'Kontrolle & Korrektur': 'teil' }, hinweis: 'Ein Baustein unter mehreren Übungsformaten.' },
+    uebung_lang: { passung: 2, phasen: { 'Längere Übungszeit': 'teil', 'Kontrolle & Korrektur': 'teil' }, hinweis: 'Ein Baustein unter mehreren Aufgabenformaten.' },
     wiederholung: { passung: 1, phasen: { 'Wiederholen & üben': 'kern', 'Sicherheit überprüfen': 'teil' }, hinweis: 'Ruft Abläufe und Zusammenhänge gezielt ab.' },
     vertieft: { passung: 3, phasen: { 'Problem erschließen': 'teil', 'Lösungsideen entwickeln': 'bedingt' }, hinweis: 'Kann ein Problem strukturieren, ist aber kein eigenes Teamprodukt.' },
     diagnose_kurz: { passung: 2, phasen: { 'Lernstand erheben': 'kern' }, hinweis: 'Zeigt schnell, ob Abläufe verstanden sind.' },
@@ -463,7 +463,7 @@ export const EINORDNUNG_PROBE = {
   'Fishbowl-Diskussion': {
     induktiv: { passung: 3, phasen: { 'Vermutungen bilden': 'teil', 'Vermutungen prüfen': 'teil' }, hinweis: 'Vermutungen werden im Innenkreis öffentlich abgewogen.' },
     deduktiv: { passung: 3, phasen: { 'Selbstständiger Transfer': 'teil' }, hinweis: 'Diskussion über die Anwendung der Regel auf einen strittigen Fall.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Kostet Übungszeit.' },
     uebung_lang: { passung: 4, phasen: { 'Abschlussbilanz': 'bedingt' }, hinweis: 'Allenfalls zum Austausch über Erfahrungen.' },
     wiederholung: { passung: 4, phasen: { 'Weiterführende Aufgabe': 'bedingt' }, hinweis: 'Nur bei strittigen Wiederholungsthemen.' },
@@ -499,7 +499,7 @@ export const EINORDNUNG_PROBE = {
   'Insert-Methode': {
     induktiv: { passung: 3, phasen: { 'Beobachten & erkunden': 'kern' }, hinweis: 'Erschließt einen Sachtext genau, die Regel muss danach formuliert werden.' },
     deduktiv: { passung: 2, phasen: { 'Verstehen & klären': 'kern' }, hinweis: 'Markiert Bekanntes, Neues und Unklares im Regeltext.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 3, phasen: { 'Individuelle Arbeitsphase': 'teil' }, hinweis: 'Als Übung der Lesestrategie selbst.' },
     uebung_lang: { passung: 3, phasen: { 'Längere Übungszeit': 'teil' }, hinweis: 'Mehrere Texte nacheinander bearbeiten.' },
     wiederholung: { passung: 2, phasen: { 'Vorwissen reaktivieren': 'teil', 'Lücken bestimmen': 'kern' }, hinweis: 'Fragezeichen zeigen genau, was unklar ist.' },
@@ -549,7 +549,7 @@ export const EINORDNUNG_PROBE = {
     deduktiv: { passung: 3, phasen: { 'Selbstständiger Transfer': 'kern' }, hinweis: 'Wendet Wissen über Strukturen und Abläufe in einer Simulation an.' },
     uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Passt zeitlich nicht.' },
     uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Passt zeitlich nicht.' },
-    uebung_lang: { passung: 4, phasen: { 'Längere Übungszeit': 'bedingt' }, hinweis: 'Kein Übungsformat im engeren Sinn.' },
+    uebung_lang: { passung: 4, phasen: { 'Längere Übungszeit': 'bedingt' }, hinweis: 'Kein Aufgabenformat im engeren Sinn.' },
     wiederholung: { passung: 4, phasen: { 'Weiterführende Aufgabe': 'bedingt' }, hinweis: 'Für eine Wiederholung zu aufwendig.' },
     vertieft: { passung: 1, phasen: { 'Aufgabe & Ziel klären': 'kern', 'Problem erschließen': 'kern', 'Lösungsideen entwickeln': 'kern', 'Vergleichen & präsentieren': 'teil', 'Transfer reflektieren': 'kern' }, hinweis: 'Trägt mehrere Stunden. Die Auswertung danach ist unverzichtbar.' },
     diagnose_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Diagnoseformat.' },
@@ -571,7 +571,7 @@ export const EINORDNUNG_PROBE = {
   'Schneeball / Pyramidendiskussion': {
     induktiv: { passung: 2, phasen: { 'Vermutungen bilden': 'kern', 'Regel formulieren': 'kern' }, hinweis: 'Vermutungen werden schrittweise zur gemeinsamen Regel verdichtet.' },
     deduktiv: { passung: 3, phasen: { 'Verstehen & klären': 'teil', 'Ergebnis sichern': 'teil' }, hinweis: 'Einigt sich schrittweise auf die wichtigsten Aspekte der Regel.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 4, phasen: { 'Rückmeldung / Selbstkontrolle': 'bedingt' }, hinweis: 'Höchstens zum Vergleich von Lösungen.' },
     uebung_lang: { passung: 4, phasen: { 'Abschlussbilanz': 'bedingt' }, hinweis: 'Kann die wichtigsten Erkenntnisse bündeln.' },
     wiederholung: { passung: 2, phasen: { 'Vorwissen reaktivieren': 'kern', 'Abschlussreflexion': 'teil' }, hinweis: 'Das Wichtigste wird von allen zusammengetragen.' },
@@ -619,7 +619,7 @@ export const EINORDNUNG_PROBE = {
   'World Café': {
     induktiv: { passung: 3, phasen: { 'Vermutungen bilden': 'kern', 'Regel formulieren': 'bedingt' }, hinweis: 'Sammelt viele Vermutungen an Tischen. Für das Prüfen zu unverbindlich.' },
     deduktiv: { passung: 4, phasen: { 'Selbstständiger Transfer': 'bedingt' }, hinweis: 'Höchstens zum Diskutieren von Anwendungsfragen.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Kostet Übungszeit.' },
     uebung_lang: { passung: 4, phasen: { 'Abschlussbilanz': 'bedingt' }, hinweis: 'Allenfalls für eine Reflexion über mehrere Fragen.' },
     wiederholung: { passung: 2, phasen: { 'Vorwissen reaktivieren': 'kern', 'Lücken bestimmen': 'teil' }, hinweis: 'Tischdecken zeigen, was die Klasse zu jedem Teilthema weiß.' },

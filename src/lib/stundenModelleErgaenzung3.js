@@ -67,7 +67,7 @@ export const EINORDNUNG_ERGAENZUNG_3 = {
   'Antizipierendes Lesen': {
     induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Vermutungen bilden': 'kern', 'Vermutungen prüfen': 'kern' }, hinweis: 'Vermuten und am Text prüfen ist der Kern der Methode.' },
     deduktiv: { passung: 4, phasen: {}, hinweis: 'Passt nicht zur Regelvorgabe.' },
-    uebung_kurz: { passung: 4, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 4, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     uebung_mittel: { passung: 3, phasen: { 'Individuelle Arbeitsphase': 'teil' }, hinweis: 'Als Leseübung mit Vermutungsbogen.' },
     uebung_lang: { passung: 4, phasen: {}, hinweis: 'Kaum Bezug.' },
     wiederholung: { passung: 5, phasen: {}, hinweis: 'Funktioniert nur mit unbekanntem Text.' },
@@ -143,9 +143,9 @@ export const EINORDNUNG_ERGAENZUNG_3 = {
   'Literarisches Unterrichtsgespräch': {
     induktiv: { passung: 1, phasen: { 'Problem/Phänomen begegnen': 'kern', 'Beobachten & erkunden': 'kern', 'Vermutungen bilden': 'kern', 'Rückblick Erkenntnisweg': 'teil' }, hinweis: 'Der Text ist das Phänomen; Deutungen entstehen gemeinsam im Gespräch.' },
     deduktiv: { passung: 5, phasen: {}, hinweis: 'Eine vorgegebene Deutung widerspricht der Methode.' },
-    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
-    uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
-    uebung_lang: { passung: 5, phasen: {}, hinweis: 'Kein Übungsformat.' },
+    uebung_kurz: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
+    uebung_mittel: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
+    uebung_lang: { passung: 5, phasen: {}, hinweis: 'Kein Aufgabenformat.' },
     wiederholung: { passung: 4, phasen: { 'Vorwissen reaktivieren': 'bedingt' }, hinweis: 'Höchstens zum erneuten Lesen eines Schlüsseltextes.' },
     vertieft: { passung: 3, phasen: { 'Problem erschließen': 'teil', 'Transfer reflektieren': 'teil' }, hinweis: 'Kann eine Teamaufgabe zum Text eröffnen.' },
     diagnose_kurz: { passung: 4, phasen: { 'Lernstand erheben': 'bedingt' }, hinweis: 'Die Lehrkraft hört Lesarten, bewertet aber nicht.' },

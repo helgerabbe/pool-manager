@@ -8,7 +8,7 @@ import AufgabeTafelUmschalter from './AufgabeTafelUmschalter';
 
 const basis = (key) => STANDARD_FOLIEN.find((x) => x.key === key) || {};
 
-/** Übungsformate: je Format die digitale (Tablet + Tafel-Arbeitsauftrag) und ggf. analoge Fassung (Übung an der Tafel). */
+/** Aufgabenformate: je Format die digitale (Tablet + Tafel-Arbeitsauftrag) und ggf. analoge Fassung (Übung an der Tafel). */
 export default function UebungsformateReiter() {
   const [key, setKey] = React.useState(UEBUNGSFORMATE[0].key);
   const [modus, setModus] = React.useState('digital');

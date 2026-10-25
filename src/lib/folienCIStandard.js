@@ -59,8 +59,8 @@ export const CI_STANDARDFOLIEN = {
   },
   klassenmodus: {
     name: 'Übung an der Tafel', folientyp: 'aufgabe',
-    schueler: 'Kein Gerät: Die Klasse löst das Übungsformat gemeinsam an der Tafel.',
-    lehrer: 'Rahmenfolie: Hier liegt groß die Übung (Tafel-Fassung eines Übungsformats), die die Klasse gemeinsam löst. Ergebnisse werden nicht gespeichert, nur gemeinsam gesichert.',
+    schueler: 'Kein Gerät: Die Klasse löst das Aufgabenformat gemeinsam an der Tafel.',
+    lehrer: 'Rahmenfolie: Hier liegt groß die Übung (Tafel-Fassung eines Aufgabenformats), die die Klasse gemeinsam löst. Ergebnisse werden nicht gespeichert, nur gemeinsam gesichert.',
   },
   lueckentext: {
     name: 'Lückentext', folientyp: 'aufgabe',

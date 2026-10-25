@@ -1,5 +1,5 @@
-// Übungsformate (2026-10-24): eigener Bereich neben Standardfolien und Layoutvorlagen.
-// Ein Übungsformat füllt die Leerstelle einer Rahmenfolie.
+// Aufgabenformate (2026-10-24): eigener Bereich neben Standardfolien und Layoutvorlagen.
+// Ein Aufgabenformat füllt die Leerstelle einer Rahmenfolie.
 // digital: Tablet-Ansicht + Tafel-Arbeitsauftrag (umschaltbar zur interaktiven Tafel).
 // analog: Übung an der Tafel; Tablets zeigen nur den Hinweis nach vorne.
 export const ANALOG_HINWEIS = 'Wir lösen gerade etwas gemeinsam an der Tafel. Bitte richte deine Aufmerksamkeit dorthin.';
