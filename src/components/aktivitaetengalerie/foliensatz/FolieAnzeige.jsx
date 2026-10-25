@@ -8,7 +8,7 @@ import PartnerTafel from './standard/PartnerTafel';
 import { ANKUENDIGUNG_BEISPIEL } from './standard/AnkuendigungBild';
 
 // Diese Standardfolien bringen schon eine ganze Tafel mit; vergrößert würden sie abgeschnitten.
-const VOLLBILD = ['lueckentext', 'bildbeschriftung', 'multiple_choice', 'richtig_falsch', 'reihenfolge', 'zuordnen', 'arbeitsphase_analog', 'einzelphase', 'partnerphase'];
+const VOLLBILD = ['lueckentext', 'bildbeschriftung', 'multiple_choice', 'richtig_falsch', 'reihenfolge', 'zuordnen', 'arbeitsphase_analog', 'einzelphase', 'partnerphase', 'kartenabfrage'];
 
 /** Zeigt eine Folie: neue Folien über feste Vorlagen, ältere Folien über die freien Elemente. */
 export default function FolieAnzeige({ folie, ansicht = 'lehrer', klein, kopf }) {
