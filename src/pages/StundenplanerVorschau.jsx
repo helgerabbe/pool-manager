@@ -82,7 +82,8 @@ export default function StundenplanerVorschau() {
   ].filter(Boolean);
   const { stundeId, status, laden, speichern } = usePlanerSpeichern(einheit);
   const stand = () => ({ phase, minuten, pause, v, punkte, entwurf });
-  const titel = entwurf?.name || v.anker.thema || v.anker.abschnitte?.[0]?.titel;
+  // Die Stunde heißt nach ihrem Thema, nicht nach dem Arbeitsstand („Grobentwurf“).
+  const titel = v.anker.thema || v.anker.abschnitte?.[0]?.titel || (entwurf?.name !== 'Grobentwurf' && entwurf?.name) || 'Neue Stunde';
   React.useEffect(() => {
     laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
   }, [laden]);
@@ -186,7 +187,7 @@ export default function StundenplanerVorschau() {
             <AufbereitungSchritt entwurf={entwurf} setEntwurf={setEntwurf} onErstellen={() => kiAufbereitung({ assistent, einheit, anker: v.anker, entwurf })}
               onZurueck={() => setPhase('fein')} onWeiter={() => setPhase('fertig')} />
           )}
-          {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onAnsehen={() => setPhase('aufbereitung')} onFeinplanung={() => setPhase('fein')} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
+          {phase === 'fertig' && <ProtoAbschluss name={titel} onAnsehen={() => setPhase('aufbereitung')} onFeinplanung={() => setPhase('fein')} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
       </div>
     </div>
