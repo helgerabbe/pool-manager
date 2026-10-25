@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wand2, ArrowLeft } from 'lucide-react';
-import { methodenSatz, vorschlaegeZurPhase, fuelleVorlage, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
+import { methodenSatz, vorschlaegeZurPhase, fuelleVorlage, vorschlagAnpassen, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
 import PhasenLeisteBau from '@/components/stundenbau/PhasenLeisteBau';
 import PhasenFragen from '@/components/stundenbau/PhasenFragen';
 import PhasenEditor from '@/components/stundenbau/PhasenEditor';
@@ -86,10 +86,13 @@ export default function StundenbauAssistent() {
                     <Button size="sm" className="ml-auto" onClick={vorschlaege} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Mit Inhalten füllen</Button>
                   </div>
                 )}
-                {stand.vorlage && stand.fragen?.length > 0 && <PhasenFragen key={aktiv} stand={stand} onBauen={bauen} baut={laedt} />}
                 {stand.folien?.length > 0 && (
                   <PhasenEditor key={aktiv} stand={stand} kopf={kopf} onFolien={(folien) => setzeStand({ folien })} onEinfuegen={einfuegen}
                     onFertig={fertig} onNeu={planen} letztePhase={aktiv === phasen.length - 1} />
+                )}
+                {stand.vorlage && stand.fragen?.length > 0 && (
+                  <PhasenFragen key={`f${aktiv}`} stand={stand} onBauen={bauen} baut={laedt} onFragen={(fragen) => setzeStand({ fragen })}
+                    onAnpassen={(f, w) => vorschlagAnpassen(stunde, f.frage, f.vorschlag, w)} />
                 )}
               </>
             )}

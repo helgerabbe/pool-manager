@@ -1,35 +1,30 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Hammer, Check, Pencil } from 'lucide-react';
-import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
+import { Loader2, Hammer } from 'lucide-react';
+import VorschlagKarte from './VorschlagKarte';
 
-/** Entscheidungen mit Vorschlag des Assistenten: „Passt so“ oder per (Sprach-)Eingabe ändern. */
-export default function PhasenFragen({ stand, onBauen, baut }) {
-  const [anders, setAnders] = React.useState({});
+/** Alle Entscheidungen für den ganzen Foliensatz der Phase, gruppiert nach Folie. */
+export default function PhasenFragen({ stand, onBauen, onFragen, onAnpassen, baut }) {
   const fragen = stand.fragen || [];
-  const bauen = () => onBauen(fragen.map((f, i) => `${i + 1}. ${f.frage} → ${anders[i]?.trim() || f.vorschlag}`).join('\n'));
+  const titel = (n) => stand.folien?.[n - 1]?.titel;
+  const gruppen = [...new Set(fragen.map((f) => f.folie || 0))].sort((a, b) => a - b);
+  const setze = (i, patch) => onFragen(fragen.map((f, j) => (j === i ? { ...f, ...patch } : f)));
+  const bauen = () => onBauen(fragen.map((f, i) => `${i + 1}. (Folie ${f.folie || '-'}) ${f.frage} → ${f.vorschlag}`).join('\n'));
   return (
-    <div className="max-w-3xl space-y-3">
+    <div className="max-w-3xl space-y-4">
       <p className="text-sm">{stand.einleitung}</p>
-      <p className="text-sm font-semibold">Meine Vorschläge – passt alles, oder möchtest du etwas anders?</p>
-      {fragen.map((f, i) => (
-        <div key={i} className="rounded-lg border bg-card p-3 space-y-2">
-          <p className="text-sm font-semibold">{i + 1}. {f.frage}</p>
-          <p className="text-sm rounded-md bg-muted/50 px-3 py-2"><span className="text-xs text-muted-foreground">Vorschlag: </span>{f.vorschlag}</p>
-          {anders[i] === undefined ? (
-            <div className="flex gap-2">
-              <span className="flex items-center gap-1 text-xs text-green-700"><Check className="h-3.5 w-3.5" /> Passt so</span>
-              <Button size="sm" variant="outline" className="ml-auto" onClick={() => setAnders({ ...anders, [i]: '' })}><Pencil className="h-3.5 w-3.5" /> Anders</Button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <FreitextMitSprache rows={2} value={anders[i]} onChange={(v) => setAnders({ ...anders, [i]: v })} placeholder="Sag oder schreib, wie es stattdessen sein soll." />
-              <Button size="sm" variant="ghost" onClick={() => { const n = { ...anders }; delete n[i]; setAnders(n); }}>Doch den Vorschlag nehmen</Button>
-            </div>
-          )}
+      <p className="text-sm font-semibold">Meine Vorschläge für alle {stand.folien?.length || ''} Folien dieser Phase – passt alles, oder möchtest du etwas anders?</p>
+      {gruppen.map((g) => (
+        <div key={g} className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary">{g ? `Folie ${g}${titel(g) ? ` · ${titel(g)}` : ''}` : 'Allgemein'}</p>
+          {fragen.map((f, i) => (f.folie || 0) === g && (
+            <VorschlagKarte key={i} nr={i + 1} f={f}
+              onAnpassen={async (w) => setze(i, { vorschlag: await onAnpassen(f, w), vorher: f.vorschlag })}
+              onZurueck={() => setze(i, { vorschlag: f.vorher, vorher: null })} />
+          ))}
         </div>
       ))}
-      <Button onClick={bauen} disabled={baut}>{baut ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />} Folien damit füllen</Button>
+      <Button onClick={bauen} disabled={baut}>{baut ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />} {baut ? 'Ich fülle die Folien …' : 'Alle Folien damit füllen'}</Button>
     </div>
   );
 }

@@ -30,10 +30,26 @@ export async function vorschlaegeZurPhase(stunde, phase, vorlage) {
     prompt: `Du bist der Stundenbau-Assistent für Lehrkräfte. Die Vorlage der Methode soll jetzt mit den Inhalten dieser Stunde gefüllt werden.
 ${kontext(stunde, phase, vorlage)}
 ${offen.length ? `Diese Punkte muss die Vorlage geklärt bekommen: ${[...new Set(offen)].join(' | ')}` : ''}
-Schreibe eine kurze "einleitung" (1-2 Sätze, du-Form). Liste dann alle Entscheidungen (2 bis 7, ohne Dopplungen) als "fragen". Mache zu JEDER Frage einen konkreten, fertigen Vorschlag passend zur Stunde (z. B. Wortlaut der Leitfrage, Motiv des Bildes, Zahl der Karten), damit die Lehrkraft nur noch zustimmen muss.`,
-    response_json_schema: { type: 'object', properties: { einleitung: { type: 'string' }, fragen: { type: 'array', items: { type: 'object', properties: { frage: { type: 'string' }, vorschlag: { type: 'string' } } } } } },
+Schreibe eine kurze "einleitung" (1-2 Sätze, du-Form). Liste dann alle Entscheidungen (2 bis 7, ohne Dopplungen) als "fragen". Ordne jede Frage mit "folie" (1, 2, 3 …) der Folie der Vorlage zu, auf der sie wirkt. Mache zu JEDER Frage einen konkreten, fertigen Vorschlag passend zur Stunde (z. B. Wortlaut der Leitfrage, Motiv des Bildes, Zahl der Karten), damit die Lehrkraft nur noch zustimmen muss.`,
+    response_json_schema: { type: 'object', properties: { einleitung: { type: 'string' }, fragen: { type: 'array', items: { type: 'object', properties: { folie: { type: 'number' }, frage: { type: 'string' }, vorschlag: { type: 'string' } } } } } },
   });
 }
+
+/** Schreibt einen Vorschlag nach dem (gesprochenen) Wunsch der Lehrkraft um. */
+export async function vorschlagAnpassen(stunde, frage, vorschlag, wunsch) {
+  const r = await base44.integrations.Core.InvokeLLM({
+    prompt: `Stunde: ${stunde.arbeitstitel}. Frage: ${frage}
+Bisheriger Vorschlag: ${vorschlag}
+Die Lehrkraft möchte es anders (frei gesprochen): ${wunsch}
+Formuliere den neuen Vorschlag kurz und fertig, genau im Sinne der Lehrkraft.`,
+    response_json_schema: { type: 'object', properties: { vorschlag: { type: 'string' } } },
+  });
+  return r.vorschlag || wunsch;
+}
+
+// Nur die Textfelder gehen an die KI, damit das Füllen schnell bleibt.
+const TEXTFELDER = ['titel', 'untertitel', 'satz', 'frage', 'auftrag', 'hinweis', 'inhalt', 'methodisch', 'minuten', 'sozialform'];
+const kurz = (f) => Object.fromEntries(TEXTFELDER.filter((k) => f[k] !== undefined && f[k] !== '').map((k) => [k, f[k]]).concat([['standard', f.standard]]));
 
 /** Füllt die Vorlage: gleiche Folien, gleiche Reihenfolge, nur Inhalte der Stunde. */
 export async function fuelleVorlage(stunde, phase, vorlage, entscheidungen) {
@@ -42,7 +58,7 @@ export async function fuelleVorlage(stunde, phase, vorlage, entscheidungen) {
     prompt: `Du bist der Stundenbau-Assistent. Fülle die Vorlage mit den Inhalten dieser Stunde.
 ${kontext(stunde, phase, vorlage)}
 Entscheidungen der Lehrkraft: ${entscheidungen}
-Vorlage (JSON): ${JSON.stringify(vorlage.map(({ id, ...f }) => f))}
+Vorlage (JSON): ${JSON.stringify(vorlage.map(kurz))}
 Gib GENAU ${vorlage.length} Folien in derselben Reihenfolge zurück. "vorlage" und "standard" jeder Folie bleiben unverändert, nur die Texte werden an die Stunde angepasst. Schülersprache.
 ${BAUREGELN}`,
     response_json_schema: { type: 'object', properties: { folien: { type: 'array', items: folieSchema } } },
