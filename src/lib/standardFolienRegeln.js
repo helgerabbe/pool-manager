@@ -2,7 +2,7 @@
 // Geklärt wird von der Lehrkraft oder vom Unterrichtsassistenten.
 export const CI_REGELN = {
   begruessung: {
-    gestaltung: ['Großer Gruß, darunter Thema und Foto im Bildrahmen', 'Lehrergerät: Anmeldezähler, optional „Wer fehlt noch?“'],
+    gestaltung: ['Großer Gruß, darunter Thema und Foto im Bildrahmen', 'Anmeldezähler, optional „Wer fehlt noch?“'],
     inhalt: ['Nur Gruß und Thema der Stunde, keine Aufgabe', 'Foto passt zum Thema, fotorealistisch'],
     titel: ['Guten Morgen!', 'Schön, dass ihr da seid!'],
     klaeren: ['Thema der Stunde', 'Motiv des Fotos'],
@@ -116,13 +116,13 @@ export const CI_REGELN = {
     klaeren: ['Wortlaut des Impulses', 'Gibt es ein Foto, mit welchem Motiv?'],
   },
   lernort: {
-    gestaltung: ['Tablet: ein Satz und große Antippkarten der Orte', 'Lehrergerät: Liste nach Orten, nicht an der Tafel'],
+    gestaltung: ['Tablet: ein Satz und große Antippkarten der Orte', 'Liste nach Orten'],
     inhalt: ['Fester Satz, nur die Orte der Schule sind austauschbar'],
     titel: ['Wo arbeitest du?'],
     klaeren: ['Ist der Lernort frei?', 'Welche Orte stehen zur Auswahl?'],
   },
   reflexion: {
-    gestaltung: ['Tablet: Aussagen mit „stimmt / teils / stimmt nicht“', 'Tafel: nur anonyme Balken, Namen nur auf dem Lehrergerät'],
+    gestaltung: ['Tablet: Aussagen mit „stimmt / teils / stimmt nicht“', 'Tafel: nur anonyme Balken'],
     inhalt: ['Kurze Aussagen in Ich-Form', 'Für eine Phase reichen 2-3 Aussagen'],
     titel: ['Wie lief es für dich?', 'Was nimmst du mit?'],
     klaeren: ['Reflexion der Stunde oder einer Phase?', 'Welche Aussagen, gibt es eine eigene Frage?'],

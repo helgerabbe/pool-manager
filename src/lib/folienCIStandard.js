@@ -5,12 +5,12 @@ export const CI_STANDARDFOLIEN = {
   begruessung: {
     name: 'Begrüßung', folientyp: 'organisation',
     schueler: 'Großes „Guten Morgen!“, darunter Thema der Stunde und ein Foto zum Thema im Bildrahmen.',
-    lehrer: 'Gleiche Folie an der Tafel, zusätzlich Zähler „18 von 24 angemeldet“. Optional per Knopf „Wer fehlt noch?“: Liste der Schüler, die noch nicht in der App sind (nur auf dem Lehrergerät, nicht an der Tafel).',
+    lehrer: 'Gleiche Folie an der Tafel, zusätzlich Zähler „18 von 24 angemeldet“. Optional per Knopf „Wer fehlt noch?“: Liste der Schüler, die noch nicht in der App sind.',
   },
   start: {
     name: 'Stundenstart', folientyp: 'organisation',
     schueler: 'Folgt direkt auf die Begrüßung. Oben klein Fach und Einheit, groß das Thema der Stunde. Von der Lehrkraft zuschaltbar: Stundenziel „Am Ende der Stunde kannst du …“ (gelbe Merksatz-Box) und ein kurzer Ablauf „Heute: 1 … 2 … 3 …“ als nummerierte Stichpunkte (höchstens vier). Kein ausführlicher Einstieg, nur Orientierung.',
-    lehrer: 'Gleiche Folie an der Tafel. Auf dem Lehrergerät zwei Schalter: „Stundenziel zeigen“ und „Ablauf zeigen“.',
+    lehrer: 'Gleiche Folie an der Tafel. Zwei Schalter: „Stundenziel zeigen“ und „Ablauf zeigen“.',
   },
   ankuendigung: {
     name: 'Phaseneinleitung', folientyp: 'organisation',
@@ -30,7 +30,7 @@ export const CI_STANDARDFOLIEN = {
   partner: {
     name: 'Partner finden', folientyp: 'organisation',
     schueler: 'Satz „Such dir einen Partner.“ Eingabefeld „Mit wem arbeitest du?“ mit Namensvorschlägen aus der Klasse. Erst wenn beide sich gegenseitig eingetragen haben, erscheint grün „Ihr seid Partner 7“. Zusatzoptionen (von der Lehrkraft zuschaltbar): „Wir sind zu dritt“ und „Ich arbeite allein“. Allein ist nur eine Anfrage, die Lehrkraft entscheidet.',
-    lehrer: 'TAFEL-STANDARD (fest): Überschrift „Wer arbeitet mit wem?“, darunter ein Raster aus 6 Spalten × 3 Reihen für bis zu 18 Kacheln (16 Paare plus Reserve). Jede Kachel: Partner-Symbol + große Paarnummer, darunter die Namen gut lesbar von hinten; Dreier in derselben Kachel. Allein-Wünsche gelb mit „allein?“. Schüler ohne Partner in einer grauen Zeile unten („Noch ohne Partner: …“). Lehrergerät zusätzlich: Die Lehrkraft kann einen Allein-Wunsch erlauben (✓) oder ablehnen (×, Schüler muss sich einen Partner suchen), Dreier und Paare auflösen und Übrige per Ziehen zuordnen. Auflösen ist auch während der laufenden Partnerarbeit möglich (z. B. zu laut).',
+    lehrer: 'TAFEL-STANDARD (fest): Überschrift „Wer arbeitet mit wem?“, darunter ein Raster aus 6 Spalten × 3 Reihen für bis zu 18 Kacheln (16 Paare plus Reserve). Jede Kachel: Partner-Symbol + große Paarnummer, darunter die Namen gut lesbar von hinten; Dreier in derselben Kachel. Allein-Wünsche gelb mit „allein?“. Schüler ohne Partner in einer grauen Zeile unten („Noch ohne Partner: …“). Die Lehrkraft kann einen Allein-Wunsch erlauben (✓) oder ablehnen (×, Schüler muss sich einen Partner suchen), Dreier und Paare auflösen und Übrige per Ziehen zuordnen. Auflösen ist auch während der laufenden Partnerarbeit möglich (z. B. zu laut).',
   },
   partner_analog: {
     name: 'Partner finden (analog)', folientyp: 'organisation',
@@ -70,7 +70,7 @@ export const CI_STANDARDFOLIEN = {
   sammlung: {
     name: 'Sammlung (Lehrkraft schreibt mit)', folientyp: 'sicherung',
     schueler: 'Überschrift und Leitfrage der Sammlung, darunter eine offene Liste. Kein Merksatz-Kasten, weil noch nichts festgelegt ist: Es wird erst gesammelt, was aus der Arbeitsphase kommt.',
-    lehrer: 'Klassische Lehrersicherung: Während die Schüler vortragen bzw. sich melden, tippt die Lehrkraft live in das Textfeld; jeder Eintrag erscheint sofort als Punkt in der Liste (zweispaltig bei vielen Punkten). Optional liegt ein Erwartungshorizont als Spickzettel nur auf dem Lehrergerät.',
+    lehrer: 'Klassische Lehrersicherung: Während die Schüler vortragen bzw. sich melden, tippt die Lehrkraft live in das Textfeld; jeder Eintrag erscheint sofort als Punkt in der Liste (zweispaltig bei vielen Punkten). Optional liegt ein Erwartungshorizont als Spickzettel bereit.',
   },
   abstimmung: {
     name: 'Abstimmung (nach der Sammlung)', folientyp: 'sicherung',
@@ -101,12 +101,12 @@ export const CI_STANDARDFOLIEN = {
   lernort: {
     name: 'Lernort frei wählen', folientyp: 'organisation',
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
-    lehrer: 'Lehrergerät (nicht Tafel): Liste nach Orten gruppiert mit Namen bzw. Partner-/Gruppenkennung, darunter grau „Noch keine Angabe“. Schalter „Lernort frei“ an/aus; aus = alle bitte zurück in den Klassenraum.',
+    lehrer: 'Liste nach Orten gruppiert mit Namen bzw. Partner-/Gruppenkennung, darunter grau „Noch keine Angabe“. Schalter „Lernort frei“ an/aus; aus = alle bitte zurück in den Klassenraum.',
   },
   reflexion: {
     name: 'Reflexion (Stunde / Phase)', folientyp: 'reflexion',
     schueler: 'Teil 1 Pflicht: kurze Aussagen, je mit drei Antippfeldern „stimmt“ / „teils“ / „stimmt nicht“: Ich habe das Thema verstanden · Ich habe alles geschafft · Ich habe mich wohlgefühlt und konnte gut arbeiten · Das Thema war schwierig · Wir sollten das noch vertiefen. Für eine einzelne Phase reichen 2–3 Aussagen. Optional ein Satz „Das nehme ich heute mit: …“. Teil 2 freiwillig und anonym, nur wenn die Lehrkraft es freischaltet: Rückmeldung an die Lehrkraft (Sie haben verständlich erklärt · Der Unterricht war spannend · Der Einstieg hat mir geholfen) plus eine eigene Frage der Lehrkraft, z. B. „Ich habe heute etwas Neues ausprobiert. Wie fandet ihr das?“. Knopf „Überspringen“ immer sichtbar.',
-    lehrer: 'Tafel: nur anonyme Balken je Aussage in der Ergebnisreihe (Teil 9), Aufdecken durch die Lehrkraft. Lehrergerät: zusätzlich Namensliste „Braucht Unterstützung“ (Verstanden = stimmt nicht oder Wohlgefühlt = stimmt nicht). Die Rückmeldung an die Lehrkraft ist immer anonym und erscheint nur auf dem Lehrergerät, nie an der Tafel. Aussagen und eigene Frage werden vor der Stunde in der Folie vorbereitet.',
+    lehrer: 'Tafel: nur anonyme Balken je Aussage in der Ergebnisreihe (Teil 9), Aufdecken durch die Lehrkraft. Zusätzlich Namensliste „Braucht Unterstützung“ (Verstanden = stimmt nicht oder Wohlgefühlt = stimmt nicht). Die Rückmeldung an die Lehrkraft ist immer anonym und erscheint nie an der Tafel. Aussagen und eigene Frage werden vor der Stunde in der Folie vorbereitet.',
   },
 };
 
