@@ -3,19 +3,21 @@ import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import { EINSATZ, FOLIEN_EINSATZ } from '@/lib/standardFolienEinsatz';
 import FolieAnzeige from '@/components/aktivitaetengalerie/foliensatz/FolieAnzeige';
 
-const alsFolie = (s) => (s.ci
+export const FAVORITEN = ['begruessung', 'start', 'ankuendigung', 'impuls', 'reflexion', 'einzelphase', 'partnerphase'];
+
+export const alsFolie = (s) => (s.ci
   ? { vorlage: 'standard', standard: s.key, folientyp: s.folientyp, titel: s.titel?.[0] || s.name }
   : { ...s.folie });
 
 /** Standardfolien nach Einsatz-Kategorie gruppiert. */
 export default function StandardfolieWahl({ onWahl }) {
-  const gruppen = {};
+  const gruppen = { favoriten: STANDARD_FOLIEN.filter((s) => FAVORITEN.includes(s.key)) };
   STANDARD_FOLIEN.forEach((s) => { const k = FOLIEN_EINSATZ[s.key]; (gruppen[k] = gruppen[k] || []).push(s); });
   return (
     <div className="space-y-6">
       {Object.entries(gruppen).map(([k, liste]) => (
         <div key={k}>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-chart-4">{EINSATZ[k]?.name || 'Weitere'}</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-chart-4">{k === 'favoriten' ? '★ Häufig genutzt' : EINSATZ[k]?.name || 'Weitere'}</p>
           <div className="grid gap-3 sm:grid-cols-3">
             {liste.map((s) => {
               const folie = alsFolie(s);

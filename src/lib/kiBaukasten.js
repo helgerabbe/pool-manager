@@ -1,6 +1,6 @@
 import { base44 } from '@/api/base44Client';
 import { methodenSatz, fuelleVorlage, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
-import { neuerBaustein, alsPhase, kiStunde, fundamentText } from '@/lib/stundenbaukasten';
+import { neuerBaustein, alsPhase, kiStunde, fundamentText, amEinschubTeilen } from '@/lib/stundenbaukasten';
 
 const baustein = { type: 'object', properties: { art: { type: 'string', enum: ['methode', 'inhalt', 'uebung'] }, titel: { type: 'string' }, methode: { type: 'string' }, beschreibung: { type: 'string' }, minuten: { type: 'number' }, geraet: { type: 'string', enum: ['tafel', 'geraet'] } } };
 
@@ -25,7 +25,8 @@ Methoden: ${methoden.map((m) => m.name).join(', ')}
 "minuten" nur als grober Richtwert. "geraet": "tafel" = nur Tafel, "geraet" = Schüler arbeiten am Gerät. "beschreibung": 1 Satz, was passiert.`,
     response_json_schema: { type: 'object', properties: { bausteine: { type: 'array', items: baustein } } },
   });
-  return Promise.all((r.bausteine || []).map((x) => mitVorlage(neuerBaustein(x.art, { ...x, methode: x.art === 'methode' ? x.methode : '' }), stunde.fach)));
+  const liste = await Promise.all((r.bausteine || []).map((x) => mitVorlage(neuerBaustein(x.art, { ...x, methode: x.art === 'methode' ? x.methode : '' }), stunde.fach)));
+  return liste.flatMap(amEinschubTeilen);
 }
 
 /** Füllt einen Baustein mit Folien zu Fundament und Stunde. */

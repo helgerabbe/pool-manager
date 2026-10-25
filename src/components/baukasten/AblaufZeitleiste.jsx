@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BausteinZeile from './BausteinZeile';
 
 /** Vertikaler Stundenablauf; Reihenfolge per Ziehen. */
-export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOeffnen, onEntfernen }) {
+export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOeffnen, onEntfernen, onFolieHinzu }) {
   const ende = ({ source, destination }) => {
     if (!destination || destination.index === source.index) return;
     const l = [...bausteine]; const [x] = l.splice(source.index, 1); l.splice(destination.index, 0, x);
@@ -23,7 +23,7 @@ export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOef
               <Draggable key={b.id} draggableId={b.id} index={i}>
                 {(d) => (
                   <div ref={d.innerRef} {...d.draggableProps}>
-                    <BausteinZeile b={b} nr={i + 1} kopf={kopf} griff={d.dragHandleProps} onOeffnen={(n) => onOeffnen(b.id, n)} onEntfernen={() => onEntfernen(b.id)} />
+                    <BausteinZeile b={b} nr={i + 1} kopf={kopf} griff={d.dragHandleProps} onOeffnen={(n) => onOeffnen(b.id, n)} onEntfernen={() => onEntfernen(b.id)} onFolieHinzu={(f) => onFolieHinzu(b, f)} />
                   </div>
                 )}
               </Draggable>

@@ -8,6 +8,25 @@ export const ARTEN = {
   standard: { label: 'Standardfolie', farbe: 'bg-chart-4/10 text-chart-4 border-chart-4/30' },
 };
 
+import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
+import { istFreieMethode } from '@/lib/freieMethode';
+
+/** Echte Methode? Freie Methode = Kiste ohne Methode. */
+export const hatMethode = (b) => b.art === 'methode' && !istFreieMethode(b);
+
+/** Name der Standardfolie, sonst der Folientitel. */
+export const folienName = (f) => {
+  const s = STANDARD_FOLIEN.find((x) => (f.vorlage === 'standard' ? x.key === f.standard : !x.ci && x.folie?.vorlage === f.vorlage));
+  return s?.name || f.titel || '';
+};
+
+/** Methoden mit Einschub-Platzhalter werden zu zwei Blöcken: davor und danach. */
+export const amEinschubTeilen = (b) => {
+  const i = b.folien.findIndex((f) => f.standard === 'einschub');
+  if (i < 0) return [b];
+  return [{ ...b, folien: b.folien.slice(0, i) }, { ...b, id: neueId(), titel: `${b.titel} – Abschluss`, minuten: null, folien: b.folien.slice(i + 1) }];
+};
+
 export const neueId = () => `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export const neuerBaustein = (art, daten = {}) => ({ id: neueId(), art, titel: '', beschreibung: '', minuten: null, geraet: 'tafel', folien: [], annahmen: [], ...daten });
