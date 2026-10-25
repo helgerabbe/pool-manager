@@ -7,8 +7,9 @@ import CiStandardBild from './CiStandardBild';
 import PartnerTafel from './standard/PartnerTafel';
 import { ANKUENDIGUNG_BEISPIEL } from './standard/AnkuendigungBild';
 
-// Diese Standardfolien bringen schon eine ganze Tafel mit; vergrößert würden sie abgeschnitten.
-const VOLLBILD = ['lueckentext', 'bildbeschriftung', 'multiple_choice', 'richtig_falsch', 'reihenfolge', 'zuordnen', 'arbeitsphase_analog', 'einzelphase', 'partnerphase', 'kartenabfrage'];
+// Nur diese älteren Standardfolien sind kleine Skizzen und werden vergrößert.
+// Alle anderen (auch jede neue Standardfolie) füllen die Folie selbst und werden nie vergrößert.
+const SKIZZE = ['positionierung', 'abstimmung', 'sammlung', 'sammlung_procontra', 'einschub', 'begruessung', 'reflexion', 'lernort', 'aufgabenerklaerung', 'zuhoeren', 'partner_analog', 'partner', 'klassenmodus'];
 
 /** Zeigt eine Folie: neue Folien über feste Vorlagen, ältere Folien über die freien Elemente. */
 export default function FolieAnzeige({ folie, ansicht = 'lehrer', klein, kopf }) {
@@ -20,7 +21,7 @@ export default function FolieAnzeige({ folie, ansicht = 'lehrer', klein, kopf })
         : folie.vorlage === 'standard' && folie.standard === 'ankuendigung'
         ? <VorlagenInhalt f={{ ...ANKUENDIGUNG_BEISPIEL, titel: folie.titel || ANKUENDIGUNG_BEISPIEL.titel, satz: folie.satz || folie.text || ANKUENDIGUNG_BEISPIEL.satz, bild: folie.bild || ANKUENDIGUNG_BEISPIEL.bild }} />
         : folie.vorlage === 'standard'
-        ? <div className={`flex flex-1 items-center justify-center ${VOLLBILD.includes(folie.standard) ? 'w-full' : 'origin-center scale-[1.8]'}`}><CiStandardBild art={folie.standard} ansicht={ansicht} /></div>
+        ? <div className={`flex flex-1 items-center justify-center ${SKIZZE.includes(folie.standard) ? 'origin-center scale-[1.8]' : 'w-full'}`}><CiStandardBild art={folie.standard} ansicht={ansicht} /></div>
         : ansicht === 'schueler' ? <TabletInhalt f={folie} /> : <VorlagenInhalt f={folie} />}
     </VorlageRahmen>
   );
