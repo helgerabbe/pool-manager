@@ -16,7 +16,11 @@ export default function StundenbauAssistent() {
   const [aktiv, setAktiv] = React.useState(0);
   const [laedt, setLaedt] = React.useState(false);
 
+  const [einheitTitel, setEinheitTitel] = React.useState('');
   React.useEffect(() => { base44.entities.Unterrichtsstunde.get(id).then(setStunde); }, [id]);
+  React.useEffect(() => {
+    if (stunde?.unterrichtseinheit_id) base44.entities.Unterrichtseinheit.get(stunde.unterrichtseinheit_id).then((e) => setEinheitTitel(e?.titel || ''));
+  }, [stunde?.unterrichtseinheit_id]);
   if (!stunde) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin" /></div>;
 
   const phasen = stunde.planer_stand?.entwurf?.phasen || [];
