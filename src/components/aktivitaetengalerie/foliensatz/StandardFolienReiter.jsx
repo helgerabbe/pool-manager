@@ -6,6 +6,7 @@ import { EINSATZ, FOLIEN_EINSATZ } from '@/lib/standardFolienEinsatz';
 import StandardFolienRegeln from './StandardFolienRegeln';
 import StandardFolieAnsicht from './StandardFolieAnsicht';
 import { INHALTS_FUNKTIONEN } from '@/lib/inhaltsFolienFunktionen';
+import InhaltsFunktionAnsicht from './InhaltsFunktionAnsicht';
 
 // Rahmenfolien = wer sieht was wo (mit Leerstelle); Übungsformate = füllen die Leerstelle (Tablet- und Tafel-Fassung).
 const GRUPPEN = [
@@ -43,17 +44,11 @@ export default function StandardFolienReiter() {
         <p className="mb-1 rounded-md bg-[#F3E8D6] px-2 py-1 text-xs font-semibold">Inhaltsfolien nach Funktion <span className="float-right font-normal">{INHALTS_FUNKTIONEN.length}</span></p>
         {INHALTS_FUNKTIONEN.map((x) => (
           <button key={x.key} onClick={() => { setFunktion(x); if (x.folie) setKey(x.folie); }} className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-sm ${funktion?.key === x.key ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}>
-            <span className="flex-1">{x.name}</span>{!x.folie && <span className="text-[10px] opacity-70">offen</span>}
+            <img src={x.symbol} alt="" className="h-5 w-5 shrink-0 rounded-full bg-white object-contain" /><span className="flex-1">{x.name}</span>
           </button>
         ))}
       </div>
-      {funktion && !funktion.folie ? (
-        <div className="flex-1 space-y-2 pr-2">
-          <p className="font-display text-lg font-bold">{funktion.name}</p>
-          <p className="text-sm text-muted-foreground">Inhaltsfolie nach Funktion</p>
-          <div className="rounded-xl border-2 border-dashed p-6"><p>{funktion.text}</p><p className="mt-2 text-sm text-muted-foreground">Diese Folie ist noch nicht ausgearbeitet.</p></div>
-        </div>
-      ) :
+      {funktion ? <InhaltsFunktionAnsicht f={funktion} /> :
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
         <div><p className="font-display text-lg font-bold">{s.name}</p><p className="text-sm text-muted-foreground">{CI_FOLIENTYPEN[s.folientyp]?.name || s.folientyp}</p>
           <p className={`mt-1 inline-block rounded-md px-2 py-1 text-sm font-medium ${EINSATZ[FOLIEN_EINSATZ[s.key]].klasse}`}>{EINSATZ[FOLIEN_EINSATZ[s.key]].name}: {EINSATZ[FOLIEN_EINSATZ[s.key]].text}</p></div>
