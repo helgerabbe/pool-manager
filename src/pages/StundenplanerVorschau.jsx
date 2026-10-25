@@ -121,10 +121,12 @@ export default function StundenplanerVorschau() {
         </div>
         <div className="flex gap-1">
           {SCHRITTE.map((s, i) => (
-            <div key={s} className="flex-1">
+            <button key={s} type="button" disabled={i > stufe || (i >= 3 && !entwurf)} title="Zu diesem Schritt springen"
+              onClick={() => setPhase(['grob', 'uebung', 'gespraech', 'methodik', 'fein', 'aufbereitung'][i])}
+              className="flex-1 text-left enabled:hover:opacity-80 disabled:cursor-default">
               <div className={`h-1 rounded-full ${i <= stufe ? 'bg-primary' : 'bg-muted'}`} />
               <p className={`mt-1 text-[11px] ${i === stufe ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>{i + 1}. {s}</p>
-            </div>
+            </button>
           ))}
         </div>
         <section className="space-y-6 rounded-2xl border bg-card/50 p-6">
@@ -184,7 +186,7 @@ export default function StundenplanerVorschau() {
             <AufbereitungSchritt entwurf={entwurf} setEntwurf={setEntwurf} onErstellen={() => kiAufbereitung({ assistent, einheit, anker: v.anker, entwurf })}
               onZurueck={() => setPhase('fein')} onWeiter={() => setPhase('fertig')} />
           )}
-          {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
+          {phase === 'fertig' && <ProtoAbschluss name={entwurf?.name} onAnsehen={() => setPhase('aufbereitung')} onFeinplanung={() => setPhase('fein')} onZurueck={() => navigate(`/unterrichtseinheit/${id}/struktur`)} />}
         </section>
       </div>
     </div>
