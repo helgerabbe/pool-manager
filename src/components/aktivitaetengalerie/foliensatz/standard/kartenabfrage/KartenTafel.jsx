@@ -56,10 +56,13 @@ export default function KartenTafel({ stapel, setStapel }) {
         {['sammeln', 'clustern'].map((m) => <button key={m} onClick={() => setModus(m)} className={`rounded-full px-1.5 py-0.5 text-[8px] ${modus === m ? 'bg-[#2A4074] text-white' : 'border bg-white'}`}>{m === 'sammeln' ? 'Sammeln' : 'Clustern'}</button>)}
       </div>
       {modus === 'sammeln' ? (
-        <div className="flex h-full flex-col items-center justify-center gap-1 text-[11px]">
-          <p className="font-display text-[12px] font-bold">Was fällt euch dazu ein?</p>
-          <KartenStapel anzahl={stapel.length} />
-        </div>
+        <>
+          <div className="absolute left-[4%] top-[5%] max-w-[55%] border-l-4 border-[#E07A5F] pl-2">
+            <p className="text-[7px] font-semibold uppercase tracking-wider text-[#6A7181]">Leitfrage</p>
+            <p className="font-display text-[15px] font-extrabold leading-tight text-[#2A4074]">Was fällt euch dazu ein?</p>
+          </div>
+          <div className="flex h-full items-center justify-center pt-[8%] text-[11px]"><KartenStapel anzahl={stapel.length} /></div>
+        </>
       ) : (
         <>
           <div className="absolute left-[2%] top-[3%] z-20"><KartenStapel anzahl={stapel.length} aktiv onAufdecken={aufdecken} /></div>
