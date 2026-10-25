@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, Plus, Trash2, Check, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Trash2, Check, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import FeinschliffRahmen from './FeinschliffRahmen';
 import FolieAnzeige from '@/components/aktivitaetengalerie/foliensatz/FolieAnzeige';
 import { toast } from 'sonner';
 import FolieEinfuegenDialog from './FolieEinfuegenDialog';
@@ -12,6 +13,8 @@ export default function PhasenEditor({ stand, kopf, onFolien, onEinfuegen, onFer
   const folien = stand.folien || [];
   const folie = folien[Math.min(nr, folien.length - 1)];
 
+  const [fein, setFein] = React.useState(false);
+  const feinAendern = (ansicht, liste) => onFolien(folien.map((f) => (f.id === folie.id ? { ...f, feinschliff: { ...f.feinschliff, [ansicht]: liste } } : f)));
   const loeschen = () => { onFolien(folien.filter((_, i) => i !== nr)); setNr(Math.max(0, nr - 1)); };
   const neu = async (art, wunsch) => { await onEinfuegen(nr + 1, art, wunsch); setNr(nr + 1); };
 
@@ -25,8 +28,12 @@ export default function PhasenEditor({ stand, kopf, onFolien, onEinfuegen, onFer
       )}
       {folie ? (
         <div className="grid grid-cols-1 xl:grid-cols-[3fr_2fr] gap-4 items-start">
-          <div><p className="text-xs font-semibold text-muted-foreground mb-1">Lehreransicht (Tafel)</p><FolieAnzeige folie={folie} ansicht="lehrer" kopf={kopf} /></div>
-          <div><p className="text-xs font-semibold text-muted-foreground mb-1">Schüleransicht (Tablet)</p><FolieAnzeige folie={folie} ansicht="schueler" kopf={kopf} /></div>
+          {[['lehrer', 'Lehreransicht (Tafel)'], ['schueler', 'Schüleransicht (Tablet)']].map(([a, label]) => (
+            <div key={a}><p className="text-xs font-semibold text-muted-foreground mb-1">{label}</p>
+              <FeinschliffRahmen key={`${folie.id}${a}`} aktiv={fein} anpassungen={folie.feinschliff?.[a]} onAendern={(l) => feinAendern(a, l)}>
+                <FolieAnzeige folie={folie} ansicht={a} kopf={kopf} />
+              </FeinschliffRahmen></div>
+          ))}
         </div>
       ) : <p className="text-sm text-muted-foreground italic">Diese Phase hat keine Folien mehr.</p>}
       <div className="flex flex-wrap items-center gap-2">
@@ -37,7 +44,10 @@ export default function PhasenEditor({ stand, kopf, onFolien, onEinfuegen, onFer
         <Button size="sm" variant="outline" onClick={() => toast('Folien einfügen kommt in einem nächsten Schritt.')}><Plus className="w-4 h-4" /> Folie dahinter einfügen</Button>
         <Button size="sm" variant="outline" disabled={!folie} onClick={loeschen}><Trash2 className="w-4 h-4" /> Löschen</Button>
         <Button size="sm" variant="ghost" onClick={onNeu}><RotateCcw className="w-4 h-4" /> Phase neu planen</Button>
-        <Button size="sm" className="ml-auto" onClick={onFertig}><Check className="w-4 h-4" /> {letztePhase ? 'Phase fertig' : 'Phase fertig – weiter'}</Button>
+        <Button size="sm" variant={fein ? 'default' : 'outline'} className="ml-auto" disabled={stand.vorlage || !folie} title={stand.vorlage ? 'Erst die Folien mit Inhalten füllen' : ''} onClick={() => setFein(!fein)}>
+          <SlidersHorizontal className="w-4 h-4" /> {fein ? 'Feinschliff beenden' : 'Manueller Feinschliff'}
+        </Button>
+        <Button size="sm" onClick={onFertig}><Check className="w-4 h-4" /> {letztePhase ? 'Phase fertig' : 'Phase fertig – weiter'}</Button>
       </div>
       <FolieEinfuegenDialog offen={einfuegen} onSchliessen={() => setEinfuegen(false)} onEinfuegen={neu} />
     </div>
