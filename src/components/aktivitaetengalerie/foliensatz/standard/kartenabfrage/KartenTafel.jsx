@@ -44,7 +44,7 @@ export default function KartenTafel({ stapel, setStapel }) {
   );
 
   return (
-    <div ref={board} onPointerMove={bewegen} onPointerUp={ende} className="absolute inset-0 select-none p-[2%] text-[9px]">
+    <div ref={board} onPointerMove={bewegen} onPointerUp={ende} className="absolute inset-0 select-none p-[2%] text-[9px] [container-type:inline-size]">
       <div className="absolute right-[2%] top-[3%] z-20 flex items-center gap-0.5">
         <Popover>
           <PopoverTrigger className="rounded-full bg-white p-0.5 text-[#6A7181] ring-1 ring-[#E4E1DA]"><Info className="h-3 w-3" /></PopoverTrigger>
@@ -58,8 +58,8 @@ export default function KartenTafel({ stapel, setStapel }) {
       {modus === 'sammeln' ? (
         <>
           <div className="absolute left-[4%] top-[5%] max-w-[55%] border-l-4 border-[#E07A5F] pl-2">
-            <p className="text-[7px] font-semibold uppercase tracking-wider text-[#6A7181]">Leitfrage</p>
-            <p className="font-display text-[15px] font-extrabold leading-tight text-[#2A4074]">Was fällt euch dazu ein?</p>
+            <p className="text-[1.3cqw] font-semibold uppercase tracking-wider text-[#6A7181]">Leitfrage</p>
+            <p className="font-display text-[3.4cqw] font-extrabold leading-tight text-[#2A4074]">Was fällt euch dazu ein?</p>
           </div>
           <div className="flex h-full items-center justify-center pt-[8%] text-[11px]"><KartenStapel anzahl={stapel.length} /></div>
         </>
