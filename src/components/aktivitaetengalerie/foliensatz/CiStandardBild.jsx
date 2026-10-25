@@ -29,6 +29,7 @@ import ProContraBild from './standard/ProContraBild';
 import EinschubBild from './standard/EinschubBild';
 import IrritierenBild from './standard/IrritierenBild';
 import SammlungBild from './standard/SammlungBild';
+import AbstimmungBild from './standard/AbstimmungBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 
@@ -36,6 +37,7 @@ const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 export default function CiStandardBild({ art, ansicht }) {
   if (art === 'ankuendigung') return <AnkuendigungBild />;
   if (art === 'positionierung') return <PositionierungBild ansicht={ansicht} />;
+  if (art === 'abstimmung') return <AbstimmungBild ansicht={ansicht} />;
   if (art === 'sammlung') return <SammlungBild ansicht={ansicht} />;
   if (art === 'sammlung_procontra') return <ProContraBild ansicht={ansicht} />;
   if (art === 'einschub') return <EinschubBild ansicht={ansicht} />;
