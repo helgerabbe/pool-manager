@@ -1,7 +1,7 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id). Die Phasen liegen in StundenSequenz. STUNDENPLANER (2026-10-21): 'planer_stand' speichert den Zwischenstand des Stundenplaners (Schritt, Vorgaben, Entwurf), damit die Lehrkraft jederzeit weiterarbeiten kann.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id). Die Phasen liegen in StundenSequenz. STUNDENPLANER (2026-10-21): 'planer_stand' speichert den Zwischenstand des Stundenplaners (Schritt, Vorgaben, Entwurf), damit die Lehrkraft jederzeit weiterarbeiten kann. STUNDENBAU (2026-10-25): 'stundenbau' h\u00e4lt den Foliensatz, den der Stundenbau-Assistent Phase f\u00fcr Phase baut: { phasen: { <Index der Planer-Phase>: { einleitung, fragen[], antworten, annahmen[], folien[], fertig } } }.",
   "properties": {
     "unterrichtseinheit_id": {
       "type": "string",
@@ -52,6 +52,11 @@
       "type": "object",
       "additionalProperties": true,
       "description": "Zwischenstand des Stundenplaners: { phase, minuten, pause, v, punkte, entwurf, gespeichert_am }."
+    },
+    "stundenbau": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Foliensatz aus dem Stundenbau-Assistenten, je Phase: { phasen: { '0': { einleitung, fragen, antworten, annahmen, folien, fertig } } }."
     },
     "coach_plan": {
       "type": "object",

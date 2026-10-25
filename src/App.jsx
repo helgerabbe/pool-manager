@@ -37,6 +37,7 @@ const FolienDesigner = lazyWithRetry(() => import('@/pages/FolienDesigner'));
 const Praesentationsmodus = lazyWithRetry(() => import('@/pages/Praesentationsmodus'));
 const PraesentationTafel = lazyWithRetry(() => import('@/pages/PraesentationTafel'));
 const LiveMitmachen = lazyWithRetry(() => import('@/pages/LiveMitmachen'));
+const StundenbauAssistent = lazyWithRetry(() => import('@/pages/StundenbauAssistent'));
 const BasismoduleListe = lazyWithRetry(() => import('@/pages/BasismoduleListe'));
 const StundenPlayerLehrer = lazyWithRetry(() => import('@/pages/StundenPlayerLehrer'));
 const StundenEditor = lazyWithRetry(() => import('@/pages/StundenEditor'));
@@ -172,6 +173,7 @@ const AuthenticatedApp = () => {
           <Route path="/unterrichtseinheit/:id/struktur" element={<ErrorBoundary fallback="Die Struktur konnte nicht geladen werden."><UnterrichtseinheitStruktur /></ErrorBoundary>} />
           <Route path="/unterrichtseinheit/:id/stundenplaner" element={<ErrorBoundary fallback="Der Stundenplaner konnte nicht geladen werden."><StundenplanerVorschau /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id/start" element={<ErrorBoundary fallback="Die Stunde konnte nicht gestartet werden."><StundenPlayerLehrer /></ErrorBoundary>} />
+          <Route path="/unterrichtsstunde/:id/stundenbau" element={<ErrorBoundary fallback="Der Stundenbau-Assistent konnte nicht geladen werden."><StundenbauAssistent /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id/editor" element={<ErrorBoundary fallback="Der Editor konnte nicht geladen werden."><StundenEditor /></ErrorBoundary>} />
           <Route path="/unterrichtsstunde/:id" element={<ErrorBoundary fallback="Unterrichtsstunde konnte nicht geladen werden."><UnterrichtsstundeDetail /></ErrorBoundary>} />
           <Route path="/aktivitaetengalerie" element={<ErrorBoundary fallback="Die Methodengalerie konnte nicht geladen werden."><Aktivitaetengalerie /></ErrorBoundary>} />

@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { CalendarDays, ChevronRight, PlaySquare, ClipboardList } from 'lucide-react';
+import { CalendarDays, ChevronRight, PlaySquare, ClipboardList, Hammer } from 'lucide-react';
 import StundeLoeschenButton from '@/components/unterrichtsstunden/StundeLoeschenButton';
 import StundeThemaAufklapp from '@/components/unterricht/StundeThemaAufklapp';
 import VeroeffentlichenButton from '@/components/bibliothek/VeroeffentlichenButton';
@@ -38,6 +38,12 @@ export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
             <Link to={`/unterrichtseinheit/${s.unterrichtseinheit_id}/stundenplaner?stunde=${s.id}`} title="Planung der Stunde öffnen"
               className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
               <ClipboardList className="w-3.5 h-3.5" /> Planung
+            </Link>
+          )}
+          {s.planer_stand?.entwurf?.phasen?.length > 0 && (
+            <Link to={`/unterrichtsstunde/${s.id}/stundenbau`} title="Foliensatz Phase für Phase bauen"
+              className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground">
+              <Hammer className="w-3.5 h-3.5" /> Stundenbau
             </Link>
           )}
           <VeroeffentlichenButton art="stunde" quelle={s} unterrichtseinheit={unterrichtseinheit} />
