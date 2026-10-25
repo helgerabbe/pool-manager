@@ -37,6 +37,7 @@ export async function fuellen(stunde, bk, b) {
     const r = await bauePhase(s, phase, [], '');
     return { ...b, vorlage: false, ...r };
   }
+  if (b.art === 'standard') return { ...b, folien: await fuelleVorlage(s, phase, b.folien, 'Fülle die Standardfolie nur mit Text passend zum Stundenfundament.') };
   const f = await folieAusWunsch(s, phase, b.art === 'uebung' ? 'Übungsaufgabe für die Schüler' : 'Inhaltsfolie, die Lehrkraft erklärt', b.beschreibung || b.titel, b.folien);
   return { ...b, folien: [...b.folien, f] };
 }

@@ -1,37 +1,36 @@
 import React from 'react';
-import { base44 } from '@/api/base44Client';
-import { Input } from '@/components/ui/input';
-import { Plus, Presentation, ListChecks, Search } from 'lucide-react';
+import { Plus, ListChecks, LayoutTemplate, Shapes } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import UebungWahl from './wahl/UebungWahl';
+import StandardfolieWahl from './wahl/StandardfolieWahl';
+import MethodeWahl from './wahl/MethodeWahl';
 
-/** Auswahl der Bausteine: Methoden, Inhaltsfolie, Übungen aus den Kern- und Teilaufgaben. */
+const KNOEPFE = [
+  { k: 'uebung', label: 'Übung hinzufügen', icon: ListChecks, farbe: 'border-chart-3/40 hover:bg-chart-3/10 text-chart-3' },
+  { k: 'standard', label: 'Standardfolie hinzufügen', icon: LayoutTemplate, farbe: 'border-chart-4/40 hover:bg-chart-4/10 text-chart-4' },
+  { k: 'methode', label: 'Methode hinzufügen', icon: Shapes, farbe: 'border-primary/40 hover:bg-primary/10 text-primary' },
+];
+
+/** Drei Knöpfe; jeder öffnet ein passendes Auswahlfenster. */
 export default function BausteinPalette({ fundament, onHinzu }) {
-  const [methoden, setMethoden] = React.useState([]);
-  const [suche, setSuche] = React.useState('');
-  React.useEffect(() => { base44.entities.MethodenKatalog.filter({ quelle: 'methode', ist_aktiv: true }, 'name', 300).then(setMethoden); }, []);
-  const treffer = methoden.filter((m) => m.name.toLowerCase().includes(suche.toLowerCase())).slice(0, 40);
-  const aufgaben = [...(fundament.kernaufgaben || []).map((a) => ({ ...a, kern: true })), ...(fundament.teilaufgaben || [])];
-  const Zeile = ({ titel, sub, onClick }) => (
-    <button onClick={onClick} className="group flex w-full items-start gap-2 rounded-lg px-2 py-1.5 text-left hover:bg-muted">
-      <Plus className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground group-hover:text-primary" />
-      <span className="min-w-0"><span className="block truncate text-sm">{titel}</span>{sub && <span className="block truncate text-[11px] text-muted-foreground">{sub}</span>}</span>
-    </button>
-  );
+  const [wahl, setWahl] = React.useState(null);
+  const nehmen = (art, daten) => { onHinzu(art, daten); setWahl(null); };
+  const aktiv = KNOEPFE.find((x) => x.k === wahl);
   return (
-    <div className="space-y-5">
-      <button onClick={() => onHinzu('inhalt', { titel: 'Lehrkraft erklärt' })} className="flex w-full items-center gap-2 rounded-xl border border-accent/40 bg-accent/5 p-3 text-sm font-medium hover:bg-accent/10">
-        <Presentation className="h-4 w-4 text-accent" /> Inhaltsfolie einfügen
-      </button>
-      <div>
-        <p className="mb-2 flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-chart-3"><ListChecks className="h-3.5 w-3.5" /> Übungen aus dem Fundament</p>
-        {aufgaben.length ? aufgaben.map((a, i) => <Zeile key={i} titel={a.titel} sub={a.kern ? 'Kernaufgabe' : 'Teilaufgabe'} onClick={() => onHinzu('uebung', { titel: a.titel, beschreibung: a.text })} />)
-          : <p className="px-2 text-xs text-muted-foreground">Noch keine Kern- oder Teilaufgaben im Fundament.</p>}
-        <Zeile titel="Eigene Übung" onClick={() => onHinzu('uebung', { titel: 'Übung' })} />
-      </div>
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">Methoden</p>
-        <div className="relative mb-2"><Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" /><Input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Methode suchen" className="h-8 pl-7 text-sm" /></div>
-        {treffer.map((m) => <Zeile key={m.id} titel={m.name} sub={m.kurzbeschreibung} onClick={() => onHinzu('methode', { titel: m.name, methode: m.name, minuten: m.dauer_min || null })} />)}
-      </div>
+    <div className="space-y-2">
+      {KNOEPFE.map(({ k, label, icon: Icon, farbe }) => (
+        <button key={k} onClick={() => setWahl(k)} className={`flex w-full items-center gap-2 rounded-xl border bg-card p-3 text-sm font-medium transition ${farbe}`}>
+          <Icon className="h-4 w-4" /> <span className="flex-1 text-left text-foreground">{label}</span> <Plus className="h-4 w-4" />
+        </button>
+      ))}
+      <Dialog open={!!wahl} onOpenChange={(o) => !o && setWahl(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-display">{aktiv?.label}</DialogTitle></DialogHeader>
+          {wahl === 'uebung' && <UebungWahl fundament={fundament} onWahl={(d) => nehmen('uebung', d)} />}
+          {wahl === 'standard' && <StandardfolieWahl onWahl={(d) => nehmen('standard', d)} />}
+          {wahl === 'methode' && <MethodeWahl onWahl={(d) => nehmen('methode', d)} />}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

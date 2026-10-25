@@ -5,6 +5,7 @@ export const ARTEN = {
   methode: { label: 'Methode', farbe: 'bg-primary/10 text-primary border-primary/30' },
   inhalt: { label: 'Inhaltsfolie', farbe: 'bg-accent/10 text-accent border-accent/30' },
   uebung: { label: 'Übung', farbe: 'bg-chart-3/10 text-chart-3 border-chart-3/30' },
+  standard: { label: 'Standardfolie', farbe: 'bg-chart-4/10 text-chart-4 border-chart-4/30' },
 };
 
 export const neueId = () => `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
