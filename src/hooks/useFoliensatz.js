@@ -50,5 +50,11 @@ export default function useFoliensatz(methode, werte, fachName, kanal, ziel) {
     setVorlagen((v) => { speichern(v); return v; });
   };
 
-  return { satz, planen, allesBauen, folieNeu };
+  // Schritt 2: alle noch leeren Standardfolien nacheinander bauen.
+  const standardsBauen = async () => {
+    for (const folie of satz.folien.filter((x) => x.standard && x.vorlage === 'entwurf')) await bauen(fach, satz, folie);
+    setVorlagen((v) => { speichern(v); return v; });
+  };
+
+  return { satz, planen, allesBauen, folieNeu, standardsBauen };
 }

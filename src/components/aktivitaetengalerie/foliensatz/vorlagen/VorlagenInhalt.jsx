@@ -48,7 +48,7 @@ export default function VorlagenInhalt({ f }) {
   if (f.vorlage === 'einschub') return <EinschubInhalt f={f} />;
   if (f.vorlage === 'entwurf') return (
     <div className="flex min-h-0 flex-1 flex-col gap-3 rounded-2xl border-4 border-dashed border-[#9AA1AE] p-6">
-      <p className="text-lg font-semibold uppercase tracking-wide text-[#9AA1AE]">Noch keine Standardfolie · Bauauftrag</p>
+      <p className="text-lg font-semibold uppercase tracking-wide text-[#9AA1AE]">{f.standard ? `Standardfolie: ${f.standard} · noch nicht gebaut` : 'Noch keine Standardfolie · Bauauftrag'}</p>
       <Titel>{f.titel}</Titel>
       <p className="min-h-0 flex-1 overflow-y-auto whitespace-pre-line text-[18px] leading-snug">{f.beschreibung}</p>
     </div>

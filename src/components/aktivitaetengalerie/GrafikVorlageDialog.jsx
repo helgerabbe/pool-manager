@@ -27,7 +27,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
   const kanal = 'digital'; // ein gemeinsamer Satz; kanalspezifische Folien sind mit „nur analog/digital“ gekennzeichnet
   const [schritt, setSchritt] = React.useState('funktion');
   const [ziel, setZiel] = React.useState('divergierend');
-  const { satz, planen, allesBauen, folieNeu } = useFoliensatz(methode, werte, fach, kanal, ziel);
+  const { satz, planen, allesBauen, folieNeu, standardsBauen } = useFoliensatz(methode, werte, fach, kanal, ziel);
   const folien = satz?.folien || [];
   const folie = folien.find((f) => f.id === aktivId) || folien[0];
   const baut = planen || folien.some((f) => f.status === 'baut');
@@ -49,6 +49,7 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
             {ZIELE.map(([k, l]) => <Button key={k} size="sm" variant={ziel === k ? 'secondary' : 'ghost'} disabled={baut} onClick={() => { setZiel(k); setAktivId(null); }}>{l}</Button>)}
           </span>}
           {setze && <span className="ml-auto"><StatusQuoButton methode={methode} folien={folien} setze={setze} onGespeichert={onGespeichert} disabled={baut || !folien.length || folien.some((f) => f.status !== 'fertig')} /></span>}
+          {folien.some((f) => f.standard && f.vorlage === 'entwurf') && <Button size="sm" variant="outline" className={`${setze ? '' : 'ml-auto '}gap-2`} disabled={baut} onClick={standardsBauen}><Sparkles className="h-4 w-4" /> Standardfolien erstellen</Button>}
           <Button size="sm" className={`${setze ? '' : 'ml-auto '}gap-2`} disabled={baut || !werte.info_grafikassistent} onClick={allesBauen}>
             {baut ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} {satz ? 'Foliensatz neu bauen' : 'Foliensatz bauen'}
           </Button>
