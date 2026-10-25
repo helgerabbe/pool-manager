@@ -1,11 +1,18 @@
 import React from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import BausteinZeile from './BausteinZeile';
+import { folieVerschieben } from '@/lib/stundenbaukasten';
 
 /** Vertikaler Stundenablauf; Reihenfolge per Ziehen. */
-export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOeffnen, onEntfernen, onFolieHinzu }) {
-  const ende = ({ source, destination }) => {
+export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOeffnen, onEntfernen, onFolieHinzu, onFolien }) {
+  const ende = ({ source, destination, type }) => {
     if (!destination || destination.index === source.index) return;
+    if (type === 'folie') {
+      if (destination.droppableId !== source.droppableId) return;
+      const b = bausteine.find((x) => `folien:${x.id}` === source.droppableId);
+      onFolien(b, folieVerschieben(b.folien, source.index, destination.index));
+      return;
+    }
     const l = [...bausteine]; const [x] = l.splice(source.index, 1); l.splice(destination.index, 0, x);
     onReihenfolge(l);
   };
@@ -23,7 +30,7 @@ export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOef
               <Draggable key={b.id} draggableId={b.id} index={i}>
                 {(d) => (
                   <div ref={d.innerRef} {...d.draggableProps}>
-                    <BausteinZeile b={b} nr={i + 1} kopf={kopf} griff={d.dragHandleProps} onOeffnen={(n) => onOeffnen(b.id, n)} onEntfernen={() => onEntfernen(b.id)} onFolieHinzu={(f) => onFolieHinzu(b, f)} />
+                    <BausteinZeile b={b} nr={i + 1} kopf={kopf} griff={d.dragHandleProps} onOeffnen={(n) => onOeffnen(b.id, n)} onEntfernen={() => onEntfernen(b.id)} onFolieHinzu={(f) => onFolieHinzu(b, f)} onFolien={(l) => onFolien(b, l)} />
                   </div>
                 )}
               </Draggable>

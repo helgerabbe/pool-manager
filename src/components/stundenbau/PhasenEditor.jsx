@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Plus, Trash2, Check, RotateCcw, SlidersHoriz
 import FeinschliffRahmen from './FeinschliffRahmen';
 import FolieAnzeige from '@/components/aktivitaetengalerie/foliensatz/FolieAnzeige';
 import { toast } from 'sonner';
+import { verbundBereich } from '@/lib/stundenbaukasten';
 import FolieEinfuegenDialog from './FolieEinfuegenDialog';
 
 /** Editor einer Phase: Lehrer- und Schüleransicht nebeneinander, durchklicken, einfügen, löschen. */
@@ -15,7 +16,11 @@ export default function PhasenEditor({ stand, kopf, onFolien, onEinfuegen, onFer
 
   const [fein, setFein] = React.useState(false);
   const feinAendern = (ansicht, liste) => onFolien(folien.map((f) => (f.id === folie.id ? { ...f, feinschliff: { ...f.feinschliff, [ansicht]: liste } } : f)));
-  const loeschen = () => { onFolien(folien.filter((_, i) => i !== nr)); setNr(Math.max(0, nr - 1)); };
+  const loeschen = () => {
+    const [a, z] = verbundBereich(folien, nr);
+    if (z > a && !window.confirm(`Diese Folie ist fest mit ${z - a} weiteren Folie(n) verbunden. Einzeln löschen geht nicht – den ganzen Verbund löschen?`)) return;
+    onFolien(folien.filter((_, i) => i < a || i > z)); setNr(Math.max(0, a - 1));
+  };
   const neu = async (art, wunsch) => { await onEinfuegen(nr + 1, art, wunsch); setNr(nr + 1); };
 
   return (

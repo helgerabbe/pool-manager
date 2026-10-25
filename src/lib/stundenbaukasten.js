@@ -29,6 +29,46 @@ export function methodeAnzeige(b, katalogNamen) {
   return katalogNamen.includes(b.methode) ? b.methode : null;
 }
 
+/** Indexbereich [von, bis] des Folienverbunds, zu dem Folie i gehört (zusammenhängende Folien mit gleichem `verbund`). */
+export function verbundBereich(folien, i) {
+  const v = folien[i]?.verbund;
+  if (!v) return [i, i];
+  let a = i; let z = i;
+  while (a > 0 && folien[a - 1].verbund === v) a--;
+  while (z < folien.length - 1 && folien[z + 1].verbund === v) z++;
+  return [a, z];
+}
+
+/** Verschiebt Folie (samt ihrem Verbund) von Index `von` an Index `nach`; Verbünde werden nicht zerrissen. */
+export function folieVerschieben(folien, von, nach) {
+  const [a, z] = verbundBereich(folien, von);
+  const block = folien.slice(a, z + 1);
+  const rest = [...folien.slice(0, a), ...folien.slice(z + 1)];
+  let ziel = nach > z ? nach - block.length + 1 : nach;
+  ziel = Math.max(0, Math.min(rest.length, ziel));
+  const [ra, rz] = ziel > 0 && ziel < rest.length && rest[ziel - 1].verbund && rest[ziel - 1].verbund === rest[ziel].verbund ? verbundBereich(rest, ziel) : [ziel, ziel - 1];
+  if (rz >= ra) ziel = rz + 1; // nicht mitten in einen fremden Verbund
+  rest.splice(ziel, 0, ...block);
+  return rest;
+}
+
+/** Verbindet bzw. trennt Folie i und i+1. */
+export function verbundUmschalten(folien, i) {
+  const l = folien.map((f) => ({ ...f }));
+  const a = l[i]; const b = l[i + 1];
+  if (a.verbund && a.verbund === b.verbund) {
+    const neu = `v${Date.now()}`;
+    for (let j = i + 1; j < l.length && l[j].verbund === a.verbund; j++) l[j].verbund = neu;
+    [i, i + 1].forEach((k) => { const [x, y] = verbundBereich(l, k); if (x === y) delete l[k].verbund; });
+    return l;
+  }
+  const v = a.verbund || b.verbund || `v${Date.now()}`;
+  const alt = b.verbund;
+  for (let j = i + 1; j < l.length && (j === i + 1 || (alt && l[j].verbund === alt)); j++) l[j].verbund = v;
+  for (let j = i; j >= 0 && (j === i || (a.verbund && l[j].verbund === a.verbund)); j--) l[j].verbund = v;
+  return l;
+}
+
 /** Name der Standardfolie, sonst der Folientitel. */
 export const folienName = (f) => {
   const s = STANDARD_FOLIEN.find((x) => (f.vorlage === 'standard' ? x.key === f.standard : !x.ci && x.folie?.vorlage === f.vorlage));

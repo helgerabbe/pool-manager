@@ -8,7 +8,7 @@ const baustein = { type: 'object', properties: { art: { type: 'string', enum: ['
 export async function mitVorlage(b, fach) {
   if (b.art !== 'methode' || !b.methode) return b;
   const satz = await methodenSatz(b.methode, fach);
-  return { ...b, folien: (satz || []).map((f, i) => ({ ...f, id: `${b.id}v${i}`, phase: b.titel })), vorlage: !!satz?.length };
+  return { ...b, folien: (satz || []).map((f, i) => ({ ...f, id: `${b.id}v${i}`, phase: b.titel, verbund: `${b.id}m` })), vorlage: !!satz?.length };
 }
 
 /** Vorschlag des Assistenten: ganzer Ablauf (wunsch leer) oder einzelne Bausteine nach Wunsch. */
