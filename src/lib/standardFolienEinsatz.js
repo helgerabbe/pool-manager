@@ -15,3 +15,6 @@ export const FOLIEN_EINSATZ = {
 // Scrollbarkeit (2026-10-25): darf die Folie nach unten über den Bildschirm hinaus wachsen? Nicht aufgeführt = nicht scrollbar.
 export const FOLIEN_SCROLLBAR = ['partner', 'sammlung', 'sammlung_procontra', 'abstimmung', 'reflexion', 'lernort', 'lueckentext', 'notizen', 'satzanfaenge'];
 export const istScrollbar = (key) => FOLIEN_SCROLLBAR.includes(key);
+// Hängt vom gezeigten Inhalt ab (z. B. Aufgabenart).
+export const FOLIEN_SCROLL_ABHAENGIG = ['aufgabenerklaerung'];
+export const scrollText = (key) => FOLIEN_SCROLL_ABHAENGIG.includes(key) ? 'scrollbar je nach Aufgabenart' : istScrollbar(key) ? 'scrollbar' : 'nicht scrollbar';

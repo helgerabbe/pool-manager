@@ -2,7 +2,7 @@ import React from 'react';
 import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import { CI_FOLIENTYPEN } from '@/lib/folienCI';
 import { CI_STANDARD_REGEL } from '@/lib/folienCIStandard';
-import { EINSATZ, FOLIEN_EINSATZ, istScrollbar } from '@/lib/standardFolienEinsatz';
+import { EINSATZ, FOLIEN_EINSATZ, scrollText } from '@/lib/standardFolienEinsatz';
 import StandardFolienRegeln from './StandardFolienRegeln';
 import StandardFolieAnsicht from './StandardFolieAnsicht';
 import { INHALTS_FUNKTIONEN } from '@/lib/inhaltsFolienFunktionen';
@@ -50,7 +50,7 @@ export default function StandardFolienReiter() {
       </div>
       {funktion ? <InhaltsFunktionAnsicht f={funktion} /> :
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-2">
-        <div><p className="font-display text-lg font-bold">{s.name}</p><p className="text-sm text-muted-foreground">{CI_FOLIENTYPEN[s.folientyp]?.name || s.folientyp} · {istScrollbar(s.key) ? 'scrollbar' : 'nicht scrollbar'}</p>
+        <div><p className="font-display text-lg font-bold">{s.name}</p><p className="text-sm text-muted-foreground">{CI_FOLIENTYPEN[s.folientyp]?.name || s.folientyp} · {scrollText(s.key)}</p>
           <p className={`mt-1 inline-block rounded-md px-2 py-1 text-sm font-medium ${EINSATZ[FOLIEN_EINSATZ[s.key]].klasse}`}>{EINSATZ[FOLIEN_EINSATZ[s.key]].name}: {EINSATZ[FOLIEN_EINSATZ[s.key]].text}</p></div>
         <div className="grid gap-4 lg:grid-cols-2">
           <StandardFolieAnsicht s={s} ansicht="schueler" />
