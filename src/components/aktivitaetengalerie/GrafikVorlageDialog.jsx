@@ -8,6 +8,7 @@ import useFoliensatz from '@/hooks/useFoliensatz';
 import { ZIELE, hatZielWeiche } from '@/lib/standardFoliensaetze';
 import FolienLeiste from './foliensatz/FolienLeiste';
 import FolieAnzeige from './foliensatz/FolieAnzeige';
+import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import FolieErklaerung from './foliensatz/FolieErklaerung';
 import LehrerTutorial from './foliensatz/LehrerTutorial';
 import GestaltungPlatzhalter from './foliensatz/GestaltungPlatzhalter';
@@ -80,6 +81,9 @@ export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte
                   {folie.status === 'fehler' ? 'Diese Folie konnte nicht gebaut werden. Bitte neu erzeugen.' : <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Folie wird gebaut …</>}
                 </div>
               )}
+              {(() => { const s = STANDARD_FOLIEN.find((x) => x.key === folie.standard); return (
+                <p className="text-sm text-muted-foreground">{s ? <>Standardfolie: <b className="text-foreground">{s.name}</b></> : 'Keine Standardfolie · eigens gestaltete Folie'}</p>
+              ); })()}
               <p className="flex items-center gap-2 text-sm text-accent"><Lock className="h-4 w-4" /> Weiter: {FREIGABE_TEXT[folie.freigabe] || 'Lehrkraft gibt frei'}{folie.freigabe === 'zeit' && folie.minuten ? ` (${folie.minuten} Min.)` : ''}</p>
             </div>
             <FolieErklaerung folie={folie} folien={folien} />
