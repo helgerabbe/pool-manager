@@ -2,6 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Check, RotateCcw } from 'lucide-react';
 import FolieAnzeige from '@/components/aktivitaetengalerie/foliensatz/FolieAnzeige';
+import { toast } from 'sonner';
 import FolieEinfuegenDialog from './FolieEinfuegenDialog';
 
 /** Editor einer Phase: Lehrer- und Schüleransicht nebeneinander, durchklicken, einfügen, löschen. */
@@ -32,7 +33,8 @@ export default function PhasenEditor({ stand, kopf, onFolien, onEinfuegen, onFer
         <Button size="sm" variant="outline" disabled={nr <= 0} onClick={() => setNr(nr - 1)}><ChevronLeft className="w-4 h-4" /></Button>
         <span className="text-xs text-muted-foreground">Folie {folien.length ? nr + 1 : 0} von {folien.length}{folie ? ` · ${folie.titel || ''}` : ''}</span>
         <Button size="sm" variant="outline" disabled={nr >= folien.length - 1} onClick={() => setNr(nr + 1)}><ChevronRight className="w-4 h-4" /></Button>
-        <Button size="sm" variant="outline" onClick={() => setEinfuegen(true)}><Plus className="w-4 h-4" /> Folie einfügen</Button>
+        {/* Vorgesehen: Folie nach der aktuellen einfügen, der Assistent fragt dann, was darauf soll (onEinfuegen/FolieEinfuegenDialog). Noch ohne Funktion. */}
+        <Button size="sm" variant="outline" onClick={() => toast('Folien einfügen kommt in einem nächsten Schritt.')}><Plus className="w-4 h-4" /> Folie dahinter einfügen</Button>
         <Button size="sm" variant="outline" disabled={!folie} onClick={loeschen}><Trash2 className="w-4 h-4" /> Löschen</Button>
         <Button size="sm" variant="ghost" onClick={onNeu}><RotateCcw className="w-4 h-4" /> Phase neu planen</Button>
         <Button size="sm" className="ml-auto" onClick={onFertig}><Check className="w-4 h-4" /> {letztePhase ? 'Phase fertig' : 'Phase fertig – weiter'}</Button>

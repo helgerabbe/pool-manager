@@ -2,6 +2,7 @@ import { base44 } from '@/api/base44Client';
 import { FOLIEN_VORLAGEN, vorlagenText, folieSchema } from '@/lib/folienVorlagen';
 import { standardSatz } from '@/lib/standardFoliensaetze';
 import { BAUREGELN } from '@/lib/foliensatzBauregeln';
+import { CI_REGELN } from '@/lib/standardFolienRegeln';
 
 // Stundenbau-Assistent (2026-10-25): Phase für Phase einen Foliensatz der Stunde bauen.
 // 1. fragenZurPhase: alle offenen Fragen auf einmal. 2. bauePhase: Folien bauen, Unbeantwortetes entscheidet die KI selbst.
@@ -10,13 +11,43 @@ import { BAUREGELN } from '@/lib/foliensatzBauregeln';
 const MODELL = 'claude_sonnet_4_6';
 
 /** Grundsatz der gewählten Methode (Standardsatz oder gespeicherter Foliensatz), sonst null. */
-export async function methodenSatz(name) {
+// Zuerst der in der Methodengalerie gebaute Foliensatz (passendes Fach bevorzugt), dann der feste Standardsatz.
+export async function methodenSatz(name, fach) {
   if (!name) return null;
-  const fest = standardSatz(name, 'digital') || standardSatz(name, 'analog');
-  if (fest?.folien?.length) return fest.folien;
   const [m] = await base44.entities.MethodenKatalog.filter({ name });
-  const v = Object.values(m?.grafik_vorlagen || {}).find((x) => x?.folien?.length);
-  return v?.folien || null;
+  const saetze = Object.entries(m?.grafik_vorlagen || {}).filter(([, x]) => x?.folien?.length);
+  const v = saetze.find(([k]) => fach && k.startsWith(fach)) || saetze[0];
+  if (v) return v[1].folien;
+  const fest = standardSatz(name, 'digital') || standardSatz(name, 'analog');
+  return fest?.folien?.length ? fest.folien : null;
+}
+
+/** Alle Entscheidungen für diese Phase, je mit einem konkreten Vorschlag des Assistenten. */
+export async function vorschlaegeZurPhase(stunde, phase, vorlage) {
+  const offen = (vorlage || []).flatMap((f) => CI_REGELN[f.standard]?.klaeren || f.entscheidungen || []);
+  return base44.integrations.Core.InvokeLLM({
+    model: MODELL,
+    prompt: `Du bist der Stundenbau-Assistent für Lehrkräfte. Die Vorlage der Methode soll jetzt mit den Inhalten dieser Stunde gefüllt werden.
+${kontext(stunde, phase, vorlage)}
+${offen.length ? `Diese Punkte muss die Vorlage geklärt bekommen: ${[...new Set(offen)].join(' | ')}` : ''}
+Schreibe eine kurze "einleitung" (1-2 Sätze, du-Form). Liste dann alle Entscheidungen (2 bis 7, ohne Dopplungen) als "fragen". Mache zu JEDER Frage einen konkreten, fertigen Vorschlag passend zur Stunde (z. B. Wortlaut der Leitfrage, Motiv des Bildes, Zahl der Karten), damit die Lehrkraft nur noch zustimmen muss.`,
+    response_json_schema: { type: 'object', properties: { einleitung: { type: 'string' }, fragen: { type: 'array', items: { type: 'object', properties: { frage: { type: 'string' }, vorschlag: { type: 'string' } } } } } },
+  });
+}
+
+/** Füllt die Vorlage: gleiche Folien, gleiche Reihenfolge, nur Inhalte der Stunde. */
+export async function fuelleVorlage(stunde, phase, vorlage, entscheidungen) {
+  const r = await base44.integrations.Core.InvokeLLM({
+    model: MODELL,
+    prompt: `Du bist der Stundenbau-Assistent. Fülle die Vorlage mit den Inhalten dieser Stunde.
+${kontext(stunde, phase, vorlage)}
+Entscheidungen der Lehrkraft: ${entscheidungen}
+Vorlage (JSON): ${JSON.stringify(vorlage.map(({ id, ...f }) => f))}
+Gib GENAU ${vorlage.length} Folien in derselben Reihenfolge zurück. "vorlage" und "standard" jeder Folie bleiben unverändert, nur die Texte werden an die Stunde angepasst. Schülersprache.
+${BAUREGELN}`,
+    response_json_schema: { type: 'object', properties: { folien: { type: 'array', items: folieSchema } } },
+  });
+  return vorlage.map((v, i) => ({ ...v, ...(r.folien?.[i] || {}), vorlage: v.vorlage, standard: v.standard, folientyp: v.folientyp, id: v.id, phase: phase.name, status: 'fertig' }));
 }
 
 const kurzFolie = (f) => `${f.vorlage}${f.standard ? `:${f.standard}` : ''} „${f.titel || ''}“`;
@@ -49,7 +80,7 @@ const fertig = (f, phase, i) => ({ ...f, id: `f${Date.now()}${i}${Math.random().
   vorlage: FOLIEN_VORLAGEN[f.vorlage] ? f.vorlage : 'fokus', folientyp: FOLIEN_VORLAGEN[f.vorlage]?.folientyp || 'inhalt' });
 
 export async function bauePhase(stunde, phase, fragen, antworten) {
-  const satz = await methodenSatz(phase.methode);
+  const satz = await methodenSatz(phase.methode, stunde.fach);
   const r = await base44.integrations.Core.InvokeLLM({
     model: MODELL,
     prompt: `Du bist der Stundenbau-Assistent. Baue jetzt den Foliensatz für diese eine Phase.

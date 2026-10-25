@@ -1,24 +1,35 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Hammer } from 'lucide-react';
+import { Loader2, Hammer, Check, Pencil } from 'lucide-react';
 import FreitextMitSprache from '@/components/stundenplaner/FreitextMitSprache';
 
-/** Alle Fragen des Assistenten auf einmal, eine gemeinsame (Sprach-)Antwort. */
+/** Entscheidungen mit Vorschlag des Assistenten: „Passt so“ oder per (Sprach-)Eingabe ändern. */
 export default function PhasenFragen({ stand, onBauen, baut }) {
-  const [antworten, setAntworten] = React.useState(stand.antworten || '');
+  const [anders, setAnders] = React.useState({});
+  const fragen = stand.fragen || [];
+  const bauen = () => onBauen(fragen.map((f, i) => `${i + 1}. ${f.frage} → ${anders[i]?.trim() || f.vorschlag}`).join('\n'));
   return (
-    <div className="max-w-2xl space-y-4">
+    <div className="max-w-3xl space-y-3">
       <p className="text-sm">{stand.einleitung}</p>
-      <div className="rounded-lg border bg-card p-4">
-        <p className="text-sm font-semibold mb-2">Bevor ich baue, beantworte mir bitte noch folgende Fragen:</p>
-        <ol className="list-decimal pl-5 space-y-1 text-sm">{stand.fragen.map((f, i) => <li key={i}>{f}</li>)}</ol>
-      </div>
-      <FreitextMitSprache rows={6} value={antworten} onChange={setAntworten}
-        placeholder="Zum Beispiel: Zu 1: … Zu 2: … Zu 3 weiß ich noch nicht." />
-      <p className="text-xs text-muted-foreground">Was du nicht weißt, kannst du weglassen. Ich entscheide dann selbst, und du kannst es danach ändern.</p>
-      <Button onClick={() => onBauen(antworten)} disabled={baut}>
-        {baut ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />} Folien bauen
-      </Button>
+      <p className="text-sm font-semibold">Meine Vorschläge – passt alles, oder möchtest du etwas anders?</p>
+      {fragen.map((f, i) => (
+        <div key={i} className="rounded-lg border bg-card p-3 space-y-2">
+          <p className="text-sm font-semibold">{i + 1}. {f.frage}</p>
+          <p className="text-sm rounded-md bg-muted/50 px-3 py-2"><span className="text-xs text-muted-foreground">Vorschlag: </span>{f.vorschlag}</p>
+          {anders[i] === undefined ? (
+            <div className="flex gap-2">
+              <span className="flex items-center gap-1 text-xs text-green-700"><Check className="h-3.5 w-3.5" /> Passt so</span>
+              <Button size="sm" variant="outline" className="ml-auto" onClick={() => setAnders({ ...anders, [i]: '' })}><Pencil className="h-3.5 w-3.5" /> Anders</Button>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <FreitextMitSprache rows={2} value={anders[i]} onChange={(v) => setAnders({ ...anders, [i]: v })} placeholder="Sag oder schreib, wie es stattdessen sein soll." />
+              <Button size="sm" variant="ghost" onClick={() => { const n = { ...anders }; delete n[i]; setAnders(n); }}>Doch den Vorschlag nehmen</Button>
+            </div>
+          )}
+        </div>
+      ))}
+      <Button onClick={bauen} disabled={baut}>{baut ? <Loader2 className="w-4 h-4 animate-spin" /> : <Hammer className="w-4 h-4" />} Folien damit füllen</Button>
     </div>
   );
 }

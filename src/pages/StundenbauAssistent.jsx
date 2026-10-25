@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Wand2, ArrowLeft } from 'lucide-react';
-import { fragenZurPhase, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
+import { methodenSatz, vorschlaegeZurPhase, fuelleVorlage, bauePhase, folieAusWunsch } from '@/lib/kiStundenbau';
 import PhasenLeisteBau from '@/components/stundenbau/PhasenLeisteBau';
 import PhasenFragen from '@/components/stundenbau/PhasenFragen';
 import PhasenEditor from '@/components/stundenbau/PhasenEditor';
@@ -32,8 +32,24 @@ export default function StundenbauAssistent() {
   };
   const mitLaden = async (fn) => { setLaedt(true); try { await fn(); } catch { toast.error('Der Assistent hat nicht geantwortet. Bitte noch einmal versuchen.'); } finally { setLaedt(false); } };
 
-  const planen = () => mitLaden(async () => { const r = await fragenZurPhase(stunde, phase); await setzeStand({ einleitung: r.einleitung, fragen: r.fragen || [], antworten: '', annahmen: [], folien: [], fertig: false }); });
-  const bauen = (antworten) => mitLaden(async () => { const r = await bauePhase(stunde, phase, stand.fragen, antworten); await setzeStand({ antworten, ...r }); });
+  // 1. Planen: Vorlage der Methode sofort zeigen (ohne KI). Ohne Vorlage gleich zu den Vorschlägen.
+  const planen = () => mitLaden(async () => {
+    const satz = await methodenSatz(phase.methode, stunde.fach);
+    const folien = (satz || []).map((f, i) => ({ ...f, id: `v${Date.now()}${i}`, phase: phase.name }));
+    const basis = { vorlage: true, vorlage_folien: folien, folien, fragen: null, einleitung: '', annahmen: [], fertig: false };
+    if (folien.length) return setzeStand(basis);
+    const r = await vorschlaegeZurPhase(stunde, phase, []);
+    await setzeStand({ ...basis, einleitung: r.einleitung, fragen: r.fragen || [] });
+  });
+  // 2. Füllen lassen: Vorschläge zu allen Entscheidungen holen.
+  const vorschlaege = () => mitLaden(async () => { const r = await vorschlaegeZurPhase(stunde, phase, stand.vorlage_folien); await setzeStand({ einleitung: r.einleitung, fragen: r.fragen || [] }); });
+  // 3. Mit den bestätigten bzw. geänderten Entscheidungen füllen.
+  const bauen = (entscheidungen) => mitLaden(async () => {
+    const r = stand.vorlage_folien?.length
+      ? { folien: await fuelleVorlage(stunde, phase, stand.vorlage_folien, entscheidungen), annahmen: [] }
+      : await bauePhase(stunde, phase, [], entscheidungen);
+    await setzeStand({ antworten: entscheidungen, vorlage: false, fragen: null, ...r });
+  });
   const einfuegen = async (pos, art, wunsch) => {
     const f = await folieAusWunsch(stunde, phase, art, wunsch, stand.folien);
     const folien = [...stand.folien]; folien.splice(pos, 0, f);
@@ -60,13 +76,22 @@ export default function StundenbauAssistent() {
                 {phase.minuten > 0 && <span className="rounded-full border bg-card px-3 py-1" title="Nur ein Richtwert zur Orientierung">Richtwert: ca. {phase.minuten} Min.</span>}
               </div>
             </div>
-            {!stand?.fragen ? (
+            {!stand?.folien?.length && !(stand?.vorlage && stand?.fragen?.length) ? (
               <Button onClick={planen} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Diese Phase planen</Button>
-            ) : !stand.folien?.length && !stand.antworten ? (
-              <PhasenFragen key={aktiv} stand={stand} onBauen={bauen} baut={laedt} />
             ) : (
-              <PhasenEditor key={aktiv} stand={stand} kopf={kopf} onFolien={(folien) => setzeStand({ folien })} onEinfuegen={einfuegen}
-                onFertig={fertig} onNeu={planen} letztePhase={aktiv === phasen.length - 1} />
+              <>
+                {stand.vorlage && !stand.fragen?.length && stand.folien?.length > 0 && (
+                  <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+                    <span>Das ist die <b>Vorlage</b> der Methode. Soll ich sie mit den Inhalten dieser Stunde füllen?</span>
+                    <Button size="sm" className="ml-auto" onClick={vorschlaege} disabled={laedt}>{laedt ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />} Mit Inhalten füllen</Button>
+                  </div>
+                )}
+                {stand.vorlage && stand.fragen?.length > 0 && <PhasenFragen key={aktiv} stand={stand} onBauen={bauen} baut={laedt} />}
+                {stand.folien?.length > 0 && (
+                  <PhasenEditor key={aktiv} stand={stand} kopf={kopf} onFolien={(folien) => setzeStand({ folien })} onEinfuegen={einfuegen}
+                    onFertig={fertig} onNeu={planen} letztePhase={aktiv === phasen.length - 1} />
+                )}
+              </>
             )}
           </>
         )}
