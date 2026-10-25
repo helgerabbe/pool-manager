@@ -5,6 +5,11 @@ const K = ['induktiv_offen', 'induktiv_gelenkt', 'induktiv_gestuft', 'induktiv_k
 const v = (...werte) => Object.fromEntries(K.map((k, i) => [k, werte[i]]));
 
 export const VARIANTEN_PASSUNG_5 = {
+  'Strukturiertes Textmapping': v(
+    [2, 'Text selbst erkunden, Kategorien gemeinsam finden.'], [1, 'Vorgegebene Kategorien lenken das Lesen.'], [2, 'Kategorie für Kategorie erarbeiten.'], [3, 'Kurzform mit wenigen Kategorien.'],
+    [3, 'Eingeführte Kategorien anwenden.'], [2, 'Am Mustertext vormachen, dann selbst mappen.'], [1, 'Material gezielt erschließen.'], [3, 'Nur bei sehr kurzem Text.'],
+    [2, 'Fallmaterial ordnen.'], [3, 'Map als Teilprodukt.'], [1, 'Quellen kriteriengeleitet auswerten.'], [2, 'Positionen im Text kartieren.'],
+    [3, 'Für kurze Wiederholung meist zu lang.'], [2, 'Analysekategorien der Einheit an neuem Text sichern.']),
   'Modellbau und Modellkritik': v(
     [2, 'Eigenes Modell als Erklärungsversuch.'], [2, 'Modell gelenkt prüfen.'], [3, 'Bauschritte als Stufen.'], [4, 'Braucht Zeit.'],
     [3, 'Eingeführtes Modell nachbauen.'], [3, 'Mustermodell als Beispiel.'], [3, 'Modell aus Material entwickeln.'], [5, 'Zu aufwendig.'],

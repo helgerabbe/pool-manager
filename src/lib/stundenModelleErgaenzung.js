@@ -3,6 +3,18 @@
 const e = (passung, phasen, hinweis) => ({ passung, phasen, hinweis });
 
 export const EINORDNUNG_ERGAENZUNG = {
+  'Strukturiertes Textmapping': {
+    induktiv: e(2, { 'Beobachten & erkunden': 'kern', 'Vermutungen bilden': 'teil' }, 'Der Text wird gezielt erkundet, aus der Map entstehen Vermutungen.'),
+    deduktiv: e(2, { 'Angeleitetes Anwenden': 'kern' }, 'Eingeführte Kategorien (z. B. Erzählelemente) an einem Text anwenden.'),
+    uebung_kurz: e(3, { 'Individuell üben': 'teil' }, 'Als Kurzform mit zwei bis drei Kategorien direkt im Text.'),
+    uebung_mittel: e(2, { 'Individuelle Arbeitsphase': 'kern' }, 'Kriteriengeleitetes Lesen an einem neuen Text üben.'),
+    uebung_lang: e(3, { 'Längere Übungszeit': 'teil' }, 'Eine Station im Lernzirkel mit eigenem Text.'),
+    wiederholung: e(3, { 'Vorwissen reaktivieren': 'teil' }, 'Bekannte Analysekategorien an einem kurzen Text wiederholen.'),
+    vertieft: e(2, { 'Problem erschließen': 'kern' }, 'Erschließt Material oder Quellen vor der eigentlichen Arbeit.'),
+    diagnose_kurz: e(4, {}, 'Für eine Kurzdiagnose zu zeitintensiv.'),
+    diagnose_mittel: e(2, { 'Lernstand erheben': 'kern' }, 'Die Map zeigt, ob die Kategorien sicher erkannt werden.'),
+    diagnose_lang: e(3, { 'Nachweise sammeln': 'teil' }, 'Maps zu Beginn und am Ende vergleichen.'),
+  },
   'Concept Mapping': {
     induktiv: e(2, { 'Regel formulieren': 'teil', 'Rückblick Erkenntnisweg': 'kern' }, 'Macht die gefundenen Zusammenhänge sichtbar und hält den Erkenntnisweg fest.'),
     deduktiv: e(2, { 'Verstehen & klären': 'kern', 'Ergebnis sichern': 'teil' }, 'Ordnet die eingeführten Begriffe und prüft das Verständnis der Beziehungen.'),

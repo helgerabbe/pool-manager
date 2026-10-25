@@ -51,6 +51,7 @@ const Z = {
   'Tafelbild gemeinsam entwickeln': 'erarbeitung erklaeren',
   'Merksatz formulieren': 'erarbeitung abschluss',
   'Concept Mapping': 'erarbeitung ueben',
+  'Strukturiertes Textmapping': 'erarbeitung ueben',
   'Strukturlegetechnik': 'erarbeitung ueben',
   'Objekt-Analyse': 'erarbeitung',
   'Mystery / Rätsel': 'erarbeitung austausch',

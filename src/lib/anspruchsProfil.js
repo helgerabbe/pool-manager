@@ -140,6 +140,11 @@ export const PROFIL_PROBE = {
     jahrgaenge: jg('vereinfachen', 'vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
     fazit: 'Ruhige Einzelarbeit, die mit Übung immer besser wird. Ohne klare Regeln markieren Schüler den halben Text. Lange eine Farbe, eine Leitfrage und eine Höchstzahl an Markierungen vorgeben.',
   },
+  'Strukturiertes Textmapping': {
+    werte: { komplexitaet: 3, einuebung: 3, lerngruppe: 2, lehrkraft: 2, vorbereitung: 3, material: 2, steuerung: 2 },
+    jahrgaenge: jg('vereinfachen', 'vereinfachen', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja', 'ja'),
+    fazit: 'Gut steuerbar durch klare Kategorien und Farben. In den unteren Jahrgängen mit nur zwei bis drei Kategorien und einer vorbereiteten Textlandkarte beginnen. Die Auswertungsfrage vorher nennen, damit die Map nicht zum Selbstzweck wird.',
+  },
   'Concept Mapping': {
     werte: { komplexitaet: 5, einuebung: 4, lerngruppe: 2, lehrkraft: 3, vorbereitung: 2, material: 2, steuerung: 3 },
     jahrgaenge: jg('nein', 'nein', 'warnung', 'warnung', 'warnung', 'vereinfachen', 'ja', 'ja', 'ja'),

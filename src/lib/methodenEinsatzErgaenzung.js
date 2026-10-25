@@ -12,6 +12,7 @@ export const EINSATZ_ERGAENZUNG = {
   'Fragend-entwickelndes Unterrichtsgespräch': { stufe: 1, begruendung: 'Ohne Material und Einführung jederzeit möglich.' },
   'Insert-Methode': { stufe: 2, begruendung: 'Die Markierungszeichen sitzen nach wenigen Durchgängen und werden zur festen Lesestrategie.' },
   'Textknacken / Markieren': { stufe: 2, begruendung: 'Wiederkehrend geübt wird die Lesestrategie zur Routine, idealerweise fächerübergreifend gleich.' },
+  'Strukturiertes Textmapping': { stufe: 3, begruendung: 'Kategorien und Legende müssen vorbereitet werden; mit jedem Einsatz markieren die Schüler gezielter.' },
   'Concept Mapping': { stufe: 3, begruendung: 'Braucht anfangs Anleitung, lässt sich aber allein im eigenen Unterricht aufbauen.' },
   'Begriffe zuordnen': { stufe: 1, begruendung: 'Digital schnell erstellt und von Schülern sofort verstanden.' },
   'Digitaler Kurztest': { stufe: 2, begruendung: 'Als regelmäßiger Stundenabschluss ein starkes Ritual; einmal erstellte Tests sind wiederverwendbar.' },
