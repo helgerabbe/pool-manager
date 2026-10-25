@@ -83,7 +83,8 @@ export default function StundenplanerVorschau() {
   const { stundeId, status, laden, speichern } = usePlanerSpeichern(einheit);
   const stand = () => ({ phase, minuten, pause, v, punkte, entwurf });
   // Die Stunde heißt nach ihrem Thema, nicht nach dem Arbeitsstand („Grobentwurf“).
-  const titel = v.anker.thema || v.anker.abschnitte?.[0]?.titel || (entwurf?.name !== 'Grobentwurf' && entwurf?.name) || 'Neue Stunde';
+  // Vorrang: der gewählte Abschnitt aus der Struktur (kurzer Titel); das Thema ist oft ein ganzer Satz.
+  const titel = v.anker.abschnitte?.[0]?.titel || (v.anker.thema?.length <= 60 && v.anker.thema) || (entwurf?.name !== 'Grobentwurf' && entwurf?.name) || 'Neue Stunde';
   React.useEffect(() => {
     laden().then((s) => { if (!s) return; setPhase(s.phase || 'grob'); setMinuten(s.minuten ?? 45); setPause(!!s.pause); setV(s.v || START); setPunkte(s.punkte || []); setEntwurf(s.entwurf || null); });
   }, [laden]);
