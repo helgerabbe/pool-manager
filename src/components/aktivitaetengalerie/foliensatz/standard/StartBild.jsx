@@ -13,7 +13,7 @@ export default function StartBild({ ansicht }) {
   const lehrer = ansicht === 'lehrer';
   const schalter = (an, set, l) => <button onClick={() => set(!an)} className={`rounded-full border px-1.5 text-[8px] leading-4 ${an ? 'bg-[#DCEBE1] text-[#24553A]' : 'bg-white text-[#6A7181]'}`}>{l}: {an ? 'an' : 'aus'}</button>;
   return (
-    <div className="relative min-h-[170px] w-full space-y-1 text-[10px]">
+    <div className="min-h-[170px] w-full space-y-1 text-[10px] [&>*]:relative [&>*]:z-10">
       {lehrer && <div className="flex gap-1">{schalter(ziel, setZiel, 'Stundenziel')}{schalter(ablauf, setAblauf, 'Ablauf')}</div>}
       <p className="text-[#6A7181]">Erdkunde · Einheit: Stadt und Land</p>
       <p className="text-base font-bold">Warum ziehen Menschen in die Stadt?</p>
@@ -23,7 +23,7 @@ export default function StartBild({ ansicht }) {
           <ol className="ml-4 list-decimal">{ABLAUF.map((a) => <li key={a}>{a}</li>)}</ol>
         </div>
       )}
-      <img src={BILD} alt="Jemand packt einen Umzugskarton" className="absolute -bottom-5 -right-5 h-28 w-48 object-cover"
+      <img src={BILD} alt="Jemand packt einen Umzugskarton" className="!absolute !z-0 -bottom-[3%] -right-[3%] h-[55%] w-[42%] object-cover"
         style={{ WebkitMaskImage: ECKE, maskImage: ECKE }} />
     </div>
   );

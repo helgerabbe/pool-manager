@@ -11,3 +11,7 @@ export const FOLIEN_EINSATZ = {
   einzelphase: 'digital', arbeitsphase_analog: 'analog', klassenmodus: 'analog', lueckentext: 'beide', sammlung: 'beide', abstimmung: 'digital', lernort: 'digital', positionierung: 'beide', sammlung_procontra: 'beide', einschub: 'beide', irritieren: 'beide', reflexion: 'digital',
   notizen: 'beide', satzanfaenge: 'beide',
 };
+
+// Scrollbarkeit (2026-10-25): darf die Folie nach unten über den Bildschirm hinaus wachsen? Nicht aufgeführt = nicht scrollbar.
+export const FOLIEN_SCROLLBAR = ['partner', 'sammlung', 'sammlung_procontra', 'abstimmung', 'reflexion', 'lernort', 'lueckentext', 'notizen', 'satzanfaenge'];
+export const istScrollbar = (key) => FOLIEN_SCROLLBAR.includes(key);
