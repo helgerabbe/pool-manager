@@ -4,6 +4,7 @@ import { format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { CalendarDays, ChevronRight, PlaySquare, ClipboardList } from 'lucide-react';
 import StundeLoeschenButton from '@/components/unterrichtsstunden/StundeLoeschenButton';
+import StundeThemaAufklapp from '@/components/unterricht/StundeThemaAufklapp';
 import VeroeffentlichenButton from '@/components/bibliothek/VeroeffentlichenButton';
 
 /** Die Unterrichtsstunden EINER Einheit. */
@@ -15,7 +16,8 @@ export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
   return (
     <div className="divide-y rounded-lg border bg-card">
       {stunden.map((s) => (
-        <div key={s.id} className="flex items-center gap-1 pr-2 hover:bg-muted/20 transition-colors">
+        <div key={s.id}>
+        <div className="flex items-center gap-1 pr-2 hover:bg-muted/20 transition-colors">
           <Link to={s.planer_stand && s.planer_stand.phase !== 'fertig' ? `/unterrichtseinheit/${s.unterrichtseinheit_id}/stundenplaner?stunde=${s.id}` : `/unterrichtsstunde/${s.id}/editor`} className="flex items-center gap-3 px-3 py-2 flex-1 min-w-0">
             <PlaySquare className="w-4 h-4 text-accent shrink-0" />
             <div className="min-w-0 flex-1">
@@ -40,6 +42,8 @@ export default function FachStundenListe({ stunden = [], unterrichtseinheit }) {
           )}
           <VeroeffentlichenButton art="stunde" quelle={s} unterrichtseinheit={unterrichtseinheit} />
           <StundeLoeschenButton stunde={s} />
+        </div>
+        <StundeThemaAufklapp thema={s.planer_stand?.v?.anker?.thema || s.stundenziel} />
         </div>
       ))}
     </div>
