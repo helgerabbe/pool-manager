@@ -1,16 +1,25 @@
 import React from 'react';
 import { Search } from 'lucide-react';
 
-/** Standardfolie „Impuls setzen (Material/Quelle)“ an der Tafel: Gegenstand + Untersuchungsimpuls. */
-export default function ImpulsSetzenTafel() {
+const BEISPIEL_BILD = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=600';
+
+/** Standardfolie „Impuls setzen (Material/Quelle)“ an der Tafel: Gegenstand, optionales Bild, Untersuchungsimpuls. */
+export default function ImpulsSetzenTafel({ bild = BEISPIEL_BILD }) {
   return (
-    <div className="absolute inset-0 flex flex-col justify-center gap-[4%] px-[8%] pr-[28%]">
-      <p className="text-[clamp(10px,1.4vw,16px)] text-[#6A7181]">Wir schauen uns jetzt etwas genauer an:</p>
-      <p className="font-display text-[clamp(14px,2.4vw,28px)] font-bold leading-tight">„Hard Land“ von Benedict Wells</p>
-      <div className="flex gap-2 rounded-xl bg-[#E3F1EF] p-[3%] text-[clamp(9px,1.2vw,14px)] leading-snug text-[#24504A]">
-        <Search className="mt-0.5 h-4 w-4 shrink-0" />
-        <p>Nimm das Buch in die Hand. Schau dir Vorder- und Rückseite an, blättere es durch und lies die ersten Seiten. Lass es auf dich wirken.</p>
+    <div className="absolute inset-0 flex items-center gap-[5%] px-[7%] pt-[6%]">
+      <div className="flex min-w-0 flex-1 flex-col gap-[0.6em] text-[clamp(8px,1.1vw,14px)]">
+        <p className="whitespace-nowrap text-[#6A7181]">Wir schauen uns jetzt genauer an:</p>
+        <p className="font-display text-[2em] font-bold leading-tight">„Hard Land“<span className="block text-[0.6em] font-semibold text-[#6A7181]">von Benedict Wells</span></p>
+        <div className="flex gap-2 rounded-xl bg-[#E3F1EF] p-[0.8em] leading-snug text-[#24504A]">
+          <Search className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>Nimm das Buch in die Hand. Schau dir Vorder- und Rückseite an, blättere es durch und lies die ersten Seiten. Lass es auf dich wirken.</p>
+        </div>
       </div>
+      {bild && (
+        <div className="w-[32%] shrink-0 rotate-2 bg-white p-[1.2%] shadow-md">
+          <img src={bild} alt="" className="aspect-[4/5] w-full object-cover" />
+        </div>
+      )}
     </div>
   );
 }
