@@ -16,7 +16,7 @@ import StatusQuoButton from './foliensatz/StatusQuoButton';
 import StandardFolienReiter from './foliensatz/StandardFolienReiter';
 import UebungsformateReiter from './foliensatz/UebungsformateReiter';
 
-const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['standard', '2. Standardfolien'], ['formate', '3. Übungsformate'], ['gestaltung', '4. Layoutvorlagen'], ['tutorial', '5. Lehrer-Tutorial']];
+const SCHRITTE = [['funktion', '1. Foliensatz der Methode'], ['standard', '2. Standardfolien'], ['formate', '3. Aufgabenformate'], ['gestaltung', '4. Layoutvorlagen'], ['tutorial', '5. Lehrer-Tutorial']];
 
 /** Grafische Vorlage: Der Grafikassistent baut den Foliensatz Folie für Folie, hier wird er durchgeblättert. */
 export default function GrafikVorlageDialog({ open, onOpenChange, methode, werte, setze, onGespeichert }) {
