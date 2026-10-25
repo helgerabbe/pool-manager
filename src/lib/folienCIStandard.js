@@ -13,7 +13,7 @@ export const CI_STANDARDFOLIEN = {
     lehrer: 'Gleiche Folie an der Tafel. Auf dem Lehrergerät zwei Schalter: „Stundenziel zeigen“ und „Ablauf zeigen“.',
   },
   ankuendigung: {
-    name: 'Inhaltliche Ankündigung', folientyp: 'organisation',
+    name: 'Phaseneinleitung', folientyp: 'organisation',
     schueler: 'Kündigt an, was in der nächsten Unterrichtsphase inhaltlich passiert. Große Überschrift, darunter ein freier Satz, der IMMER ein Signalwort für den nächsten Schritt enthält („jetzt“ oder „als Nächstes“), z. B. „Wir wollen jetzt herausfinden, …“ oder „Als Nächstes wollen wir untersuchen, …“ – keine Aufgabenbox, kein Sozialform-Symbol, kein Timer. Optional ein Bildimpuls: immer fotorealistisch (nie Comic), im unteren rechten Bereich im Hintergrund, leicht blass, weich auslaufend und über dem Folienart-Kreis liegend.',
     lehrer: 'Gleiche Folie an der Tafel. Die Lehrkraft legt vorher fest: Überschrift, Fokus-Satz und ob es einen Bildimpuls gibt (mit Motiv).',
   },
