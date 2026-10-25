@@ -24,12 +24,20 @@ import LernortBild from './standard/LernortBild';
 import ReflexionBild from './standard/ReflexionBild';
 import StartBild from './standard/StartBild';
 import AnkuendigungBild from './standard/AnkuendigungBild';
+import PositionierungBild from './standard/PositionierungBild';
+import ProContraBild from './standard/ProContraBild';
+import EinschubBild from './standard/EinschubBild';
+import IrritierenBild from './standard/IrritierenBild';
 
 const karte = 'rounded-lg border bg-white p-1.5 text-[10px]';
 
 /** Skizze einer Standardfolie, je Ansicht (schueler | lehrer). */
 export default function CiStandardBild({ art, ansicht }) {
   if (art === 'ankuendigung') return <AnkuendigungBild />;
+  if (art === 'positionierung') return <PositionierungBild ansicht={ansicht} />;
+  if (art === 'sammlung_procontra') return <ProContraBild ansicht={ansicht} />;
+  if (art === 'einschub') return <EinschubBild ansicht={ansicht} />;
+  if (art === 'irritieren') return <IrritierenBild ansicht={ansicht} />;
   if (art === 'begruessung') return <BegruessungBild ansicht={ansicht} />;
   if (art === 'start') return <StartBild ansicht={ansicht} />;
   if (art === 'reflexion') return <ReflexionBild ansicht={ansicht} />;

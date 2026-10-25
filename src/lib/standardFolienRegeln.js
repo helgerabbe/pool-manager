@@ -91,6 +91,30 @@ export const CI_REGELN = {
     titel: ['Wie stehst du dazu?', 'Und, wie stimmst du ab?'],
     klaeren: ['Art: gewichten, bewerten oder auswählen', 'Abstufung der Abstimmung: 2, 3 oder 5 Stufen'],
   },
+  positionierung: {
+    gestaltung: ['Tablet: Aussage oben, große Skalenknöpfe', 'Tafel: anonyme Balken je Stufe, Aufdecken durch die Lehrkraft', 'Variante Vorher-Nachher: Balkenpaare nebeneinander'],
+    inhalt: ['Die Aussage steht im genauen Wortlaut da', 'Kein Lehrerurteil, keine Wertung des Ergebnisses'],
+    titel: ['Wie stehst du dazu?', 'Und jetzt?'],
+    klaeren: ['Aussage', 'Stufen: 2, 3 oder 5', 'Erste Positionierung oder Vorher-Nachher?'],
+  },
+  sammlung_procontra: {
+    gestaltung: ['Tafel: Leitfrage, darunter Spalten, die Lehrkraft schreibt live mit', 'Unterform: zwei Spalten oder vier abgestufte Spalten'],
+    inhalt: ['Leitfrage als direkte Frage an die Klasse', 'Einträge kurz, nicht werten'],
+    titel: ['Was spricht dafür, was dagegen?'],
+    klaeren: ['Leitfrage', 'Zwei oder vier Spalten?'],
+  },
+  einschub: {
+    gestaltung: ['Gestrichelter Rahmen „Hier läuft der Unterricht“', 'Darunter klein der spätere Rückbezug'],
+    inhalt: ['Kein Inhalt, nur Platzhalter'],
+    titel: ['Hier läuft der Unterricht'],
+    klaeren: ['Worauf wird am Ende zurückgegriffen?'],
+  },
+  irritieren: {
+    gestaltung: ['Nur der Impuls, groß und zentriert', 'Optional verblassendes Foto (Streifen unten oder Ecke rechts unten)'],
+    inhalt: ['Ein Satz: These, Frage oder Widerspruch, höchstens 15 Wörter'],
+    titel: ['Kein Titel'],
+    klaeren: ['Wortlaut des Impulses', 'Gibt es ein Foto, mit welchem Motiv?'],
+  },
   lernort: {
     gestaltung: ['Tablet: ein Satz und große Antippkarten der Orte', 'Lehrergerät: Liste nach Orten, nicht an der Tafel'],
     inhalt: ['Fester Satz, nur die Orte der Schule sind austauschbar'],

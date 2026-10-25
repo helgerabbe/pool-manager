@@ -77,6 +77,26 @@ export const CI_STANDARDFOLIEN = {
     schueler: 'Optional im Anschluss an eine Sammlung: Die gesammelten Punkte erscheinen als Karten. Drei Arten: Gewichten (drei Stimmen verteilen), Bewerten (je Punkt stimmt / teils / stimmt nicht), Auswählen (eine Stimme). Ordnen und Merksatz formulieren gehen nicht per Abstimmung.',
     lehrer: 'Tafel zeigt anonyme Balken je Punkt, die Lehrkraft deckt auf. Je mehr Stimmen, desto höher steht der Punkt.',
   },
+  positionierung: {
+    name: 'Positionierung / Stimmungsbild', folientyp: 'reflexion',
+    schueler: 'Oben klein die Aussage (z. B. eine These), darunter große Antwortknöpfe auf einer Skala: Zustimmung · Eher Zustimmung · Unentschieden · Eher Ablehnung · Ablehnung (auch 2 oder 3 Stufen möglich). Anonym, die eigene Wahl bleibt markiert. Das Ergebnis wird gespeichert. Variante „Vorher-Nachher“: erneute Positionierung, danach sieht der Schüler seine erste und seine jetzige Position nebeneinander.',
+    lehrer: 'Tafel: Aussage oben, darunter anonyme Balken je Stufe, die Lehrkraft deckt auf (nicht sofort, damit niemand die Mehrheit abwartet). Variante „Vorher-Nachher“: beide Ergebnisse als Balkenpaare nebeneinander (vorher blass, jetzt kräftig). Kein Lehrerurteil auf der Folie.',
+  },
+  sammlung_procontra: {
+    name: 'Sammlung Pro / Contra', folientyp: 'sicherung',
+    schueler: 'Wie die Sammlung: eigene Notizen und Meldeknopf; die Sammlung selbst steht an der Tafel.',
+    lehrer: 'Lehrersicherung in Spalten: Leitfrage oben, darunter „Spricht dafür“ und „Spricht dagegen“. Die Lehrkraft tippt live mit und ordnet jeden Eintrag einer Spalte zu. Unterform „abgestuft“: vier Spalten (Spricht dafür · Eher dafür · Eher dagegen · Spricht dagegen). Einträge lassen sich nachträglich verschieben.',
+  },
+  einschub: {
+    name: 'Platzhalter: Unterricht', folientyp: 'organisation',
+    schueler: 'Keine eigene Ansicht: Hier laufen die Folien des eigentlichen Unterrichts.',
+    lehrer: 'Platzhalter in Methoden, die den Unterricht einrahmen (z. B. Einstieg und Rückbezug am Stundenende). Gestrichelter Rahmen „Hier läuft der Unterricht“, darunter klein, worauf am Ende zurückgegriffen wird (z. B. „Danach: zweite Positionierung“). Der Unterrichtsassistent setzt hier die Unterrichtsfolien ein.',
+  },
+  irritieren: {
+    name: 'Irritieren und neugierig machen', folientyp: 'inhalt',
+    schueler: 'Der Impuls allein: eine These, Frage oder ein Widerspruch groß in der Mitte, sonst nichts (kein Titel, keine Aufgabe, kein Symbol, kein Timer). Optional ein stimmungsvolles Foto, weich in den Hintergrund auslaufend.',
+    lehrer: 'Gleiche Folie an der Tafel, kommentarlos gezeigt. Lehrergerät: Hinweis „Stille aushalten“. Dieselbe Folie kann später unverändert wiederkehren (Rückbezug).',
+  },
   lernort: {
     name: 'Lernort frei wählen', folientyp: 'organisation',
     schueler: 'Erscheint nur, wenn die Lehrkraft „Lernort frei“ eingeschaltet hat (bei Einzel-, Partner- und Gruppenarbeit). Satz „Du darfst dir einen Lernort suchen. Wo arbeitest du?“ und große Antippkarten: Klassenraum, Gruppenraum, Flur vorne, Flur hinten, Mensa, Kabine, Hof, Sonstiges (kurze Eingabe). Bei Partner/Gruppe genügt eine Angabe für alle. Ändern jederzeit über das Orts-Symbol oben rechts.',
