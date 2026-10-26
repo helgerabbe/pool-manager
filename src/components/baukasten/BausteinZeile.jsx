@@ -8,7 +8,7 @@ import FolieHinzuButton from './FolieHinzuButton';
 import FolienStreifen from './FolienStreifen';
 
 /** Eine Zeile der Zeitleiste: Kopf (Art, Titel, Richtwert) + horizontaler Folienstreifen. */
-export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien, onBearbeiten }) {
+export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien, onBearbeiten, onTitel }) {
   const methode = methodeAnzeige(b, useMethodenNamen());
   const [ueber, setUeber] = React.useState(false);
   const ablegen = (e) => {
@@ -26,7 +26,13 @@ export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfern
         <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">{nr}</span>
         {methode !== '' && <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${ARTEN.methode.farbe}`}>Methode</span>}
         <div className="min-w-0 flex-1">
-          <p className="truncate font-display font-bold">{b.titel || 'Ohne Titel'}
+          <p className="flex min-w-0 items-baseline truncate font-display font-bold">
+            {vorschlag || !onTitel ? (b.titel || 'Ohne Titel') : (
+              <input defaultValue={b.titel || ''} key={b.titel} placeholder="Ohne Titel" size={Math.max((b.titel || '').length, 8)}
+                onBlur={(e) => e.target.value.trim() !== (b.titel || '') && onTitel(e.target.value.trim())}
+                onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                className="min-w-0 max-w-full rounded bg-transparent px-1 -mx-1 outline-none hover:bg-muted focus:bg-muted" />
+            )}
             {methode ? <span className="font-normal text-muted-foreground"> · {methode}</span> : methode === null ? <span className="font-normal italic text-accent"> · Methode noch offen</span> : ''}</p>
           {b.beschreibung && <p className="truncate text-xs text-muted-foreground">{b.beschreibung}</p>}
         </div>
