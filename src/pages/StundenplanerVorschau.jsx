@@ -100,7 +100,7 @@ export default function StundenplanerVorschau() {
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-4xl space-y-6 p-6">
-        <button onClick={() => navigate(`/unterrichtseinheit/${id}/struktur`)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
+        <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Zurück</button>
         <div>
           <h1 className="font-display text-2xl font-bold">Neue Stunde planen</h1>
           {einheit && <p className="text-sm text-muted-foreground">{einheit.titel} · {einheit.fach} · Jg. {einheit.jahrgangsstufe}</p>}
