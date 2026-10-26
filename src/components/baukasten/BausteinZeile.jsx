@@ -6,9 +6,10 @@ import { STANDARD_FOLIEN } from '@/lib/standardFolienBibliothek';
 import { alsFolie } from './wahl/StandardfolieWahl';
 import FolieHinzuButton from './FolieHinzuButton';
 import FolienStreifen from './FolienStreifen';
+import ZeitPopover, { zeitText } from './ZeitPopover';
 
 /** Eine Zeile der Zeitleiste: Kopf (Art, Titel, Richtwert) + horizontaler Folienstreifen. */
-export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien, onBearbeiten, onTitel }) {
+export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien, onBearbeiten, onTitel, onZeit }) {
   const methode = methodeAnzeige(b, useMethodenNamen());
   const [ueber, setUeber] = React.useState(false);
   const ablegen = (e) => {
@@ -37,7 +38,9 @@ export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfern
           {b.beschreibung && <p className="truncate text-xs text-muted-foreground">{b.beschreibung}</p>}
         </div>
         <span className="text-[11px] text-muted-foreground">{mitGeraeten(b) ? 'Mit Geräten' : 'Nur Tafel'}</span>
-        {b.minuten > 0 && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />ca. {b.minuten}′</span>}
+        {vorschlag || !onZeit
+          ? b.minuten > 0 && <span className="flex items-center gap-1 text-xs text-muted-foreground"><Clock className="h-3 w-3" />{zeitText(b)}</span>
+          : <ZeitPopover b={b} onZeit={onZeit} />}
         {vorschlag ? (
           <>
             <button onClick={() => onUebernehmen(true)} className="flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs text-primary-foreground"><Check className="h-3 w-3" /> Übernehmen</button>

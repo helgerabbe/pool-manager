@@ -33,7 +33,7 @@ export default function AblaufZeitleiste({ bausteine, kopf, onReihenfolge, onOef
                   <div ref={d.innerRef} {...d.draggableProps} className="space-y-2">
                     <PhasenKopf phase={b.phase} neu={!!b.phase} onPhase={(ph) => onPhase(b, ph)} />
                     <BausteinZeile b={b} nr={i + 1} kopf={kopf} griff={d.dragHandleProps} onOeffnen={(n) => onOeffnen(b.id, n)} onEntfernen={() => onEntfernen(b.id)}
-                      onFolieHinzu={(f) => onFolieHinzu(b, f)} onFolien={(l) => onFolien(b, l)} onBearbeiten={(n) => onBearbeiten(b, n)} onTitel={(titel) => onTitel(b, titel)} />
+                      onFolieHinzu={(f) => onFolieHinzu(b, f)} onFolien={(l) => onFolien(b, l)} onBearbeiten={(n) => onBearbeiten(b, n)} onTitel={(titel) => onTitel(b, titel)} onZeit={(z) => onTitel(b, null, z)} />
                   </div>
                 )}
               </Draggable>

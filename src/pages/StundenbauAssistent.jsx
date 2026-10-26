@@ -77,7 +77,7 @@ export default function StundenbauAssistent() {
                 onOeffnen={(bid, folie) => setDetail({ id: bid, folie })} onEntfernen={(bid) => aendern({ bausteine: bausteine.filter((b) => b.id !== bid) })}
                 onFolieHinzu={(b, f) => setzeBaustein({ ...b, folien: [...b.folien, f] })}
                 onFolien={(b, folien) => setzeBaustein({ ...b, folien })}
-                onBearbeiten={(b, i) => setDesign({ bid: b.id, i })} onPhase={(b, phase) => setzeBaustein({ ...b, phase })} onTitel={(b, titel) => setzeBaustein({ ...b, titel })} />
+                onBearbeiten={(b, i) => setDesign({ bid: b.id, i })} onPhase={(b, phase) => setzeBaustein({ ...b, phase })} onTitel={(b, titel, zeit) => setzeBaustein(zeit ? { ...b, ...zeit } : { ...b, titel })} />
               {stunde.planer_stand?.entwurf?.phasen?.length > 0 && (
                 <button onClick={() => window.confirm('Ablauf und Fundament aus der Planung neu übernehmen? Der jetzige Ablauf wird ersetzt.') && aendern(ueberfuehren(stunde))}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><RefreshCw className="h-3 w-3" /> Aus der Planung neu übernehmen</button>
