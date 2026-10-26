@@ -61,6 +61,9 @@ export default function FachEinheitKarte({ unterrichtseinheit, stunden = [], blo
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" disabled={stundeAnlegen.isPending} onClick={() => stundeAnlegen.mutate('Neue Stunde', { onSuccess: (s) => navigate(`/unterrichtsstunde/${s.id}/stundenbau`) })} className="gap-2">
+            <Plus className="w-4 h-4" /> Neue Stunde planen
+          </Button>
           <EinheitProfilButton unterrichtseinheit={unterrichtseinheit} lerngruppenProfil={lerngruppenProfil} />
           <StrukturStatusButton unterrichtseinheitId={unterrichtseinheit.id} />
           <StundeAusVerlaufButton unterrichtseinheitId={unterrichtseinheit.id} />

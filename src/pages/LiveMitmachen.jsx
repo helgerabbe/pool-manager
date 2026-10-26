@@ -6,6 +6,7 @@ import { useLiveRaum } from '@/hooks/useLiveRaum';
 import { melden } from '@/lib/liveRaum';
 import LiveCodeEingabe from '@/components/praesentation/LiveCodeEingabe';
 import NotizHeft from '@/components/aktivitaetengalerie/foliensatz/vorlagen/NotizHeft';
+import FolieAnzeige from '@/components/aktivitaetengalerie/foliensatz/FolieAnzeige';
 
 /** Schülergerät im Präsentationsmodus: Code eingeben, dann folgt das Tablet der Tafel. */
 export default function LiveMitmachen() {

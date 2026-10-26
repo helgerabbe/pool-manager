@@ -1,7 +1,7 @@
 {
   "name": "LiveRaum",
   "type": "object",
-  "description": "PR\u00c4SENTATIONSMODUS (2026-10-25): Ein Live-Raum einer laufenden Unterrichtsstunde. Die Lehrkraft startet ihn, an der Tafel steht der sechsstellige Raum-Code, die Sch\u00fcler treten mit dem Code bei. 'schritte' ist ein Schnappschuss des Ablaufs beim Start (Sch\u00fcler brauchen so keinen Zugriff auf die Planung). 'aktueller_schritt' steuert Tafel und Tablets gleichzeitig (Echtzeit \u00fcber subscribe).",
+  "description": "PR\u00c4SENTATIONSMODUS (2026-10-25): Ein Live-Raum einer laufenden Unterrichtsstunde. Die Lehrkraft startet ihn, an der Tafel steht der sechsstellige Raum-Code, die Sch\u00fcler treten mit dem Code bei. 'schritte' ist ein Schnappschuss des Ablaufs beim Start (Sch\u00fcler brauchen so keinen Zugriff auf die Planung). Seit 2026-10-26 tr\u00e4gt jeder Schritt aus dem Stundenbaukasten die gespeicherte Folie ('folie') und wird genau so abgespielt. 'aktueller_schritt' steuert Tafel und Tablets gleichzeitig (Echtzeit \u00fcber subscribe).",
   "properties": {
     "code": {
       "type": "string"
@@ -20,12 +20,16 @@
       "default": [],
       "items": {
         "type": "object",
+        "additionalProperties": true,
         "properties": {
           "titel": {
             "type": "string"
           },
           "minuten": {
-            "type": "number"
+            "type": [
+              "number",
+              "null"
+            ]
           },
           "tafel": {
             "type": "string"
@@ -38,6 +42,14 @@
           },
           "methode": {
             "type": "string"
+          },
+          "folie": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "kopf": {
+            "type": "object",
+            "additionalProperties": true
           }
         }
       }
