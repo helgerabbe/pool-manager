@@ -34,7 +34,9 @@ export default function LiveMitmachen() {
       </div>
       <div className="relative flex-1 flex flex-col items-center justify-center p-6 text-center gap-4">
         {nr >= 0 && <NotizHeft gross />}
-        {nr < 0 ? <p className="text-lg">Du bist dabei. Gleich geht es los …</p> : (
+        {nr < 0 ? <p className="text-lg">Du bist dabei. Gleich geht es los …</p> : schritt.folie && (schritt.folie.vorlage || schritt.folie.schueler?.length) ? (
+          <div className="w-full max-w-4xl"><FolieAnzeige folie={schritt.folie} ansicht="schueler" kopf={schritt.kopf} /></div>
+        ) : (
           <>
             <p className="text-xs uppercase tracking-wider text-accent font-semibold">{schritt.titel}</p>
             {schritt.tablet.startsWith('Lehrkraft erklärt') ? <Ear className="w-12 h-12 text-primary" /> : null}

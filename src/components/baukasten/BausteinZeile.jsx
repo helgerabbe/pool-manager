@@ -8,7 +8,7 @@ import FolieHinzuButton from './FolieHinzuButton';
 import FolienStreifen from './FolienStreifen';
 
 /** Eine Zeile der Zeitleiste: Kopf (Art, Titel, Richtwert) + horizontaler Folienstreifen. */
-export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien }) {
+export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfernen, vorschlag, onUebernehmen, onFolieHinzu, onFolien, onBearbeiten }) {
   const methode = methodeAnzeige(b, useMethodenNamen());
   const [ueber, setUeber] = React.useState(false);
   const ablegen = (e) => {
@@ -45,7 +45,7 @@ export default function BausteinZeile({ b, nr, kopf, griff, onOeffnen, onEntfern
           </>
         )}
       </div>
-      <FolienStreifen folien={b.folien} kopf={kopf} onFolie={vorschlag ? () => {} : onOeffnen} dropId={vorschlag ? null : `folien:${b.id}`} onFolien={vorschlag ? null : onFolien} />
+      <FolienStreifen folien={b.folien} kopf={kopf} onFolie={vorschlag ? () => {} : onOeffnen} dropId={vorschlag ? null : `folien:${b.id}`} onFolien={vorschlag ? null : onFolien} onBearbeiten={vorschlag ? null : onBearbeiten} />
     </div>
   );
 }

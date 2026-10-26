@@ -14,6 +14,9 @@ import AssistentLeiste from '@/components/baukasten/AssistentLeiste';
 import VorschlagsBereich from '@/components/baukasten/VorschlagsBereich';
 import BausteinDetail from '@/components/baukasten/BausteinDetail';
 import AltinhalteHinweis from '@/components/baukasten/AltinhalteHinweis';
+import FolienDesignerDialog from '@/components/baukasten/FolienDesignerDialog';
+import UnterrichtStartenButton from '@/components/baukasten/UnterrichtStartenButton';
+import StundenTitelFeld from '@/components/baukasten/StundenTitelFeld';
 
 /** Stundenbaukasten: Fundament + vertikaler Ablauf aus Methoden, Inhaltsfolien und Übungen. */
 export default function StundenbauAssistent() {
@@ -24,6 +27,7 @@ export default function StundenbauAssistent() {
   const [detail, setDetail] = React.useState(null);
   const [laedt, setLaedt] = React.useState(false);
   const [ersetzen, setErsetzen] = React.useState(false);
+  const [design, setDesign] = React.useState(null);
   if (!stunde) return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   const kopf = { einheit: stunde.fach, thema: einheitTitel };
@@ -39,6 +43,7 @@ export default function StundenbauAssistent() {
   };
   const alle = (ja) => aendern({ vorschlaege: [], ...(ja ? { bausteine: ersetzen ? bk.vorschlaege : [...bausteine, ...bk.vorschlaege] } : {}) });
   const offenB = bausteine.find((b) => b.id === detail?.id);
+  const designB = bausteine.find((b) => b.id === design?.bid);
 
   return (
     <div className="flex h-full">
@@ -47,13 +52,14 @@ export default function StundenbauAssistent() {
           <button onClick={zurueck} className="text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /></button>
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-accent">Stundenbau · {stunde.fach}</p>
-            <h1 className="truncate font-display text-xl font-bold">{stunde.arbeitstitel || 'Neue Stunde'}</h1>
+            <StundenTitelFeld stunde={stunde} />
             {bk.fundament.thema && bk.fundament.thema !== stunde.arbeitstitel && <p className="truncate text-xs text-muted-foreground" title={bk.fundament.thema}>{bk.fundament.thema}</p>}
           </div>
           <span className="ml-auto flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground" title="Grober Richtwert aus den Bausteinen">
             <Clock className="h-3 w-3" /> geschätzt ca. {summeMinuten(bausteine)} Min.
           </span>
           <Button variant="outline" size="sm" onClick={() => setFundOffen(true)}><Layers className="h-4 w-4" /> Fundament</Button>
+          <UnterrichtStartenButton stunde={stunde} />
         </header>
         <div className="mx-auto max-w-5xl space-y-5 px-8 py-6">
           {offenB ? (
@@ -70,7 +76,8 @@ export default function StundenbauAssistent() {
               <AblaufZeitleiste bausteine={bausteine} kopf={kopf} onReihenfolge={(l) => aendern({ bausteine: l })}
                 onOeffnen={(bid, folie) => setDetail({ id: bid, folie })} onEntfernen={(bid) => aendern({ bausteine: bausteine.filter((b) => b.id !== bid) })}
                 onFolieHinzu={(b, f) => setzeBaustein({ ...b, folien: [...b.folien, f] })}
-                onFolien={(b, folien) => setzeBaustein({ ...b, folien })} />
+                onFolien={(b, folien) => setzeBaustein({ ...b, folien })}
+                onBearbeiten={(b, i) => setDesign({ bid: b.id, i })} onPhase={(b, phase) => setzeBaustein({ ...b, phase })} />
               {stunde.planer_stand?.entwurf?.phasen?.length > 0 && (
                 <button onClick={() => window.confirm('Ablauf und Fundament aus der Planung neu übernehmen? Der jetzige Ablauf wird ersetzt.') && aendern(ueberfuehren(stunde))}
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><RefreshCw className="h-3 w-3" /> Aus der Planung neu übernehmen</button>
@@ -85,6 +92,8 @@ export default function StundenbauAssistent() {
           <BausteinPalette fundament={bk.fundament} onHinzu={hinzu} />
         </aside>
       )}
+      <FolienDesignerDialog folie={designB?.folien[design.i] || null} onAbbrechen={() => setDesign(null)}
+        onOk={(f) => { setzeBaustein({ ...designB, folien: designB.folien.map((x, j) => (j === design.i ? f : x)) }); setDesign(null); }} />
       <FundamentPanel offen={fundOffen} onOffen={setFundOffen} fundament={bk.fundament} onAendern={(fundament) => aendern({ fundament })} />
     </div>
   );

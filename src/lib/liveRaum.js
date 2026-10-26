@@ -6,6 +6,14 @@ const neuerCode = () => String(Math.floor(100000 + Math.random() * 900000));
 
 /** Ablauf der Stunde als Schritte: zuerst die Phasen aus dem Stundenplaner, sonst das Regieblatt. */
 export async function schritteDerStunde(stunde) {
+  // Stundenbaukasten: jede gespeicherte Folie ist ein Schritt – abgespielt genau wie sie aussieht.
+  const bk = stunde.stundenbau;
+  if (bk?.version === 2) {
+    return (bk.bausteine || []).flatMap((b) => (b.folien || []).map((f) => ({
+      titel: f.titel || b.titel || '', minuten: b.minuten || null, tafel: '', sozialform: b.sozialform || '', methode: b.methode || '',
+      tablet: 'Lehrkraft erklärt – zuhören', folie: f, kopf: { einheit: stunde.fach, thema: stunde.arbeitstitel },
+    })));
+  }
   const phasen = stunde.planer_stand?.entwurf?.phasen || [];
   if (phasen.length) {
     return phasen.map((p) => ({

@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import StandardfolieWahl from './wahl/StandardfolieWahl';
+import SchnellFolienWahl from './SchnellFolienWahl';
 
 /** Eine Standardfolie in diese Kiste hineinlegen. */
 export default function FolieHinzuButton({ onFolie }) {
@@ -12,6 +13,8 @@ export default function FolieHinzuButton({ onFolie }) {
       <Dialog open={offen} onOpenChange={setOffen}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle className="font-display">Folie in diese Kiste legen</DialogTitle></DialogHeader>
+          <SchnellFolienWahl onFolie={(f) => { onFolie(f); setOffen(false); }} />
+          <p className="pt-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Oder eine Standardfolie</p>
           <StandardfolieWahl onWahl={(d) => { onFolie(d.folien[0]); setOffen(false); }} />
         </DialogContent>
       </Dialog>
