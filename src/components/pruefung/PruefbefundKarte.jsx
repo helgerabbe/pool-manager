@@ -140,7 +140,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
               <BaumeisterButton
                 einheitId={einheitId}
                 label="Mit Baumeister reparieren"
-                startRef={befund.ziel_typ === 'allgemeine_aufgabe' ? `auf:${befund.ziel_id}` : undefined}
+                startRef={befund.ziel_typ === 'allgemeine_aufgabe' ? `auf:${befund.ziel_id}` : befund.ziel_typ === 'aktivitaet' ? `akt:${befund.ziel_id}` : undefined}
                 startHinweis={[
                   befund.fundort || befund.ziel_titel,
                   befund.befund,
