@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
       Authorization: `Bearer ${cfg.access_token}`,
       Accept: 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'PoolManager-Galerie',
     };
 
     const fetchFileContent = async (path) => {

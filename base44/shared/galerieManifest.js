@@ -35,6 +35,7 @@ export async function galerieRepoZugang(base44) {
         Authorization: `Bearer ${cfg.access_token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'PoolManager-Galerie',
       },
     });
     if (!res.ok) return null;
@@ -68,6 +69,7 @@ export async function loadGalerieIdeen(base44) {
         Authorization: `Bearer ${cfg.access_token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'PoolManager-Galerie',
       },
     });
     if (!res.ok) return [];

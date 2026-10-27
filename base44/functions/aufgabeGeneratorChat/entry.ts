@@ -315,6 +315,7 @@ async function ladeGalerieEintraege(base44) {
         Authorization: `Bearer ${cfg.access_token}`,
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'PoolManager-Werkstatt',
       },
     });
     if (!res.ok) return [];
