@@ -135,8 +135,11 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
               </label>
             )}
             <BaumeisterEntscheidung
-              jaGesperrt={!!fremdGesperrt || (b.stelle?.freigegeben && !freigabeOk)}
-              onJa={b.uebernehmen}
+              jaGesperrt={!!fremdGesperrt}
+              onJa={() => {
+                if (b.stelle?.freigegeben && !freigabeOk && !window.confirm('Diese Aufgabe ist schon freigegeben. Trotzdem übernehmen? Die Freigabe bleibt bestehen, die Aufgabe muss im Kurs neu gebaut werden.')) return;
+                b.uebernehmen();
+              }}
               onNein={b.neuStarten}
               onNachbessern={(zusatz) => b.bauen(b.stelle, zusatz)}
             />
