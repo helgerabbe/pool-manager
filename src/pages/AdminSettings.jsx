@@ -37,6 +37,7 @@ import GitHubTicketConnectorCard from '@/components/admin/GitHubTicketConnectorC
 import GitHubCssConnectorCard from '@/components/admin/GitHubCssConnectorCard';
 import AnthropicConnectorCard from '@/components/admin/AnthropicConnectorCard';
 import LtiMoodleCard from '@/components/admin/LtiMoodleCard';
+import StudyflixCard from '@/components/admin/StudyflixCard';
 import AufgabenFormateTab from '@/components/admin/formate/AufgabenFormateTab';
 
 const KATEGORIEN = ['Diagnostik', 'Input', 'Übung', 'Projekt', 'Prüfung'];
@@ -304,6 +305,7 @@ export default function AdminSettings() {
           <GitHubTicketConnectorCard />
           <GitHubCssConnectorCard />
           <AnthropicConnectorCard />
+          <StudyflixCard />
         </TabsContent>
 
         {/* Systembausteine (globaler Pool für Tab „Dashboards") */}
