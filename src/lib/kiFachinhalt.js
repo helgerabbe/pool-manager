@@ -12,7 +12,7 @@ const SCHEMA = {
 };
 
 /** Ordnet das Rohmaterial in das fachliche Exposé der Einheit ein (ergänzend, nie ersetzend). */
-export async function fachinhaltEinordnen({ einheit, planung, quellen, recherche }) {
+export async function fachinhaltEinordnen({ einheit, planung, quellen, recherche, fokus }) {
   const bisher = einheit.fachinhalt?.kapitel?.length ? JSON.stringify(einheit.fachinhalt) : 'noch keiner';
   const roh = quellen.map((q) => `- [${q.art}] ${q.url || ''} ${q.inhalt || ''}`).join('\n') || 'keines';
   const links = quellen.some((q) => q.url);
@@ -24,6 +24,7 @@ Gliedere in Kapitel mit Abschnitten. Typisch: (1) Grundlagen des Unterrichtsgege
 
 REGELN: Der bisherige Fachinhalt bleibt vollständig erhalten. Ergänze ihn, ordne Neues an der passenden Stelle ein, korrigiere nur nachweislich Falsches. Erfinde nichts. Gib in "quellen" alle genutzten Quellen (Links, "Material der Lehrkraft") an.
 ${recherche ? 'Recherchiere zusätzlich gründlich im Internet und baue die Ergebnisse ein.' : ''}
+${fokus ? `SCHWERPUNKT DIESER RECHERCHE: "${fokus}". Recherchiere gezielt und sehr ausführlich nur dazu und erweitere das passende Kapitel (oder lege es neu an). Alle anderen Kapitel bleiben unverändert.` : ''}
 ${links ? 'Lies die angegebenen Links und nutze ihren Inhalt.' : ''}
 
 BISHERIGER FACHINHALT:

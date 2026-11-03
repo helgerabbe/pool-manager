@@ -10,6 +10,7 @@ export default function FachinhaltEingang({ einheit, quellen, laedt, onEinordnen
   const [text, setText] = React.useState('');
   const [url, setUrl] = React.useState('');
   const [speichert, setSpeichert] = React.useState(false);
+  const [fokus, setFokus] = React.useState('');
   const offen = quellen.filter((q) => !q.eingeordnet).length;
 
   const hinzufuegen = async () => {
@@ -38,7 +39,8 @@ export default function FachinhaltEingang({ einheit, quellen, laedt, onEinordnen
         <Button className="w-full" onClick={() => onEinordnen(false)} disabled={!!laedt}>
           {laedt === 'einordnen' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} In den Fachinhalt einordnen
         </Button>
-        <Button variant="secondary" className="w-full" onClick={() => onEinordnen(true)} disabled={!!laedt}>
+        <Input value={fokus} onChange={(e) => setFokus(e.target.value)} placeholder="Recherche-Thema (optional), z. B. „Der Roman“" />
+        <Button variant="secondary" className="w-full" onClick={() => onEinordnen(true, fokus.trim() || undefined)} disabled={!!laedt}>
           {laedt === 'recherche' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />} Mit Internetrecherche erweitern
         </Button>
         {laedt && <p className="text-xs text-muted-foreground">Das kann ein bis zwei Minuten dauern …</p>}

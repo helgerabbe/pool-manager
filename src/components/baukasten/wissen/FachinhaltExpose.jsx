@@ -1,12 +1,13 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Globe, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const anker = (i, j) => `fi-${i}${j != null ? `-${j}` : ''}`;
 const springe = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 /** Das gegliederte fachliche Exposé mit Inhaltsverzeichnis. */
-export default function FachinhaltExpose({ fachinhalt }) {
+export default function FachinhaltExpose({ fachinhalt, laedt, onVertiefen }) {
   const kapitel = fachinhalt?.kapitel || [];
   if (!kapitel.length) {
     return (
@@ -33,7 +34,12 @@ export default function FachinhaltExpose({ fachinhalt }) {
       </nav>
       {kapitel.map((k, i) => (
         <section key={i} id={anker(i)} className="scroll-mt-48 rounded-xl border bg-card p-6">
-          <h3 className="mb-4 font-display text-xl font-bold">{i + 1}. {k.titel}</h3>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-display text-xl font-bold">{i + 1}. {k.titel}</h3>
+            <Button size="sm" variant="outline" disabled={!!laedt} onClick={() => onVertiefen(k.titel, i)}>
+              {laedt === `kap-${i}` ? <Loader2 className="h-4 w-4 animate-spin" /> : <Globe className="h-4 w-4" />} Kernthema mit Internetrecherche erweitern
+            </Button>
+          </div>
           {(k.abschnitte || []).map((a, j) => (
             <div key={j} id={anker(i, j)} className="mb-5 scroll-mt-48">
               <h4 className="mb-1.5 font-semibold">{i + 1}.{j + 1} {a.titel}</h4>
