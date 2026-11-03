@@ -7,7 +7,8 @@ import { Trash2, Pencil, Link2, FileText, Check } from 'lucide-react';
 /** Eine eingegebene Information: anzeigen, bearbeiten, löschen. */
 export default function QuelleZeile({ q, onNeu }) {
   const [edit, setEdit] = React.useState(null);
-  const speichern = async () => { await base44.entities.FachinhaltQuelle.update(q.id, { inhalt: edit, eingeordnet: false }); setEdit(null); onNeu(); };
+  const speichern = async () => {
+    if (edit.length > 15000) { window.alert('Der Text ist zu lang (max. 15.000 Zeichen je Eintrag). Bitte kürzen oder als neuen Eintrag hinzufügen.'); return; } await base44.entities.FachinhaltQuelle.update(q.id, { inhalt: edit, eingeordnet: false }); setEdit(null); onNeu(); };
   const loeschen = async () => { if (window.confirm('Eintrag löschen? Bereits eingeordneter Fachinhalt bleibt erhalten.')) { await base44.entities.FachinhaltQuelle.delete(q.id); onNeu(); } };
   return (
     <div className="flex items-start gap-2 rounded-md border p-3">

@@ -19,7 +19,11 @@ export default function FachinhaltEingang({ einheit, quellen, laedt, onEinordnen
       const me = await base44.auth.me();
       const basis = { unterrichtseinheit_id: einheit.id, besitzer_email: me.email };
       const neu = [];
-      if (text.trim()) neu.push({ ...basis, art: 'text', inhalt: text.trim() });
+      const t = text.trim();
+      const teile = Math.ceil(t.length / 15000);
+      for (let i = 0; i < teile; i++) {
+        neu.push({ ...basis, art: 'text', inhalt: (teile > 1 ? `(Teil ${i + 1}/${teile}) ` : '') + t.slice(i * 15000, (i + 1) * 15000) });
+      }
       if (url.trim()) neu.push({ ...basis, art: 'link', url: url.trim() });
       await base44.entities.FachinhaltQuelle.bulkCreate(neu);
       setText(''); setUrl(''); onNeu();
