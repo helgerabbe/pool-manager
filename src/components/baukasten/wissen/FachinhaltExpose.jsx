@@ -12,7 +12,7 @@ export default function FachinhaltExpose({ fachinhalt }) {
     return (
       <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
         <BookOpen className="mx-auto mb-3 h-8 w-8 text-primary/40" />
-        Noch kein gegliederter Fachinhalt. Wirf rechts Texte, Sprachnotizen oder Links hinein und drücke „In den Fachinhalt einordnen“.
+        Noch kein gegliederter Fachinhalt. Füge rechts Texte, Sprachnotizen oder Links hinzu und drücke „In den Fachinhalt einordnen“.
       </div>
     );
   }

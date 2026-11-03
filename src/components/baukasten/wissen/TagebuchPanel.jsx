@@ -2,12 +2,15 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { Trash2 } from 'lucide-react';
 import TagebuchEintragen from './TagebuchEintragen';
+import EinheitVerlauf from './EinheitVerlauf';
 
 /** Einheit bisher: was tatsächlich im Unterricht passiert ist. */
-export default function TagebuchPanel({ einheit, tagebuch, onNeu }) {
+export default function TagebuchPanel({ einheit, planung, tagebuch, onNeu }) {
   const loeschen = async (id) => { if (window.confirm('Eintrag löschen?')) { await base44.entities.UnterrichtsTagebuch.delete(id); onNeu(); } };
   return (
     <div className="space-y-4 text-sm">
+      <EinheitVerlauf planung={planung} />
+      <p className="pt-2 font-display text-lg font-bold">Bisher in der Einheit</p>
       <p className="font-semibold">{tagebuch.length} gehaltene Stunde{tagebuch.length === 1 ? '' : 'n'} festgehalten</p>
       <TagebuchEintragen einheit={einheit} onFertig={onNeu} />
       {tagebuch.map((t) => (

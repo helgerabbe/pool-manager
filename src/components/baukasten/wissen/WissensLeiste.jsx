@@ -7,7 +7,7 @@ export const REITER = [
   { k: 'fach', l: 'Fachinhalt', sub: 'Wissen der Einheit', icon: BookOpen },
   { k: 'mat', l: 'Materialien', sub: 'Dateien & Lehrwerk', icon: Paperclip },
   { k: 'lg', l: 'Lerngruppe', sub: 'Klasse & Einschätzung', icon: Users },
-  { k: 'bisher', l: 'Einheit bisher', sub: 'Gehaltene Stunden', icon: NotebookPen },
+  { k: 'bisher', l: 'Einheit', sub: 'Verlauf & bisher', icon: NotebookPen },
 ];
 
 /** Obere Menüleiste (Ribbon): öffnet die Bereiche im Hauptbereich. Ausgelegt für bis zu zehn Reiter. */
