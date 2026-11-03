@@ -1,0 +1,83 @@
+{
+  "name": "FachinhaltQuelle",
+  "type": "object",
+  "description": "FACHINHALT DER EINHEIT (2026-11-03): Rohmaterial, das die Lehrkraft in den fachlichen Wissensspeicher einer Unterrichtseinheit wirft (Text, Spracheingabe-Transkript oder Link). Bleibt unver\u00e4ndert erhalten; 'eingeordnet' = wurde beim Einordnen in Unterrichtseinheit.fachinhalt ber\u00fccksichtigt.",
+  "properties": {
+    "unterrichtseinheit_id": {
+      "type": "string"
+    },
+    "besitzer_email": {
+      "type": "string"
+    },
+    "art": {
+      "type": "string",
+      "enum": [
+        "text",
+        "sprache",
+        "link"
+      ],
+      "enumColors": [
+        "blue",
+        "purple",
+        "green"
+      ]
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Text bzw. Transkript; bei Links optionaler Hinweis, worauf geachtet werden soll."
+    },
+    "url": {
+      "type": "string"
+    },
+    "eingeordnet": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "unterrichtseinheit_id",
+    "besitzer_email",
+    "art"
+  ],
+  "rls": {
+    "create": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

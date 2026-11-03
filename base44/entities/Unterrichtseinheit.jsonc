@@ -1,7 +1,7 @@
 {
   "name": "Unterrichtseinheit",
   "type": "object",
-  "description": "UNTERRICHTSEINHEIT (2026-09-14): Die thematische Mappe einer Lehrkraft im Bereich 'Mein Unterricht' \u2014 z. B. 'Rechtschreibung'. Sie liegt in einer LERNGRUPPE (lerngruppe_id, seit 2026-10-03). Darin liegen ihre Unterrichtsstunden (Unterrichtsstunde.unterrichtseinheit_id) und ihre Selbstst\u00e4ndigen \u00dcbungen (Einheiten mit format='uebungsblock' und eltern_einheit_id).\n\nWARUM EIGENST\u00c4NDIG UND NICHT EINE 'Einheit': Eine EINHEIT (Entity 'Einheiten') ist das vollst\u00e4ndige Poolzeit-Lernszenario mit Lernpfaden, Dashboards, Freigabe-Lebenszyklus und Moodle-Kurs. Eine UNTERRICHTSEINHEIT ist nur eine Ordnungsmappe f\u00fcr die eigene Unterrichtsplanung.\n\nL\u00d6SCHEN: Eine Unterrichtseinheit ist nur eine H\u00fclle. Wird sie gel\u00f6scht, d\u00fcrfen Stunden und \u00dcbungen NICHT mitgel\u00f6scht werden.\n\nPROFIL (2026-10-21): optionale eigene Einsch\u00e4tzung der Lerngruppe f\u00fcr diese Einheit; leer = Standard der Lerngruppe.",
+  "description": "UNTERRICHTSEINHEIT (2026-09-14): Die thematische Mappe einer Lehrkraft im Bereich 'Mein Unterricht' \u2014 z. B. 'Rechtschreibung'. Sie liegt in einer LERNGRUPPE (lerngruppe_id, seit 2026-10-03). Darin liegen ihre Unterrichtsstunden (Unterrichtsstunde.unterrichtseinheit_id) und ihre Selbstst\u00e4ndigen \u00dcbungen (Einheiten mit format='uebungsblock' und eltern_einheit_id).\n\nWARUM EIGENST\u00c4NDIG UND NICHT EINE 'Einheit': Eine EINHEIT (Entity 'Einheiten') ist das vollst\u00e4ndige Poolzeit-Lernszenario mit Lernpfaden, Dashboards, Freigabe-Lebenszyklus und Moodle-Kurs. Eine UNTERRICHTSEINHEIT ist nur eine Ordnungsmappe f\u00fcr die eigene Unterrichtsplanung.\n\nL\u00d6SCHEN: Eine Unterrichtseinheit ist nur eine H\u00fclle. Wird sie gel\u00f6scht, d\u00fcrfen Stunden und \u00dcbungen NICHT mitgel\u00f6scht werden.\n\nPROFIL (2026-10-21): optionale eigene Einsch\u00e4tzung der Lerngruppe f\u00fcr diese Einheit; leer = Standard der Lerngruppe.\n\nFACHINHALT (2026-11-03): gegliedertes fachliches Expos\u00e9 der Einheit, erzeugt nur auf ausdr\u00fcckliche Aktion aus dem Rohmaterial (FachinhaltQuelle).",
   "properties": {
     "besitzer_email": {
       "type": "string",
@@ -43,6 +43,48 @@
         },
         "leistung": {
           "type": "number"
+        }
+      }
+    },
+    "fachinhalt": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Fachliches Expos\u00e9: { kapitel: [{ titel, abschnitte: [{ titel, text }] }], quellen: [string], aktualisiert_am }.",
+      "properties": {
+        "kapitel": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "titel": {
+                "type": "string"
+              },
+              "abschnitte": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "titel": {
+                      "type": "string"
+                    },
+                    "text": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "quellen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "aktualisiert_am": {
+          "type": "string",
+          "format": "date-time"
         }
       }
     }

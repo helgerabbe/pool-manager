@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, Layers, Clock, RefreshCw } from 'lucide-react';
+import { Loader2, ArrowLeft, Clock, RefreshCw } from 'lucide-react';
 import useStundenbaukasten from '@/hooks/useStundenbaukasten';
 import { neuerBaustein, summeMinuten, ueberfuehren, kiStunde, alsPhase, amEinschubTeilen } from '@/lib/stundenbaukasten';
 import { vorschlagen, fuellen, mitVorlage } from '@/lib/kiBaukasten';
@@ -18,6 +18,8 @@ import FolienDesignerDialog from '@/components/baukasten/FolienDesignerDialog';
 import UnterrichtStartenButton from '@/components/baukasten/UnterrichtStartenButton';
 import StundenTitelFeld from '@/components/baukasten/StundenTitelFeld';
 import WissensLeiste from '@/components/baukasten/wissen/WissensLeiste';
+import WissensBereich from '@/components/baukasten/wissen/WissensBereich';
+import useEinheitWissen from '@/hooks/useEinheitWissen';
 
 /** Stundenbaukasten: Fundament + vertikaler Ablauf aus Methoden, Inhaltsfolien und Übungen. */
 export default function StundenbauAssistent() {
@@ -29,6 +31,8 @@ export default function StundenbauAssistent() {
   const [laedt, setLaedt] = React.useState(false);
   const [ersetzen, setErsetzen] = React.useState(false);
   const [design, setDesign] = React.useState(null);
+  const [bereich, setBereich] = React.useState('bau');
+  const wissen = useEinheitWissen(stunde?.unterrichtseinheit_id);
   if (!stunde) return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   const kopf = { einheit: stunde.fach, thema: einheitTitel };
@@ -59,12 +63,14 @@ export default function StundenbauAssistent() {
           <span className="ml-auto flex items-center gap-1 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground" title="Grober Richtwert aus den Bausteinen">
             <Clock className="h-3 w-3" /> geschätzt ca. {summeMinuten(bausteine)} Min.
           </span>
-          <Button variant="outline" size="sm" onClick={() => setFundOffen(true)}><Layers className="h-4 w-4" /> Fundament</Button>
           <UnterrichtStartenButton stunde={stunde} />
-          <div className="w-full"><WissensLeiste einheitId={stunde.unterrichtseinheit_id} /></div>
+          <div className="w-full"><WissensLeiste aktiv={bereich} onAktiv={(k) => { setBereich(k); setDetail(null); }}
+            zahlen={wissen.data ? { bisher: wissen.data.tagebuch.length, fach: wissen.data.quellen.length } : {}} /></div>
         </header>
-        <div className="mx-auto max-w-5xl space-y-5 px-8 py-6">
-          {offenB ? (
+        <div className="mx-auto max-w-6xl space-y-5 px-8 py-6">
+          {bereich !== 'bau' ? (
+            <WissensBereich bereich={bereich} wissen={wissen} fundament={bk.fundament} onFundament={() => setFundOffen(true)} onZurueck={() => setBereich('bau')} />
+          ) : offenB ? (
             <BausteinDetail b={offenB} kopf={kopf} startFolie={detail.folie} laedt={laedt} onAendern={setzeBaustein} onFertig={() => setDetail(null)}
               onFuellen={() => mitLaden(async () => setzeBaustein(await fuellen(stunde, bk, offenB)))}
               onEinfuegen={async (pos, art, wunsch) => { const f = await folieAusWunsch(kiStunde(stunde, bk), alsPhase(offenB), art, wunsch, offenB.folien); const l = [...offenB.folien]; l.splice(pos, 0, f); setzeBaustein({ ...offenB, folien: l }); }} />
@@ -88,7 +94,7 @@ export default function StundenbauAssistent() {
           )}
         </div>
       </main>
-      {!offenB && (
+      {!offenB && bereich === 'bau' && (
         <aside className="w-72 shrink-0 overflow-y-auto border-l bg-card/50 p-4">
           <p className="mb-4 font-display font-bold">Bausteine</p>
           <BausteinPalette fundament={bk.fundament} onHinzu={hinzu} />
