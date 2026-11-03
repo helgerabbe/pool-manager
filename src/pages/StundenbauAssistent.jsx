@@ -17,6 +17,7 @@ import AltinhalteHinweis from '@/components/baukasten/AltinhalteHinweis';
 import FolienDesignerDialog from '@/components/baukasten/FolienDesignerDialog';
 import UnterrichtStartenButton from '@/components/baukasten/UnterrichtStartenButton';
 import StundenTitelFeld from '@/components/baukasten/StundenTitelFeld';
+import WissensLeiste from '@/components/baukasten/wissen/WissensLeiste';
 
 /** Stundenbaukasten: Fundament + vertikaler Ablauf aus Methoden, Inhaltsfolien und Übungen. */
 export default function StundenbauAssistent() {
@@ -60,6 +61,7 @@ export default function StundenbauAssistent() {
           </span>
           <Button variant="outline" size="sm" onClick={() => setFundOffen(true)}><Layers className="h-4 w-4" /> Fundament</Button>
           <UnterrichtStartenButton stunde={stunde} />
+          <div className="w-full"><WissensLeiste einheitId={stunde.unterrichtseinheit_id} /></div>
         </header>
         <div className="mx-auto max-w-5xl space-y-5 px-8 py-6">
           {offenB ? (

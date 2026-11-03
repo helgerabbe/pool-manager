@@ -1,0 +1,80 @@
+{
+  "name": "UnterrichtsTagebuch",
+  "type": "object",
+  "description": "EINHEIT BISHER (2026-11-03): Ist-Stand einer Unterrichtseinheit. Je Eintrag eine tats\u00e4chlich gehaltene Stunde, frei eingesprochen (rohtext) und von der KI geordnet.",
+  "properties": {
+    "unterrichtseinheit_id": {
+      "type": "string"
+    },
+    "besitzer_email": {
+      "type": "string"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "inhalt": {
+      "type": "string",
+      "description": "Was wurde gemacht."
+    },
+    "ergebnis": {
+      "type": "string",
+      "description": "Wie lief es, was haben die Sch\u00fcler erreicht."
+    },
+    "besonderheiten": {
+      "type": "string",
+      "description": "Offenes, Probleme, was nachgeholt werden muss."
+    },
+    "rohtext": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "unterrichtseinheit_id",
+    "besitzer_email"
+  ],
+  "rls": {
+    "create": {
+      "data.besitzer_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.besitzer_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
