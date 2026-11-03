@@ -1,0 +1,82 @@
+{
+  "name": "StudyflixVideo",
+  "type": "object",
+  "description": "STUDYFLIX-KATALOG (2026-11-03): Lizenzierte Studyflix-Videos der IGS Seevetal. Grundlage der Videosuche. Einbett-Codes werden NICHT gespeichert, sondern von der Funktion studyflixSuche mit dem gesch\u00fctzten Partner-Key erzeugt.",
+  "properties": {
+    "video_id": {
+      "type": "number",
+      "description": "Studyflix-ID (Spalte ID)."
+    },
+    "titel": {
+      "type": "string"
+    },
+    "dauer": {
+      "type": "string"
+    },
+    "zuletzt_veraendert_am": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "kurzbeschreibung": {
+      "type": "string"
+    },
+    "playlist": {
+      "type": "string"
+    },
+    "themen": {
+      "type": "string"
+    },
+    "fachbereiche": {
+      "type": "string"
+    },
+    "zielgruppen": {
+      "type": "string"
+    },
+    "klassenstufe": {
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "einleitung": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "video_id",
+    "titel"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
