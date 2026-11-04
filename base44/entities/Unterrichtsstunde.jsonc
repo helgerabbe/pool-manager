@@ -1,7 +1,7 @@
 {
   "name": "Unterrichtsstunde",
   "type": "object",
-  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id). Die Phasen liegen in StundenSequenz. STUNDENPLANER (2026-10-21): 'planer_stand' speichert den Zwischenstand des Stundenplaners (Schritt, Vorgaben, Entwurf), damit die Lehrkraft jederzeit weiterarbeiten kann. STUNDENBAU (2026-10-25): 'stundenbau' h\u00e4lt den Foliensatz, den der Stundenbau-Assistent Phase f\u00fcr Phase baut: { phasen: { <Index der Planer-Phase>: { einleitung, fragen[], antworten, annahmen[], folien[], fertig } } }.",
+  "description": "Moodle-Unterrichts-Generator (MUG, 2026-08-16): Eine einzelne, linear geplante Unterrichtsstunde ('Stunden-Regieblatt'). Sie liegt in einer UNTERRICHTSEINHEIT (unterrichtseinheit_id). Die Phasen liegen in StundenSequenz. STUNDENPLANER (2026-10-21): 'planer_stand' speichert den Zwischenstand des Stundenplaners (Schritt, Vorgaben, Entwurf), damit die Lehrkraft jederzeit weiterarbeiten kann. STUNDENBAU (2026-10-25): 'stundenbau' h\u00e4lt den Foliensatz, den der Stundenbau-Assistent Phase f\u00fcr Phase baut: { phasen: { <Index der Planer-Phase>: { einleitung, fragen[], antworten, annahmen[], folien[], fertig } } }. STUNDENFORM (2026-11-04): 'stundenform' h\u00e4lt fest, welche Art von Stunde gemacht wird (Stundenform + Variante der didaktischen Konzeption, Schl\u00fcssel aus src/lib/stundenModelle.js und den Varianten-Dateien). Status: herausgehoert -> empfohlen -> vorlaeufig / festgelegt. Erst mit Variante kennt der Methodenassistent die Phasenfolge.",
   "properties": {
     "unterrichtseinheit_id": {
       "type": "string",
@@ -47,6 +47,56 @@
     },
     "notfall_code": {
       "type": "string"
+    },
+    "stundenform": {
+      "type": "object",
+      "description": "Art der Stunde nach der didaktischen Konzeption.",
+      "properties": {
+        "form": {
+          "type": "string",
+          "description": "Schl\u00fcssel der Stundenform, z. B. 'einstieg', 'erarbeitung', 'uebung', 'diagnose'."
+        },
+        "variante": {
+          "type": "string",
+          "description": "Schl\u00fcssel der Variante, z. B. 'gelenkt_entdeckend' oder bei \u00dcbung/Diagnose 'kurz', 'mittel', 'lang'."
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "herausgehoert",
+            "empfohlen",
+            "vorlaeufig",
+            "festgelegt"
+          ],
+          "enumColors": [
+            "gray",
+            "blue",
+            "yellow",
+            "green"
+          ],
+          "description": "herausgehoert = Arbeitsannahme des Assistenten; empfohlen = Assistent empfiehlt mit Begr\u00fcndung; vorlaeufig = Lehrkraft plant ohne Festlegung weiter; festgelegt = Lehrkraft hat best\u00e4tigt."
+        },
+        "alternativen": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Weitere in Frage kommende Varianten."
+        },
+        "begruendung": {
+          "type": "string",
+          "description": "Kurze Begr\u00fcndung der Empfehlung bzw. Wahl."
+        },
+        "absicht": {
+          "type": "string",
+          "description": "Was die Lehrkraft mit der Stunde vor allem will, in ihren Worten."
+        },
+        "geaendert_am": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
     },
     "planer_stand": {
       "type": "object",
