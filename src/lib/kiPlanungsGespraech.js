@@ -7,6 +7,7 @@ import { uebungenText } from '@/lib/kiUebungsformate';
 import { STUNDEN_MODELLE } from '@/lib/stundenModelle';
 import { INDUKTIVE_VARIANTEN } from '@/lib/induktiveVarianten';
 import { DEDUKTIVE_VARIANTEN } from '@/lib/deduktiveVarianten';
+import { STUNDENFORM_SCHEMA, profileText } from '@/lib/stundenformGespraech';
 
 /** Einmalige Recherche zum Thema (wird gespeichert). */
 export const kiGespraechHintergrund = (k) => base44.integrations.Core.InvokeLLM({
@@ -29,6 +30,7 @@ const SCHEMA = {
     art: { type: 'string', enum: ['bestaetigen', 'frage', 'fertig'] },
     optionen: { type: 'array', items: { type: 'string' } },
     kernschritte: { type: 'array', items: SCHRITT },
+    stundenform: STUNDENFORM_SCHEMA,
   },
   required: ['nachricht', 'art'],
 };
@@ -50,6 +52,7 @@ ${vorgaben.anker.materialien.length ? '' : 'Die Lehrkraft hat noch kein Material
 HINTERGRUNDWISSEN
 Recherche zum Thema: ${vorgaben.hintergrund || '–'}
 ${konzeption()}
+${profileText(vorgaben.stundenform)}
 AKTUELLE KERNSCHRITTE: ${vorgaben.kernschritte?.length ? vorgaben.kernschritte.map((s, i) => `${i + 1}. ${s.name}: ${s.satz}${s.ok ? ' [von der Lehrkraft bestätigt, nicht mehr nachfragen, nicht ändern]' : ''}`).join(' / ') : 'noch keine'}
 
 GESPRÄCH BISHER:

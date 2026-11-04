@@ -13,6 +13,8 @@ import AufbereitungSchritt from '@/components/feinplanung/AufbereitungSchritt';
 import { kiAufbereitung } from '@/lib/kiAufbereitung';
 import PlanungsGespraech from '@/components/planungsgespraech/PlanungsGespraech';
 import { kiGespraechSchritt, kiGespraechHintergrund } from '@/lib/kiPlanungsGespraech';
+import { stundenformSpeichern } from '@/lib/stundenformGespraech';
+import StundenformAnzeige from '@/components/planungsgespraech/StundenformAnzeige';
 import KernschrittListe from '@/components/planungsgespraech/KernschrittListe';
 import VorgabenPopup from '@/components/planungsgespraech/VorgabenPopup';
 import UebungsformateSchritt from '@/components/uebungsplanung/UebungsformateSchritt';
@@ -68,8 +70,10 @@ export default function StundenplanerVorschau() {
         return { name: s.name, satz: s.satz, neu: alt.length > 0 && !vorher, ok: !!vorher?.ok };
       }));
     }
+    if (r.stundenform?.form) setze('stundenform')(await stundenformSpeichern(stundeId, v.stundenform, r.stundenform));
     return r;
   };
+  const stundenformStatus = async (status) => setze('stundenform')(await stundenformSpeichern(stundeId, v.stundenform, { status }));
   const listeZeigen = () => { setPunkte([]); setPopup(true); lauf(kiPlanungsVorgaben({ ...k(), vorgaben: v }), setPunkte); };
   const bauen = () => lauf(kiGrobverlauf({ ...k(), vorgaben: { ...v, punkte } }), (e) => { setEntwurf(e); setPhase('methodik'); });
   const uebungWeiter = (u) => { setze('uebungen')(u); if (!Array.isArray(v.gespraech)) setze('gespraech')([]); setPhase('gespraech'); };
@@ -156,6 +160,7 @@ export default function StundenplanerVorschau() {
           {kontext && phase === 'gespraech' && (
             <>
               <div className="space-y-3">
+                <StundenformAnzeige stundenform={v.stundenform} onStatus={stundenformStatus} />
                 <KernschrittListe schritte={v.kernschritte} gesperrt={gLaedt} onOk={(i) => setze('kernschritte')((ks) => ks.map((s, j) => (j === i ? { ...s, ok: !s.ok, neu: false } : s)))} onAnsprechen={(s) => setAnstoss({ text: `Ich möchte über die Phase „${s.name}“ sprechen.` })} />
                 <PlanungsGespraech verlauf={v.gespraech || []} setVerlauf={setze('gespraech')} onListe={listeZeigen} onSchritt={gespraechSchritt} anstoss={anstoss} onLaedt={setGLaedt} />
               </div>
