@@ -70,6 +70,8 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
   const openLerntypDiagnose = useCallback(() => setLerntypDiagnoseOpen(true), []);
   const openLernlandkarte = useCallback(() => setLernlandkarteOpen(true), []);
   const openPruefungsAnmeldung = useCallback(() => setPruefungsAnmeldungOpen(true), []);
+  const [onlineTestOpen, setOnlineTestOpen] = useState(false);
+  const openOnlineTest = useCallback(() => setOnlineTestOpen(true), []);
   const openDashboard = useCallback(() => setDashboardOpen(true), []);
   const openThemenfeldIntro = useCallback((ctx) => setThemenfeldIntroContext(ctx), []);
 
@@ -89,6 +91,9 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       openPruefungsAnmeldung,
       pruefungsAnmeldungOpen,
       setPruefungsAnmeldungOpen,
+      openOnlineTest,
+      onlineTestOpen,
+      setOnlineTestOpen,
       // Zustand (wird an CockpitPreviewModals durchgereicht)
       dashboardOpen,
       setDashboardOpen,
@@ -120,6 +125,8 @@ export function useCockpitPreviews({ einheitId, toast, queryClient }) {
       openLernlandkarte,
       openPruefungsAnmeldung,
       pruefungsAnmeldungOpen,
+      openOnlineTest,
+      onlineTestOpen,
       openThemenfeldIntro,
       lernlandkarteOpen,
       dashboardOpen,

@@ -1,0 +1,112 @@
+{
+  "name": "OnlineTest",
+  "type": "object",
+  "description": "ONLINE-TEST (2026-11-10): Abschlusstest einer Einheit f\u00fcr den Systembaustein 'Externer Test' (sys_external_test), erstellt aus dem Pragmatiker-Dashboard. Gespeichert wird nur der Aufgabenpool (Aufgaben mit Varianten, OHNE L\u00f6sungen); die test.html f\u00fcr die App NeunZehn erzeugt src/lib/onlineTestHtml.js daraus. 'hintergrund' und 'erwartungshorizont' sind f\u00fcr die korrigierende KI bestimmt und d\u00fcrfen Sch\u00fclern nie gezeigt werden.",
+  "properties": {
+    "einheit_id": {
+      "type": "string"
+    },
+    "lerntyp": {
+      "type": "string",
+      "default": "pragmatiker"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "aufgaben": {
+      "type": "array",
+      "default": [],
+      "description": "[{ id, thema, varianten: [{ id, typ, frage, optionen, einheit, links, rechts, elemente }] }]",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "hintergrund": {
+      "type": "string",
+      "description": "Teil 2: Fachlicher Hintergrund f\u00fcr die korrigierende KI."
+    },
+    "erwartungshorizont": {
+      "type": "string",
+      "description": "Teil 3: Erwartete L\u00f6sung je Variante."
+    },
+    "gespraech": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "einheit_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

@@ -181,6 +181,7 @@ export default function LernpfadeArchitekt({
   onPreviewThemenfeldIntro,
   onPreviewLernlandkarte,
   onPreviewPruefungsAnmeldung,
+  onOpenOnlineTest,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -262,6 +263,7 @@ export default function LernpfadeArchitekt({
                 onPreviewThemenfeldIntro={onPreviewThemenfeldIntro}
                 onPreviewLernlandkarte={onPreviewLernlandkarte}
               onPreviewPruefungsAnmeldung={onPreviewPruefungsAnmeldung}
+                onOpenOnlineTest={onOpenOnlineTest}
                 driftStatus={
                   driftReportLoading
                     ? 'loading'

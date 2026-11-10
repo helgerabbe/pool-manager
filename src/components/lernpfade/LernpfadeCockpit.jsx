@@ -1123,6 +1123,7 @@ export default function LernpfadeCockpit({
                 onPreviewDiagnoseQuiz={previews.openDiagnoseQuiz}
                 onPreviewLernlandkarte={previews.openLernlandkarte}
                 onPreviewPruefungsAnmeldung={previews.openPruefungsAnmeldung}
+                onOpenOnlineTest={activeLernTyp === 'pragmatiker' ? previews.openOnlineTest : undefined}
                 onPreviewThemenfeldIntro={(ctx) =>
                   previews.openThemenfeldIntro({ ...ctx, lerntyp: activeLernTyp })
                 }

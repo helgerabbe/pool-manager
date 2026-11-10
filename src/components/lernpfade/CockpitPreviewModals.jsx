@@ -17,6 +17,7 @@ import ThemenfeldEinfuehrungPreviewModal from '@/components/lernpfade/Themenfeld
 import AufgabePreviewDialog from '@/components/lernpfade/AufgabePreviewDialog';
 import LernlandkartePreviewModal from '@/components/lernpfade/LernlandkartePreviewModal';
 import PruefungsAnmeldungPreviewModal from '@/components/lernpfade/PruefungsAnmeldungPreviewModal';
+import OnlineTestDialog from '@/components/onlinetest/OnlineTestDialog';
 
 export default function CockpitPreviewModals({
   previews,
@@ -117,6 +118,16 @@ export default function CockpitPreviewModals({
         einheitId={einheitId}
         einheitTitel={einheitTitel}
       />
+
+      {activeLernTyp === 'pragmatiker' && (
+        <OnlineTestDialog
+          open={previews.onlineTestOpen}
+          onOpenChange={previews.setOnlineTestOpen}
+          einheit={einheit}
+          sektoren={sektoren}
+          aufgabenById={aufgabenById}
+        />
+      )}
 
       <PruefungsAnmeldungPreviewModal
         open={previews.pruefungsAnmeldungOpen}

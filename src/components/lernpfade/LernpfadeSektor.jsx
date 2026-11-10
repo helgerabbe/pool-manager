@@ -195,6 +195,7 @@ export default function LernpfadeSektor({
   onPreviewThemenfeldIntro,
   onPreviewLernlandkarte,
   onPreviewPruefungsAnmeldung,
+  onOpenOnlineTest,
   alleSektoren = [],
   // Akkordeon: Sektor zugeklappt? + Toggle-Callbacks (Sektor & Bündel).
   collapsed = false,
@@ -252,6 +253,8 @@ export default function LernpfadeSektor({
               ? onPreviewLernlandkarte
               : item.ref_id === 'sys_exam_register' && onPreviewPruefungsAnmeldung
               ? onPreviewPruefungsAnmeldung
+              : item.ref_id === 'sys_external_test' && onOpenOnlineTest
+              ? onOpenOnlineTest
               : item.ref_id === 'sys_themenfeld_intro' && onPreviewThemenfeldIntro
               ? () => onPreviewThemenfeldIntro({
                   instanceId: item.instance_id,
