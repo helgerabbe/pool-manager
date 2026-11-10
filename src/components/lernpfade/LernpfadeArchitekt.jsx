@@ -182,6 +182,7 @@ export default function LernpfadeArchitekt({
   onPreviewLernlandkarte,
   onPreviewPruefungsAnmeldung,
   onOpenOnlineTest,
+  onOpenKompetenzkarte,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
@@ -264,6 +265,7 @@ export default function LernpfadeArchitekt({
                 onPreviewLernlandkarte={onPreviewLernlandkarte}
               onPreviewPruefungsAnmeldung={onPreviewPruefungsAnmeldung}
                 onOpenOnlineTest={onOpenOnlineTest}
+                onOpenKompetenzkarte={onOpenKompetenzkarte}
                 driftStatus={
                   driftReportLoading
                     ? 'loading'

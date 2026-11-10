@@ -210,10 +210,10 @@ export default function SystemBausteinPill({
                     e.stopPropagation();
                     onPreview();
                   }}
-                  title={refId === 'sys_external_test' ? 'Online-Test mit dem Assistenten erstellen' : 'KI-Vorschau erstellen'}
+                  title={refId === 'sys_external_test' ? 'Online-Test mit dem Assistenten erstellen' : refId === 'sys_kompetenzkarte' ? 'Kompetenzkarte mit dem Assistenten erstellen' : 'KI-Vorschau erstellen'}
                   className="inline-flex items-center gap-1 rounded border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700 hover:bg-violet-100 transition-colors"
                 >
-                  <Eye className="w-3 h-3" /> {refId === 'sys_external_test' ? 'Test erstellen' : 'Vorschau'}
+                  <Eye className="w-3 h-3" /> {refId === 'sys_external_test' ? 'Test erstellen' : refId === 'sys_kompetenzkarte' ? 'Karte erstellen' : 'Vorschau'}
                 </button>
               )}
               {isBundle && (

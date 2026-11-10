@@ -2,6 +2,7 @@
 // „Externer Test“) aus dem Pragmatiker-Dashboard nach den Regeln für die App „NeunZehn“.
 // Die KI liefert nur den Aufgabenpool + Teil 2 + Teil 3; die test.html baut onlineTestHtml.js.
 import { base44 } from '@/api/base44Client';
+import { kompetenzkarteText } from '@/lib/kompetenzkarte';
 
 const ohneHtml = (t, n = 400) => String(t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 
@@ -42,7 +43,7 @@ const SCHEMA = {
   properties: {
     nachricht: { type: 'string' },
     titel: { type: 'string' },
-    aufgaben: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, thema: { type: 'string' }, varianten: { type: 'array', items: VARIANTE } }, required: ['id', 'thema', 'varianten'] } },
+    aufgaben: { type: 'array', items: { type: 'object', properties: { id: { type: 'string' }, thema: { type: 'string' }, kompetenzen: { type: 'array', items: { type: 'string' } }, varianten: { type: 'array', items: VARIANTE } }, required: ['id', 'thema', 'varianten'] } },
     hintergrund: { type: 'string' },
     erwartungshorizont: { type: 'string' },
   },
@@ -63,16 +64,24 @@ BEWERTUNGSMODELL (Orientierung, die App setzt es um): A „überdurchschnittlich
 
 TEIL 2 "hintergrund" (5–15 Zeilen, für die korrigierende KI): Fach, Thema, Jahrgang, geprüfte Kompetenzen, was auf grundlegendem Niveau erwartet wird, worauf es bei der Bewertung ankommt (z. B. „Einheiten müssen stimmen“). Liste die Aufgaben mit ihrem Thema auf.
 TEIL 3 "erwartungshorizont": Für JEDE Variante eine Zeile, sortiert nach Varianten-ID, z. B. "A1-a: 30 € (40 € − 25 % = 30 €). Auch "30" ohne Einheit gilt als richtig." Bei Freitext/Kurzantworten: Kernpunkte, gleichwertige Formulierungen und wann „teilweise richtig“ gilt. Bei Zuordnung die richtigen Paare, bei Reihenfolge die richtige Reihenfolge.
-"nachricht": 1–3 kurze Sätze an die Lehrkraft (Du-Form), was du gebaut oder geändert hast.`;
+"nachricht": 1–3 kurze Sätze an die Lehrkraft (Du-Form), was du gebaut oder geändert hast.
+
+KOMPETENZKARTE (wenn vorhanden): Sie ist die verbindliche Grundlage des Tests und den Schülern bekannt.
+- Jede Aufgabe prüft eine oder mehrere Kompetenzen der Karte und nennt deren IDs in "kompetenzen" (z. B. ["K1"]).
+- Zentrale Kompetenzen werden mit mehreren Aufgaben geprüft und tragen den Großteil der Bewertung. Wichtige Kompetenzen mit mindestens je einer Aufgabe. Ergänzende nur, wenn Platz ist.
+- "thema" = die Kompetenz in wenigen Wörtern.
+- Teil 2 enthält zusätzlich die Kompetenzkarte (Bereiche, Kompetenzen mit ID, Gewichtung und den Aufgaben, die sie prüfen) und diese Anweisung an die korrigierende KI: „Melde dem Schüler je Kompetenz der Kompetenzkarte zurück, in den vier Stufen nicht zutreffend, teilweise zutreffend, überwiegend zutreffend, zutreffend, mit einem kurzen Satz, was schon gut gelang und was noch geübt werden sollte. Gewichte die Gesamtbewertung nach der Wichtigkeit: zentral stark, wichtig mittel, ergänzend gering.“`;
 
 /** Erstellt den Test neu (ohne bestehenden Test) oder überarbeitet ihn nach dem Wunsch der Lehrkraft. */
-export function onlineTestBauen({ kontext, test, wunsch, verlauf = [] }) {
+export function onlineTestBauen({ kontext, karte, test, wunsch, verlauf = [] }) {
+  const kk = kompetenzkarteText(karte);
+  const kartenTeil = kk ? `\n\nKOMPETENZKARTE „${karte.titel || ''}“:\n${kk}` : '\n\n(Es gibt noch keine Kompetenzkarte; orientiere dich am Lernplan.)';
   const bestand = test?.aufgaben?.length
     ? `\nAKTUELLER TEST (überarbeite ihn; ändere nur, was der Wunsch verlangt, gib aber immer den KOMPLETTEN Test mit allen drei Teilen zurück):\n${JSON.stringify({ titel: test.titel, aufgaben: test.aufgaben, hintergrund: test.hintergrund, erwartungshorizont: test.erwartungshorizont })}`
     : '\nEs gibt noch keinen Test. Erstelle ihn vollständig neu.';
   const gespraech = verlauf.length ? `\nGESPRÄCH BISHER:\n${verlauf.slice(-8).map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Du'}: ${m.content}`).join('\n')}` : '';
   return base44.integrations.Core.InvokeLLM({
-    prompt: `${REGELN}\n\nEINHEIT:\n${kontext}${bestand}${gespraech}\n\nWUNSCH DER LEHRKRAFT: ${wunsch || 'Erstelle den Abschlusstest zu dieser Einheit.'}`,
+    prompt: `${REGELN}\n\nEINHEIT:\n${kontext}${kartenTeil}${bestand}${gespraech}\n\nWUNSCH DER LEHRKRAFT: ${wunsch || 'Erstelle den Abschlusstest zu dieser Einheit.'}`,
     response_json_schema: SCHEMA,
   });
 }

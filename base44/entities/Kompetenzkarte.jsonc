@@ -1,0 +1,108 @@
+{
+  "name": "Kompetenzkarte",
+  "type": "object",
+  "description": "KOMPETENZKARTE (2026-11-10): Systembaustein 'sys_kompetenzkarte' im Pragmatiker-Dashboard. Tabellarische Karte in Sch\u00fclersprache ('Du kannst \u2026'), was der Sch\u00fcler am Ende der Einheit wissen und k\u00f6nnen soll (nur Grundkurs). Jede Kompetenz hat eine Gewichtung (zentral / wichtig / ergaenzend) und Verweise auf die Lernpakete und Aufgaben des Dashboards, mit denen sie gelernt wird. Vier Stufen der Einsch\u00e4tzung: nicht zutreffend, teilweise zutreffend, \u00fcberwiegend zutreffend, zutreffend. Grundlage f\u00fcr den Online-Test (OnlineTest.aufgaben[].kompetenzen).",
+  "properties": {
+    "einheit_id": {
+      "type": "string"
+    },
+    "lerntyp": {
+      "type": "string",
+      "default": "pragmatiker"
+    },
+    "untertitel": {
+      "type": "string",
+      "description": "z. B. 'Kompetenzkarte Deutsch 9.2'"
+    },
+    "titel": {
+      "type": "string"
+    },
+    "bereiche": {
+      "type": "array",
+      "default": [],
+      "description": "[{ id, titel, kompetenzen: [{ id, text, gewicht, verweise: [{ id, art: 'lernpaket'|'aktivitaet'|'aufgabe', titel, paket }] }] }]",
+      "items": {
+        "type": "object",
+        "additionalProperties": true
+      }
+    },
+    "gespraech": {
+      "type": "array",
+      "default": [],
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "einheit_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

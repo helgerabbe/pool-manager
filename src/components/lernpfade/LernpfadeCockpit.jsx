@@ -1124,6 +1124,7 @@ export default function LernpfadeCockpit({
                 onPreviewLernlandkarte={previews.openLernlandkarte}
                 onPreviewPruefungsAnmeldung={previews.openPruefungsAnmeldung}
                 onOpenOnlineTest={activeLernTyp === 'pragmatiker' ? previews.openOnlineTest : undefined}
+                onOpenKompetenzkarte={activeLernTyp === 'pragmatiker' ? previews.openKompetenzkarte : undefined}
                 onPreviewThemenfeldIntro={(ctx) =>
                   previews.openThemenfeldIntro({ ...ctx, lerntyp: activeLernTyp })
                 }
