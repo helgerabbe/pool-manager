@@ -182,6 +182,10 @@ export function deriveSektorFreischaltung(sektoren, fortschrittByInstance) {
   for (let i = 0; i < list.length; i += 1) {
     const sektor = list[i];
     const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+    if (fb.modus === FREISCHALT_MODUS.NACH_FREIGABE) {
+      result.set(sektor.sektor_id, { freigeschaltet: fb.freigegeben, voraussetzungTitel: null });
+      continue;
+    }
     if (fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER) {
       const vorgaenger = i > 0 ? list[i - 1] : null;
       const freigeschaltet = vorgaenger

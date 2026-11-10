@@ -28,6 +28,7 @@ import {
 
 const SOFORT_VALUE = '__sofort__';
 const VORGAENGER_VALUE = '__vorgaenger__';
+const FREIGABE_VALUE = '__freigabe__';
 
 export default function SektorFreischaltControl({
   sektor,
@@ -66,8 +67,13 @@ export default function SektorFreischaltControl({
     currentValue = nurVorgaenger ? VORGAENGER_VALUE : fb.voraussetzung_sektor_id;
   }
 
+  if (fb.modus === FREISCHALT_MODUS.NACH_FREIGABE) currentValue = FREIGABE_VALUE;
+  const istFreigabe = fb.modus === FREISCHALT_MODUS.NACH_FREIGABE;
+
   const handleChange = (val) => {
-    if (val === SOFORT_VALUE) {
+    if (val === FREIGABE_VALUE) {
+      onChange?.({ modus: FREISCHALT_MODUS.NACH_FREIGABE, voraussetzung_sektor_id: null, freigegeben: false });
+    } else if (val === SOFORT_VALUE) {
       onChange?.({ modus: FREISCHALT_MODUS.SOFORT, voraussetzung_sektor_id: null });
     } else if (val === VORGAENGER_VALUE) {
       onChange?.({ modus: FREISCHALT_MODUS.NACH_VORGAENGER, voraussetzung_sektor_id: null });
@@ -76,7 +82,7 @@ export default function SektorFreischaltControl({
     }
   };
 
-  const isGated = fb.modus !== FREISCHALT_MODUS.SOFORT;
+  const isGated = fb.modus !== FREISCHALT_MODUS.SOFORT && !(istFreigabe && fb.freigegeben);
   const Icon = isGated ? Lock : Unlock;
 
   return (
@@ -93,7 +99,11 @@ export default function SektorFreischaltControl({
             </span>
           </TooltipTrigger>
           <TooltipContent>
-            {isGated
+            {istFreigabe
+              ? fb.freigegeben
+                ? 'Freigegeben: Die Schüler können das Projekt jetzt bearbeiten.'
+                : 'Gesperrt, bis du ihn nach Rückgabe der schriftlichen Arbeit freigibst.'
+              : isGated
               ? fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER
                 ? 'Dieser Sektor ist anfangs gesperrt und wird erst nach Abschluss des vorhergehenden Sektors zugänglich.'
                 : 'Dieser Sektor ist anfangs gesperrt und wird erst nach Abschluss des gewählten Sektors zugänglich.'
@@ -111,6 +121,9 @@ export default function SektorFreischaltControl({
             <SelectItem value={VORGAENGER_VALUE} className="text-[11px]">
               Nach Vorgänger sichtbar
             </SelectItem>
+            <SelectItem value={FREIGABE_VALUE} className="text-[11px]">
+              Nach Rückgabe der Arbeit
+            </SelectItem>
             {!nurVorgaenger &&
               auswahlbar.map((s) => (
                 <SelectItem key={s.sektor_id} value={s.sektor_id} className="text-[11px]">
@@ -119,6 +132,20 @@ export default function SektorFreischaltControl({
               ))}
           </SelectContent>
         </Select>
+        {istFreigabe && !nurVorgaenger && (
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange?.({ ...fb, freigegeben: !fb.freigegeben })}
+            className={`h-7 rounded-md border px-2 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+              fb.freigegeben
+                ? 'border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+            }`}
+          >
+            {fb.freigegeben ? 'Freigegeben' : 'Jetzt freigeben'}
+          </button>
+        )}
       </div>
     </TooltipProvider>
   );

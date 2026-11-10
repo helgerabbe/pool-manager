@@ -7,7 +7,7 @@ import { kompetenzkarteText } from '@/lib/kompetenzkarte';
 const ohneHtml = (t, n = 400) => String(t || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, n);
 
 /** Kontext aus dem Pragmatiker-Dashboard: Sektoren, darin liegende Aufgaben/Lernpakete und deren Lernziele. */
-export async function onlineTestKontext({ einheit, sektoren, aufgabenById }) {
+export async function onlineTestKontext({ einheit, sektoren, aufgabenById, planLabel = 'Inhalte des Pragmatiker-Lernplans (grundlegendes Niveau)' }) {
   const ids = sektoren.flatMap((s) => (s.items || []).filter((i) => i.type === 'aufgabe').map((i) => i.ref_id));
   const paketIds = ids.filter((id) => aufgabenById.get(id)?._isLernpaket);
   const ziele = paketIds.length ? await base44.entities.Lernziele.filter({ lernpaket_id: { $in: paketIds } }) : [];
@@ -21,7 +21,7 @@ export async function onlineTestKontext({ einheit, sektoren, aufgabenById }) {
     return items.length ? `Sektor „${s.titel_snapshot || s.titel || 'ohne Titel'}“:\n${items.join('\n')}` : null;
   }).filter(Boolean);
   return `Fach: ${einheit.fach}\nJahrgang: ${einheit.jahrgangsstufe}\nThema der Einheit: ${einheit.titel_der_einheit}
-${einheit.gesamtziele?.length ? `Gesamtziele: ${einheit.gesamtziele.join(' / ')}\n` : ''}Inhalte des Pragmatiker-Lernplans (grundlegendes Niveau):\n${zeilen.join('\n') || '(keine Inhalte gefunden)'}`;
+${einheit.gesamtziele?.length ? `Gesamtziele: ${einheit.gesamtziele.join(' / ')}\n` : ''}${planLabel}:\n${zeilen.join('\n') || '(keine Inhalte gefunden)'}`;
 }
 
 const VARIANTE = {

@@ -151,9 +151,11 @@ const EHRGEIZIG = [
   },
   {
     sektor_id: 'tpl_ehr_sec4',
-    titel: 'Projekt',
+    titel: 'Projekt (nach der schriftlichen Arbeit)',
     modus: 'sequenziell', // Phase A: Sektor-Modus immer sequenziell.
     sektor_typ: SEKTOR_TYP.PROJEKTE,
+    // Erst nach Rückgabe der schriftlichen Arbeit freigeschaltet (Lehrkraft).
+    freischalt_bedingung: { modus: 'nach_freigabe', freigegeben: false },
     items: [sys(B.projektBuendel)],
   },
 ];

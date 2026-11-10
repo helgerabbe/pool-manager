@@ -172,6 +172,10 @@ export function useDashboardRelease({
         lerntyp: activeLernTyp,
         newStatus: PFAD_STATUS.LOCKED,
       });
+      // Gemeinsamer E-Plan: Passioniert wird mit Ehrgeizig zusammen markiert.
+      if (res?.data?.ok && activeLernTyp === 'ehrgeizig') {
+        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: 'passioniert', newStatus: PFAD_STATUS.LOCKED });
+      }
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });
@@ -225,6 +229,9 @@ export function useDashboardRelease({
         lerntyp: activeLernTyp,
         newStatus: PFAD_STATUS.DRAFT,
       });
+      if (res?.data?.ok && activeLernTyp === 'ehrgeizig') {
+        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: 'passioniert', newStatus: PFAD_STATUS.DRAFT });
+      }
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" entsperrt.`);
         queryClient.invalidateQueries({ queryKey: ['lernpfadStatus', einheitId, activeLernTyp] });

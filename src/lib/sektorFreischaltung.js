@@ -24,6 +24,9 @@ export const FREISCHALT_MODUS = Object.freeze({
   SOFORT: 'sofort',
   NACH_SEKTOR: 'nach_sektor',
   NACH_VORGAENGER: 'nach_vorgaenger',
+  // 2026-11-10: Projektbereich – die Lehrkraft schaltet ihn nach Rückgabe der
+  // schriftlichen Arbeit von Hand frei (freigegeben: true).
+  NACH_FREIGABE: 'nach_freigabe',
 });
 
 /**
@@ -37,6 +40,9 @@ export function normalizeFreischaltBedingung(fb) {
   }
   if (fb.modus === FREISCHALT_MODUS.NACH_VORGAENGER) {
     return { modus: FREISCHALT_MODUS.NACH_VORGAENGER, voraussetzung_sektor_id: null };
+  }
+  if (fb.modus === FREISCHALT_MODUS.NACH_FREIGABE) {
+    return { modus: FREISCHALT_MODUS.NACH_FREIGABE, voraussetzung_sektor_id: null, freigegeben: fb.freigegeben === true };
   }
   if (fb.modus === FREISCHALT_MODUS.NACH_SEKTOR && typeof fb.voraussetzung_sektor_id === 'string' && fb.voraussetzung_sektor_id) {
     return { modus: FREISCHALT_MODUS.NACH_SEKTOR, voraussetzung_sektor_id: fb.voraussetzung_sektor_id };

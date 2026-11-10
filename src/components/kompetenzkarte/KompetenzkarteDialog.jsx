@@ -18,8 +18,12 @@ const TEXTE = {
 };
 
 /** Extra-Fenster für den Systembaustein „Kompetenzkarte“ im Pragmatiker-Dashboard. */
-export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sektoren, aufgabenById }) {
-  const kk = useKompetenzkarte({ einheit, sektoren, aufgabenById, offen: open });
+export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sektoren, aufgabenById, lerntyp = 'pragmatiker' }) {
+  const kk = useKompetenzkarte({ einheit, sektoren, aufgabenById, offen: open, lerntyp });
+  const eNiveau = lerntyp === 'ehrgeizig';
+  const texte = eNiveau
+    ? { ...TEXTE, intro: 'Ich lese den gemeinsamen Lernplan von Ehrgeizig und Passioniert bis zur schriftlichen Arbeit und schlage eine Kompetenzkarte auf E-Niveau vor: nach Bereichen gegliedert, gewichtet (zentral, wichtig, ergänzend) und mit den Lernpaketen und Aufgaben verknüpft. Der Projektbereich gehört nicht dazu.' }
+    : TEXTE;
   const [schueler, setSchueler] = React.useState(false);
   const onSenden = (w) => kk.senden(w).catch(() => toast.error('Der Assistent hat nicht geantwortet. Bitte noch einmal versuchen.'));
   const schliessen = (v) => { if (!v && kk.geaendert && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return; onOpenChange(v); };
@@ -28,7 +32,7 @@ export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sekt
     <Dialog open={open} onOpenChange={schliessen}>
       <DialogContent className="flex h-[92vh] w-[96vw] max-w-[96vw] flex-col gap-0 p-0">
         <div className="flex items-center gap-3 border-b px-5 py-3 pr-12">
-          <DialogTitle className="flex-1 font-display">Kompetenzkarte · {einheit?.titel_der_einheit}</DialogTitle>
+          <DialogTitle className="flex-1 font-display">Kompetenzkarte {eNiveau ? 'Ehrgeizig & Passioniert (E-Niveau)' : 'Pragmatiker (grundlegendes Niveau)'} · {einheit?.titel_der_einheit}</DialogTitle>
           {kk.karte?.bereiche && (
             <Button size="sm" variant="outline" onClick={() => setSchueler(!schueler)}>
               {schueler ? <Pencil /> : <Eye />} {schueler ? 'Bearbeiten' : 'Schüleransicht'}
@@ -56,7 +60,7 @@ export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sekt
             )}
           </div>
           <aside className="w-96 shrink-0 border-l bg-background">
-            <OnlineTestChat verlauf={kk.gespraech} laedt={kk.laedt} hatTest={!!kk.karte?.bereiche} onSenden={onSenden} texte={TEXTE} />
+            <OnlineTestChat verlauf={kk.gespraech} laedt={kk.laedt} hatTest={!!kk.karte?.bereiche} onSenden={onSenden} texte={texte} />
           </aside>
         </div>
       </DialogContent>

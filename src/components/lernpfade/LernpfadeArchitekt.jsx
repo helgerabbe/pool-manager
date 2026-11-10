@@ -11,7 +11,9 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ClipboardCheck, FilePlus, ChevronDown, MessageSquare } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ClipboardCheck, FilePlus, ChevronDown, MessageSquare, Lock } from 'lucide-react';
+import EPlanHinweis from '@/components/lernpfade/EPlanHinweis';
+import AbschnittTrenner from '@/components/lernpfade/AbschnittTrenner';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
@@ -88,6 +90,14 @@ const ADD_SEKTOR_OPTIONS = [
     cls: 'text-emerald-600',
   },
   {
+    key: SEKTOR_TYP.PROJEKTE,
+    label: 'Projektbereich',
+    hint: 'Nach der schriftlichen Arbeit · gesperrt bis zur Freigabe',
+    Icon: Lock,
+    cls: 'text-violet-600',
+    nurEPlan: true,
+  },
+  {
     key: SEKTOR_TYP.INDIVIDUELL,
     label: 'Leerer Sektor',
     hint: 'Ohne vordefinierte Bausteine',
@@ -96,7 +106,7 @@ const ADD_SEKTOR_OPTIONS = [
   },
 ];
 
-function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '' }) {
+function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '', ePlan = false }) {
   const renderItem = (opt) => {
     const Icon = opt.Icon;
     return (
@@ -111,7 +121,7 @@ function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', classNam
   };
 
   // „Leerer Sektor" optisch absetzen.
-  const primary = ADD_SEKTOR_OPTIONS.filter((o) => o.key !== SEKTOR_TYP.INDIVIDUELL);
+  const primary = ADD_SEKTOR_OPTIONS.filter((o) => o.key !== SEKTOR_TYP.INDIVIDUELL && (!o.nurEPlan || ePlan));
   const leer = ADD_SEKTOR_OPTIONS.find((o) => o.key === SEKTOR_TYP.INDIVIDUELL);
 
   return (
@@ -185,7 +195,12 @@ export default function LernpfadeArchitekt({
   onOpenKompetenzkarte,
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
-  const aktivLabel = LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
+  const ePlan = activeLernTyp === 'ehrgeizig';
+  const aktivLabel = ePlan ? 'Ehrgeizig & Passioniert' : LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
+  // Erster Sektor des Projektbereichs → davor der Abschnittsübergang.
+  const projektStart = ePlan
+    ? sektoren.findIndex((s) => s.sektor_typ === SEKTOR_TYP.PROJEKTE || s.freischalt_bedingung?.modus === 'nach_freigabe')
+    : -1;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -195,6 +210,7 @@ export default function LernpfadeArchitekt({
 
       {/* Canvas */}
       <div ref={canvasScrollRef} className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
+        {ePlan && <EPlanHinweis />}
         {einheitId && activeLernTyp && (
           <LernplanDauerFeld
             einheitId={einheitId}
@@ -213,7 +229,7 @@ export default function LernpfadeArchitekt({
             </p>
             {!readOnly && (
               <div className="inline-flex items-center gap-1.5">
-                <AddSektorMenu onAddSektor={onAddSektor} />
+                <AddSektorMenu onAddSektor={onAddSektor} ePlan={ePlan} />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Intensitätsstufe lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>
@@ -223,8 +239,9 @@ export default function LernpfadeArchitekt({
         ) : (
           <div className="space-y-3">
             {sektoren.map((sektor, idx) => (
+              <React.Fragment key={sektor.sektor_id || idx}>
+              {idx === projektStart && <AbschnittTrenner />}
               <LernpfadeSektor
-                key={sektor.sektor_id || idx}
                 sektor={sektor}
                 index={idx}
                 totalSektoren={sektoren.length}
@@ -272,10 +289,11 @@ export default function LernpfadeArchitekt({
                     : getDriftStatus?.(activeLernTyp, sektor.sektor_id) ?? 'unknown'
                 }
               />
+              </React.Fragment>
             ))}
             {!readOnly && (
               <div className="flex items-center gap-1.5">
-                <AddSektorMenu onAddSektor={onAddSektor} variant="outline" className="flex-1" />
+                <AddSektorMenu onAddSektor={onAddSektor} variant="outline" className="flex-1" ePlan={ePlan} />
                 <InfoHint title="Was ist ein Sektor?" side="top">
                   Ein Sektor ist ein Abschnitt im Lernpfad – eine Art Kapitel. Schüler arbeiten ihn entweder „sequenziell" (Aufgabe für Aufgabe) oder „frei" (Reihenfolge offen) ab. Pro Intensitätsstufe lassen sich beliebig viele Sektoren anlegen.
                 </InfoHint>

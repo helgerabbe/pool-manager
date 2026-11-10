@@ -74,6 +74,7 @@ import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
 import { autoAssembleLerntyp, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoAssembly';
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
+import { planVon, spiegelEPlan } from '@/lib/eNiveauPlan';
 import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
@@ -111,7 +112,7 @@ export default function LernpfadeCockpit({
   const VALID_LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
   const initialLernTyp = (() => {
     const p = searchParams.get('lerntyp');
-    return VALID_LERNTYPEN.includes(p) ? p : 'pragmatiker';
+    return VALID_LERNTYPEN.includes(p) ? planVon(p) : 'pragmatiker';
   })();
   const [activeLernTyp, setActiveLernTyp] = useState(initialLernTyp);
 
@@ -132,7 +133,7 @@ export default function LernpfadeCockpit({
     const sektorParam = searchParams.get('sektor');
     if (!lerntypParam && !sektorParam) return;
     if (lerntypParam && VALID_LERNTYPEN.includes(lerntypParam)) {
-      setActiveLernTyp(lerntypParam);
+      setActiveLernTyp(planVon(lerntypParam));
       setSelectedAufgabeIdState(null);
       setSelectedSystemBausteinIdState(null);
     }
@@ -209,8 +210,8 @@ export default function LernpfadeCockpit({
       try {
         await base44.entities.Einheiten.update(einheit.id, { aktive_lerntypen: next });
         setAktiveLerntypen(next);
-        if (!next.includes(activeLernTyp) && activeLernTyp !== 'onboarding') {
-          setActiveLernTyp(next[0]);
+        if (!next.map(planVon).includes(activeLernTyp) && activeLernTyp !== 'onboarding') {
+          setActiveLernTyp(planVon(next[0]));
           setSelectedAufgabeIdState(null);
           setSelectedSystemBausteinIdState(null);
         }
@@ -234,8 +235,8 @@ export default function LernpfadeCockpit({
   useEffect(() => {
     if (!istPrivat) return;
     if (activeLernTyp === 'onboarding' && aktiveLerntypen.length > 1) return;
-    if (!aktiveLerntypen.includes(activeLernTyp)) {
-      setActiveLernTyp(aktiveLerntypen[0]);
+    if (!aktiveLerntypen.map(planVon).includes(activeLernTyp)) {
+      setActiveLernTyp(planVon(aktiveLerntypen[0]));
       setSelectedAufgabeIdState(null);
       setSelectedSystemBausteinIdState(null);
     }
@@ -435,7 +436,7 @@ export default function LernpfadeCockpit({
   const darfEntsperren = istAdmin || istFachschaftFuerFach;
 
   const lerntypLabel = useMemo(
-    () => LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label || activeLernTyp,
+    () => (activeLernTyp === 'ehrgeizig' ? 'Ehrgeizig & Passioniert' : LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label || activeLernTyp),
     [activeLernTyp]
   );
 
@@ -547,7 +548,8 @@ export default function LernpfadeCockpit({
   const updateKonfiguration = useCallback(
     (updater, options = {}) => {
       const prev = konfigurationRef.current;
-      const next = typeof updater === 'function' ? updater(prev) : updater;
+      // Ehrgeizig + Passioniert = ein gemeinsamer E-Plan (passioniert wird mitgeschrieben).
+      const next = spiegelEPlan(typeof updater === 'function' ? updater(prev) : updater);
       konfigurationRef.current = next;
       setKonfiguration(next);
       scheduleSave(next);
@@ -620,6 +622,7 @@ export default function LernpfadeCockpit({
       if (!Array.isArray(effectiveTemplates?.[lt])) continue;
       filled = autoAssembleLerntyp(filled, lt, effectiveTemplates[lt], themenfelder, ctx);
     }
+    filled = spiegelEPlan(filled);
     setKonfiguration(filled);
     konfigurationRef.current = filled;
     // Direkter Save via flushSave(forcePayload) — kein Edit-Lock erforderlich,
@@ -785,6 +788,21 @@ export default function LernpfadeCockpit({
           items: [
             { type: 'system', ref_id: 'sys_feedback' },
           ],
+        });
+        updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+        return;
+      }
+      if (sektorTyp === SEKTOR_TYP.PROJEKTE) {
+        // Projektbereich (E-Plan): pro Plan einmal, gesperrt bis zur Rückgabe der Arbeit.
+        if ((konfigurationRef.current?.[activeLernTyp] || []).some((s) => s?.sektor_typ === SEKTOR_TYP.PROJEKTE)) {
+          toast({ title: 'Projektbereich existiert bereits', description: 'Pro Arbeitsplan gibt es genau einen Projektbereich.' });
+          return;
+        }
+        const sektor = createNewSektor({
+          titel: 'Projekt (nach der schriftlichen Arbeit)',
+          sektor_typ: SEKTOR_TYP.PROJEKTE,
+          items: [{ type: 'system', ref_id: 'sys_projektbuendel' }],
+          freischalt_bedingung: { modus: 'nach_freigabe', freigegeben: false },
         });
         updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
         return;
@@ -1124,7 +1142,7 @@ export default function LernpfadeCockpit({
                 onPreviewLernlandkarte={previews.openLernlandkarte}
                 onPreviewPruefungsAnmeldung={previews.openPruefungsAnmeldung}
                 onOpenOnlineTest={activeLernTyp === 'pragmatiker' ? previews.openOnlineTest : undefined}
-                onOpenKompetenzkarte={activeLernTyp === 'pragmatiker' ? previews.openKompetenzkarte : undefined}
+                onOpenKompetenzkarte={['pragmatiker', 'ehrgeizig'].includes(activeLernTyp) ? previews.openKompetenzkarte : undefined}
                 onPreviewThemenfeldIntro={(ctx) =>
                   previews.openThemenfeldIntro({ ...ctx, lerntyp: activeLernTyp })
                 }

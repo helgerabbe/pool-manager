@@ -828,6 +828,7 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
     // als 'nach_vorgaenger' übernommen; nur 'sofort' bleibt 'sofort'.
     freischalt_bedingung: (() => {
       const fb = normalizeFreischaltBedingung(sektor?.freischalt_bedingung);
+      if (fb.modus === 'nach_freigabe') return { ...fb, freigegeben: false };
       return fb.modus === 'sofort'
         ? fb
         : { modus: 'nach_vorgaenger', voraussetzung_sektor_id: null };

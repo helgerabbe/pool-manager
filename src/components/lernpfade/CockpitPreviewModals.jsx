@@ -120,8 +120,10 @@ export default function CockpitPreviewModals({
         einheitTitel={einheitTitel}
       />
 
-      {activeLernTyp === 'pragmatiker' && (
+      {['pragmatiker', 'ehrgeizig'].includes(activeLernTyp) && (
         <KompetenzkarteDialog
+          key={activeLernTyp}
+          lerntyp={activeLernTyp}
           open={previews.kompetenzkarteOpen}
           onOpenChange={previews.setKompetenzkarteOpen}
           einheit={einheit}

@@ -18,8 +18,9 @@ export const sortiert = (ks = []) =>
 
 export const neueId = (p) => `${p}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`;
 
-export async function ladeKompetenzkarte(einheitId) {
-  return (await base44.entities.Kompetenzkarte.filter({ einheit_id: einheitId, lerntyp: 'pragmatiker' }))[0] || null;
+/** lerntyp 'pragmatiker' = grundlegendes Niveau, 'ehrgeizig' = gemeinsame E-Niveau-Karte (Ehrgeizig + Passioniert). */
+export async function ladeKompetenzkarte(einheitId, lerntyp = 'pragmatiker') {
+  return (await base44.entities.Kompetenzkarte.filter({ einheit_id: einheitId, lerntyp }))[0] || null;
 }
 
 /** Kompetenzkarte als Text für Test-Assistent und korrigierende KI. */

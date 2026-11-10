@@ -67,10 +67,14 @@ export function buildSichtbarePfadItems(
   // Sichtbare Items in Original-Reihenfolge, Container ausgelassen.
   const sichtbar = annotatedItems.filter((it) => !istBundleItem(it, bausteinById));
 
+  // Projektbereich: gesperrt bis zur Freigabe nach Rückgabe der schriftlichen Arbeit.
+  const wartetAufFreigabe = !sektorFreigeschaltet && sektor?.freischalt_bedingung?.modus === 'nach_freigabe';
+
   return sichtbar.map((it) => {
     const meta = getItemMeta(it, aufgabenById, bausteinById);
-    const lockReason =
-      it.gate === ITEM_GATE.GESPERRT
+    const lockReason = wartetAufFreigabe
+      ? 'Das Projekt wird freigeschaltet, sobald die schriftliche Arbeit zurückgegeben wurde.'
+      : it.gate === ITEM_GATE.GESPERRT
         ? computeLockReason(it, byInstance, containerInfo, aufgabenById, bausteinById, sektorModus, sektorFreigeschaltet, voraussetzungTitel)
         : null;
     return { ...it, meta, lockReason };

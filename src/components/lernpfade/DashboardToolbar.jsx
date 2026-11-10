@@ -53,6 +53,7 @@ import {
 import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import DashboardZustandBadge from '@/components/lernpfade/DashboardZustandBadge';
+import { planVon, NIVEAU } from '@/lib/eNiveauPlan';
 
 const LERNTYP_META = {
   minimalist: { label: 'Minimalist', icon: Sparkles, activeBg: 'bg-slate-700', activeText: 'text-white', inactiveText: 'text-slate-700' },
@@ -67,7 +68,7 @@ const LERNTYPEN = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 // unten der Lebenszyklus (Neu / Im Export / Synchron / Geändert). Dadurch ist
 // auf Tab 7 jederzeit sichtbar, in welchem Moodle-Sync-Zustand jedes der vier
 // Dashboards gerade steckt.
-function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onOpenGuide, labelOverride }) {
+function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onOpenGuide, labelOverride, niveau }) {
   const baseMeta = LERNTYP_META[typKey];
   const meta = labelOverride ? { ...baseMeta, label: labelOverride } : baseMeta;
   const Icon = meta.icon;
@@ -140,6 +141,11 @@ function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onO
       {/* Zeile 2: Dashboard-Zustand (Automatisch/Bearbeitet/Geprüft) */}
       <span className="inline-flex items-center gap-1.5 pointer-events-auto">
         <DashboardZustandBadge zustand={zustand} />
+        {niveau && (
+          <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${active ? 'bg-white/20' : 'bg-muted'}`}>
+            {niveau}
+          </span>
+        )}
       </span>
     </button>
   );
@@ -205,7 +211,12 @@ export default function DashboardToolbar({
 
   // Privat-Modus: nur die angebotenen Lerntypen als Reiter zeigen. Bei genau
   // EINEM angebotenen Lerntyp entfällt die Lerntyp-Wahl → Onboarding-Pill weg.
-  const sichtbareLerntypen = LERNTYPEN.filter((lt) => aktiveLerntypen.includes(lt));
+  // Ehrgeizig + Passioniert teilen einen Plan → ein gemeinsamer Reiter (unter 'ehrgeizig').
+  const sichtbareLerntypen = LERNTYPEN.filter((lt) => lt !== 'passioniert' && aktiveLerntypen.map(planVon).includes(lt));
+  const pillLabel = (lt) =>
+    lt === 'ehrgeizig'
+      ? `${lerntypNamen.ehrgeizig || 'Ehrgeizig'} & ${lerntypNamen.passioniert || 'Passioniert'}`
+      : lerntypNamen[lt];
   const zeigeOnboardingPill = !(zeigeLerntypenSchalter && aktiveLerntypen.length === 1);
 
   return (
@@ -415,7 +426,8 @@ export default function DashboardToolbar({
               onActiveLernTypChange?.(lt);
               onOpenGuide?.();
             }}
-            labelOverride={lerntypNamen[lt]}
+            labelOverride={pillLabel(lt)}
+            niveau={NIVEAU[lt]?.kurz}
           />
         ))}
       </div>

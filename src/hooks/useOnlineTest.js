@@ -13,7 +13,7 @@ export default function useOnlineTest({ einheit, sektoren, aufgabenById, offen }
     enabled: offen && !!einheit?.id,
     queryFn: async () => (await base44.entities.OnlineTest.filter({ einheit_id: einheit.id, lerntyp: 'pragmatiker' }))[0] || null,
   });
-  const { data: karte } = useQuery({ queryKey: ['kompetenzkarte', einheit?.id], enabled: offen && !!einheit?.id, queryFn: () => ladeKompetenzkarte(einheit.id) });
+  const { data: karte } = useQuery({ queryKey: ['kompetenzkarte', einheit?.id, 'pragmatiker'], enabled: offen && !!einheit?.id, queryFn: () => ladeKompetenzkarte(einheit.id, 'pragmatiker') });
   const [laedt, setLaedt] = React.useState(false);
 
   const senden = async (wunsch) => {

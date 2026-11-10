@@ -50,17 +50,35 @@ const SCHEMA = {
   required: ['nachricht', 'untertitel', 'titel', 'bereiche'],
 };
 
-const REGELN = `ROLLE: Du erstellst eine KOMPETENZKARTE für Schüler einer Gesamtschule (IGS). Die Karte sagt dem Schüler klar, was er am Ende der Einheit wissen und können soll. Sie ist Orientierung beim Lernen, Grundlage der Selbsteinschätzung und Grundlage des Abschlusstests. Nur Grundkurs-Niveau (Pragmatiker-Lernplan), keine E-Kurs-Kompetenzen.
+const NIVEAU_REGEL = {
+  pragmatiker: {
+    rolle: 'Grundlage des Abschlusstests (Online-Test). Nur grundlegendes Niveau (Grundkurs, Pragmatiker-Lernplan), keine E-Kurs-Kompetenzen.',
+    plan: 'Nur Kompetenzen, die der Pragmatiker-Lernplan wirklich vermittelt.',
+    pruefung: 'der Abschlusstest',
+  },
+  ehrgeizig: {
+    rolle: 'Grundlage der schriftlichen Arbeit. E-Niveau (erweitertes Niveau, E-Kurs): gemeinsamer Lernplan der Lerntypen Ehrgeizig und Passioniert. Anspruchsvoller als das grundlegende Niveau: mehr Analyse, Begründung, Transfer und eigenständiges Arbeiten. Der Projektbereich nach der schriftlichen Arbeit gehört NICHT zur Karte.',
+    plan: 'Nur Kompetenzen, die der Lernplan bis zur schriftlichen Arbeit wirklich vermittelt.',
+    pruefung: 'die schriftliche Arbeit',
+  },
+};
+
+const regeln = (lerntyp) => {
+  const n = NIVEAU_REGEL[lerntyp] || NIVEAU_REGEL.pragmatiker;
+  return REGELN.replace('{ROLLE}', n.rolle).replace('{PLAN}', n.plan).replace('{PRUEFUNG}', n.pruefung);
+};
+
+const REGELN = `ROLLE: Du erstellst eine KOMPETENZKARTE für Schüler einer Gesamtschule (IGS). Die Karte sagt dem Schüler klar, was er am Ende der Einheit wissen und können soll. Sie ist Orientierung beim Lernen, Grundlage der Selbsteinschätzung und {ROLLE}
 
 AUFBAU (wie die Kompetenzkarten der Schule):
 - "untertitel": "Kompetenzkarte <Fach> <Jahrgang>", "titel": das Thema der Einheit, kurz.
 - 2–4 Bereiche nach den Kompetenzbereichen des Fachs (z. B. Deutsch: „Lesen und mit Texten arbeiten“, „Texte verfassen“; Mathematik: „Mit Formeln arbeiten“, „Probleme lösen“). IDs B1, B2, …
 - Je Bereich 3–7 Kompetenzen, insgesamt etwa 8–14. IDs K1, K2, … (fortlaufend über alle Bereiche).
 - "text" setzt „Du kannst …“ fort: klein beginnen, mit Punkt enden, z. B. „Merkmale einer Kurzgeschichte nennen.“ Eine Kompetenz pro Zeile, konkret und überprüfbar, mit klaren Verben (nennen, erklären, berechnen, untersuchen, anwenden). Schülergerechte, einfache Sprache; Fachbegriffe nur, wenn sie gelernt werden.
-- Nur Kompetenzen, die der Pragmatiker-Lernplan wirklich vermittelt.
+- {PLAN}
 
 GEWICHTUNG ("gewicht"):
-- "zentral": die 1–3 Kernkompetenzen der Einheit, die der Abschlusstest vor allem prüft (z. B. „mit dem Satz des Pythagoras fehlende Seiten im rechtwinkligen Dreieck berechnen.“).
+- "zentral": die 1–3 Kernkompetenzen der Einheit, die {PRUEFUNG} vor allem prüft (z. B. „mit dem Satz des Pythagoras fehlende Seiten im rechtwinkligen Dreieck berechnen.“).
 - "wichtig": zeigen, dass der Schüler das Thema gut beherrscht.
 - "ergaenzend": zusätzliches Wissen und Können, das dazugehört, aber nicht im Mittelpunkt steht (z. B. „erkennen, dass die Seiten auch anders heißen können, z. B. x, y und z.“).
 
@@ -77,13 +95,13 @@ const fuerKi = (karte) => ({
 });
 
 /** Erstellt die Karte neu oder überarbeitet sie nach dem Wunsch der Lehrkraft. Verweise kommen als Objekte zurück. */
-export async function kompetenzkarteBauen({ kontext, verweise, karte, wunsch, verlauf = [] }) {
+export async function kompetenzkarteBauen({ kontext, verweise, karte, wunsch, verlauf = [], lerntyp = 'pragmatiker' }) {
   const bestand = karte?.bereiche?.length
     ? `\nAKTUELLE KARTE (überarbeite sie; ändere nur, was der Wunsch verlangt, behalte IDs unveränderter Kompetenzen und gib immer die KOMPLETTE Karte zurück):\n${JSON.stringify(fuerKi(karte))}`
     : '\nEs gibt noch keine Karte. Erstelle sie vollständig neu.';
   const gespraech = verlauf.length ? `\nGESPRÄCH BISHER:\n${verlauf.slice(-8).map((m) => `${m.role === 'user' ? 'Lehrkraft' : 'Du'}: ${m.content}`).join('\n')}` : '';
   const r = await base44.integrations.Core.InvokeLLM({
-    prompt: `${REGELN}\n\nEINHEIT:\n${kontext}\n\nVERWEISBARE INHALTE:\n${verweisListe(verweise) || '(keine)'}${bestand}${gespraech}\n\nWUNSCH DER LEHRKRAFT: ${wunsch || 'Erstelle die Kompetenzkarte zu dieser Einheit.'}`,
+    prompt: `${regeln(lerntyp)}\n\nEINHEIT:\n${kontext}\n\nVERWEISBARE INHALTE:\n${verweisListe(verweise) || '(keine)'}${bestand}${gespraech}\n\nWUNSCH DER LEHRKRAFT: ${wunsch || 'Erstelle die Kompetenzkarte zu dieser Einheit.'}`,
     response_json_schema: SCHEMA,
   });
   const nachId = new Map(verweise.map((v) => [v.id, v]));
