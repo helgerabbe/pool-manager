@@ -1226,6 +1226,9 @@ export function buildStructurePayload({
     // in welcher Reihenfolge sie zu bearbeiten sind und mit welchem Zugang die
     // verlinkten Lernpakete geöffnet werden.
     aufgaben_modus: aa.aufgaben_modus || 'einzeln',
+    // Zufallsauswahl (2026-11-10): 0 = alle Elemente; X = pro Schüler
+    // zufällig X der Elemente (sequenz_schritte) ziehen.
+    zufallsauswahl_anzahl: aa.zufallsauswahl_anzahl || 0,
     lernpaket_logik: aa.lernpaket_logik || 'standard',
     erforderliche_anzahl: aa.erforderliche_anzahl ?? 0,
     interne_reihenfolge: aa.interne_reihenfolge || 'frei',
@@ -1807,6 +1810,8 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     // Leer bei Aufgaben im Modus 'einzeln'.
     aufgaben_modus: aufgabe?.aufgaben_modus || 'einzeln',
     sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi, katalogById }),
+    // Zufallsauswahl: 0 = alle Schritte; X = pro Schüler zufällig X ziehen.
+    zufallsauswahl_anzahl: aufgabe?.zufallsauswahl_anzahl || 0,
 
     // airgap-1.21.0: Bündel-/Auswahl-Verhalten und die verlinkten Elemente.
     // Bei aufgaben_typ='buendel'/'auswahl_buendel' ist das der ganze Inhalt

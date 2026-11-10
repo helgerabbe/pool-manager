@@ -38,6 +38,12 @@
       "type": "number",
       "description": "Position der Aufgabe innerhalb ihres Lernpakets (Aufgabe 1, Aufgabe 2, ...)."
     },
+    "zufallsauswahl_anzahl": {
+      "type": "integer",
+      "minimum": 0,
+      "default": 0,
+      "description": "ZUFALLSAUSWAHL (2026-11-10): Wie viele Elemente (sequenz_schritte) ein Schueler aus dieser Aufgabe bearbeitet. 0 oder leer = alle Elemente in fester Reihenfolge. X > 0 = pro Schueler werden zufaellig X der N Elemente gezogen (Reihenfolge der Folge bleibt erhalten). Ersetzt die Varianten (MasterAufgabe, master_anzeige_modus 'shuffle') der frueheren Lernpaket-Uebungen. Gilt immer fuer die ganze Aufgabe. Wird im Export an die MBK weitergegeben, die die Ziehung im Kurs uebernimmt."
+    },
     "anforderungsebene": {
       "type": "string",
       "enum": [

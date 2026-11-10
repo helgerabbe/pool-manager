@@ -2,6 +2,7 @@ import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SegmentWahl from './SegmentWahl';
+import ZufallsauswahlWahl from './ZufallsauswahlWahl';
 import { NIVEAUS, NIVEAU_STANDARD, PFLICHT_WAHL } from '@/lib/aufgabenNiveau';
 
 /** Eine Aufgabe im Teil „Aufgaben" eines Lernpakets. */
@@ -18,6 +19,14 @@ export default function LernpaketAufgabeZeile({ aufgabe, nummer, editierbar, onA
           {aufgabe.aufgaben_modus !== 'sequenz' ? 'Einzelaufgabe' : schritte === 0 ? 'Noch keine Elemente' : `${schritte} ${schritte === 1 ? 'Element' : 'Elemente'}`}
         </div>
       </button>
+      {aufgabe.aufgaben_modus === 'sequenz' && schritte >= 2 && (
+        <ZufallsauswahlWahl
+          anzahl={aufgabe.zufallsauswahl_anzahl || 0}
+          elemente={schritte}
+          onChange={(zufallsauswahl_anzahl) => onAendern({ zufallsauswahl_anzahl })}
+          disabled={!editierbar}
+        />
+      )}
       <SegmentWahl
         optionen={NIVEAUS}
         value={aufgabe.niveau || NIVEAU_STANDARD}
