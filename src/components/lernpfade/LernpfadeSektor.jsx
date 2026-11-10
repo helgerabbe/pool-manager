@@ -34,6 +34,7 @@ import AmpelBadge from '@/components/lernpfade/AmpelBadge';
 import { isExportFreigegeben, isContentApproved } from '@/lib/ampelLogic';
 import { groupItemsByParent } from '@/lib/lernpfadeUtils';
 import { getSektorTypLabel, SEKTOR_TYP } from '@/lib/sektorTypen';
+import { getSektorTypStil } from '@/lib/sektorTypStil';
 import SektorDriftBadge from '@/components/lernpfade/SektorDriftBadge';
 
 // Lernlandkarte: alle Varianten teilen dieselbe Schüler-Vorschau.
@@ -351,6 +352,8 @@ export default function LernpfadeSektor({
   //     Bündel.
   //   - Das Title-Input bleibt als Override (z. B. für Onboarding/Individuell).
   const typLabel = getSektorTypLabel(sektor.sektor_typ);
+  const stil = getSektorTypStil(sektor.sektor_typ);
+  const TypIcon = stil.Icon;
   const isArbeitsphase = sektor.sektor_typ === SEKTOR_TYP.ARBEITSPHASE;
   const themenfeldTitel = sektor.titel_snapshot || sektor.titel;
   const headerLabel = isArbeitsphase && themenfeldTitel
@@ -385,7 +388,7 @@ export default function LernpfadeSektor({
   return (
     <div
       data-sektor-id={sektor.sektor_id}
-      className="rounded-lg border border-border bg-card/80 p-3 space-y-2 transition-shadow"
+      className={`rounded-lg border border-border border-l-4 ${stil.leiste} bg-card/80 p-3 space-y-2 transition-shadow`}
     >
       {/* Header — Sektor-Titel wird automatisch aus Einheit/Lerntyp/Typ
           abgeleitet und nicht mehr per Input editiert. Bei Arbeitsphasen
@@ -422,17 +425,19 @@ export default function LernpfadeSektor({
               type="button"
               onClick={() => setIsEditingTitel(true)}
               title="Sektor-Name bearbeiten"
-              className="group inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary hover:bg-secondary/70 px-2 py-0.5 rounded shrink-0 transition-colors"
+              className={`group inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${stil.chip} hover:opacity-80 px-2 py-0.5 rounded shrink-0 transition-opacity`}
             >
+              <TypIcon className="w-3.5 h-3.5 shrink-0" aria-label={typLabel} />
               {sektor.titel?.trim() || headerLabel}
               <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
           )
         ) : (
           <span
-            className="text-[11px] font-semibold uppercase tracking-wide text-foreground bg-secondary px-2 py-0.5 rounded shrink-0"
+            className={`inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${stil.chip} px-2 py-0.5 rounded shrink-0`}
             title={typLabel}
           >
+            <TypIcon className="w-3.5 h-3.5 shrink-0" />
             {isIndividuell ? (sektor.titel?.trim() || headerLabel) : headerLabel}
           </span>
         )}

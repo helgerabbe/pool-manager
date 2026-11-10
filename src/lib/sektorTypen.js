@@ -46,10 +46,11 @@ export const ALL_SEKTOR_TYPEN = Object.freeze([
 export const SINGLETON_SEKTOR_TYPEN = Object.freeze([
   SEKTOR_TYP.ONBOARDING,
   SEKTOR_TYP.UEBERBLICK,
-  SEKTOR_TYP.ABSCHLUSSTEST,
   SEKTOR_TYP.PROJEKTE,
   SEKTOR_TYP.FEEDBACK,
 ]);
+// ABSCHLUSSTEST (= „Schriftliche Arbeit") ist seit 2026-11-10 KEIN Singleton
+// mehr: Vorbereitung und Arbeit selbst dürfen eigene Sektoren sein.
 
 export const isSingletonSektorTyp = (typ) => SINGLETON_SEKTOR_TYPEN.includes(typ);
 
@@ -63,11 +64,11 @@ export const isValidSektorTyp = (typ) => ALL_SEKTOR_TYPEN.includes(typ);
  */
 export const SEKTOR_TYP_LABELS = Object.freeze({
   [SEKTOR_TYP.ONBOARDING]: 'Onboarding',
-  [SEKTOR_TYP.UEBERBLICK]: 'Überblick',
+  [SEKTOR_TYP.UEBERBLICK]: 'Einstieg & Anmeldung',
   [SEKTOR_TYP.ARBEITSPHASE]: 'Arbeitsphase',
   [SEKTOR_TYP.ZWISCHENTEST]: 'Zwischentest',
-  [SEKTOR_TYP.ABSCHLUSSTEST]: 'Abschlusstest',
-  [SEKTOR_TYP.PROJEKTE]: 'Projekte',
+  [SEKTOR_TYP.ABSCHLUSSTEST]: 'Schriftliche Arbeit',
+  [SEKTOR_TYP.PROJEKTE]: 'Projektbereich',
   [SEKTOR_TYP.INDIVIDUELL]: 'Individueller Sektor',
   [SEKTOR_TYP.FEEDBACK]: 'Feedback',
 });

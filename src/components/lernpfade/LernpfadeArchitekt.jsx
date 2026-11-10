@@ -11,7 +11,7 @@
  */
 
 import React from 'react';
-import { Sparkles, Layers, Trophy, Star, Plus, BookOpen, ClipboardCheck, FilePlus, ChevronDown, MessageSquare, Lock } from 'lucide-react';
+import { Sparkles, Layers, Trophy, Star, Plus, ChevronDown } from 'lucide-react';
 import EPlanHinweis from '@/components/lernpfade/EPlanHinweis';
 import AbschnittTrenner from '@/components/lernpfade/AbschnittTrenner';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { SEKTOR_TYP } from '@/lib/sektorTypen';
+import { getSektorTypStil } from '@/lib/sektorTypStil';
 import { getIntensitaetsFarbe } from '@/lib/lernpfadFarben';
 
 // Intensitätsstufen: eigener Teal-Verlauf (hell → dunkel = wenig → viel
@@ -67,51 +68,27 @@ export const LERN_TYPEN = [
 // Werte, die handleAddSektor im Cockpit erwartet (Arbeitsphase öffnet
 // ein Modal, Zwischentest wird mit Template befüllt, Individuell legt
 // einen leeren Sektor an).
-const ADD_SEKTOR_OPTIONS = [
-  {
-    key: SEKTOR_TYP.ARBEITSPHASE,
-    label: 'Arbeitsphase Themenfeld',
-    hint: 'Verknüpfung mit einem Themenfeld der Einheit',
-    Icon: BookOpen,
-    cls: 'text-blue-600',
-  },
-  {
-    key: SEKTOR_TYP.ZWISCHENTEST,
-    label: 'Zwischentest',
-    hint: 'Einstiegsseite · Zwischentest-Platzhalter',
-    Icon: ClipboardCheck,
-    cls: 'text-rose-600',
-  },
-  {
-    key: SEKTOR_TYP.FEEDBACK,
-    label: 'Feedback',
-    hint: 'Schüler-Rückmeldung am Ende der Einheit (immer letzter Sektor)',
-    Icon: MessageSquare,
-    cls: 'text-emerald-600',
-  },
-  {
-    key: SEKTOR_TYP.PROJEKTE,
-    label: 'Projektbereich',
-    hint: 'Nach der schriftlichen Arbeit · gesperrt bis zur Freigabe',
-    Icon: Lock,
-    cls: 'text-violet-600',
-    nurEPlan: true,
-  },
-  {
-    key: SEKTOR_TYP.INDIVIDUELL,
-    label: 'Leerer Sektor',
-    hint: 'Ohne vordefinierte Bausteine',
-    Icon: FilePlus,
-    cls: 'text-muted-foreground',
-  },
+// Haupttypen: Einstieg & Anmeldung, Arbeitsphase, Schriftliche Arbeit,
+// Projektbereich. Darunter (noch offen in der Ausgestaltung): Zwischentest,
+// Feedback, leerer Sektor.
+const HAUPT_OPTIONEN = [
+  { key: SEKTOR_TYP.UEBERBLICK, label: 'Einstieg & Anmeldung', hint: 'Lernlandkarte und Anmeldung zur Prüfung' },
+  { key: SEKTOR_TYP.ARBEITSPHASE, label: 'Arbeitsphase', hint: 'Auf Grundlage eines Themenfelds der Einheit' },
+  { key: SEKTOR_TYP.ABSCHLUSSTEST, label: 'Schriftliche Arbeit', hint: 'Vorbereitung und schriftliche Arbeit bzw. Abschlusstest' },
+  { key: SEKTOR_TYP.PROJEKTE, label: 'Projektbereich', hint: 'Nach der schriftlichen Arbeit · gesperrt bis zur Freigabe' },
+];
+const WEITERE_OPTIONEN = [
+  { key: SEKTOR_TYP.ZWISCHENTEST, label: 'Zwischentest', hint: 'Einstiegsseite · Zwischentest-Platzhalter' },
+  { key: SEKTOR_TYP.FEEDBACK, label: 'Feedback', hint: 'Schüler-Rückmeldung am Ende der Einheit (immer letzter Sektor)' },
+  { key: SEKTOR_TYP.INDIVIDUELL, label: 'Leerer Sektor', hint: 'Ohne vordefinierte Bausteine' },
 ];
 
-function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '', ePlan = false }) {
+function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', className = '' }) {
   const renderItem = (opt) => {
-    const Icon = opt.Icon;
+    const { Icon, icon } = getSektorTypStil(opt.key);
     return (
       <DropdownMenuItem key={opt.key} onClick={() => onAddSektor?.(opt.key)}>
-        <Icon className={`w-4 h-4 ${opt.cls}`} />
+        <Icon className={`w-4 h-4 ${icon}`} />
         <div className="flex flex-col">
           <span className="font-medium">{opt.label}</span>
           <span className="text-[11px] text-muted-foreground">{opt.hint}</span>
@@ -119,10 +96,6 @@ function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', classNam
       </DropdownMenuItem>
     );
   };
-
-  // „Leerer Sektor" optisch absetzen.
-  const primary = ADD_SEKTOR_OPTIONS.filter((o) => o.key !== SEKTOR_TYP.INDIVIDUELL && (!o.nurEPlan || ePlan));
-  const leer = ADD_SEKTOR_OPTIONS.find((o) => o.key === SEKTOR_TYP.INDIVIDUELL);
 
   return (
     <DropdownMenu>
@@ -135,13 +108,10 @@ function AddSektorMenu({ onAddSektor, variant = 'default', size = 'sm', classNam
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel>Sektor-Typ wählen</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {primary.map(renderItem)}
-        {leer && (
-          <>
-            <DropdownMenuSeparator />
-            {renderItem(leer)}
-          </>
-        )}
+        {HAUPT_OPTIONEN.map(renderItem)}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">Weitere (noch in Klärung)</DropdownMenuLabel>
+        {WEITERE_OPTIONEN.map(renderItem)}
       </DropdownMenuContent>
     </DropdownMenu>
   );

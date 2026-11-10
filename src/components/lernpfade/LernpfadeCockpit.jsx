@@ -792,6 +792,29 @@ export default function LernpfadeCockpit({
         updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
         return;
       }
+      if (sektorTyp === SEKTOR_TYP.UEBERBLICK) {
+        if ((konfigurationRef.current?.[activeLernTyp] || []).some((s) => s?.sektor_typ === SEKTOR_TYP.UEBERBLICK)) {
+          toast({ title: 'Einstieg existiert bereits', description: 'Pro Arbeitsplan gibt es genau einen Bereich „Einstieg & Anmeldung".' });
+          return;
+        }
+        const sektor = createNewSektor({
+          titel: 'Einstieg & Anmeldung',
+          sektor_typ: SEKTOR_TYP.UEBERBLICK,
+          items: [{ type: 'system', ref_id: 'sys_map_full' }, { type: 'system', ref_id: 'sys_exam_register' }],
+        });
+        // Einstieg steht immer am Anfang des Plans.
+        updateKonfiguration((prev) => ({ ...prev, [activeLernTyp]: [sektor, ...(prev?.[activeLernTyp] || [])] }));
+        return;
+      }
+      if (sektorTyp === SEKTOR_TYP.ABSCHLUSSTEST) {
+        const sektor = createNewSektor({
+          titel: 'Schriftliche Arbeit',
+          sektor_typ: SEKTOR_TYP.ABSCHLUSSTEST,
+          items: [{ type: 'system', ref_id: activeLernTyp === 'pragmatiker' ? 'sys_external_test' : 'sys_abschlussarbeit' }],
+        });
+        updateKonfiguration((prev) => addSektor(prev, activeLernTyp, sektor));
+        return;
+      }
       if (sektorTyp === SEKTOR_TYP.PROJEKTE) {
         // Projektbereich (E-Plan): pro Plan einmal, gesperrt bis zur Rückgabe der Arbeit.
         if ((konfigurationRef.current?.[activeLernTyp] || []).some((s) => s?.sektor_typ === SEKTOR_TYP.PROJEKTE)) {

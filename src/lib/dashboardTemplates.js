@@ -146,7 +146,7 @@ const EHRGEIZIG = [
     sektor_id: 'tpl_ehr_sec3',
     titel: 'Vorbereitung auf die schriftliche Arbeit',
     modus: 'sequenziell',
-    sektor_typ: SEKTOR_TYP.ZWISCHENTEST,
+    sektor_typ: SEKTOR_TYP.ABSCHLUSSTEST,
     items: [sys(B.zwischentest)],
   },
   {
