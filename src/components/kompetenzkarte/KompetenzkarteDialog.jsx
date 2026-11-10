@@ -1,6 +1,7 @@
 import React from 'react';
 import { toast } from 'sonner';
-import { Loader2, Save, Target } from 'lucide-react';
+import { Eye, Loader2, Pencil, Save, Target } from 'lucide-react';
+import KompetenzkarteSchuelerAnsicht from './KompetenzkarteSchuelerAnsicht';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import useKompetenzkarte from '@/hooks/useKompetenzkarte';
@@ -19,6 +20,7 @@ const TEXTE = {
 /** Extra-Fenster für den Systembaustein „Kompetenzkarte“ im Pragmatiker-Dashboard. */
 export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sektoren, aufgabenById }) {
   const kk = useKompetenzkarte({ einheit, sektoren, aufgabenById, offen: open });
+  const [schueler, setSchueler] = React.useState(false);
   const onSenden = (w) => kk.senden(w).catch(() => toast.error('Der Assistent hat nicht geantwortet. Bitte noch einmal versuchen.'));
   const schliessen = (v) => { if (!v && kk.geaendert && !window.confirm('Ungespeicherte Änderungen verwerfen?')) return; onOpenChange(v); };
 
@@ -27,6 +29,11 @@ export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sekt
       <DialogContent className="flex h-[92vh] w-[96vw] max-w-[96vw] flex-col gap-0 p-0">
         <div className="flex items-center gap-3 border-b px-5 py-3 pr-12">
           <DialogTitle className="flex-1 font-display">Kompetenzkarte · {einheit?.titel_der_einheit}</DialogTitle>
+          {kk.karte?.bereiche && (
+            <Button size="sm" variant="outline" onClick={() => setSchueler(!schueler)}>
+              {schueler ? <Pencil /> : <Eye />} {schueler ? 'Bearbeiten' : 'Schüleransicht'}
+            </Button>
+          )}
           {kk.karte && (
             <Button size="sm" disabled={!kk.geaendert || kk.speichert} onClick={() => kk.speichern().then(() => toast.success('Kompetenzkarte gespeichert.'))}>
               {kk.speichert ? <Loader2 className="animate-spin" /> : <Save />} {kk.geaendert ? 'Speichern' : 'Gespeichert'}
@@ -37,6 +44,8 @@ export default function KompetenzkarteDialog({ open, onOpenChange, einheit, sekt
           <div className="min-w-0 flex-1 overflow-y-auto bg-muted/40">
             {kk.isLoading ? (
               <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>
+            ) : kk.karte?.bereiche && schueler ? (
+              <KompetenzkarteSchuelerAnsicht karte={kk.karte} />
             ) : kk.karte?.bereiche ? (
               <KompetenzkarteEditor karte={kk.karte} verweise={kk.verweise} onChange={kk.aendern} />
             ) : (
