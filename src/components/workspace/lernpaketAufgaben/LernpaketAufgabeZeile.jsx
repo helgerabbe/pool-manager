@@ -15,7 +15,7 @@ export default function LernpaketAufgabeZeile({ aufgabe, nummer, editierbar, onA
           {aufgabe.titel?.trim() && <span className="font-normal">: {aufgabe.titel}</span>}
         </div>
         <div className="text-[11px] text-muted-foreground">
-          {schritte === 0 ? 'Noch keine Elemente' : `${schritte} ${schritte === 1 ? 'Element' : 'Elemente'}`}
+          {aufgabe.aufgaben_modus !== 'sequenz' ? 'Einzelaufgabe' : schritte === 0 ? 'Noch keine Elemente' : `${schritte} ${schritte === 1 ? 'Element' : 'Elemente'}`}
         </div>
       </button>
       <SegmentWahl

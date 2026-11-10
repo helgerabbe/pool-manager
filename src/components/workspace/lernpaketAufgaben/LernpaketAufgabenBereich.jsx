@@ -4,6 +4,7 @@ import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
+import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import DeleteAufgabeConfirmDialog from '@/components/allgemeineAufgaben/DeleteAufgabeConfirmDialog';
 import LernpaketAufgabeZeile from './LernpaketAufgabeZeile';
 import {
@@ -46,6 +47,9 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
     reihenfolge_im_lernpaket: aufgaben.length + 1,
   }), [paket.id, aufgaben.length]);
 
+  const alteEinzelaufgabe = werkstatt?.aufgabe && werkstatt.aufgabe.aufgaben_modus !== 'sequenz'
+    ? werkstatt.aufgabe : null;
+
   const neuLaden = () => queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
 
   const aendern = useMutation({
@@ -87,8 +91,18 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
         </Button>
       )}
 
+      {/* Umgezogene Einzelaufgaben behalten ihr bisheriges Formular. */}
+      <AufgabeCreateView
+        open={!!alteEinzelaufgabe}
+        onOpenChange={(offen) => { if (!offen) setWerkstatt(null); }}
+        einheitId={einheitId}
+        themenfelder={themenfelder}
+        initialData={alteEinzelaufgabe}
+        onSuccess={neuLaden}
+      />
+
       <AufgabenWerkstatt
-        open={werkstatt !== null}
+        open={werkstatt !== null && !alteEinzelaufgabe}
         onOpenChange={(offen) => { if (!offen) { setWerkstatt(null); neuLaden(); } }}
         einheitId={einheitId}
         einheit={einheit}

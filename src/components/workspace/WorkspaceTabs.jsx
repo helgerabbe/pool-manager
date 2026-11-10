@@ -108,7 +108,7 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
     },
   },
   {
-    value: 'ebene2', label: 'Aufgaben', icon: ClipboardList, step: 5, art: 'aufgabe',
+    value: 'ebene2', label: 'Übergreifende Aufgaben', icon: ClipboardList, step: 5, art: 'aufgabe',
     help: {
       title: 'Aufgaben — das Gelernte anwenden',
       description: 'Hier schreibst du die richtigen Aufgaben: die, bei denen die Schüler das Gelernte auf etwas Neues anwenden — eine Quelle auswerten, ein Diagramm beschreiben, eine kurze Stellungnahme schreiben. Es gibt keine automatische Korrektur, dafür begleitet der KI-Tutor Brian die Schüler beim Arbeiten und gibt ihnen Rückmeldung. Damit er das gut kann, gibst du ihm neben der Aufgabenstellung auch eine Musterlösung mit — den Erwartungshorizont. Wenn dir eine Idee fehlt, schlägt dir die KI-Ideenbox passende Aufgaben zu deinem Themenfeld vor.',
