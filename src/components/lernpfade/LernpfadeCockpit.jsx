@@ -75,6 +75,7 @@ import { autoAssembleLerntyp, AUTO_DASHBOARD_STATUS } from '@/lib/dashboardAutoA
 import { useDashboardAutoStatus } from '@/hooks/useDashboardAutoStatus';
 import { getAktiveLerntypKeys } from '@/lib/lerntypen';
 import { planVon, spiegelEPlan } from '@/lib/eNiveauPlan';
+import { planbareAufgaben } from '@/lib/lernpaketAufgaben';
 import { useLerntypDefinitionen } from '@/hooks/useLerntypDefinitionen';
 
 const DEFAULT_KONFIG = { minimalist: [], pragmatiker: [], ehrgeizig: [], passioniert: [] };
@@ -401,6 +402,14 @@ export default function LernpfadeCockpit({
     return map;
   }, [aufgaben, lernpakete]);
 
+  // Aufgaben, die der Arbeitsplan als eigene Bausteine kennt: ohne die
+  // Aufgaben der Lernpakete (außer sie stehen schon im Plan). `aufgabenById`
+  // bleibt vollständig, damit vorhandene Einträge weiter aufgelöst werden.
+  const planAufgaben = useMemo(
+    () => planbareAufgaben(aufgaben, konfiguration),
+    [aufgaben, konfiguration],
+  );
+
   const ampelCtx = useMemo(
     () => ({ aufgabenById, lernpaketeById }),
     [aufgabenById, lernpaketeById]
@@ -412,7 +421,7 @@ export default function LernpfadeCockpit({
   const driftReport = useDashboardDrift({
     konfiguration,
     themenfelder,
-    aufgaben,
+    aufgaben: planAufgaben,
     lernpakete,
     systemBausteine,
   });
@@ -616,7 +625,7 @@ export default function LernpfadeCockpit({
     // würden Arbeitsphasen fehlen oder die Bündel leer bleiben.
     if (themenfelderLoading || aufgabenLoading || lernpaketeLoading || bausteineLoading) return;
     lazyInitDoneRef.current = einheit.id;
-    const ctx = { aufgaben, lernpakete, systemBausteineById };
+    const ctx = { aufgaben: planAufgaben, lernpakete, systemBausteineById };
     let filled = { ...DEFAULT_KONFIG, ...serverKonfig };
     for (const lt of emptyLerntypen) {
       if (!Array.isArray(effectiveTemplates?.[lt])) continue;
@@ -642,7 +651,7 @@ export default function LernpfadeCockpit({
     aufgabenLoading,
     lernpaketeLoading,
     bausteineLoading,
-    aufgaben,
+    planAufgaben,
     lernpakete,
     systemBausteineById,
     markAllAutoAssembled,
@@ -722,7 +731,7 @@ export default function LernpfadeCockpit({
     // Auto-Assembly: Bündel beim Standard-Aufbau automatisch befüllen,
     // danach das Dashboard als „automatisch erstellt" markieren. Eine
     // erfolgreiche Prüf-Markierung gilt zugleich als Bestätigung.
-    autoFillCtx: { aufgaben, lernpakete, systemBausteineById },
+    autoFillCtx: { aufgaben: planAufgaben, lernpakete, systemBausteineById },
     onAutoAssembled: markLerntypAutoAssembled,
     onPathReleased: confirmIfAuto,
   });
@@ -983,7 +992,7 @@ export default function LernpfadeCockpit({
     konfigurationRef,
     updateKonfiguration,
     systemBausteineById,
-    aufgaben,
+    aufgaben: planAufgaben,
     lernpakete,
     toast,
   });

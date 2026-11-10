@@ -1,4 +1,4 @@
-import { BookOpen, Dumbbell, Flag } from 'lucide-react';
+import { BookOpen, Dumbbell, Flag, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 const PHASE_META = {
   Input: { label: 'Erarbeitung', icon: BookOpen, color: 'text-sky-600', bg: 'bg-sky-100', line: 'bg-sky-200' },
   'Übung': { label: 'Übung', icon: Dumbbell, color: 'text-amber-600', bg: 'bg-amber-100', line: 'bg-amber-200' },
+  Aufgabe: { label: 'Aufgaben', icon: ListChecks, color: 'text-emerald-600', bg: 'bg-emerald-100', line: 'bg-emerald-200' },
   Abschluss: { label: 'Abschluss', icon: Flag, color: 'text-violet-600', bg: 'bg-violet-100', line: 'bg-violet-200' },
 };
 

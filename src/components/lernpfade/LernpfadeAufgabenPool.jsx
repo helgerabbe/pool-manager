@@ -244,6 +244,8 @@ export default function LernpfadeAufgabenPool({
       .map(adaptLernpaketToPoolItem);
     const aufgabenItems = (alleAufgaben || []).filter(
       (a) => a.sync_status !== 'to_delete'
+        // Aufgaben im Lernpaket werden dort bearbeitet, nicht einzeln eingeplant.
+        && !a.lernpaket_id
         && getGroupKeyForItem(a) !== null
         // Übungsblock: keine Projektaufgaben. Sie gehören zu großen Einheiten
         // und sind dort auch nicht anlegbar — im Pool wären sie eine

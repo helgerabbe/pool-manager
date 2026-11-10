@@ -1219,6 +1219,13 @@ export function buildStructurePayload({
     aufgaben_typ: nullable(aa.aufgaben_typ),
     mission_type: nullable(aa.mission_type),
     themenfeld_id: aa.themenfeld_id || null,
+    // Aufgabe im Lernpaket (2026-11-10): gehört in den Teil „Aufgaben" des
+    // genannten Lernpakets. niveau: G = Minimalist/Pragmatiker, GE = alle,
+    // E = Ehrgeizig/Passioniert. lernpaket_id null = übergreifende Aufgabe.
+    lernpaket_id: aa.lernpaket_id || null,
+    niveau: aa.lernpaket_id ? (aa.niveau || 'GE') : null,
+    pflicht: aa.lernpaket_id ? aa.pflicht !== false : null,
+    reihenfolge_im_lernpaket: aa.reihenfolge_im_lernpaket ?? null,
     schwierigkeitsgrad: aa.schwierigkeitsgrad ?? null,
     erstellungs_modus: aa.erstellungs_modus || 'manuell',
     // airgap-1.21.0: Verhalten von Bündel-/Auswahl-Aufgaben. Ohne diese Felder
@@ -1773,6 +1780,11 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     mission_type: nullable(aufgabe?.mission_type),
     schwierigkeitsgrad: aufgabe?.schwierigkeitsgrad ?? null,
     themenfeld_id: aufgabe?.themenfeld_id || null,
+    // Aufgabe im Lernpaket (2026-11-10), siehe Strukturpaket.
+    lernpaket_id: aufgabe?.lernpaket_id || null,
+    niveau: aufgabe?.lernpaket_id ? (aufgabe.niveau || 'GE') : null,
+    pflicht: aufgabe?.lernpaket_id ? aufgabe.pflicht !== false : null,
+    reihenfolge_im_lernpaket: aufgabe?.reihenfolge_im_lernpaket ?? null,
     erstellungs_modus: istKi ? 'ki' : 'manuell',
 
     // Manueller Modus: alle Inhalte. KI-Modus: null (kommt aus Payload 4).

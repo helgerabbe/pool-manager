@@ -15,6 +15,7 @@ import AufgabeInhaltSeite from '@/components/schueler/pfad/AufgabeInhaltSeite';
 import PfadStartseite from '@/components/schueler/pfad/PfadStartseite';
 import LernpaketDurcharbeiten from '@/components/schueler/pfad/LernpaketDurcharbeiten';
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
+import { lernpaketAufgabenFuerSchueler } from '@/lib/lernpaketAufgaben';
 import ThemenfeldEinfuehrungSeite from '@/components/schueler/pfad/ThemenfeldEinfuehrungSeite';
 import LernlandkarteSeite from '@/components/schueler/pfad/LernlandkarteSeite';
 import PruefungsAnmeldungSeite from '@/components/schueler/pfad/PruefungsAnmeldungSeite';
@@ -112,6 +113,20 @@ export default function EinheitDashboard() {
   // Ist das aktive Item ein Lernpaket? Dann zeigen wir die Aktivitäten-Sub-Ansicht.
   const activeAufgabe = activeItem ? aufgabenById.get(activeItem.ref_id) : null;
   const istLernpaket = activeItem?.type === 'aufgabe' && activeAufgabe?._isLernpaket === true;
+
+  // Aufgaben des geöffneten Lernpakets — nach Niveau des Lerntyps, ohne die,
+  // die schon einzeln im Arbeitsplan stehen.
+  const lernpaketAufgaben = useMemo(
+    () => (istLernpaket
+      ? lernpaketAufgabenFuerSchueler(
+        [...aufgabenById.values()],
+        activeItem.ref_id,
+        lerntypKey,
+        new Set(flatItems.map((it) => it.ref_id)),
+      )
+      : []),
+    [istLernpaket, activeItem, aufgabenById, lerntypKey, flatItems],
+  );
 
   // Ist das aktive Item die „Einführung in das Themenfeld"? Eigene KI-Snapshot-Ansicht.
   const istEinfuehrung = activeItem?.type === 'system' && activeItem?.ref_id === 'sys_themenfeld_intro';
@@ -221,6 +236,7 @@ export default function EinheitDashboard() {
             lernpaketLogik={resolveLernpaketZugang(activeItem, lerntypKey)}
             lerntyp={lerntypKey}
             loadLernpaketAktivitaeten={loadLernpaketAktivitaeten}
+            aufgaben={lernpaketAufgaben}
             katalogById={katalogById}
             fortschrittByCompositeId={fortschrittByCompositeId}
             onMarkErledigt={handleAktivitaetErledigt}

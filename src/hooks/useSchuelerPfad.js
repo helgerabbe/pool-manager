@@ -154,7 +154,8 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     const template = DASHBOARD_TEMPLATES[lerntyp];
     if (!Array.isArray(template) || themenfelderQ.isLoading) return [];
     const assembled = autoAssembleLerntyp({}, lerntyp, template, themenfelderQ.data || [], {
-      aufgaben,
+      // Aufgaben im Lernpaket sind keine eigenen Bausteine des Plans.
+      aufgaben: (aufgaben || []).filter((a) => !a.lernpaket_id),
       lernpakete,
       systemBausteineById: bausteinById,
     });

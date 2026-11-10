@@ -9,6 +9,8 @@ import MasterfaehigeAktivitaet from './MasterfaehigeAktivitaet';
 import LernpaketAktivitaetItem from './LernpaketAktivitaetItem';
 import PhasenAbschnitt from './PhasenAbschnitt';
 import { istMasterAktivitaetErledigt } from '@/lib/masterAufgabenModus';
+import AufgabeInhaltSeite from './AufgabeInhaltSeite';
+import { ITEM_GATE } from '@/lib/schuelerPfadGating';
 
 /**
  * Sub-Ansicht: Ein Lernpaket „durcharbeiten". Zeigt die enthaltenen
@@ -23,6 +25,7 @@ export default function LernpaketDurcharbeiten({
   lernpaketLogik,        // 'standard' | 'fast_track' | 'wissensspeicher' | 'test_only'
   lerntyp,               // Lerntyp des Dashboards – steuert Phasen-Reihenfolge + optionale Übungen (Pragmatiker)
   loadLernpaketAktivitaeten,
+  aufgaben = [],         // Aufgaben dieses Lernpakets (Teil „Aufgaben"), schon nach Niveau gefiltert
   katalogById,
   fortschrittByCompositeId,
   onMarkErledigt,        // (compositeId, aktivitaet) => Promise
@@ -47,10 +50,22 @@ export default function LernpaketDurcharbeiten({
 
   const compositeId = (akt) => `${item.instance_id}::${akt.id}`;
 
-  const sortiert = useMemo(
-    () => (aktivitaeten ? sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik) : []),
-    [aktivitaeten, lernpaketLogik]
-  );
+  // Die Aufgaben des Lernpakets reihen sich als eigener Abschnitt vor dem
+  // Abschluss ein und laufen ab dort wie Aktivitäten mit (Nummer, Sperre,
+  // Erledigt-Status).
+  const sortiert = useMemo(() => {
+    if (!aktivitaeten) return [];
+    const akt = sortAktivitaetenNachLogik(aktivitaeten, lernpaketLogik);
+    const alsEintrag = aufgaben.map((a, i) => ({ id: a.id, phase: 'Aufgabe', _aufgabe: a, _nummer: i + 1 }));
+    let pos = akt.length;
+    while (pos > 0 && akt[pos - 1].phase === 'Abschluss') pos -= 1;
+    return [...akt.slice(0, pos), ...alsEintrag, ...akt.slice(pos)];
+  }, [aktivitaeten, lernpaketLogik, aufgaben]);
+
+  // Freiwillig? Bei Aufgaben entscheidet Pflicht/Wahl, bei Aktivitäten die Phase.
+  const istOptional = (akt) => (akt._aufgabe
+    ? akt._aufgabe.pflicht === false || lernpaketLogik === 'wissensspeicher' || lernpaketLogik === 'fast_track'
+    : istPhaseOptional(akt.phase, lerntyp, lernpaketLogik));
 
   // Nach Phase gruppiert (Reihenfolge der ersten Vorkommen bleibt erhalten),
   // jeweils mit dem ORIGINAL-Index aus `sortiert` – wichtig für Nummerierung
@@ -84,7 +99,8 @@ export default function LernpaketDurcharbeiten({
   // Pflicht-Aktivitäten: optionale Phasen (Übung beim Pragmatiker) zählen
   // NICHT für den Paket-Abschluss – Input + Abschluss genügen.
   const pflicht = useMemo(
-    () => sortiert.filter((akt) => !istPhaseOptional(akt.phase, lerntyp, lernpaketLogik)),
+    () => sortiert.filter((akt) => !istOptional(akt)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [sortiert, lerntyp, lernpaketLogik]
   );
   // Wissensspeicher: keine Pflicht-Aktivitäten → das Paket gilt sofort als
@@ -106,17 +122,31 @@ export default function LernpaketDurcharbeiten({
   // Pragmatiker) sind nie gesperrt und blockieren nichts.
   const istGesperrt = (idx) => {
     if (!gegated) return false;
-    if (istPhaseOptional(sortiert[idx]?.phase, lerntyp, lernpaketLogik)) return false;
+    if (sortiert[idx] && istOptional(sortiert[idx])) return false;
     return sortiert
       .slice(0, idx)
-      .some(
-        (akt) =>
-          !istPhaseOptional(akt.phase, lerntyp, lernpaketLogik) && !erledigtSet.has(akt.id)
-      );
+      .some((akt) => !istOptional(akt) && !erledigtSet.has(akt.id));
   };
 
   // Einzel-Aktivitätsseite anzeigen, wenn eine Aktivität gewählt ist.
   const aktiveAkt = aktiveAktId ? sortiert.find((a) => a.id === aktiveAktId) : null;
+  if (aktiveAkt?._aufgabe) {
+    return (
+      <AufgabeInhaltSeite
+        item={{ gate: erledigtSet.has(aktiveAkt.id) ? ITEM_GATE.ERLEDIGT : null }}
+        meta={{ titel: aktiveAkt._aufgabe.titel || `Aufgabe ${aktiveAkt._nummer}` }}
+        aufgabe={aktiveAkt._aufgabe}
+        busy={busyId === aktiveAkt.id}
+        onErledigt={async () => {
+          setBusyId(aktiveAkt.id);
+          await onMarkMaster?.(compositeId(aktiveAkt), { itemType: 'aufgabe', refId: aktiveAkt.id });
+          setBusyId(null);
+          setAktiveAktId(null);
+        }}
+        onBack={() => setAktiveAktId(null)}
+      />
+    );
+  }
   if (aktiveAkt) {
     const aktiveKat = katalogById.get(aktiveAkt.aktivitaet_id);
     return (
@@ -173,14 +203,16 @@ export default function LernpaketDurcharbeiten({
               <section key={gruppe.phase} className="space-y-3">
                 <PhasenAbschnitt
                   phase={gruppe.phase}
-                  optional={istPhaseOptional(gruppe.phase, lerntyp, lernpaketLogik)}
+                  optional={gruppe.phase !== 'Aufgabe' && istPhaseOptional(gruppe.phase, lerntyp, lernpaketLogik)}
                 />
                 <ul className="space-y-2.5">
                   {gruppe.items.map(({ akt, idx }) => (
                     <LernpaketAktivitaetItem
                       key={akt.id}
                       aktivitaet={akt}
-                      kat={katalogById.get(akt.aktivitaet_id)}
+                      kat={akt._aufgabe
+                        ? { name: `${akt._aufgabe.titel?.trim() || `Aufgabe ${akt._nummer}`}${akt._aufgabe.pflicht === false ? ' (freiwillig)' : ''}` }
+                        : katalogById.get(akt.aktivitaet_id)}
                       nummer={idx + 1}
                       lernpaketInstanceId={item.instance_id}
                       fortschrittByCompositeId={fortschrittByCompositeId}
