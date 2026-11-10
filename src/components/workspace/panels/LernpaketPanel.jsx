@@ -11,6 +11,14 @@ import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
 import LernpaketAnbietenButton from '@/components/workspace/integration/LernpaketAnbietenButton';
+import LernpaketAufgabenBereich from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenBereich';
+
+// Die drei Teile des Lernpakets (2026-11-10). Schlüssel = bisherige Phase.
+const TEILE = {
+  'Input': { titel: '1 · Wissensspeicher', hinweis: 'Informationsmaterial für alle Schüler, ohne Aufgaben.' },
+  'Übung': { titel: '2 · Aufgaben', hinweis: 'Jede Aufgabe entsteht in der Werkstatt und bekommt ein Niveau (G, GE, E) sowie Pflicht oder Wahl.' },
+  'Abschluss': { titel: '3 · Abschluss', hinweis: 'Der Schlusspunkt des Lernpakets.' },
+};
 
 
 import { Button } from '@/components/ui/button';
@@ -271,8 +279,8 @@ export default function LernpaketPanel({
   }, [paket.titel_des_pakets, paket.phasen_konfiguration, canEdit]);
 
   const PHASES = [
-    { key: 'Input', label: 'Erarbeitung', icon: '📚', defaultDisabled: false },
-    { key: 'Übung', label: 'Übung', icon: '✏️', defaultDisabled: false },
+    { key: 'Input', label: 'Informationsmaterial', icon: '📚', defaultDisabled: false },
+    { key: 'Übung', label: 'Bisherige Übungen', icon: '✏️', defaultDisabled: false },
     { key: 'Abschluss', label: 'Abschluss', icon: '🎯', defaultDisabled: false },
   ];
 
@@ -478,7 +486,6 @@ export default function LernpaketPanel({
       {/* Aktivitäten-Phasen: Im Bearbeitungsmodus inline editierbar,
           sonst read-only Übersicht. */}
       <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-muted-foreground">Zugeordnete Aktivitäten</h3>
 
         {PHASES.map(phase => {
           const phaseConfig = (canEdit ? localPhasenConfig : (paket.phasen_konfiguration || {}))[phase.key] || {};
@@ -487,7 +494,29 @@ export default function LernpaketPanel({
           const hasReleasedActivity = phaseActivities.some(a => a.content_status === 'approved');
           const isExpanded = expandedPhase === phase.key;
 
-          if (!canEdit && isDisabled) return null;
+          const teil = TEILE[phase.key];
+          const teilKopf = (
+            <div className="pt-3">
+              <h3 className="text-sm font-bold text-foreground">{teil.titel}</h3>
+              <p className="text-xs text-muted-foreground">{teil.hinweis}</p>
+            </div>
+          );
+          const aufgabenBereich = phase.key === 'Übung' ? (
+            <LernpaketAufgabenBereich
+              paket={paket}
+              einheit={einheit}
+              editierbar={kannBearbeiten && !isReleased && !isLockedByOther}
+            />
+          ) : null;
+
+          if (!canEdit && isDisabled) {
+            return (
+              <React.Fragment key={phase.key}>
+                {teilKopf}
+                {aufgabenBereich || <p className="text-xs text-muted-foreground italic">Dieser Teil ist ausgeschaltet.</p>}
+              </React.Fragment>
+            );
+          }
 
           const phaseBg = {
             'Input':     'border-green-200 bg-green-50',
@@ -496,7 +525,10 @@ export default function LernpaketPanel({
           }[phase.key] || 'border-border bg-card';
 
           return (
-            <div key={phase.key} className={cn('rounded-lg border-2 overflow-hidden', phaseBg)}>
+            <React.Fragment key={phase.key}>
+            {teilKopf}
+            {aufgabenBereich}
+            <div className={cn('rounded-lg border-2 overflow-hidden', phaseBg)}>
               {/* Phase-Header */}
               <div className="flex items-center gap-2 px-3 py-2">
                 <span className="text-base">{phase.icon}</span>
@@ -586,6 +618,7 @@ export default function LernpaketPanel({
                 </div>
               )}
             </div>
+            </React.Fragment>
           );
         })}
       </div>

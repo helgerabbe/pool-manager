@@ -60,6 +60,9 @@ export default function AufgabenWerkstatt({
   defaultThemenfeldId = null,
   defaultAnforderungsebene = '2 - Transfer',
   isReleased = false,
+  // Zusätzliche Felder NUR beim Anlegen, z. B. { lernpaket_id, niveau, pflicht }
+  // für Aufgaben, die in einem Lernpaket entstehen.
+  anlegeFelder = null,
   onSuccess,
 }) {
   const queryClient = useQueryClient();
@@ -290,6 +293,7 @@ export default function AufgabenWerkstatt({
       anforderungsebene: defaultAnforderungsebene,
       aufgaben_typ: 'inhalt',
       aufgaben_modus: 'sequenz',
+      ...(anlegeFelder || {}),
       ...gemeinsameFelder(schritte),
     }));
 
@@ -383,10 +387,14 @@ export default function AufgabenWerkstatt({
 
             {/* Schwierigkeit steht offen im Kopf — im Akkordeon versteckt war
                 sie für Sequenzen praktisch nicht zu finden. */}
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
-              <span className="text-[11px] text-slate-500">Schwierigkeit</span>
-              <SternRating value={schwierigkeit} onChange={setSchwierigkeit} disabled={isReleased} />
-            </div>
+            {/* Lernpaket-Aufgaben tragen ein Niveau (G/GE/E) statt Sternen —
+                eingestellt in der Aufgabenliste des Lernpakets. */}
+            {!(anlegeFelder?.lernpaket_id || initialData?.lernpaket_id) && (
+              <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
+                <span className="text-[11px] text-slate-500">Schwierigkeit</span>
+                <SternRating value={schwierigkeit} onChange={setSchwierigkeit} disabled={isReleased} />
+              </div>
+            )}
 
             <Button
               variant="outline"
