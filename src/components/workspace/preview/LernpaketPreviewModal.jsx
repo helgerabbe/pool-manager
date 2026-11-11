@@ -286,6 +286,11 @@ function IntroSlide({ paket, lernziele }) {
 // ─── Hauptkomponente ───────────────────────────────────────────────────
 
 import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
+import { useQuery } from '@tanstack/react-query';
+import { PenLine } from 'lucide-react';
+import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
+import LernpaketPreviewAufgabe from '@/components/workspace/preview/LernpaketPreviewAufgabe';
 
 export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktivitaeten, katalog, masters, lernziele }) {
   const phaseOrder = ['Input', 'Übung', 'Abschluss'];
@@ -295,14 +300,43 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
     for (const p of phaseOrder) {
       if ((phasenConfig[p] || {}).disabled === true) continue;
       out[p] = (aktivitaeten || [])
-        .filter(a => a.phase === p)
+        .filter(a => a.phase === p && a.sync_status !== 'to_delete')
         .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
+      // Übungen gibt es nur noch als Altbestand – leer wird der Abschnitt nicht gezeigt.
+      if (p === 'Übung' && out[p].length === 0) delete out[p];
     }
     return out;
   }, [paket, aktivitaeten]);
 
+  // Die Aufgaben des Lernpakets (Teil „Aufgaben" zwischen Wissensspeicher und Abschluss).
+  const { data: alleAufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben', paket?.einheit_id],
+    queryFn: () => getAufgabenByEinheit(paket.einheit_id),
+    enabled: open && !!paket?.einheit_id,
+  });
+  const aufgaben = useMemo(() => aufgabenImLernpaket(alleAufgaben, paket?.id), [alleAufgaben, paket?.id]);
+
   const allActivities = useMemo(() => Object.values(grouped).flat(), [grouped]);
   const [selectedId, setSelectedId] = useState(null);
+  const selectedAufgabe = selectedId ? aufgaben.find(a => a.id === selectedId) : null;
+  const aufgabenBlock = aufgaben.length > 0 && (
+    <div className="space-y-1">
+      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">Aufgaben</p>
+      {aufgaben.map((a, idx) => (
+        <button
+          key={a.id}
+          onClick={() => setSelectedId(a.id)}
+          title={a.titel}
+          className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-[12px] ${
+            selectedAufgabe?.id === a.id ? 'bg-blue-600 text-white font-semibold' : 'text-slate-700 hover:bg-slate-50'
+          }`}
+        >
+          <PenLine className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate flex-1">{idx + 1}. {a.titel || 'Aufgabe'}</span>
+        </button>
+      ))}
+    </div>
+  );
 
   const selected = selectedId ? allActivities.find(a => a.id === selectedId) : null;
   const katalogName = selected ? katalog.find(k => k.id === selected.aktivitaet_id)?.name : null;
@@ -371,14 +405,16 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
                   <button
                     onClick={() => setSelectedId(null)}
                     className={`w-full text-left flex items-center gap-2 px-2 py-1.5 rounded text-xs font-semibold ${
-                      !selected ? 'bg-blue-100 text-blue-800' : 'text-slate-600 hover:bg-slate-50'
+                      !selected && !selectedAufgabe ? 'bg-blue-100 text-blue-800' : 'text-slate-600 hover:bg-slate-50'
                     }`}
                   >
                     <BookOpen className="w-3.5 h-3.5" /> Übersicht
                   </button>
 
                   {Object.entries(grouped).map(([phase, list]) => (
-                    <div key={phase} className="space-y-1">
+                    <React.Fragment key={phase}>
+                    {phase === 'Abschluss' && aufgabenBlock}
+                    <div className="space-y-1">
                       <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">{PHASE_META[phase]?.label || phase}</p>
                       {list.length === 0 && (
                         <p className="text-[11px] italic text-slate-400 px-1">—</p>
@@ -409,7 +445,9 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
                         );
                       })}
                     </div>
+                    </React.Fragment>
                   ))}
+                  {!grouped['Abschluss'] && aufgabenBlock}
 
                   {totalCount > 0 && (
                     <div className="pt-3 mt-3 border-t border-slate-100">
@@ -427,7 +465,11 @@ export default function LernpaketPreviewModal({ open, onOpenChange, paket, aktiv
                 <div className="p-4 bg-slate-100 flex items-center justify-center">
                   <div className="bg-white rounded-lg shadow-md ring-1 ring-slate-200 overflow-hidden flex flex-col"
                        style={{ width: SLIDE_W - 40, height: SLIDE_H }}>
-                    {selected ? (
+                    {selectedAufgabe ? (
+                      <div className="flex-1 min-h-0 overflow-hidden">
+                        <LernpaketPreviewAufgabe aufgabe={selectedAufgabe} />
+                      </div>
+                    ) : selected ? (
                       <>
                         <PhaseBar phase={selected.phase} />
                         <MasterVariantTabs masters={selectedMasters} selectedIdx={variantIdx} onSelect={setVariantIdx} />
