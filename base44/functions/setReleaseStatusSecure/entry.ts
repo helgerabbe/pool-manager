@@ -36,6 +36,7 @@ import {
   validateAllgemeineAufgabeCompleteness,
   checkUserCanEditEinheit,
 } from '../../shared/freigabeShared.js';
+import { projektPaketStand } from '../../shared/projektLernpaket.js';
 
 function recordsSignature(records) {
   return (records || [])
@@ -182,12 +183,20 @@ Deno.serve(async (req) => {
         const phasenConf = target.phasen_konfiguration || {};
         const active = acts.filter(a => a.sync_status !== 'to_delete' && !(phasenConf[a.phase]?.disabled === true));
         const blocking = active.filter(a => a.is_complete !== true);
-        if (active.length === 0 || blocking.length > 0) {
+        // Projekt-Lernpaket: keine Aktivitäten, es zählen seine Aufgaben.
+        const projekt = active.length === 0
+          ? await projektPaketStand(base44.asServiceRole.entities, target)
+          : null;
+        if (projekt ? !projekt.vollstaendig : (active.length === 0 || blocking.length > 0)) {
           return Response.json(
             {
-              error: 'Lernpaket kann nicht freigegeben werden: nicht alle Aktivitäten sind vollständig',
+              error: projekt
+                ? 'Projekt-Lernpaket kann nicht freigegeben werden: Es braucht mindestens eine Aufgabe, und alle Aufgaben müssen vollständig sein'
+                : 'Lernpaket kann nicht freigegeben werden: nicht alle Aktivitäten sind vollständig',
               code: 'CHILDREN_NOT_COMPLETE',
-              missingFields: blocking.map(a => ({ fieldName: `activity:${a.id}`, label: a.titel || a.id, reason: 'Aktivität nicht vollständig' })),
+              missingFields: projekt
+                ? projekt.offen.map(a => ({ fieldName: `aufgabe:${a.id}`, label: a.titel || a.id, reason: 'Aufgabe nicht vollständig' }))
+                : blocking.map(a => ({ fieldName: `activity:${a.id}`, label: a.titel || a.id, reason: 'Aktivität nicht vollständig' })),
               totalActive: active.length,
               blockingCount: blocking.length,
             },

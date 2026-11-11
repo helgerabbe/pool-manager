@@ -1,0 +1,43 @@
+{
+  "name": "Projekt-Lernpaket Vollst\u00e4ndigkeit nachziehen",
+  "description": "\u00c4ndert sich eine Aufgabe, die in einem Lernpaket liegt oder lag, wird die Vollst\u00e4ndigkeit des Projekt-Lernpakets neu berechnet. Normale Lernpakete bleiben unber\u00fchrt.",
+  "trigger": {
+    "condition": "${ (.trigger.data.lernpaket_id // .trigger.old_data.lernpaket_id // \"\") != \"\" }",
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "AllgemeineAufgabe"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "projekt_lernpaket_vollstaendigkeit_nachziehen",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "stand_nachziehen": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "projektLernpaketRollup",
+            "args": {
+              "lernpaket_id": "${ .trigger.data.lernpaket_id // null }",
+              "vorher_lernpaket_id": "${ .trigger.old_data.lernpaket_id // null }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Vollst\u00e4ndigkeit neu berechnen",
+            "description": "Nur Projekt-Lernpakete"
+          }
+        }
+      }
+    ]
+  }
+}

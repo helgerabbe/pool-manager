@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
+import { istProjektThemenfeld } from '@/lib/projektThemenfeld';
 import { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import LernpaketKopfDetails from './LernpaketKopfDetails';
 import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
@@ -103,7 +104,7 @@ export default function LernpaketPanel({
   );
   // Vereinfachter Freigabe-Workflow (2026-08-11): Aktivitäten werden nicht mehr
   // einzeln freigegeben — sie müssen nur vollständig sein.
-  const canReleaseLernpaket =
+  const aktivitaetenBereit =
     activeAktivitaetenForRelease.length > 0 &&
     activeAktivitaetenForRelease.every(a => a.is_complete === true);
   // Status-Badge: mit Aktivitäten berechnen, damit inhaltliche
@@ -116,6 +117,17 @@ export default function LernpaketPanel({
     enabled: !!paket.einheit_id,
   });
   const paketAufgaben = aufgabenImLernpaket(alleAufgaben, paket.id);
+  // Projekt-Lernpaket: keine Aktivitäten, es zählen seine Aufgaben.
+  const { data: themenfelder = [] } = useQuery({
+    queryKey: ['themenfelder', paket.einheit_id],
+    queryFn: () => base44.entities.Themenfeld.filter({ einheit_id: paket.einheit_id }),
+    enabled: !!paket.einheit_id,
+  });
+  const istProjektPaket = istProjektThemenfeld(themenfelder.find(tf => tf.id === paket.themenfeld_id));
+  const canReleaseLernpaket = istProjektPaket && activeAktivitaetenForRelease.length === 0
+    ? paketAufgaben.length > 0 &&
+      paketAufgaben.every(a => a.content_status === 'approved' || a.is_complete === true)
+    : aktivitaetenBereit;
   const statusElemente = activeAktivitaetenForRelease.filter(
     a => !(a.phase === 'Übung' && paketAufgaben.length > 0)
   );
@@ -492,7 +504,9 @@ export default function LernpaketPanel({
               title={
                 releaseLockTitle ||
                 (!canReleaseLernpaket
-                  ? 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'
+                  ? istProjektPaket
+                    ? 'Das Projekt kann erst freigegeben werden, wenn alle seine Aufgaben vollständig sind.'
+                    : 'Lernpaket kann erst freigegeben werden, wenn alle Aktivitäten freigegeben sind.'
                   : 'Lernpaket freigeben')
               }
               className="gap-2"
