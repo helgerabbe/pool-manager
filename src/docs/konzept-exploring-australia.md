@@ -106,3 +106,34 @@ Die drei Projekte bleiben und werden vervollständigt (Abgabe, Gütekriterien, A
 ## Reihenfolge der Umsetzung
 
 Muster zuerst: Themenfeld „Aboriginal Culture“, weil die Buchseiten 12–15 es vollständig abdecken. Danach Life and Society, Australia – Down Under, Environmental Challenges, Language and Communication, zuletzt Projekte und Arbeitspläne.
+
+## Entscheidungen der Lehrkraft (2026-11-11)
+
+- Mit dem Konzept einverstanden; Gliederung und Lernziele dürfen geändert werden.
+- **Vokabeln:** Je Themenfeld gibt es ein eigenes Vokabel-Lernpaket, in dem alle Wörter einmal vollständig stehen und geübt werden. Sie dürfen in anderen Lernpaketen wieder vorkommen.
+- **Hörtexte:** eigene, vertonte Hörtexte ausprobieren.
+- **Videos:** auch bei Studyflix suchen, vor allem zu den Grammatikthemen.
+- Abwechslung der Formate ist wichtiger als die Nähe zum Buch.
+
+## Umgesetzt: Themenfeld „Aboriginal Culture“ (2026-11-11)
+
+Sicherung des alten Stands (Lernpakete, Lernziele, Wissensspeicher, Aufgaben): `mp/private/69cb7e99726da2a1d81bee50/2ca4fe137_backup_aboriginal_culture_2026-11-11.json`.
+
+Aus acht Lernpaketen wurden vier. Alle vier sind wieder Entwürfe (vorher freigegeben), alle Aufgaben sind Entwürfe.
+
+| Nr. | Lernpaket (Kennung) | Aufgaben |
+|---|---|---|
+| 1 | Just a rock? Uluru, a sacred place (4c994) | 1 Get ready (Zuordnen, Quiz) · 2 Read and listen (Text, Audio, Richtig/Falsch, Satzhälften) · 3 Order and summary (Sortierung, Lückentext) · 4 Uluru today (eigener Text, Quiz, Stellungnahme mit KI) |
+| 2 | Vocabulary: Aboriginal culture and respect (64f48) | 1 Vokabeltrainer (34 Wörter) · 2 Words in context (Bestand) · 3 Wortarten zuordnen (Bestand) · 4 Wörter sortieren (Bestand) · 5 Wortfamilien (Lückentext) |
+| 3 | Respectful behaviour (e2c99) | 1 Drei Situationen (Text, Quiz, Regeln zuordnen) · 2 should / have to / be allowed to (Zuordnen, Lückentext) · 3 Listening: Ranger (eigener Hörtext, Quiz) · 4 Speaking: fünf Regeln (Aufnahme) · 5 KI-Gespräch (Bestand) · 6 Workbook p. 4 (Bestand) · 7 Quiz Showing respect (Bestand, jetzt freiwillig) |
+| 4 | Aboriginal Art (ad598) | 1 Art that tells stories (eigener Text, Quiz) · 2 Symbole und Redemittel (Zuordnen, Lückentext) · 3 Speaking: Bild beschreiben (Bestand) · 4 Writing: Gemälde beschreiben (Bestand, umgebaut) |
+
+- **Ausgeblendete Lernpakete (sync_status 'to_delete', vorher 'new'):** A sacred place (28c0b), Working with words (19ca5), Talking about respect (62ffe), Unit task: Respectful behavior (782f3). Ihre Kompaktwissen- und Abschluss-Elemente liegen noch darin.
+- **Umgezogene Wissensspeicher-Elemente:** Audio „Just a rock?“ (4afb) nach Lernpaket 1; Buchverweis S. 13 (9624) nach 2; Buchverweise S. 15 (5afe) und Workbook S. 4 (c343) nach 3. Der doppelte Buchverweis S. 12 in Lernpaket 3 (5de1) ist ausgeblendet.
+- **Ausgeblendete Aufgaben (vorher 'new'):** die zwei KI-Quizze ohne Fragen (5d16, 5d15) und „Discussing respectful behaviour“ (89f9); ihr Lesetext steht jetzt in Lernpaket 1, Aufgabe 2.
+- **Korrigiert:** In „Match the words with their word class“ stand „politeness → adjective“; jetzt „respectful → adjective“. Im Lesetext „disrespectful land ignorant“ zu „and ignorant“.
+- **Lernziele:** zwölf statt dreizehn, alle neu formuliert und den vier Lernpaketen zugeordnet. Gelöscht: 28270 („Bilder beschreiben und mich mit typischer Aboriginal-Kunst auseinandersetzen“ / „Wie beschreibe ich Bilder und was zeichnet Aboriginal-Kunst aus?“, Fachwissen), weil es in „Aboriginal Art“ schon zweimal stand.
+- **Hörtext:** „A ranger's welcome at Uluru“ ist selbst geschrieben und vertont (`f1957b691_speech.mp3`); das Transkript liegt am Element.
+- **Fakten aus der Recherche:** Rückgabe an die Anangu 1985, Beschluss November 2017, Sperrung des Aufstiegs am 26.10.2019, Höhe etwa 348 m, mindestens 37 Tote beim Aufstieg, Punktmalerei auf Leinwand seit 1971 in Papunya.
+- **Bewusst nicht gemacht:** keine KI-erzeugten Bilder im Stil der Aboriginal-Kunst; die Symbole werden in Worten beschrieben.
+- **Offen:** „Writing: Describe an Aboriginal painting“ hat nur Kriterien als Musterlösung (Nacharbeit markiert). In den Arbeitsplänen steht nur „Respectful behaviour“; die anderen drei Lernpakete fehlen dort. Der Cartoon (S. 13, Nr. 5) ist nicht umgesetzt. Kein Studyflix-Video in diesem Themenfeld gesucht.
