@@ -22,13 +22,14 @@ export const THEMEN = {
 /** Ermittelt das Thema einer Abschnitts-Überschrift. */
 export function themaFuerTitel(titel = '') {
   const t = titel.toLowerCase();
-  if (/merk|einprägen|nicht vergessen|tipp/.test(t)) return THEMEN.merke;
-  if (/achtung|vorsicht|fehler|stolper/.test(t)) return THEMEN.achtung;
-  if (/beispiel/.test(t)) return THEMEN.beispiele;
-  if (/vorgeh|so gehst du|schritt|anleitung|ablauf/.test(t)) return THEMEN.vorgehen;
-  if (/begriff|wortschatz|definition|vokab/.test(t)) return THEMEN.begriffe;
-  if (/wissen|regel|grundlage|das musst du/.test(t)) return THEMEN.wissen;
-  if (/worum|überblick|einstieg|thema|ziel/.test(t)) return THEMEN.ueberblick;
+  // Englische Überschriften (englischsprachige Einheiten) stehen jeweils hinter den deutschen.
+  if (/merk|einprägen|nicht vergessen|tipp|remember|keep in mind/.test(t)) return THEMEN.merke;
+  if (/achtung|vorsicht|fehler|stolper|watch out|careful|mistake/.test(t)) return THEMEN.achtung;
+  if (/beispiel|example/.test(t)) return THEMEN.beispiele;
+  if (/vorgeh|so gehst du|schritt|anleitung|ablauf|how to|step/.test(t)) return THEMEN.vorgehen;
+  if (/begriff|wortschatz|definition|vokab|key word|vocabulary/.test(t)) return THEMEN.begriffe;
+  if (/wissen|regel|grundlage|das musst du|need to know|rule/.test(t)) return THEMEN.wissen;
+  if (/worum|überblick|einstieg|thema|ziel|about|overview/.test(t)) return THEMEN.ueberblick;
   return THEMEN.standard;
 }
 
