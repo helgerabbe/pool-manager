@@ -290,7 +290,14 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     }
     // Entscheidung und Dubletten-Markierung bleiben erhalten: die MBK meldet
     // beim nächsten Lauf oft denselben Punkt, obwohl er hier längst geklärt ist.
-    befundUpdates.push({ ...daten, id: alt.id });
+    // Hat der Pool-Manager eine Meldung, die nur ein Lernpaket/Themenfeld nannte,
+    // schon einer konkreten Aufgabe zugeordnet, bleibt diese Zuordnung stehen.
+    const genauer = alt.ziel_typ !== 'lernpaket' && zugeordnet.ziel_typ === 'lernpaket';
+    befundUpdates.push({
+      ...daten,
+      ...(genauer ? { ziel_typ: alt.ziel_typ, ziel_id: alt.ziel_id, ziel_titel: alt.ziel_titel, fundort: alt.fundort } : {}),
+      id: alt.id,
+    });
   }
 
   const bekannteTodos = new Map((vorhandeneTodos || []).map((t) => [t.mbk_id, t]));
