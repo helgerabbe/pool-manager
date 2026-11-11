@@ -27,6 +27,11 @@ gegen diese Liste abgleichen und Fehlendes ergänzen.
 - `themenfeld_platz` (`einstieg` / `gesamtaufgabe`): Aufgabe am Anfang bzw. Ende eines
   Themenfelds, außerhalb der Lernpakete. Position im Kurs und im Arbeitsplan klären.
 
+- `sequenz_schritte[i].aufgabe.bild_url` (2026-11-11): optionales Bild zu einer Freitextfrage,
+  steht über der Aufgabenstellung. Der MBK noch nicht gemeldet; prüfen, ob es im Payload mitreist.
+- Freitextfrage (`typ = aufgabe`) mit Texteingabe: `musterloesung` ist jetzt Pflicht, auch bei
+  `feedback_modus = ki` (Grundlage der KI-Rückmeldung).
+
 ## 3. Varianten am Element
 
 - `sequenz_schritte[i].varianten`: weitere gleichwertige Fassungen neben `field_values`

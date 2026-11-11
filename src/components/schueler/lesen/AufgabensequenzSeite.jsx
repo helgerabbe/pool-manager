@@ -591,6 +591,11 @@ export default function AufgabensequenzSeite({
                   {step.titel || 'Aufgabe'}
                 </span>
               </div>
+              {step.aufgabe?.bild_url && (
+                <div className="rounded-xl overflow-hidden border border-border bg-card p-2 mb-4">
+                  <img src={step.aufgabe.bild_url} alt="Bild zur Aufgabe" className="mx-auto h-auto w-auto max-w-full max-h-80" />
+                </div>
+              )}
               {step.aufgabe?.aufgabenstellung && (
                 <div className="rounded-xl border border-border bg-card p-4 text-sm whitespace-pre-wrap leading-relaxed mb-4">
                   {step.aufgabe.aufgabenstellung}

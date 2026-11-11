@@ -203,8 +203,14 @@ export function istSchrittVollstaendig(schritt) {
       if (m.material_typ === 'bild' || m.material_typ === 'pdf') return !!m.datei_url?.trim();
       return false;
     }
-    case SCHRITT_TYPEN.AUFGABE:
-      return !!schritt.aufgabe?.aufgabenstellung?.trim();
+    case SCHRITT_TYPEN.AUFGABE: {
+      // Musterlösung ist Pflicht, sobald die Schüler etwas eingeben (2026-11-11):
+      // Ohne sie gibt es weder eine Lösung zum Vergleichen noch eine Grundlage
+      // für die KI-Rückmeldung.
+      const a = schritt.aufgabe || {};
+      if (!a.aufgabenstellung?.trim()) return false;
+      return a.input_erforderlich === false || !!a.musterloesung?.trim();
+    }
     case SCHRITT_TYPEN.KATALOG: {
       if (!schritt.aktivitaet_id) return false;
       const fv = schritt.field_values || {};

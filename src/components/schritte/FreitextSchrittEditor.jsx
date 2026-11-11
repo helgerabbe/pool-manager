@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import { Bot, BookOpen } from 'lucide-react';
+import FreitextBildFeld from '@/components/schritte/FreitextBildFeld';
 
 /**
  * FreitextSchrittEditor
@@ -31,6 +32,8 @@ export default function FreitextSchrittEditor({ schritt, onChange }) {
           className="min-h-[120px]"
         />
       </div>
+
+      <FreitextBildFeld url={auf.bild_url || ''} onChange={(url) => setAuf('bild_url', url)} />
 
       <div className="flex items-center gap-2">
         <input
@@ -86,15 +89,23 @@ export default function FreitextSchrittEditor({ schritt, onChange }) {
         <Label>
           {auf.feedback_modus === 'ki'
             ? 'Musterlösung (Grundlage für die KI-Bewertung – nicht direkt sichtbar für Schüler)'
-            : 'Musterlösung (optional – wird dem Schüler nach Abgabe angezeigt)'}
+            : 'Musterlösung (wird dem Schüler nach Abgabe angezeigt)'}
+          {auf.input_erforderlich !== false
+            ? <span className="text-destructive"> *</span>
+            : ' (optional)'}
         </Label>
+        {auf.input_erforderlich !== false && !auf.musterloesung?.trim() && (
+          <p className="text-xs text-destructive">
+            Ohne Musterlösung ist der Schritt unvollständig: Schüler und KI brauchen sie für die Rückmeldung.
+          </p>
+        )}
         <Textarea
           value={auf.musterloesung || ''}
           onChange={(e) => setAuf('musterloesung', e.target.value)}
           placeholder={
             auf.feedback_modus === 'ki'
               ? 'Erwartete Antwort / Kernaspekte, auf deren Grundlage die KI bewertet …'
-              : 'Was wäre die richtige Antwort? Leer lassen, wenn keine Musterlösung nötig ist.'
+              : 'Was wäre die richtige Antwort?'
           }
           className="min-h-[100px]"
         />

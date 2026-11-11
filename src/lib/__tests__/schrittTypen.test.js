@@ -93,7 +93,10 @@ describe('istSchrittVollstaendig', () => {
     expect(istSchrittVollstaendig({ typ: 'brian', brian: { ...vollstaendig, completion_rule: '' } })).toBe(false);
     expect(istSchrittVollstaendig({ typ: 'handlung', handlung: { arbeitsauftrag: 'Miss nach' } })).toBe(true);
     expect(istSchrittVollstaendig({ typ: 'extern', extern: { url: 'https://x' } })).toBe(true);
-    expect(istSchrittVollstaendig({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Warum?' } })).toBe(true);
+    // Freitextfrage mit Eingabe braucht eine Musterlösung (2026-11-11).
+    expect(istSchrittVollstaendig({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Warum?' } })).toBe(false);
+    expect(istSchrittVollstaendig({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Warum?', musterloesung: 'Darum.' } })).toBe(true);
+    expect(istSchrittVollstaendig({ typ: 'aufgabe', aufgabe: { aufgabenstellung: 'Lies.', input_erforderlich: false } })).toBe(true);
   });
 
   it('wirft bei unbekanntem oder fehlendem Schritt nicht', () => {
