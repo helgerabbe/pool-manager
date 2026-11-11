@@ -160,10 +160,14 @@
           },
           "aufgabe": {
             "type": "object",
-            "description": "Nur bei typ='aufgabe': Freitextfrage mit Musterloesung oder KI-Feedback. NICHT typ='offen'.",
+            "description": "Nur bei typ='aufgabe': Freitextfrage mit Musterloesung oder KI-Feedback. NICHT typ='offen'. Seit 2026-11-11 ist die Musterloesung Pflicht, sobald die Schueler etwas eingeben (input_erforderlich != false) - in beiden Rueckmelde-Arten.",
             "properties": {
               "aufgabenstellung": {
                 "type": "string"
+              },
+              "bild_url": {
+                "type": "string",
+                "description": "Optionales Bild zur Frage (2026-11-11). Steht bei den Schuelern direkt ueber der Aufgabenstellung. Oeffentliche Datei-URL, weil Schueler aus Moodle kein Konto haben."
               },
               "input_erforderlich": {
                 "type": "boolean",
@@ -791,5 +795,63 @@
   },
   "required": [
     "einheit_id"
-  ]
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "user"
+          }
+        }
+      ]
+    }
+  }
 }
