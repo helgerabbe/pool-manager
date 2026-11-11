@@ -44,7 +44,6 @@ import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/Them
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 import LernpaketAufgabenGruppe, { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
-import ZurueckZumLernpaketButton from '@/components/workspace/lernpaketAufgaben/ZurueckZumLernpaketButton';
 import AbschlussUebersicht from '@/components/workspace/lernpaketAufgaben/AbschlussUebersicht';
 import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
 import { aufgabenImLernpaket, aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
@@ -679,8 +678,9 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
     const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
     if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
   };
-  const aktivitaetPanel = selectedActivity && (
+  const aktivitaetPanel = (extra) => selectedActivity && (
     <ActivityMasterPanel
+      {...extra}
       key={selectedActivity.id}
       activityRecord={selectedActivity}
       catalogEntry={selectedCatalog}
@@ -715,14 +715,9 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           onZurueck={zumLernpaketDerAktivitaet}
           onVarianteOeffnen={(master) => setSelectedItem({ type: 'master', master })}
         >
-          {aktivitaetPanel}
+          {aktivitaetPanel({ ohneKopf: true })}
         </AbschlussUebersicht>
-      ) : (
-        <>
-          <ZurueckZumLernpaketButton onClick={zumLernpaketDerAktivitaet} />
-          {aktivitaetPanel}
-        </>
-      )}
+      ) : aktivitaetPanel({ onZurueck: zumLernpaketDerAktivitaet })}
     </div>
   );
 

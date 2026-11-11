@@ -17,6 +17,9 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monitor, Bot, PencilRuler } from 'lucide-react';
 import NacharbeitToggle from '@/components/release/NacharbeitToggle';
+import ElementKopf from '@/components/workspace/kopf/ElementKopf';
+import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
+import VorschauKnopf from '@/components/workspace/kopf/VorschauKnopf';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
 import StandardInput from '@/components/workspace/inputs/StandardInput';
 import KITutorMasterForm from '@/components/workspace/KITutorMasterForm';
@@ -53,7 +56,6 @@ import AufgabenWerkstattModal from '@/components/workspace/preview/AufgabenWerks
 import GalerieAktivitaetModal from '@/components/workspace/galerie/GalerieAktivitaetModal';
 import KompaktwissenKIPanel from '@/components/workspace/KompaktwissenKIPanel';
 import KompaktwissenInfoBox from '@/components/workspace/KompaktwissenInfoBox';
-import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
 import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
@@ -121,6 +123,9 @@ export default function ActivityMasterPanel({
   userRole,
   einheitId,
   parentLernpaketName = null,
+  // Rücksprung zur Lernpaket-Übersicht; `ohneKopf`, wenn die Ansicht schon in einem Kopf steckt (Abschluss).
+  onZurueck = null,
+  ohneKopf = false,
   onMasterSelected = null,
   onKlonSelected = null,
   selectedMasterId = null,
@@ -609,7 +614,7 @@ export default function ActivityMasterPanel({
   //
   // WICHTIG: updateActivitySecure verlangt einen aktiven Lernpaket-Lock auf
   // den aufrufenden User (Hierarchical Locking, §8 dort). Wenn der Lock
-  // noch nicht aktiv ist (User hat z. B. „Inhalt bearbeiten" nicht geklickt),
+  // noch nicht aktiv ist (User hat z. B. „Bearbeiten" nicht geklickt),
   // erwerben wir ihn hier still für die Dauer des Modus-Wechsels und geben
   // ihn danach wieder frei — wie bei `handleAddMaster`.
   const handleModusChange = async (newModus) => {
@@ -715,24 +720,35 @@ export default function ActivityMasterPanel({
       ? `Kernbegriffe: ${lernpaket.kernbegriffe.join(', ')}` : null,
   ].filter(Boolean).join('\n\n');
 
+  // Schüler-Vorschau: welches Format hat eine, und welches Fenster öffnet sie.
+  const katalogName = catalogEntry?.name?.toLowerCase() || '';
+  const VORSCHAU = [
+    ['slideshow', setSlideshowPreviewOpen], ['ki-quiz', setKiQuizPreviewOpen],
+    ['ki-check', setKiCheckPreviewOpen], ['ki check', setKiCheckPreviewOpen],
+    ['sprechaufgabe', setSprechaufgabePreviewOpen], ['materialaufgabe', setMaterialaufgabePreviewOpen],
+    ['zuordnungstraining', setZuordnungstrainingPreviewOpen],
+    ['lehrwerk', setLehrwerkPreviewOpen], ['quelle', setLehrwerkPreviewOpen],
+    ['kompaktwissen', setKompaktwissenPreviewOpen], ['aufgabensequenz', setAufgabensequenzPreviewOpen],
+    ['html', setHtmlSeitePreviewOpen], ['bildbeschriftung', setImageLabelingPreviewOpen],
+    ['offene', setOffenePreviewOpen], ['bestätigen', setConfirmationPreviewOpen],
+    ['ki-tutor', setKiTutorActivityPreviewOpen],
+    ['video', setVideoAudioPreviewOpen], ['audio', setVideoAudioPreviewOpen],
+    ['link', setLinkUrlPreviewOpen], ['url', setLinkUrlPreviewOpen],
+    ['text lesen', setPreviewOpen],
+  ];
+  const vorschauTreffer = VORSCHAU.find(([wort]) => katalogName.includes(wort));
+  const hatVorschau = !!vorschauTreffer;
+  const vorschauOeffnen = () => vorschauTreffer[1](true);
+
   return (
     <div className="space-y-6 overflow-visible h-auto">
-      {/* ── Aktivitäts-Header (Tab 4: nur Info, KEIN Lock-Toggle-Button) ──────── */}
-      <div className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          {parentLernpaketName && (
-            <p className="text-xs text-muted-foreground uppercase font-semibold tracking-wide mb-0.5 truncate">
-              {parentLernpaketName}
-            </p>
-          )}
-          <h2 className="text-base font-semibold truncate">{catalogEntry?.name || 'Aktivität'}</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Phase: {activityRecord?.phase}</p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <SyncStatusBadge
-            status={activityRecord?.moodle_sync_status || activityRecord?.sync_status || 'new'}
-          />
-          {brauchtNacharbeit && (
+      {/* Kopf wie in der Lernpaket-Übersicht: Status am Titel, Bearbeiten oben rechts, darunter Rücksprung und Vorschau. */}
+      {!ohneKopf && (
+        <ElementKopf
+          overline={parentLernpaketName}
+          titel={catalogEntry?.name || 'Aktivität'}
+          status={effectivelyComplete ? 'green' : 'red'}
+          badges={brauchtNacharbeit && (
             <span
               title={activityRecord?.nacharbeit_notiz || 'Für Nacharbeit vorgemerkt'}
               className="inline-flex items-center gap-1 text-xs font-medium text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full"
@@ -740,12 +756,39 @@ export default function ActivityMasterPanel({
               <PencilRuler className="w-3 h-3" /> Nacharbeit
             </span>
           )}
-          {effectivelyComplete
-            ? <span className="text-xs font-medium text-green-700 bg-green-100 border border-green-300 px-2 py-0.5 rounded-full">✓ Vollständig</span>
-            : <span className="text-xs font-medium text-amber-700 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">Noch unvollständig</span>
-          }
-        </div>
-      </div>
+          rechts={kannBearbeiten && !supportsMaster && (
+            <BearbeitenKnopf
+              onClick={handleOpenEditModal}
+              laedt={acquiringLock}
+              title={lernpaketReleased
+                ? '🔒 Dieses Lernpaket ist freigegeben. Hebe zuerst die Freigabe auf, um Änderungen vorzunehmen.'
+                : isParentPaketLockedByOther
+                ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet.`
+                : (globalEditActive && !lernpaketLockActive)
+                ? '🔒 Ein anderes Lernpaket wird gerade bearbeitet.'
+                : ''}
+            />
+          )}
+          onZurueck={onZurueck}
+          aktionen={!supportsMaster && (
+            <>
+              {/* Kompaktwissen: Übersicht per KI erstellen (aus Lernzielen, Inhalten und Aufgaben des Lernpakets). */}
+              {kannBearbeiten && katalogName.includes('kompaktwissen') && (
+                <KompaktwissenKIPanel
+                  activityId={activityRecord.id}
+                  fieldValues={fieldValues}
+                  disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive)}
+                  onGenerated={async (newFieldValues) => {
+                    if (newFieldValues) setFieldValues(newFieldValues);
+                    await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+                  }}
+                />
+              )}
+              {hatVorschau && <VorschauKnopf onClick={vorschauOeffnen} />}
+            </>
+          )}
+        />
+      )}
 
       {/* Nacharbeits-Merker der Lehrkraft (ersetzt die frühere Aktivitäts-Freigabe) */}
       {kannBearbeiten && (
@@ -785,100 +828,7 @@ export default function ActivityMasterPanel({
         return (
           <>
             {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && <KompaktwissenInfoBox />}
-            {kannBearbeiten && (
-              <div className="flex justify-end gap-2">
-                {/* Kompaktwissen: Übersicht per KI erstellen (aus Lernzielen,
-                    Inhalten und Aufgaben des Lernpakets). */}
-                {catalogEntry?.name?.toLowerCase().includes('kompaktwissen') && (
-                  <KompaktwissenKIPanel
-                    activityId={activityRecord.id}
-                    fieldValues={fieldValues}
-                    disabled={acquiringLock || lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive)}
-                    onGenerated={async (newFieldValues) => {
-                      if (newFieldValues) setFieldValues(newFieldValues);
-                      await queryClient.refetchQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-                    }}
-                  />
-                )}
-                {/* Schüler-Vorschau (Stufe-1-Pilot, für "Text lesen", "Video / Audio" und "Link / URL"). */}
-                {(catalogEntry?.name?.toLowerCase().includes('text lesen') || catalogEntry?.name?.toLowerCase().includes('video') || catalogEntry?.name?.toLowerCase().includes('audio') || catalogEntry?.name?.toLowerCase().includes('link') || catalogEntry?.name?.toLowerCase().includes('url') || catalogEntry?.name?.toLowerCase().includes('ki-tutor') || catalogEntry?.name?.toLowerCase().includes('bestätigen') || catalogEntry?.name?.toLowerCase().includes('offene') || catalogEntry?.name?.toLowerCase().includes('bildbeschriftung') || catalogEntry?.name?.toLowerCase().includes('lehrwerk') || catalogEntry?.name?.toLowerCase().includes('quelle') || catalogEntry?.name?.toLowerCase().includes('kompaktwissen') || catalogEntry?.name?.toLowerCase().includes('aufgabensequenz') || catalogEntry?.name?.toLowerCase().includes('html-seite') || catalogEntry?.name?.toLowerCase().includes('html') || catalogEntry?.name?.toLowerCase().includes('zuordnungstraining') || catalogEntry?.name?.toLowerCase().includes('materialaufgabe') || catalogEntry?.name?.toLowerCase().includes('sprechaufgabe') || catalogEntry?.name?.toLowerCase().includes('ki-quiz') || catalogEntry?.name?.toLowerCase().includes('ki-check') || catalogEntry?.name?.toLowerCase().includes('ki check') || catalogEntry?.name?.toLowerCase().includes('slideshow')) && (
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      const n = catalogEntry?.name?.toLowerCase() || '';
-                      if (n.includes('slideshow')) {
-                        setSlideshowPreviewOpen(true);
-                      } else if (n.includes('ki-quiz')) {
-                        setKiQuizPreviewOpen(true);
-                      } else if (n.includes('ki-check') || n.includes('ki check')) {
-                        setKiCheckPreviewOpen(true);
-                      } else if (n.includes('sprechaufgabe')) {
-                        setSprechaufgabePreviewOpen(true);
-                      } else if (n.includes('materialaufgabe')) {
-                        setMaterialaufgabePreviewOpen(true);
-                      } else if (n.includes('zuordnungstraining')) {
-                        setZuordnungstrainingPreviewOpen(true);
-                      } else if (n.includes('lehrwerk') || n.includes('quelle')) {
-                        setLehrwerkPreviewOpen(true);
-                      } else if (n.includes('kompaktwissen')) {
-                        setKompaktwissenPreviewOpen(true);
-                      } else if (n.includes('aufgabensequenz')) {
-                        setAufgabensequenzPreviewOpen(true);
-                      } else if (n.includes('html-seite') || n.includes('html')) {
-                        setHtmlSeitePreviewOpen(true);
-                      } else if (n.includes('bildbeschriftung')) {
-                        setImageLabelingPreviewOpen(true);
-                      } else if (n.includes('offene')) {
-                        setOffenePreviewOpen(true);
-                      } else if (n.includes('bestätigen')) {
-                        setConfirmationPreviewOpen(true);
-                      } else if (n.includes('ki-tutor')) {
-                        setKiTutorActivityPreviewOpen(true);
-                      } else if (n.includes('video') || n.includes('audio')) {
-                        setVideoAudioPreviewOpen(true);
-                      } else if (n.includes('link') || n.includes('url')) {
-                        setLinkUrlPreviewOpen(true);
-                      } else {
-                        setPreviewOpen(true);
-                      }
-                    }}
-                    className="gap-2 border-violet-300 bg-violet-50 text-violet-800 hover:bg-violet-100 hover:text-violet-900"
-                    title="Diese Aktivität in der Schüler-Ansicht anzeigen"
-                  >
-                    <Eye className="w-4 h-4" /> Vorschau
-                  </Button>
-                )}
-                <TooltipProvider delayDuration={300}>
-                  <Tooltip>
-                    {/* disabled-Buttons feuern keine Hover-Events → in span wickeln */}
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          onClick={handleOpenEditModal}
-                          disabled={acquiringLock}
-                          className="gap-2"
-                        >
-                            {acquiringLock
-                              ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
-                              : <><Pencil className="w-4 h-4" /> Inhalt bearbeiten</>}
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {(lernpaketReleased || isParentPaketLockedByOther || (globalEditActive && !lernpaketLockActive) || lernpaket?.moodle_sync_status === 'locked') && (
-                      <TooltipContent side="bottom" className="max-w-xs">
-                        {lernpaketReleased
-                          ? '🔒 Dieses Lernpaket ist freigegeben. Die Inhalte können nicht mehr bearbeitet werden. Hebe zuerst die Freigabe auf, um Änderungen vorzunehmen.'
-                          : isParentPaketLockedByOther
-                          ? `🔒 Lernpaket wird gerade von ${lernpaket?.locked_by_email} bearbeitet.`
-                          : (globalEditActive && !lernpaketLockActive)
-                          ? '🔒 Ein anderes Lernpaket wird gerade bearbeitet.'
-                          : 'Einheit ist zur Moodle-Synchronisation gesperrt.'}
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-                </div>
-              )}
+
 
               {/* Stufe-1-Pilot: Schüler-Vorschau-Modals für "Text lesen" und "Video / Audio". */}
               <TextLesenPreviewModal
@@ -1153,7 +1103,7 @@ export default function ActivityMasterPanel({
                   catalogName={catalogEntry?.name}
                   phase={activityRecord?.phase}
                 />
-                {/* „Inhalt bearbeiten" führt in die Aufgaben-Werkstatt: dort wird
+                {/* „Bearbeiten" führt in die Aufgaben-Werkstatt: dort wird
                     zuerst nach einem passenden Format gesucht, dann gebaut. */}
                 <AufgabenWerkstattModal
                   open={editModalOpen}
@@ -1189,8 +1139,8 @@ export default function ActivityMasterPanel({
                     </p>
                     <p className="text-xs text-muted-foreground/80">
                       {expectedFields.length > 0
-                        ? <>Klicke auf <span className="font-medium">„Inhalt bearbeiten"</span>, um {expectedFields.join(', ')} zu ergänzen.</>
-                        : <>Klicke auf <span className="font-medium">„Inhalt bearbeiten"</span>, um Inhalte zu ergänzen.</>}
+                        ? <>Klicke auf <span className="font-medium">„Bearbeiten"</span>, um {expectedFields.join(', ')} zu ergänzen.</>
+                        : <>Klicke auf <span className="font-medium">„Bearbeiten"</span>, um Inhalte zu ergänzen.</>}
                     </p>
                   </div>
                 );

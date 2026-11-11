@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Loader2, PenLine } from 'lucide-react';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
+import ElementKopf from '@/components/workspace/kopf/ElementKopf';
+import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
+import VorschauKnopf from '@/components/workspace/kopf/VorschauKnopf';
+import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
+import { istVollstaendig } from './LernpaketAufgabenGruppe';
 import { Badge } from '@/components/ui/badge';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -21,6 +24,7 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
   const { canEdit, isLockedByOther, lockedByEmail, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [offen, setOffen] = useState(false);
   const [oeffnet, setOeffnet] = useState(false);
+  const [vorschau, setVorschau] = useState(false);
 
   const paketFreigegeben = paket.content_status === 'approved' && !!paket.released_at;
   const istFolge = aufgabe.aufgaben_modus === 'sequenz';
@@ -45,26 +49,22 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
 
   return (
     <div className="space-y-4">
-      <div className="pb-3 border-b">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{paket.titel_des_pakets}</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-lg font-bold">Aufgabe {nummer}{aufgabe.titel?.trim() ? `: ${aufgabe.titel}` : ''}</h2>
+      <ElementKopf
+        overline={paket.titel_des_pakets}
+        titel={`Aufgabe ${nummer}${aufgabe.titel?.trim() ? `: ${aufgabe.titel}` : ''}`}
+        status={aufgabe.content_status === 'approved' ? 'released' : istVollstaendig(aufgabe) ? 'green' : 'red'}
+        badges={<>
           <Badge variant="outline">{aufgabe.niveau || NIVEAU_STANDARD}</Badge>
           <Badge variant="outline">{aufgabe.pflicht === false ? 'Wahl' : 'Pflicht'}</Badge>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onZurueck}>
-          <ArrowLeft /> {zurueckLabel}
-        </Button>
-        {kannBearbeiten && (
-          <Button variant="outline" size="sm" onClick={bearbeiten} disabled={oeffnet || !!sperrGrund} title={sperrGrund}
-            className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900">
-            {oeffnet ? <Loader2 className="animate-spin" /> : <PenLine />} Bearbeiten
-          </Button>
+        </>}
+        rechts={kannBearbeiten && (
+          <BearbeitenKnopf onClick={bearbeiten} laedt={oeffnet} disabled={!!sperrGrund} title={sperrGrund} />
         )}
-      </div>
+        onZurueck={onZurueck}
+        zurueckLabel={zurueckLabel}
+        aktionen={<VorschauKnopf onClick={() => setVorschau(true)} />}
+      />
+      <AufgabePreviewModal open={vorschau} onOpenChange={setVorschau} aufgabe={aufgabe} />
 
       {aufgabe.aufgabenstellung?.trim() && (
         <div className="rounded-md border border-border bg-card px-4 py-3">

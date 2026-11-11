@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Check, ChevronRight, PenLine } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronRight } from 'lucide-react';
+import ElementKopf from '@/components/workspace/kopf/ElementKopf';
+import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
+import { variantenVollstaendig } from '@/lib/variantenStatus';
 import { Badge } from '@/components/ui/badge';
 
 /**
@@ -9,34 +11,19 @@ import { Badge } from '@/components/ui/badge';
  * zufällig eine davon. Geändert wird erst über „Bearbeiten" – dann erscheint
  * die Bearbeitungsansicht (`children`).
  */
-export default function AbschlussUebersicht({ name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
+export default function AbschlussUebersicht({ activity = null, name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
   const [bearbeitet, setBearbeitet] = useState(false);
 
   return (
     <div className="space-y-4">
-      <div className="pb-3 border-b">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{paketTitel}</p>
-        <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-lg font-bold">Abschluss: {name}</h2>
-          <Badge variant="outline">{varianten.length} {varianten.length === 1 ? 'Variante' : 'Varianten'}</Badge>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={onZurueck}>
-          <ArrowLeft /> Zum Lernpaket
-        </Button>
-        {kannBearbeiten && (bearbeitet ? (
-          <Button variant="outline" size="sm" className="gap-2" onClick={() => setBearbeitet(false)}>
-            <Check /> Fertig
-          </Button>
-        ) : (
-          <Button variant="outline" size="sm" onClick={() => setBearbeitet(true)}
-            className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900">
-            <PenLine /> Bearbeiten
-          </Button>
-        ))}
-      </div>
+      <ElementKopf
+        overline={paketTitel}
+        titel={`Abschluss: ${name}`}
+        status={activity?.content_status === 'approved' || activity?.is_complete === true || variantenVollstaendig(varianten) ? 'green' : 'red'}
+        badges={<Badge variant="outline">{varianten.length} {varianten.length === 1 ? 'Variante' : 'Varianten'}</Badge>}
+        rechts={kannBearbeiten && <BearbeitenKnopf aktiv={bearbeitet} onClick={() => setBearbeitet((v) => !v)} />}
+        onZurueck={onZurueck}
+      />
 
       {bearbeitet ? children : (
         <div className="space-y-2">

@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { PenLine, Save } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { StatusBadge } from '@/components/workspace/panels/SharedUI';
+import ElementKopf from '@/components/workspace/kopf/ElementKopf';
+import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import LernpaketAufgabenBereich from './LernpaketAufgabenBereich';
@@ -29,31 +28,18 @@ export default function ThemenfeldPlatzKarte({ platz, themenfeld, editierbar, on
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <div className="pb-3 border-b flex items-start gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{themenfeld.titel}</p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-lg font-bold">{platz.titel}</h2>
-              <StatusBadge status={status} />
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">{platz.beschreibung}</p>
-          </div>
-          {editierbar && (bearbeitet ? (
-            <Button size="sm" className="gap-2 shrink-0" onClick={() => setBearbeitet(false)}>
-              <Save /> Speichern
-            </Button>
-          ) : (
-            <Button variant="outline" size="sm" onClick={() => setBearbeitet(true)} disabled={freigegeben}
-              title={freigegeben ? '🔒 Freigegeben – zum Bearbeiten erst die Freigabe zurücknehmen.' : ''}
-              className="gap-2 shrink-0 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900">
-              <PenLine /> Bearbeiten
-            </Button>
-          ))}
-        </div>
-        <ThemenfeldPlatzAktionen aufgaben={aufgaben} vollstaendig={vollstaendig} freigegeben={freigegeben}
-          editierbar={editierbar} bearbeitet={bearbeitet} />
-      </div>
+      <ElementKopf
+        overline={themenfeld.titel}
+        titel={platz.titel}
+        status={status}
+        beschreibung={platz.beschreibung}
+        rechts={editierbar && (
+          <BearbeitenKnopf aktiv={bearbeitet} onClick={() => setBearbeitet((v) => !v)} disabled={freigegeben}
+            title={freigegeben ? '🔒 Freigegeben – zum Bearbeiten erst die Freigabe zurücknehmen.' : ''} />
+        )}
+        aktionen={<ThemenfeldPlatzAktionen aufgaben={aufgaben} vollstaendig={vollstaendig} freigegeben={freigegeben}
+          editierbar={editierbar} bearbeitet={bearbeitet} />}
+      />
 
       <div className="space-y-3">
         <div className="flex items-center gap-2">
