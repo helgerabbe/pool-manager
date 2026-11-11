@@ -54,7 +54,7 @@
       "type": "integer",
       "minimum": 0,
       "default": 0,
-      "description": "ZUFALLSAUSWAHL (2026-11-10): Wie viele Elemente (sequenz_schritte) ein Schueler aus dieser Aufgabe bearbeitet. 0 oder leer = alle Elemente in fester Reihenfolge. X > 0 = pro Schueler werden zufaellig X der N Elemente gezogen (Reihenfolge der Folge bleibt erhalten). Ersetzt die Varianten (MasterAufgabe, master_anzeige_modus 'shuffle') der frueheren Lernpaket-Uebungen. Gilt immer fuer die ganze Aufgabe. Wird im Export an die MBK weitergegeben, die die Ziehung im Kurs uebernimmt."
+      "description": "@legacy (2026-11-11): Wird nicht mehr ausgewertet und bleibt 0. Schueler bearbeiten immer alle Elemente einer Aufgabe. Soll ein Schueler nur eine von mehreren gleichwertigen Fassungen bekommen, hat das ELEMENT Varianten (sequenz_schritte[i].varianten)."
     },
     "anforderungsebene": {
       "type": "string",
@@ -225,7 +225,26 @@
           "field_values": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Nur bei typ='katalog': formatgleich zu LernpaketPhaseAktivitaet.field_values."
+            "description": "Nur bei typ='katalog': formatgleich zu LernpaketPhaseAktivitaet.field_values. Hat das Element Varianten, ist dies Variante 1."
+          },
+          "varianten": {
+            "type": "array",
+            "default": [],
+            "description": "VARIANTEN DES ELEMENTS (2026-11-11): Nur bei typ='katalog' mit variantenfaehigem Format (AktivitaetenKatalog.supports_master). Weitere, gleichwertige Varianten neben field_values (= Variante 1). Jeder Schueler bekommt zufaellig genau eine Variante; der Fortschritt haengt weiter an der id des Schritts. Ersetzt zufallsauswahl_anzahl an der Aufgabe.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Stabile UID der Variante."
+                },
+                "field_values": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
           },
           "offen": {
             "type": "object",
