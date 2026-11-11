@@ -248,7 +248,7 @@ Nach Buch S. 97–98. Alle neuen Aufgaben sind Entwürfe. Die Zeichnungen sind n
 
 ## Einheit Exploring Australia: Aufgaben in Lernpakete eingeordnet (2026-11-11)
 
-Die elf Aufgaben ohne Lernpaket wurden eingeordnet, Inhalte und Freigaben unverändert. Die alten Übungen der Lernpakete sind in dieser Einheit noch NICHT umgewandelt.
+Die elf Aufgaben ohne Lernpaket wurden eingeordnet, Inhalte und Freigaben unverändert. Die alten Übungen der Lernpakete wurden danach umgewandelt (siehe nächster Abschnitt).
 
 | Aufgabe | Lernpaket | Platz | Niveau |
 |---|---|---|---|
@@ -269,3 +269,41 @@ Die elf Aufgaben ohne Lernpaket wurden eingeordnet, Inhalte und Freigaben unver�
 - **Arbeitsplan:** Die sieben Aufgaben aus „Life and Society“ standen als Einzelbausteine im Plan (G: fünf, E: sieben). Sie wurden entfernt, ebenso das dadurch leere Aufgaben-Bündel der Arbeitsphase. „Grammar“ steht in allen vier Plänen direkt hinter „Applying for a Job“ im selben Bündel. Der vorherige Plan liegt als private Datei: `mp/private/69cb7e99726da2a1d81bee50/121c30076_lernpfade_backup_exploring_australia_2026-11-11.json`.
 - **Rückgängig:** `lernpaket_id` bzw. `themenfeld_platz` an den Aufgaben leeren, Lernpaket „Grammar“ löschen, Plan aus der Sicherung zurückspielen.
 - **Offen:** „vocabulary training“ doppelt sich mit der Übung f8923 im selben Lernpaket; „Discussing respectful behaviour“ überschneidet sich mit dem Abschluss des gleichnamigen Lernpakets. Die Gesamtaufgabe „Survival Guide“ steht noch in keinem Arbeitsplan.
+
+## Einheit Exploring Australia: Übungen umgewandelt (2026-11-11)
+
+Die 23 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Aus 23 Übungen wurden 22 Aufgaben, alle Entwürfe mit „GE“ und „Pflicht“, hinter den schon vorhandenen Aufgaben ihres Lernpakets. Die Titelliste ging der Lehrkraft nicht vorab zur Durchsicht, sondern mit der Umwandlung; die Titel sind aus Auftragstext und Inhalt abgeleitet.
+
+- **Zusammengefasst (gleiches Hörmaterial):** 563c0 (Part a) + 7a95a (Part b) im Lernpaket „Outback and School of the Air“.
+- **Nicht zusammengefasst:** f3175 und dde5f („Working with words“) üben beide Wortarten, sind aber eher Alternativen als Schritte.
+- **Offen, leer:** 3b7d4 hatte keine fertige Fassung. Geplantes Element ohne Fragment, Auftragstext als Aufgabenstellung und Kurzbeschreibung. Unvollständig.
+- **KI-Quiz ohne Fragen:** 728ae und 99e3b enthalten keine Fragen, nur den Hinweis „MALTE: Quiz ist (schon) bei Brian angelegt“ in der Einleitung. Unverändert übernommen und als unvollständig markiert.
+- **KI-Tutor 5968c:** Dialogname = Titel. Die Abschlussregel fehlte und wurde ergänzt (je Situation A bis C eine begründete Regel, danach Hinweis auf sprachliche Fehler). Die Anweisung für Lernende nennt die drei Situationen nicht; sie stehen nur in der internen Anweisung.
+- **9dc99:** enthält nur den Verweis aufs Workbook (pp. 2 f., 1–3), leeres Material und eine Platzhalterfrage.
+- **Miniquiz und Begriffe zuordnen:** Inhalt aus der einen Variante (MasterAufgabe) ins Element übernommen. Keine Übung hatte mehrere Varianten.
+- **Rückgängig:** sync_status der Übungen wieder auf 'new', die 22 Aufgaben löschen.
+
+| Übung | Lernpaket | Platz | Titel | Element |
+|---|---|---|---|---|
+| 9dc99 | Exploring Australia | 1 | Workbook pp. 2–3: Tasks 1–3 (?) | katalog |
+| daea1 | Exploring Australia | 2 | Label the map of Australia | katalog |
+| 3462e | Exploring Australia | 3 | Quiz: Facts about Australia | katalog |
+| 3b7d4 | Australian Wildlife | 1 | Australian animals: Research and write | offen, leer |
+| a4b17 | Geography and Climate of Australia | 1 | Australia's climate: Read and take notes | katalog |
+| 563c0 + 7a95a | Outback and School of the Air | 3 | Listening: Peter talks about the School of the Air | katalog, katalog |
+| 4c2e1 | Features of Australian English | 1 | The Australian accent: Compare the vowel sounds | katalog |
+| dc518 | Features of Australian English | 2 | Aussie words: Find the standard English word (?) | katalog |
+| 61212 | Features of Australian English | 3 | Listening: Jack's day at Bondi Beach | katalog |
+| f8923 | Applying for a Job | 6 | Vocabulary "Station 2": Learn and practise | katalog |
+| cc5f6 | Applying for a Job | 7 | Vocabulary trainer: Jobs and applications | katalog |
+| 4bbd0 | Discussing respectful behaviour | 2 | Quiz: Showing respect for Aboriginal culture | katalog |
+| 728ae | A sacred place | 1 | Quiz: Uluru – culture and tourism | katalog, leer |
+| 99e3b | Just a Rock? | 1 | Quiz: Uluru and Aboriginal culture | katalog, leer |
+| b1877 | Words in context | 1 | Words in context: Aboriginal culture | offen |
+| f3175 | Working with words | 1 | Match the words with their word class | katalog |
+| dde5f | Working with words | 2 | Sort the words: verb, noun or adjective | offen |
+| 7f36d | Talking about respect | 1 | Right or wrong? Talking about respect | katalog |
+| 512b4 | Aboriginal Art | 2 | Speaking: Describe the picture | katalog |
+| 5968c | Unit task: Respectful behavior | 1 | Discuss your rules for respectful behaviour | brian |
+| b09c4 | Great Barrier Reef 1 | 1 | Great Barrier Reef: Match the sentence halves | katalog |
+| 60175 | Fire at the sheep station | 1 | Right or wrong? Fire at the sheep station | katalog |
