@@ -99,3 +99,80 @@ Aus 40 Übungen werden 36 Aufgaben. Kennungen = letzte fünf Zeichen der Übung.
 
 - **cc78b:** verweist auf einen „inneren Monolog" von vorhin, der unter den Übungen des Lernpakets nicht vorkommt.
 - **f072e:** könnte Material zu 59b01 sein statt einer eigenen Aufgabe.
+
+## Einheit Kreis und Körper (umgewandelt am 2026-11-11)
+
+Die 64 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Aus 64 Übungen wurden 64 Aufgaben, alle Entwürfe mit „GE" und „Pflicht". Zusammengefasst wurde nichts, weil keine zwei Übungen dasselbe Material nutzen.
+
+- **Offen, leer (10):** Zu diesen offenen Aufgaben gab es keine fertige Fassung. Angelegt als geplantes Element ohne Fragment; der Auftragstext steht als Aufgabenstellung an der Aufgabe und als Kurzbeschreibung am Element. Sie müssen in der Werkstatt gebaut werden.
+- **KI-Tutor (15):** Allen fehlt die Abschlussregel, sie sind deshalb unvollständig. Fehlte der Dialogname, wurde der Titel eingesetzt.
+- **91e4a:** Der eingebettete Inhalt war schon vorher defekt („???"). Als unvollständig angelegt.
+- **6de22 und 495e6:** „Die Suppendose" kommt doppelt vor, als eigenes Gespräch und als erster Schritt von 495e6.
+- **Varianten:** d22a0 und abf9a haben je zwei freigegebene Varianten (Variante 2 am Element).
+
+| Übung | Lernpaket | Titel | Element |
+|---|---|---|---|
+| 23ad6 | Kreisumfang und Kreiszahl Pi | Kreisumfang berechnen (Buch S. 92–93) | katalog |
+| fbd00 | Kreisumfang und Kreiszahl Pi | Kreiszahl Pi und Umfangsformel: Wichtiges notieren | brian |
+| 8f429 | Kreisfläche berechnen | Herleitung der Flächenformel erklären (Buch S. 94) | offen, leer |
+| af994 | Kreisfläche berechnen | Quiz: Flächeninhalt des Kreises | katalog |
+| 91e4a | Kreisfläche berechnen | Kreisflächen berechnen (Buch S. 95, Nr. 5–8) | katalog |
+| 74965 | Kreisfläche berechnen | Größter Kreis aus der Blechplatte | brian |
+| 115ff | Kreisring, Kreisausschnitt und Kreisbogen | Kreisring, Kreisausschnitt und Kreisbogen berechnen | katalog |
+| a9989 | Anwendungsaufgaben zu Kreis und Kreisformen | Lückentext: Begriffe und Formeln am Kreis | katalog |
+| 737dc | Anwendungsaufgaben zu Kreis und Kreisformen | Kreise im Alltag: Planschbecken, Beet und Sitzplatz | katalog |
+| e051f | Anwendungsaufgaben zu Kreis und Kreisformen | Familie Meyer plant ihren Garten | katalog |
+| 084dc | Anwendungsaufgaben zu Kreis und Kreisformen | Pizzeria „Bella Torta“: Kreisausschnitte berechnen | offen, leer |
+| 9ff11 | Einstieg Prismen | Umbauter Raum: Erster Überblick zu Prismen | katalog |
+| 8f3dc | Aufbau und Netz von Prismen | Prismennetze konstruieren | offen, leer |
+| 1b634 | Aufbau und Netz von Prismen | Körper benennen | katalog |
+| be348 | Aufbau und Netz von Prismen | Körper und Körpernetze zuordnen | katalog |
+| 8bac8 | Oberfläche von Prismen berechnen | Oberfläche von Prismen berechnen | offen, leer |
+| 4358f | Volumen von Prismen berechnen | Volumen von Prismen berechnen | offen, leer |
+| 7bc42 | Anwendungsaufgaben zu Prismen | Oberflächeninhalt eines Prismas am 3D-Modell | offen, leer |
+| 4c94c | Anwendungsaufgaben zu Prismen | Volumen eines Bahndamms | offen, leer |
+| 51f23 | Aufbau und Netz der quadratischen Pyramide | Netz der Pyramide beschriften | katalog |
+| b7226 | Aufbau und Netz der quadratischen Pyramide | Aufbau und Netz der Pyramide begründen | katalog |
+| a7829 | Aufbau und Netz der quadratischen Pyramide | Quiz: Aufbau der quadratischen Pyramide | katalog |
+| d4696 | Aufbau und Netz der quadratischen Pyramide | Die quadratische Pyramide beschriften | katalog |
+| 0e0e0 | Aufbau und Netz der quadratischen Pyramide | Begriffe zur Pyramide zuordnen | katalog |
+| 3d132 | Oberfläche der quadratischen Pyramide berechnen | Pavillondach: Mantelfläche berechnen | brian |
+| 284e2 | Oberfläche der quadratischen Pyramide berechnen | Aussagen und Rechnungen zur Oberfläche prüfen | katalog |
+| 310a5 | Oberfläche der quadratischen Pyramide berechnen | Oberfläche der Pyramide berechnen | katalog |
+| 366b1 | Oberfläche der quadratischen Pyramide berechnen | Quiz: Oberfläche der Pyramide | katalog |
+| f4992 | Oberfläche der quadratischen Pyramide berechnen | Lückentext: Oberfläche der Pyramide | katalog |
+| 1d5e0 | Oberfläche der quadratischen Pyramide berechnen | Fachbegriffe zur Oberfläche zuordnen | katalog |
+| a2e50 | Volumen der quadratischen Pyramide berechnen | Fachbegriffe zum Volumen zuordnen | katalog |
+| 101e4 | Volumen der quadratischen Pyramide berechnen | Rechenschritte zum Volumen ordnen | katalog |
+| 1565e | Volumen der quadratischen Pyramide berechnen | Quiz: Volumen der Pyramide | katalog |
+| e81c3 | Volumen der quadratischen Pyramide berechnen | Volumen der Pyramide berechnen | katalog |
+| 8c743 | Volumen der quadratischen Pyramide berechnen | Eine eigene Pyramide entwerfen und berechnen | offen, leer |
+| 012cc | Anwendungsaufgaben zur quadratischen Pyramide | Arbeitsschritte bei Sachaufgaben ordnen | katalog |
+| 20567 | Anwendungsaufgaben zur quadratischen Pyramide | Lösungswege zu Anwendungsaufgaben beurteilen | katalog |
+| 414bb | Anwendungsaufgaben zur quadratischen Pyramide | Das Pyramidenzelt | brian |
+| ab785 | Aufbau und Netz des Zylinders | Das Netz des Zylinders zeichnen | offen, leer |
+| a50e3 | Aufbau und Netz des Zylinders | Lückentext: Aufbau des Zylinders | katalog |
+| 6efaf | Aufbau und Netz des Zylinders | Teilflächen des Zylindernetzes beschriften | katalog |
+| 127e8 | Oberfläche des Zylinders berechnen | Quiz: Oberfläche des Zylinders | katalog |
+| e893d | Oberfläche des Zylinders berechnen | Oberfläche berechnen (r = 3,5 cm, h = 8 cm) | brian |
+| 5eeca | Oberfläche des Zylinders berechnen | Oberfläche berechnen (r = 2 cm, h = 5 cm) | brian |
+| d5046 | Oberfläche des Zylinders berechnen | Rechenschritte zur Oberfläche ordnen | katalog |
+| d6284 | Volumen des Zylinders berechnen | Quiz: Volumen des Zylinders | katalog |
+| af2b8 | Volumen des Zylinders berechnen | Volumen berechnen (r = 4,8 cm, h = 9,6 cm) | brian |
+| 2859e | Volumen des Zylinders berechnen | Volumen berechnen (r = 3,5 cm, h = 8 cm) | brian |
+| af15b | Volumen des Zylinders berechnen | Rechenschritte zum Volumen ordnen | katalog |
+| bb6f8 | Anwendungsaufgaben zum Zylinder | Der Getränkebecher | brian |
+| 2237e | Anwendungsaufgaben zum Zylinder | Das Etikett der Pfirsichdose | brian |
+| 6de22 | Anwendungsaufgaben zum Zylinder | Die Suppendose | brian |
+| 495e6 | Anwendungsaufgaben zum Zylinder | Oberfläche, Mantel oder Volumen? Entscheiden | katalog |
+| afe87 | Aufbau des Kegels | Schrägbild und Netz des Kegels beschriften | katalog |
+| 514e8 | Mantelfläche und Oberfläche des Kegels | Oberfläche mit dem Online-Rechner berechnen | offen, leer |
+| d22a0 | Mantelfläche und Oberfläche des Kegels | Rechenschritte zum Mantel ordnen (1 von 2) | katalog |
+| b6210 | Volumen des Kegels berechnen | Volumen eines Kegels berechnen | offen |
+| abf9a | Volumen des Kegels berechnen | Rechenschritte zum Volumen ordnen (1 von 2) | katalog |
+| cbc8c | Anwendungsaufgaben zum Kegel | Der Sandhaufen: Lösungsschritte ordnen | katalog |
+| 261ce | Eigenschaften und Oberfläche der Kugel | Oberfläche von Kugeln berechnen (a–c) | brian |
+| 7110b | Eigenschaften und Oberfläche der Kugel | Oberfläche einer Kugel mit r = 3 | brian |
+| 5ae36 | Volumen der Kugel berechnen | Die Kugel beschriften | katalog |
+| 6122a | Volumen der Kugel berechnen | Volumen von Kugeln berechnen (a–f) | brian |
+| 416ed | Anwendungsaufgaben zur Kugel | Fehlende Größen in der Kugel-Tabelle ergänzen | brian |
