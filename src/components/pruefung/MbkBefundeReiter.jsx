@@ -28,6 +28,9 @@ import MbkAntwortSenden from './MbkAntwortSenden';
 import BrianAdressenInfoCard from './BrianAdressenInfoCard';
 import MbkGelostePunkte from './MbkGelostePunkte';
 import MbkStapelLeiste from './MbkStapelLeiste';
+import MbkBereichWahl from './MbkBereichWahl';
+import MbkAufgabenZahlen from './MbkAufgabenZahlen';
+import { hinweisOrt, istArbeitsplan } from '@/lib/hinweisOrt';
 
 export default function MbkBefundeReiter({
   einheitId,
@@ -51,6 +54,7 @@ export default function MbkBefundeReiter({
   const erledigen = useMbkAdminTodoErledigen();
   const [zeigeDubletten, setZeigeDubletten] = useState(false);
   const [stapel, setStapel] = useState('alle');
+  const [bereich, setBereich] = useState('uebergreifend');
 
   const offene = useMemo(
     () => befunde.filter((b) => (b.entscheidung || 'offen') === 'offen'),
@@ -61,17 +65,20 @@ export default function MbkBefundeReiter({
     [offene]
   );
   const sichtbar = useMemo(() => {
-    let liste = zeigeDubletten ? offene : offene.filter((b) => b.dublette_status !== 'dublette');
+    let liste = (zeigeDubletten ? offene : offene.filter((b) => b.dublette_status !== 'dublette'))
+      .filter((b) => hinweisOrt(b) === bereich);
     if (stapel === 'ohne') liste = liste.filter((b) => !b.ki_stapel);
     else if (stapel !== 'alle') liste = liste.filter((b) => b.ki_stapel === stapel);
     // Schülermeldungen (Tickets) stehen immer oben, danach nach Schwere.
     const ticketRang = (b) => (b.mbk_quelle === 'ticket' ? 0 : 1);
     return [...liste].sort(
       (a, b) =>
+        istArbeitsplan(a) - istArbeitsplan(b) ||
         ticketRang(a) - ticketRang(b) ||
         (PRUEF_SCHWERE[a.schwere]?.rang ?? 9) - (PRUEF_SCHWERE[b.schwere]?.rang ?? 9)
     );
-  }, [offene, zeigeDubletten, stapel]);
+  }, [offene, zeigeDubletten, stapel, bereich]);
+  const ohneDoppelte = useMemo(() => offene.filter((b) => b.dublette_status !== 'dublette'), [offene]);
 
   // Zweite Zahl: alles, was schon entschieden ist (behoben, bewusst gelassen,
   // Widerspruch) — steht eingeklappt unter der Liste.
@@ -155,9 +162,13 @@ export default function MbkBefundeReiter({
       )}
 
       {offene.length > 0 && (
+        <MbkBereichWahl befunde={ohneDoppelte} bereich={bereich} onBereich={(b) => { setBereich(b); setStapel('alle'); }} />
+      )}
+
+      {offene.length > 0 && bereich !== 'aufgabe' && (
         <MbkStapelLeiste
           einheitId={einheitId}
-          offene={offene}
+          offene={offene.filter((b) => hinweisOrt(b) === bereich)}
           filter={stapel}
           onFilter={setStapel}
           kannStarten={kannStarten}
@@ -171,12 +182,19 @@ export default function MbkBefundeReiter({
           <Inbox className="w-5 h-5 mx-auto mb-2 opacity-60" />
           {befunde.length === 0
             ? 'Vom Moodle-Team gibt es zu dieser Einheit noch keine Hinweise.'
-            : 'Alle Hinweise sind erledigt oder stehen schon unter „Selbst prüfen".'}
+            : 'Hier ist nichts offen.'}
         </div>
+      ) : bereich === 'aufgabe' ? (
+        <MbkAufgabenZahlen befunde={sichtbar} einheitId={einheitId} />
       ) : (
         <div className="space-y-2">
-          {sichtbar.map((b) => (
+          {sichtbar.map((b, i) => (
             <div key={b.id} className="space-y-1">
+              {bereich === 'uebergreifend' && (i === 0 || istArbeitsplan(b) !== istArbeitsplan(sichtbar[i - 1])) && (
+                <h3 className="text-sm font-semibold text-muted-foreground pt-2">
+                  {istArbeitsplan(b) ? 'Arbeitsplan' : 'Einheit, Themenfelder und Lernpakete'}
+                </h3>
+              )}
               {b.dublette_status === 'dublette' && (
                 <p className="text-xs text-muted-foreground">
                   Doppelt

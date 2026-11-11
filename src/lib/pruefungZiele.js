@@ -42,7 +42,8 @@ export function getBefundZiel(befund, { einheitId, aufgaben = [] }) {
     return null;
   }
 
-  if (befund.ziel_typ === 'allgemeine_aufgabe') {
+  // Aufgaben, die in einem Lernpaket liegen, werden dort bearbeitet.
+  if (befund.ziel_typ === 'allgemeine_aufgabe' && !befund.lernpaket_id) {
     const aufgabe = aufgaben.find((a) => a.id === befund.ziel_id);
     const tab = aufgabe?.anforderungsebene === '3 - Projekt' ? 'ebene3' : 'ebene2';
     return {

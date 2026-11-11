@@ -292,10 +292,17 @@ async function verarbeiteEinheit(base44, token, einheit, jetzt) {
     // beim nächsten Lauf oft denselben Punkt, obwohl er hier längst geklärt ist.
     // Hat der Pool-Manager eine Meldung, die nur ein Lernpaket/Themenfeld nannte,
     // schon einer konkreten Aufgabe zugeordnet, bleibt diese Zuordnung stehen.
-    const genauer = alt.ziel_typ !== 'lernpaket' && zugeordnet.ziel_typ === 'lernpaket';
+    // Gleiches gilt, wenn die MBK noch eine alte Übung nennt, der Hinweis hier
+    // aber schon an der Aufgabe hängt, die daraus entstanden ist.
+    const genauer = (alt.ziel_typ !== 'lernpaket' && zugeordnet.ziel_typ === 'lernpaket')
+      || (alt.ziel_typ === 'allgemeine_aufgabe' && zugeordnet.ziel_typ !== 'allgemeine_aufgabe');
     befundUpdates.push({
       ...daten,
-      ...(genauer ? { ziel_typ: alt.ziel_typ, ziel_id: alt.ziel_id, ziel_titel: alt.ziel_titel, fundort: alt.fundort } : {}),
+      ...(genauer ? {
+        ziel_typ: alt.ziel_typ, ziel_id: alt.ziel_id, ziel_titel: alt.ziel_titel, fundort: alt.fundort,
+        lernpaket_id: alt.lernpaket_id, lernpaket_titel: alt.lernpaket_titel,
+        themenfeld_id: alt.themenfeld_id, themenfeld_titel: alt.themenfeld_titel,
+      } : {}),
       id: alt.id,
     });
   }
