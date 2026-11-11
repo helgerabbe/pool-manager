@@ -8,6 +8,7 @@ import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewM
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
 import NacharbeitToggle from '@/components/release/NacharbeitToggle';
 import ElementDetails from '@/components/workspace/kopf/ElementDetails';
+import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
 import { Zeile } from '@/components/workspace/panels/LernpaketKopfDetails';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -71,6 +72,9 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
       <AufgabePreviewModal open={vorschau} onOpenChange={setVorschau} aufgabe={aufgabe} />
       {kannBearbeiten && (
         <NacharbeitToggle key={aufgabe.id} activity={aufgabe} entity="AllgemeineAufgabe" queryKey="allgemeineAufgaben" />
+      )}
+      {kannBearbeiten && (
+        <ElementHinweise key={`hinweise-${aufgabe.id}`} einheitId={aufgabe.einheit_id} zielIds={[aufgabe.id]} gesperrt={paketFreigegeben} />
       )}
 
       {aufgabe.aufgabenstellung?.trim() && (

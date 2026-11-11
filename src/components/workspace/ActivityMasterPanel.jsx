@@ -19,6 +19,7 @@ import { Crown, Plus, Loader2, Save, Pencil, Check, Lock, Eye, ListChecks, Monit
 import NacharbeitToggle from '@/components/release/NacharbeitToggle';
 import ElementKopf from '@/components/workspace/kopf/ElementKopf';
 import ElementDetails from '@/components/workspace/kopf/ElementDetails';
+import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
 import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
 import VorschauKnopf from '@/components/workspace/kopf/VorschauKnopf';
 import MasterAufgabeCard from '@/components/workspace/MasterAufgabeCard';
@@ -798,6 +799,10 @@ export default function ActivityMasterPanel({
           activity={activityRecord}
           disabled={lernpaketReleased || isParentPaketLockedByOther}
         />
+      )}
+      {kannBearbeiten && (
+        <ElementHinweise einheitId={einheitId} gesperrt={lernpaketReleased}
+          zielIds={[activityRecord.id, ...masterAufgaben.map((m) => m.id)]} />
       )}
 
       {/* ── Read-Only-Ansicht für Aktivitäten ohne Varianten (z.B. "Text lesen") ── */}

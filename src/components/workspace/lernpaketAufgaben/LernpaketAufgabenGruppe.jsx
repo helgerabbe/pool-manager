@@ -3,6 +3,8 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { istSchrittVollstaendig } from '@/lib/schrittTypen';
 import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
+import HinweisZeichen from '@/components/workspace/kopf/HinweisZeichen';
+import { useElementHinweise } from '@/hooks/useElementHinweise';
 
 /** Grün = vollständig, Orange = unvollständig – wie bei den übrigen Elementen des Menübaums. */
 export function istVollstaendig(aufgabe) {
@@ -13,6 +15,7 @@ export function istVollstaendig(aufgabe) {
 
 /** Die Aufgaben eines Lernpakets im Menübaum: Stift-Symbol, Aufgabe 1, Aufgabe 2, … (Titel als Tooltip). */
 export default function LernpaketAufgabenGruppe({ aufgaben, lernpaket, selectedItem, onSelect }) {
+  const hinweise = useElementHinweise(lernpaket.einheit_id);
   return (
     <TooltipProvider delayDuration={200}>
       {aufgaben.map((a, i) => {
@@ -32,6 +35,7 @@ export default function LernpaketAufgabenGruppe({ aufgaben, lernpaket, selectedI
                 <span className="shrink-0">✏️</span>
                 <span className="flex-1 truncate">Aufgabe {i + 1}</span>
                 {a.braucht_nacharbeit === true && <NacharbeitZeichen notiz={a.nacharbeit_notiz} gewaehlt={gewaehlt} />}
+                <HinweisZeichen anzahl={hinweise([a.id]).length} gewaehlt={gewaehlt} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">{a.titel?.trim() || 'Ohne Titel'}</TooltipContent>

@@ -41,6 +41,8 @@ import MasterDetailView from '@/components/workspace/MasterDetailView';
 import LernpaketPanel from '@/components/workspace/panels/LernpaketPanel';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
+import HinweisZeichen from '@/components/workspace/kopf/HinweisZeichen';
+import { useElementHinweise } from '@/hooks/useElementHinweise';
 import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKnoten';
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
@@ -71,8 +73,9 @@ function isKlonLockedByOther(klon, myEmail) {
 
 function ActivitySidebarItem({
     activity, aktivitaetName, masterAufgaben, kloneByMasterId,
-    selectedItem, onSelect, isIncomplete, myEmail, symbol,
+    selectedItem, onSelect, isIncomplete, myEmail, symbol, einheitId,
   }) {
+    const hinweise = useElementHinweise(einheitId);
     const selbstGewaehlt = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
     const hasSelectedDescendant =
       masterAufgaben.some(m =>
@@ -115,6 +118,7 @@ function ActivitySidebarItem({
           )}
           <span className="flex-1 truncate">{aktivitaetName}</span>
           {activity.braucht_nacharbeit === true && <NacharbeitZeichen notiz={activity.nacharbeit_notiz} gewaehlt={isActivitySelected} />}
+          <HinweisZeichen anzahl={hinweise([activity.id, ...masterAufgaben.map(m => m.id)]).length} gewaehlt={isActivitySelected} />
           {lockedByOther && !isActivitySelected && (
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
           )}
@@ -254,6 +258,7 @@ function SidebarLernpaketFolder({
                       isIncomplete={!isComplete}
                       myEmail={myEmail}
                       symbol={phase.icon}
+                      einheitId={lernpaket.einheit_id}
                     />
                   );
                 });

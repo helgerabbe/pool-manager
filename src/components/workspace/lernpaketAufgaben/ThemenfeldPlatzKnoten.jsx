@@ -4,12 +4,15 @@ import { cn } from '@/lib/utils';
 import { aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
 import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
+import HinweisZeichen from '@/components/workspace/kopf/HinweisZeichen';
+import { useElementHinweise } from '@/hooks/useElementHinweise';
 
 const SYMBOL = { einstieg: Compass, gesamtaufgabe: Flag };
 
 /** Eintrag im Menübaum für einen festen Platz des Themenfelds, mit Zähler wie beim Lernpaket. */
 export default function ThemenfeldPlatzKnoten({ platz, themenfeld, selectedItem, onSelect, alleAufgaben = [] }) {
   const Symbol = SYMBOL[platz.key];
+  const hinweise = useElementHinweise(themenfeld.einheit_id);
   const gewaehlt = (selectedItem?.type === 'themenfeld_platz' || (selectedItem?.type === 'aufgabe' && !!selectedItem.platz))
     && selectedItem.platz.key === platz.key
     && selectedItem.themenfeld.id === themenfeld.id;
@@ -32,6 +35,7 @@ export default function ThemenfeldPlatzKnoten({ platz, themenfeld, selectedItem,
       <Symbol className={cn('w-4 h-4 shrink-0', gewaehlt ? 'text-primary-foreground' : 'text-primary')} />
       <span className="flex-1 truncate">{platz.titel}</span>
       {aufgaben.some((a) => a.braucht_nacharbeit === true) && <NacharbeitZeichen gewaehlt={gewaehlt} />}
+      <HinweisZeichen anzahl={hinweise(aufgaben.map((a) => a.id)).length} gewaehlt={gewaehlt} />
       <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pille)}>
         {freigegeben ? <Check className="w-3.5 h-3.5" /> : aufgaben.length}
       </div>
