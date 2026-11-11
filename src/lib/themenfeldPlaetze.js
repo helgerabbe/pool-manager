@@ -9,7 +9,7 @@ export const THEMENFELD_PLAETZE = [
   {
     key: 'einstieg',
     titel: 'Einstieg',
-    beschreibung: 'Steht am Anfang des Themenfelds: ein erster Einblick, bevor die Lernpakete beginnen.',
+    beschreibung: 'Freiwillig: Hier kannst du eine Aufgabe an den Anfang des Themenfelds stellen, die den Schülern einen ersten Einblick gibt, bevor die Lernpakete beginnen. Ein Themenfeld braucht keinen Einstieg; ohne Aufgabe starten die Schüler direkt mit dem ersten Lernpaket.',
     leer: 'Noch keine Einstiegsaufgabe in diesem Themenfeld.',
   },
   {

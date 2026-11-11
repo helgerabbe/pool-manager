@@ -7,6 +7,7 @@ import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import DeleteAufgabeConfirmDialog from '@/components/allgemeineAufgaben/DeleteAufgabeConfirmDialog';
 import LernpaketAufgabeZeile from './LernpaketAufgabeZeile';
+import AufgabenEinstellungenHilfe from './AufgabenEinstellungenHilfe';
 import {
   getAufgabenByEinheit, updateAllgemeineAufgabe, deleteAllgemeineAufgabe,
 } from '@/services/AllgemeineAufgabeService';
@@ -79,7 +80,9 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
       ) : aufgaben.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">{platz ? platz.leer : 'Noch keine Aufgabe in diesem Lernpaket.'}</p>
       ) : (
-        aufgaben.map((a, i) => (
+        <>
+        <AufgabenEinstellungenHilfe imLernpaket={!platz} />
+        {aufgaben.map((a, i) => (
           <LernpaketAufgabeZeile
             key={a.id}
             aufgabe={a}
@@ -89,7 +92,8 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
             onOeffnen={() => setWerkstatt({ aufgabe: a })}
             onLoeschen={() => setZuLoeschen(a)}
           />
-        ))
+        ))}
+        </>
       )}
 
       {editierbar && (
