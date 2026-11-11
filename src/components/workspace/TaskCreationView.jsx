@@ -845,7 +845,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
               )}
               <div className="space-y-0.5">
                 {themenfeld && (
-                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} />
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} alleAufgaben={alleAufgaben} />
                 )}
                 {pakete.map((lernpaket, idx) => (
                   <SidebarLernpaketFolder
@@ -870,7 +870,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                      />
                 ))}
                 {themenfeld && (
-                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} />
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} alleAufgaben={alleAufgaben} />
                 )}
               </div>
             </div>
