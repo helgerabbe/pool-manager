@@ -31,7 +31,7 @@ export function planbareAufgaben(aufgaben = [], konfiguration = null) {
 /** Die Aufgaben eines Lernpakets in ihrer Reihenfolge (Aufgabe 1, Aufgabe 2, …). */
 export function aufgabenImLernpaket(aufgaben = [], lernpaketId) {
   return (aufgaben || [])
-    .filter((a) => a.lernpaket_id === lernpaketId)
+    .filter((a) => a.lernpaket_id === lernpaketId && a.sync_status !== 'to_delete')
     .sort((a, b) => (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0)
       || String(a.created_date).localeCompare(String(b.created_date)));
 }
@@ -39,7 +39,7 @@ export function aufgabenImLernpaket(aufgaben = [], lernpaketId) {
 /** Die Aufgaben eines festen Themenfeld-Platzes (Einstieg / Gesamtaufgabe) in ihrer Reihenfolge. */
 export function aufgabenAmPlatz(aufgaben = [], themenfeldId, platzKey) {
   return (aufgaben || [])
-    .filter((a) => !a.lernpaket_id && a.themenfeld_id === themenfeldId && a.themenfeld_platz === platzKey)
+    .filter((a) => !a.lernpaket_id && a.themenfeld_id === themenfeldId && a.themenfeld_platz === platzKey && a.sync_status !== 'to_delete')
     .sort((a, b) => (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0)
       || String(a.created_date).localeCompare(String(b.created_date)));
 }

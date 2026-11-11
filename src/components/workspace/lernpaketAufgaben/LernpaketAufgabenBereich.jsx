@@ -41,6 +41,7 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
   });
 
   const aufgaben = useMemo(() => alle
+    .filter((a) => a.sync_status !== 'to_delete')
     .filter((a) => (platz
       ? !a.lernpaket_id && a.themenfeld_id === paket.themenfeld_id && a.themenfeld_platz === platz.key
       : a.lernpaket_id === paket.id))
