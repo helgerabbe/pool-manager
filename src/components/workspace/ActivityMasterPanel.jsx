@@ -56,7 +56,6 @@ import KompaktwissenInfoBox from '@/components/workspace/KompaktwissenInfoBox';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import ImageLabelingEditor from '@/components/workspace/ImageLabelingEditor';
 import ModusAuswahlBox from '@/components/workspace/ki/ModusAuswahlBox';
-import MasterAnzeigeModusToggle from '@/components/workspace/MasterAnzeigeModusToggle';
 import KiBriefingForm from '@/components/workspace/ki/KiBriefingForm';
 import TranskriptStatusBadge from '@/components/workspace/ki/TranskriptStatusBadge';
 import { shouldShowTranskript } from '@/components/workspace/ki/TranskriptField';
@@ -475,17 +474,6 @@ export default function ActivityMasterPanel({
   // Anzeige-Modus für mehrere Master-Aufgaben (shuffle | alle). Default 'shuffle'.
   // Haupteinstellung auf Aktivitäts-Ebene; pro Karte nur als Badge gespiegelt.
   const masterAnzeigeModus = activityRecord?.master_anzeige_modus || 'shuffle';
-  const saveAnzeigeModusMutation = useMutation({
-    mutationFn: (modus) =>
-      base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, {
-        master_anzeige_modus: modus,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      toast.success('Wiedergabe-Modus gespeichert.');
-    },
-    onError: () => toast.error('Modus konnte nicht gespeichert werden.'),
-  });
 
   // Alle Klone für diese Aktivität (gruppiert nach master_aufgabe_id)
   const { data: alleKlone = [] } = useQuery({
@@ -1517,22 +1505,6 @@ export default function ActivityMasterPanel({
             </div>
 
           </div>
-
-          {/* Wiedergabe-Modus (nur sinnvoll ab 2 Aufgaben, nicht bei KI-Tutor) */}
-          {!isKITutor && masterAufgaben.length >= 2 && (
-            <MasterAnzeigeModusToggle
-              value={masterAnzeigeModus}
-              onChange={(m) => saveAnzeigeModusMutation.mutate(m)}
-              saving={saveAnzeigeModusMutation.isPending}
-              disabled={
-                !kannBearbeiten ||
-                isParentPaketLockedByOther ||
-                lernpaketReleased ||
-                lernpaket?.moodle_sync_status === 'locked' ||
-                lernpaket?.export_locked
-              }
-            />
-          )}
 
           {/* Vorhandene Master-Karten */}
           {masterAufgaben.map((master, idx) => 

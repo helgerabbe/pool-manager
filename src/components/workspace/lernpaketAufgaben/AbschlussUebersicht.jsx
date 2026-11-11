@@ -1,27 +1,16 @@
 import React, { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Check, ChevronRight, PenLine } from 'lucide-react';
-import { toast } from 'sonner';
-import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import MasterAnzeigeModusToggle from '@/components/workspace/MasterAnzeigeModusToggle';
 
 /**
  * Übersicht eines Abschluss-Elements mit Varianten (z. B. Test) im
- * Inhaltsfenster: Varianten und ihre Auswahl für die Schüler. Geändert wird
- * erst über „Bearbeiten" – dann erscheint die Bearbeitungsansicht (`children`).
+ * Inhaltsfenster. Hat das Element mehrere Varianten, bekommt jeder Schüler
+ * zufällig eine davon. Geändert wird erst über „Bearbeiten" – dann erscheint
+ * die Bearbeitungsansicht (`children`).
  */
-export default function AbschlussUebersicht({ activity, name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
-  const queryClient = useQueryClient();
+export default function AbschlussUebersicht({ name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
   const [bearbeitet, setBearbeitet] = useState(false);
-  const [modus, setModus] = useState(activity.master_anzeige_modus || 'shuffle');
-
-  const modusSpeichern = useMutation({
-    mutationFn: (neu) => base44.entities.LernpaketPhaseAktivitaet.update(activity.id, { master_anzeige_modus: neu }),
-    onSuccess: (_, neu) => { setModus(neu); queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] }); },
-    onError: () => toast.error('Die Auswahl konnte nicht gespeichert werden.'),
-  });
 
   return (
     <div className="space-y-4">
@@ -30,7 +19,6 @@ export default function AbschlussUebersicht({ activity, name, paketTitel, varian
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">Abschluss: {name}</h2>
           <Badge variant="outline">{varianten.length} {varianten.length === 1 ? 'Variante' : 'Varianten'}</Badge>
-          {varianten.length >= 2 && <Badge variant="outline">{modus === 'alle' ? 'Alle bearbeiten' : '1 zufällig'}</Badge>}
         </div>
       </div>
 
@@ -53,8 +41,7 @@ export default function AbschlussUebersicht({ activity, name, paketTitel, varian
       {bearbeitet ? children : (
         <div className="space-y-2">
           {varianten.length >= 2 && (
-            <MasterAnzeigeModusToggle value={modus} onChange={(neu) => modusSpeichern.mutate(neu)}
-              saving={modusSpeichern.isPending} disabled={!kannBearbeiten} />
+            <p className="text-xs text-muted-foreground">Jeder Schüler bekommt zufällig eine der {varianten.length} Varianten.</p>
           )}
           {varianten.length === 0 && <p className="text-xs text-muted-foreground italic">Noch keine Variante angelegt.</p>}
           {varianten.map((v, i) => {

@@ -30,7 +30,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { ChevronRight, Package, MousePointerClick, Lock, Crown, CheckCircle2, Check, Menu, X, PenLine } from 'lucide-react';
+import { ChevronRight, Package, MousePointerClick, Lock, Check, Menu, X, PenLine } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -63,121 +63,21 @@ function isKlonLockedByOther(klon, myEmail) {
   return true;
 }
 
-// ── Klon-Unterzeile ───────────────────────────────────────────────────────────
-
-function KlonSubItem({ klon, isSelected, onSelect }) {
-   // Farb-Logik basierend auf content_status (nicht sync_status)
-   const isReleased = klon.content_status === 'approved';
-   const textColor = isReleased ? 'text-green-600' : 'text-orange-600';
-   const isIncomplete = !klon.is_complete;
-
-   return (
-     <button
-       onClick={() => onSelect({ type: 'klon', klon })}
-       className={cn(
-         'w-full flex items-center gap-2 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
-         isSelected
-           ? 'bg-primary/10 text-primary font-medium'
-           : cn('hover:bg-muted', textColor)
-       )}
-     >
-       <span className="flex-1 truncate">
-         {isReleased ? '✓' : '○'} Kopie {klon.klon_index}
-       </span>
-
-     </button>
-   );
-}
-
-// ── Master-Unterzeile (mit eingerückten Klonen, einklappbar) ───────────────────────────────
-
-function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEntry }) {
-   const isMasterSelected = selectedItem?.type === 'master' && selectedItem?.master?.id === master.id;
-   const hasSelectedKlon = klone.some(k => selectedItem?.type === 'klon' && selectedItem?.klon?.id === k.id);
-   const [expanded, setExpanded] = useState(isMasterSelected || hasSelectedKlon);
-
-   // Auto-expand wenn Master oder Klon selektiert wird
-   useEffect(() => {
-     if (isMasterSelected || hasSelectedKlon) {
-       setExpanded(true);
-     }
-   }, [isMasterSelected, hasSelectedKlon]);
-
-   const isKITutor = catalogEntry?.name?.toLowerCase().includes('ki-tutor');
-
-   // Farb-Logik: grün wenn freigegeben ODER vollständig, orange wenn unvollständig
-   const isReleased = master.content_status === 'approved';
-   const isComplete = master.is_complete === true;
-   const textColor = (isReleased || isComplete) ? 'text-green-600' : 'text-orange-600';
-
-   return (
-     <div>
-       <div className="flex items-center gap-0.5">
-         {/* Expand-Button (für KI-Tutor und Masters mit Klonen) */}
-         {isKITutor || klone.length > 0 ? (
-           <button
-             onClick={() => setExpanded(!expanded)}
-             className="p-0.5 text-muted-foreground hover:text-foreground shrink-0"
-             title={expanded ? 'Einklappen' : 'Aufklappen'}
-           >
-             <ChevronRight className={cn('w-3 h-3 transition-transform', expanded && 'rotate-90')} />
-           </button>
-         ) : (
-           <div className="w-4" /> /* Spacer für Alignment */
-         )}
-
-         <button
-           onClick={() => onSelect({ type: 'master', master })}
-           className={cn(
-             'flex-1 flex items-center gap-1.5 px-2 py-1 rounded-md text-left text-[11px] transition-colors',
-             isMasterSelected
-               ? 'bg-primary/15 text-primary font-semibold'
-               : cn('hover:bg-muted', textColor)
-           )}
-         >
-           <Crown className="w-3 h-3 shrink-0 text-primary/70" />
-           <span className="flex-1 truncate">{master.titel || `Variante ${index}`}</span>
-           {isReleased && (
-             <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Freigegeben" />
-           )}
-         </button>
-       </div>
-
-       {/* Expandierte Klone oder Inhalts-Preview für KI-Tutor */}
-       {expanded && (
-         <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-           {klone.length > 0 ? (
-             klone.map((klon) => (
-               <KlonSubItem
-                 key={klon.id}
-                 klon={klon}
-                 isSelected={selectedItem?.type === 'klon' && selectedItem?.klon?.id === klon.id}
-                 onSelect={onSelect}
-               />
-             ))
-           ) : isKITutor ? (
-             <p className="px-2 py-1 text-[10px] text-muted-foreground/60 italic">Keine Klone (KI-Tutor-Aufgabe)</p>
-           ) : null}
-         </div>
-       )}
-     </div>
-   );
-}
-
 // ── Sidebar: Aktivitäts-Zeile ─────────────────────────────────────────────────
 
 function ActivitySidebarItem({
     activity, aktivitaetName, masterAufgaben, kloneByMasterId,
-    selectedItem, onSelect, isIncomplete, myEmail, catalogEntry,
+    selectedItem, onSelect, isIncomplete, myEmail, symbol,
   }) {
-    const isActivitySelected = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
+    const selbstGewaehlt = selectedItem?.type === 'activity' && selectedItem?.activity?.id === activity.id;
     const hasSelectedDescendant =
       masterAufgaben.some(m =>
         (selectedItem?.type === 'master' && selectedItem?.master?.id === m.id) ||
         (selectedItem?.type === 'klon' && (kloneByMasterId[m.id] || []).some(k => k.id === selectedItem?.klon?.id))
       );
     const lockedByOther = isActivityLockedByOther(activity, myEmail);
-    const showChildren = isActivitySelected || hasSelectedDescendant;
+    // Varianten und Kopien stehen nicht im Menübaum – ist eine davon geöffnet, ist ihr Element markiert.
+    const isActivitySelected = selbstGewaehlt || hasSelectedDescendant;
 
     // Farb-Logik: Bei Master-Aktivitäten kommt die Vollständigkeit aus den
     // freigegebenen Masteraufgaben; bei normalen Aktivitäten aus dem Backend-Flag.
@@ -193,9 +93,10 @@ function ActivitySidebarItem({
             'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors',
             isActivitySelected
               ? 'bg-primary text-primary-foreground font-medium'
-              : cn('hover:bg-muted', textColor)
+              : cn('hover:bg-card', textColor)
           )}
         >
+          <span className="shrink-0">{symbol}</span>
           {activity.content_status === 'approved' && (
             <Lock
               className={cn(
@@ -213,23 +114,6 @@ function ActivitySidebarItem({
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
           )}
         </button>
-
-      {/* Master-Knoten + deren Klone — immer sichtbar, wenn Master-Aufgaben existieren */}
-      {masterAufgaben.length > 0 && (
-        <div className="ml-4 mt-0.5 border-l border-border pl-2 space-y-0.5">
-          {masterAufgaben.map((master, idx) => (
-            <MasterSubItem
-              key={master.id}
-              master={master}
-              index={idx + 1}
-              klone={kloneByMasterId[master.id] || []}
-              selectedItem={selectedItem}
-              onSelect={onSelect}
-              catalogEntry={catalogEntry}
-            />
-          ))}
-        </div>
-      )}
     </div>
   );
 }
@@ -240,7 +124,7 @@ function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
-  expandedPhases, setExpandedPhases, isEditingActive = false, aufgaben = [],
+  isEditingActive = false, aufgaben = [],
 }) {
   const isLernpaketSelected = selectedItem?.type === 'lernpaket' && selectedItem?.lernpaket?.id === lernpaket.id;
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
@@ -255,26 +139,24 @@ function SidebarLernpaketFolder({
     );
   });
 
-  // Initial-Auto-Open: einmalig öffnen, wenn ein Kind dieses Pakets
-  // selektiert ist. KEIN permanenter Effekt — sonst würde das Akkordeon
-  // jeden manuellen Wechsel auf ein anderes Paket sofort revertieren,
-  // weil die Selection im alten Paket noch lebt (Bug 2026-05-14).
-  const didAutoOpenRef = React.useRef(false);
+  // Das Lernpaket, in dem man sich befindet (Übersicht oder eines seiner
+  // Elemente), ist IMMER aufgeklappt und lässt sich nicht einklappen. Es
+  // schließt sich erst, wenn ein anderes Lernpaket angeklickt wird.
+  const aktiv = isLernpaketSelected || hasSelectedChild;
+  const offen = isOpen || aktiv;
   useEffect(() => {
-    if (hasSelectedChild && !isOpen && !didAutoOpenRef.current && onToggleOpen) {
-      didAutoOpenRef.current = true;
-      onToggleOpen(lernpaket.id, true);
-    }
-  }, [hasSelectedChild, isOpen, lernpaket.id, onToggleOpen]);
+    if (aktiv && !isOpen) onToggleOpen?.(lernpaket.id, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aktiv, isOpen, lernpaket.id]);
 
   // Prüfe ob dieses Paket das aktive (gesperrte) ist
   const isActiveLocked = isEditingActive && hasSelectedChild;
 
   return (
-    <div className={cn(isActiveLocked && "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5")}>
+    <div className={cn(isActiveLocked ? "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5" : offen && "rounded-lg bg-secondary")}>
       <button
          onClick={() => {
-           onToggleOpen?.(lernpaket.id, !isOpen);
+           onToggleOpen?.(lernpaket.id, true);
            onSelect?.({ type: 'lernpaket', lernpaket });
          }}
          className={cn(
@@ -286,7 +168,7 @@ function SidebarLernpaketFolder({
              : "text-foreground hover:bg-muted"
          )}
        >
-         <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-90')} />
+         <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', offen && 'rotate-90')} />
          <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : isLernpaketSelected ? "text-primary-foreground" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
          {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
@@ -328,8 +210,10 @@ function SidebarLernpaketFolder({
          })()}
        </button>
 
-      {isOpen && (
-        <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-0.5 pb-1">
+      {/* Inhalt des Lernpakets: nur die Elemente. Das Symbol davor zeigt den Teil
+          (📚 Wissensspeicher, ✏️ Aufgaben, 🎯 Abschluss), die Schriftfarbe den Stand. */}
+      {offen && (
+        <div className="pl-6 pr-1.5 pt-0.5 pb-1.5 space-y-0.5">
           {paketActivities.length === 0 && aufgaben.length === 0 ? (
             <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
           ) : (
@@ -338,62 +222,33 @@ function SidebarLernpaketFolder({
               if (phase.key === 'Übung' && aufgaben.length > 0) {
                 return <LernpaketAufgabenGruppe key="aufgaben" aufgaben={aufgaben} lernpaket={lernpaket} selectedItem={selectedItem} onSelect={onSelect} />;
               }
-              const phaseConfig = phasenConfig[phase.key] || {};
-              if (phaseConfig.disabled) return null;
-              const phaseActs = paketActivities
+              if (phasenConfig[phase.key]?.disabled) return null;
+              return paketActivities
                 .filter(a => a.phase === phase.key)
-                .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
-              if (phaseActs.length === 0) return null;
-
-              const phaseExpanded = expandedPhases[phase.key] !== false;
-              const togglePhaseExpand = (phaseKey) => {
-                setExpandedPhases(prev => ({
-                  ...prev,
-                  [phaseKey]: !prev[phaseKey],
-                }));
-              };
-
-              return (
-                <div key={phase.key}>
-                  <button
-                    onClick={() => togglePhaseExpand(phase.key)}
-                    className="w-full flex items-center gap-1.5 px-2 py-0.5 text-left text-[10px] font-semibold text-muted-foreground/60 hover:text-muted-foreground transition-colors"
-                  >
-                    <ChevronRight className={cn('w-3 h-3 shrink-0 transition-transform', phaseExpanded && 'rotate-90')} />
-                    {phase.icon} <span className="uppercase tracking-wide">{phase.label}</span>
-                  </button>
-                  {phaseExpanded && (
-                    <div className="ml-2 border-l border-border/40 pl-2 space-y-0.5">
-                      {phaseActs.map(activity => {
-                         const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
-                         const masters = masterAufgabenByActivityId[activity.id] || [];
-                         const supportsMaster = actCatalog?.supports_master === true;
-
-                         // Anzeige-Logik: grün sobald die Aktivität vollständig ist; Freigabe ist dafür nicht nötig.
-                         let isComplete = activity.content_status === 'approved' || activity.is_complete === true;
-                         if (!isComplete && supportsMaster) {
-                           isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
-                         }
-
-                         return (
-                           <ActivitySidebarItem
-                             key={activity.id}
-                             activity={activity}
-                             aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
-                             masterAufgaben={masters}
-                             kloneByMasterId={kloneByMasterId}
-                             selectedItem={selectedItem}
-                             onSelect={onSelect}
-                             isIncomplete={!isComplete}
-                             myEmail={myEmail}
-                             catalogEntry={actCatalog}
-                           />
-                         );
-                       })}
-                    </div>
-                  )}
-                </div>
-              );
+                .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
+                .map(activity => {
+                  const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
+                  const masters = masterAufgabenByActivityId[activity.id] || [];
+                  // Grün, sobald das Element vollständig ist; Freigabe ist dafür nicht nötig.
+                  let isComplete = activity.content_status === 'approved' || activity.is_complete === true;
+                  if (!isComplete && actCatalog?.supports_master === true) {
+                    isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
+                  }
+                  return (
+                    <ActivitySidebarItem
+                      key={activity.id}
+                      activity={activity}
+                      aktivitaetName={aktivitaetenMap[activity.aktivitaet_id] || '…'}
+                      masterAufgaben={masters}
+                      kloneByMasterId={kloneByMasterId}
+                      selectedItem={selectedItem}
+                      onSelect={onSelect}
+                      isIncomplete={!isComplete}
+                      myEmail={myEmail}
+                      symbol={phase.icon}
+                    />
+                  );
+                });
             })
           )}
         </div>
@@ -527,7 +382,6 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
    const [selectedItem, setSelectedItem] = useState(null);
    // Akkordeon: immer nur EIN Lernpaket offen (analog Tab 3 SidebarTree).
    const [openPacketIds, setOpenPacketIds] = useState(new Set());
-   const [expandedPhases, setExpandedPhases] = useState({});
 
    // Paket-Lock auf DB setzen/freigeben wenn isEditingActive wechselt.
    //
@@ -997,15 +851,11 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                     myEmail={userEmail}
                     isOpen={openPacketIds.has(lernpaket.id)}
                     onToggleOpen={(paketId, shouldOpen) => {
-                       // Akkordeon-Verhalten: beim Öffnen wird das angeklickte
-                       // Paket zum einzigen offenen Knoten; beim Schließen
-                       // wird alles eingeklappt.
+                       // Akkordeon: das angeklickte Paket ist der einzige offene Knoten.
                        setOpenPacketIds(shouldOpen ? new Set([paketId]) : new Set());
                      }}
                      aktivitaetenKatalog={aktivitaetenKatalog}
                      aufgaben={aufgabenImLernpaket(alleAufgaben, lernpaket.id)}
-                     expandedPhases={expandedPhases}
-                     setExpandedPhases={setExpandedPhases}
                      isEditingActive={isEditingActive}
                      />
                 ))}
