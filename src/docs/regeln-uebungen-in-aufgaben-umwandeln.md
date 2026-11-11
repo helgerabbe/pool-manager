@@ -186,3 +186,22 @@ Die 64 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. A
 | 5ae36 | Volumen der Kugel berechnen | Die Kugel beschriften | katalog |
 | 6122a | Volumen der Kugel berechnen | Volumen von Kugeln berechnen (a–f) | brian |
 | 416ed | Anwendungsaufgaben zur Kugel | Fehlende Größen in der Kugel-Tabelle ergänzen | brian |
+
+## Lernpaket „Kreisfläche berechnen“ neu aufgebaut (2026-11-11)
+
+Nach Buch S. 94–95, mit der Lehrkraft abgestimmt. Alle neuen Aufgaben sind Entwürfe.
+
+| Nr. | Aufgabe | Niveau | Elemente |
+|---|---|---|---|
+| 1 | Wie groß ist ein Kreis? Erst schätzen (Nr. 1, 2) | GE, Pflicht | offen: Kästchen im Viertelkreis antippen; offen: Faustformel 3 · r² |
+| 2 | Vom Kreis zum Rechteck: Die Formel A = π · r² verstehen (Nr. 3) | GE, Pflicht | offen: Kreis in 4 bis 64 Teile zerlegen; Begriffe zuordnen; Sortierung; Freitextfrage mit KI |
+| 3 | Herleitung Flächeninhalt Kreis (Ausschneiden, Bestand 672e2) | GE, freiwillig | Handlung, unverändert |
+| 4 | Die Formel anwenden: Kreisflächen berechnen (Nr. 4, 5) | GE, Pflicht | Musterbeispiel (Text); Miniquiz Pia und Lukas; offen: Tabelle Nr. 5 a–k |
+| 5 | Kreise im Alltag: Sachaufgaben zur Kreisfläche (Nr. 6–8) | GE, Pflicht | drei offene Aufgaben mit geführten Rechenschritten |
+| 6 | Blumenbeet im Stadtpark (Nr. 9) | E, Pflicht | KI-Tutor |
+
+- **Zahlenfelder:** Ergebnisse mit π-Taste und mit π ≈ 3,14 gelten beide. Die offenen Aufgaben erkennen typische Fehler am Ergebnis (Durchmesser statt Radius, Umfang statt Fläche, r · 2 statt r², π vergessen) und nennen sie.
+- **Nr. 9:** Die Buchseite nennt keine Fragen. Formuliert wurden a) Anzahl der Pflanzen (294, abrunden), b) Rasenfläche (1467,82 m²), c) Rasensamen (etwa 44 kg bei 3 kg je 100 m²).
+- **Ausgeblendet (sync_status 'to_delete', vorher 'new'):** 4e369 Herleitung erklären, 9b846 Flächeninhalt Kreis berechnen (war freigegeben), 4e36a Quiz, 4e36b Kreisflächen berechnen (Nr. 5–8), 4e36c Blechplatte.
+- **Lernziele umgehängt (vorher alle an „Kreisfläche berechnen“):** d216c (Kreisring) und ba57d (Kreisausschnitt) nach „Kreisring, Kreisausschnitt und Kreisbogen“; dc146 (Umfang) und 56638 (Pi als Verhältnis) nach „Kreisumfang und Kreiszahl Pi“.
+- **Offen:** Das Umstellen nach Radius oder Durchmesser steht im Lernziel, wird aber von keiner Aufgabe geübt. In den anderen Kreis-Lernpaketen hängen weitere Lernziele am falschen Paket (nicht geändert).
