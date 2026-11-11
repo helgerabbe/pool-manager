@@ -9,7 +9,7 @@
  *   basis = die zuletzt vorgeschlagene Fassung, wenn die Lehrkraft nachbessern lässt.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { getAnthropicConfig, askAnthropicJson, askAnthropicText } from '../../shared/anthropicClient.js';
+import { getAnthropicConfig, askAnthropicJson, askAnthropicText, askAnthropicWerkzeug } from '../../shared/anthropicClient.js';
 import { hatImportCenterZugang, ZUGANG_FEHLER } from '../../shared/importAuftragAccess.js';
 import { ladeStellen, stelleOhneRoh, schritteAlsFelder } from '../../shared/baumeisterStellen.js';
 
@@ -17,6 +17,20 @@ const GRUNDREGEL = `Du bist der Bauer eines Unterrichtsplanungs-Werkzeugs. Du se
 - Ändere nur, was der Wunsch verlangt. Alles andere bleibt Zeichen für Zeichen gleich.
 - Verlangt der Wunsch einen Neubau, baue die Aufgabe neu — schülergerecht und vollständig.
 - Beschreibe deine Änderung in EINEM kurzen, konkreten Satz (z. B. „Im Hinweis ‚Gleichgültigkeit' durch ‚Resignation' ersetzt.").`;
+
+// Sucht `suche` wörtlich; sonst großzügig bei Anführungszeichen und Leerraum,
+// weil die KI „typografische" Zeichen beim Abschreiben gern vertauscht.
+function findeStelle(text, suche) {
+  const direkt = text.indexOf(suche);
+  if (direkt >= 0) return [direkt, suche.length];
+  if (!String(suche || '').trim()) return null;
+  const muster = suche
+    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    .replace(/["'„“”‚‘’]/g, '["\'„“”‚‘’]')
+    .replace(/\s+/g, '\\s+');
+  const m = new RegExp(muster).exec(text);
+  return m ? [m.index, m[0].length] : null;
+}
 
 function wunschText(hinweis, zusatz) {
   return `ÄNDERUNGSWUNSCH:\n${hinweis}${zusatz ? `\n\nERGÄNZUNG DER LEHRKRAFT ZUM LETZTEN VORSCHLAG:\n${zusatz}` : ''}`;
@@ -90,7 +104,9 @@ export default async function (req) {
     }
 
     // Verlangt der Wunsch eine ANDERE Aufgabenart (z. B. KI-Tutor statt Bestätigen)?
-    if (stelle.art === 'aktivitaet') {
+    // Läuft nur, wenn der Bauer selbst meldet, dass die Aufgabenart nicht passt
+    // (oder die Lehrkraft einen Artwechsel nachbessert) – nicht mehr vor jeder Änderung.
+    const artwechsel = async () => {
       const katalog = (await base44.asServiceRole.entities.AktivitaetenKatalog.filter({ is_active: true }))
         .filter((k) => Array.isArray(k.form_schema) && k.form_schema.length);
       const bisher = basis?.__artwechsel_id ? katalog.find((k) => k.id === basis.__artwechsel_id) : null;
@@ -130,6 +146,11 @@ export default async function (req) {
           aenderung: `Aufgabenart gewechselt: „${stelle.titel}" → „${ziel.name}". ${antwort.aenderung || ''}`.trim(),
         });
       }
+      return null;
+    };
+    if (stelle.art === 'aktivitaet' && basis?.__artwechsel_id) {
+      const wechsel = await artwechsel();
+      if (wechsel) return wechsel;
     }
 
     if (stelle.art === 'aktivitaet' || stelle.art === 'aufgabe') {
@@ -138,21 +159,71 @@ export default async function (req) {
       const felder = (stelle.roh.form_schema || [])
         .map((f) => `- ${f.field_name} (${f.type}): ${f.label}`)
         .join('\n');
-      const antwort = await askAnthropicJson(cfg, {
-        system: `${GRUNDREGEL}\nDie Aufgabe ist ein Objekt aus Feldwerten. Behalte Feldnamen und Datenformat exakt bei (Arrays bleiben Arrays, Objekte bleiben Objekte). Antworte NUR mit JSON: {"field_values":{...ALLE Felder...},"aenderung":"..."}`,
+      const antwort = await askAnthropicWerkzeug(cfg, {
+        system: `${GRUNDREGEL}
+Die Aufgabe ist ein Objekt aus Feldwerten. Du schreibst sie NICHT neu ab, sondern nennst nur die Änderungen:
+- Textfelder: je Änderung eine Ersetzung mit dem Feldnamen, der WÖRTLICH kopierten alten Textstelle (so kurz wie möglich, aber eindeutig) und dem neuen Text. Steht derselbe Text in mehreren Feldern, ändere ihn in jedem.
+- Felder, die kein reiner Text sind (Listen, Objekte): den vollständigen neuen Wert unter "felder", im selben Datenformat.
+- Nennt der Wunsch keine fertige Formulierung, formuliere selbst schülergerecht.
+- Der Wunsch kann Verwaltungsnotizen enthalten (Daten, Namen, Verweise auf Listen). Setze nur die inhaltliche Änderung um.
+- Verlangt der Wunsch eine ANDERE Aufgabenart, als die Aufgabe jetzt hat, setze andere_aufgabenart=true.
+- Kannst du den Wunsch an dieser Aufgabe nicht umsetzen (Stelle nicht gefunden, Wunsch unklar, betrifft etwas anderes), setze moeglich=false und nenne in "grund" in ein bis zwei Sätzen genau, woran es liegt und was du bräuchtest.`,
         prompt: `AUFGABENART: ${stelle.titel}\nFELDER:\n${felder}\n\nAKTUELLE FELDWERTE:\n${JSON.stringify(ausgang, null, 2)}\n\n${wunschText(hinweis, zusatz)}`,
+        schema: {
+          type: 'object',
+          properties: {
+            moeglich: { type: 'boolean' },
+            grund: { type: 'string', description: 'Nur bei moeglich=false: warum nicht.' },
+            andere_aufgabenart: { type: 'boolean' },
+            aenderung: { type: 'string', description: 'Ein kurzer Satz, was geändert wird.' },
+            ersetzungen: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: { feld: { type: 'string' }, suche: { type: 'string' }, ersetze: { type: 'string' } },
+                required: ['feld', 'suche', 'ersetze'],
+              },
+            },
+            felder: { type: 'object', additionalProperties: true },
+          },
+          required: ['moeglich'],
+        },
         maxTokens: 8000,
       });
-      if (!antwort?.field_values || typeof antwort.field_values !== 'object') {
-        return Response.json({ error: 'Die KI hat keine verwertbare Fassung geliefert. Bitte erneut versuchen.' }, { status: 502 });
+
+      if (antwort.andere_aufgabenart === true && stelle.art === 'aktivitaet') {
+        const wechsel = await artwechsel();
+        if (wechsel) return wechsel;
+      }
+      if (antwort.moeglich === false) {
+        return Response.json({ error: `Das kann ich hier nicht ändern: ${antwort.grund || 'Die KI hat keinen Grund genannt.'}` }, { status: 422 });
+      }
+
+      const neu = { ...ausgang, ...(antwort.felder && typeof antwort.felder === 'object' ? antwort.felder : {}) };
+      const stellen = [];
+      for (const e of antwort.ersetzungen || []) {
+        const text = neu[e.feld];
+        const treffer = typeof text === 'string' ? findeStelle(text, e.suche) : null;
+        if (!treffer) {
+          return Response.json({
+            error: `Ich wollte im Feld „${e.feld}" die Stelle „${String(e.suche).slice(0, 120)}" ersetzen, sie steht dort aber nicht wörtlich. Bitte noch einmal versuchen oder die Stelle genauer nennen.`,
+          }, { status: 422 });
+        }
+        const [ab, laenge] = treffer;
+        stellen.push({ feld: e.feld, vorher: text.slice(ab, ab + laenge), nachher: e.ersetze });
+        neu[e.feld] = text.slice(0, ab) + e.ersetze + text.slice(ab + laenge);
+      }
+      if (JSON.stringify(neu) === JSON.stringify(ausgang)) {
+        return Response.json({ error: `Ich habe nichts gefunden, das zu ändern wäre. ${antwort.grund || antwort.aenderung || ''}`.trim() }, { status: 422 });
       }
       return Response.json({
         stelle: stelleOhneRoh(stelle),
         form_schema: stelle.roh.form_schema,
         alt,
         neu: stelle.art === 'aufgabe'
-          ? Object.fromEntries(Object.keys(alt).map((k) => [k, String(antwort.field_values[k] ?? ausgang[k] ?? '')]))
-          : { ...ausgang, ...antwort.field_values },
+          ? Object.fromEntries(Object.keys(alt).map((k) => [k, String(neu[k] ?? '')]))
+          : neu,
+        stellen,
         aenderung: antwort.aenderung || '',
       });
     }

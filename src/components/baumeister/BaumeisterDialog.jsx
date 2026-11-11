@@ -9,11 +9,12 @@ import SpeechInputButton from '@/components/ui/SpeechInputButton';
 import { getBaumeisterKontext } from '@/lib/baumeisterKontext';
 import BaumeisterKandidaten from './BaumeisterKandidaten';
 import BaumeisterVergleich from './BaumeisterVergleich';
+import BaumeisterKurzfassung from './BaumeisterKurzfassung';
 import BaumeisterEntscheidung from './BaumeisterEntscheidung';
 
 const LADE_TEXT = {
   suchen: 'Warte kurz, ich schaue mir die Einheit an und suche die Stelle …',
-  bauen: 'Ich baue die Änderung — das dauert einen Moment …',
+  bauen: 'Ich lese den Hinweis und schaue, was hier zu ändern ist …',
   ausfuehren: 'Ich übernehme die Änderung …',
 };
 
@@ -29,7 +30,8 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
     setAufKontext(true);
     base44.auth.me().then((u) => setIch(u?.email)).catch(() => {});
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-  React.useEffect(() => { setFreigabeOk(false); }, [b.vorschlag]);
+  const [ganz, setGanz] = React.useState(false);
+  React.useEffect(() => { setFreigabeOk(false); setGanz(false); }, [b.vorschlag]);
   const fremdGesperrt = b.stelle?.gesperrt_von && b.stelle.gesperrt_von !== ich ? b.stelle.gesperrt_von : null;
   const losLegen = () => (kontext && aufKontext ? b.direktBauen(kontext.ref, b.hinweis) : b.suchen());
   // Aus einem Prüfbefund geöffnet: bei bekannter Stelle direkt bauen, sonst Hinweis vorbefüllen.
@@ -113,13 +115,22 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
         {b.phase === 'vergleich' && b.vorschlag && (
           <div className="flex flex-col gap-3 min-h-0 flex-1">
             <div className="text-xs text-muted-foreground">{b.stelle?.ort} · <span className="font-semibold">{b.stelle?.titel}</span></div>
-            <BaumeisterVergleich
-              art={b.stelle?.art}
-              alt={b.vorschlag.alt}
-              neu={b.vorschlag.neu}
-              aenderung={b.vorschlag.aenderung}
-              formSchema={b.vorschlag.form_schema || []}
-            />
+            {b.vorschlag.stellen?.length > 0 && !ganz ? (
+              <>
+                <BaumeisterKurzfassung aenderung={b.vorschlag.aenderung} stellen={b.vorschlag.stellen} />
+                <div>
+                  <Button size="sm" variant="outline" onClick={() => setGanz(true)}>Ganze Aufgabe vorher und nachher zeigen</Button>
+                </div>
+              </>
+            ) : (
+              <BaumeisterVergleich
+                art={b.stelle?.art}
+                alt={b.vorschlag.alt}
+                neu={b.vorschlag.neu}
+                aenderung={b.vorschlag.aenderung}
+                formSchema={b.vorschlag.form_schema || []}
+              />
+            )}
             {fremdGesperrt && (
               <div className="text-sm rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
                 <b>Achtung:</b> {fremdGesperrt} bearbeitet diese Stelle gerade. Ich kann die Änderung nicht übernehmen, sonst würde die Arbeit überschrieben. Versuch es später noch einmal.

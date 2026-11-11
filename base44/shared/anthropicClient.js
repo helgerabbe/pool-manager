@@ -96,6 +96,41 @@ export async function askAnthropicText(cfg, { system, prompt, maxTokens = 20000 
 }
 
 /**
+ * Stellt eine Frage und bekommt die Antwort garantiert in der Form `schema`
+ * zurück (Werkzeug-Aufruf statt frei getipptem JSON – dort machte schon ein
+ * einziges unmaskiertes Anführungszeichen die ganze Antwort unlesbar).
+ * Wirft mit Klartext-Grund, wenn nichts Verwertbares kam.
+ */
+export async function askAnthropicWerkzeug(cfg, { system, prompt, schema, maxTokens = 4000 }) {
+  if (cfg.plattform) {
+    return cfg.base44.asServiceRole.integrations.Core.InvokeLLM({
+      prompt: `${system}\n\n${prompt}`, response_json_schema: schema, model: 'claude_sonnet_4_6',
+    });
+  }
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'x-api-key': cfg.apiKey, 'anthropic-version': ANTHROPIC_VERSION },
+    body: JSON.stringify({
+      model: cfg.modell,
+      max_tokens: maxTokens,
+      system,
+      messages: [{ role: 'user', content: prompt }],
+      tools: [{ name: 'antwort', description: 'Gib dein Ergebnis zurück.', input_schema: schema }],
+      tool_choice: { type: 'tool', name: 'antwort' },
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => '');
+    throw new Error(`Die KI war nicht erreichbar (Anthropic HTTP ${res.status}). ${detail.slice(0, 200)}`);
+  }
+  const data = await res.json();
+  if (data?.stop_reason === 'max_tokens') throw new Error('Die Antwort der KI war zu lang und wurde abgeschnitten.');
+  const block = (data?.content || []).find((b) => b?.type === 'tool_use');
+  if (!block?.input) throw new Error('Die KI hat nicht im verlangten Format geantwortet.');
+  return block.input;
+}
+
+/**
  * Stellt eine Frage und erwartet reines JSON zurück.
  * @returns {Promise<any|null>} geparstes JSON oder null, wenn nichts brauchbar kam
  */
