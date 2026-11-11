@@ -170,3 +170,18 @@ Die Lehrkraft hat die Seiten 10–27 erneut hochgeladen. Abgeglichen wurden S. 1
 - **The job interview:** Die Speaking skills von S. 25 stehen im Kompaktwissen und als vier weitere Fragen in „Good idea or bad idea?“; dazu die Beispielfrage „Why should we hire you?“.
 - **Nicht umgesetzt:** S. 17, Nr. 5 (Telefonat Hair House, Hörtext liegt nicht vor; ersetzt durch die Mailbox-Nachricht). S. 24, „wombat cuddler“ als Partner-Rollenspiel (Schritte 1 bis 7); das Gespräch läuft über die Interview-Simulation mit City Guides. S. 18–19, Nr. 6 bis 8 gehören zu „Grammar“ und sind dort noch nicht gebaut.
 - **Buchseiten:** liegen als private Chat-Dateien unter `mp/private/69cb7e99726da2a1d81bee50/chat/` (Screenshot2026-11-11 1929 bis 1932, vermutlich in der Reihenfolge S. 10–11 bis S. 26–27).
+
+## Umgesetzt: Städte und Einwanderung in „Life and Society in Australia“ (2026-11-11, abends)
+
+Beide Lernpakete waren leer (leeres Kompaktwissen, keine Lernziele, keine Aufgaben) und als freigegeben geführt; deshalb keine Sicherung. Jetzt sind sie Entwürfe, alle Aufgaben sind Entwürfe mit „GE“ und „Pflicht“.
+
+| Nr. | Lernpaket (Kennung) | Aufgaben |
+|---|---|---|
+| 1 | Australian Cities and Lifestyle (19c8a), vorher „Australian Cities and Lifestyle in Australia“ | 1 Get ready (Buchtext 1, Quiz, Städte und Lage zuordnen) · 2 Read: City life, beach life (eigener Text, Richtig/Falsch, Zuordnen) · 3 Words (Zuordnen, Lückentext) · 4 Listening: Mia's Saturday in Sydney (eigener Hörtext, Quiz, Sortierung) · 5 Speaking: Which city would you live in? (Aufnahme) |
+| 2 | Multicultural Australia - Immigration and identity (09070) | 1 Who came to Australia? (Buchtexte 3 und 4, eigener Text, Zeitleiste als Sortierung, Quiz) · 2 Words (Zuordnen, Lückentext) · 3 Read: Work and travel in Australia (Buchtext S. 103, Quiz, Zuordnen) · 4 Writing: Stellungnahme (Pro/Contra-Quiz, Freitext mit KI und Musterlösung) |
+
+- **Buchtexte:** S. 10, Texte 1, 3 und 4 und der Text S. 103 sind abgetippt, mit den Worterklärungen von S. 103.
+- **Hörtext:** „Mia's Saturday in Sydney“ ist selbst geschrieben und vertont (`8502a9082_speech.mp3`); das Transkript liegt am Element.
+- **Fakten der eigenen Texte (aus dem Gedächtnis, nicht nachrecherchiert):** etwa 85 % der Australier leben weniger als 50 km von der Küste; Sydney über 5 Millionen Einwohner, Melbourne zweitgrößte Stadt; Perth über 2 000 km von der nächsten Großstadt; Cook 1770, erste britische Schiffe 1788, Goldfunde 1851, Staatsgründung 1901, Ende der „White Australia“-Politik 1973; knapp jeder Dritte im Ausland geboren; über 300 Sprachen.
+- **Lernziele:** je Lernpaket drei neue (Fachwissen, Verstehen, Sprechen bzw. Schreiben).
+- **Nicht umgesetzt:** Städte auf einer Karte beschriften (kein Kartenbild; ersetzt durch Zuordnen von Stadt und Lage). S. 102 (Hörtext der vier Jugendlichen liegt nicht vor). Keine E-Aufgabe, kein Abschluss.
