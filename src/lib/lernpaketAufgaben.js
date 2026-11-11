@@ -28,6 +28,14 @@ export function planbareAufgaben(aufgaben = [], konfiguration = null) {
   return (aufgaben || []).filter((a) => !a.lernpaket_id || planText.includes(a.id));
 }
 
+/** Die Aufgaben eines Lernpakets in ihrer Reihenfolge (Aufgabe 1, Aufgabe 2, …). */
+export function aufgabenImLernpaket(aufgaben = [], lernpaketId) {
+  return (aufgaben || [])
+    .filter((a) => a.lernpaket_id === lernpaketId)
+    .sort((a, b) => (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0)
+      || String(a.created_date).localeCompare(String(b.created_date)));
+}
+
 /** Die Aufgaben eines Lernpakets, wie ein Schüler dieses Lerntyps sie sieht. */
 export function lernpaketAufgabenFuerSchueler(aufgaben = [], lernpaketId, lerntyp, imPlanIds = new Set()) {
   return (aufgaben || [])

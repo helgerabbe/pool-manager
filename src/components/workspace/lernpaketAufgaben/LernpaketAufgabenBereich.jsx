@@ -18,7 +18,8 @@ import { NIVEAU_STANDARD } from '@/lib/aufgabenNiveau';
  * Teil „Aufgaben" eines Lernpakets: Aufgabe 1, Aufgabe 2, … Jede Aufgabe
  * entsteht in der Aufgabenwerkstatt und trägt Niveau sowie Pflicht/Wahl.
  */
-export default function LernpaketAufgabenBereich({ paket, einheit = null, editierbar, platz = null }) {
+export default function LernpaketAufgabenBereich({ paket, einheit = null, editierbar, platz = null, onUebersicht = null }) {
+  // Mit `onUebersicht` führt ein Klick auf eine Aufgabe zu ihrer Übersichtsseite statt in die Werkstatt.
   // Mit `platz` zeigt der Bereich statt eines Lernpakets einen festen Platz
   // des Themenfelds (Einstieg / Gesamtaufgabe); `paket` trägt dann nur
   // einheit_id und themenfeld_id.
@@ -108,7 +109,7 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
               />
             ) : null}
             onAendern={(daten) => aendern.mutate({ id: a.id, daten })}
-            onOeffnen={() => setWerkstatt({ aufgabe: a })}
+            onOeffnen={() => (onUebersicht ? onUebersicht(a.id) : setWerkstatt({ aufgabe: a }))}
             onLoeschen={() => setZuLoeschen(a)}
           />
         ))}

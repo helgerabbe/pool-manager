@@ -40,7 +40,7 @@ export default function LernpaketAufgabeZeile({ aufgabe, nummer, editierbar, pfe
         onChange={(pflicht) => onAendern({ pflicht })}
         disabled={!editierbar}
       />
-      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={onOeffnen} title="In der Werkstatt öffnen">
+      <Button type="button" variant="ghost" size="icon" className="h-7 w-7" onClick={onOeffnen} title="Aufgabe öffnen">
         <Pencil />
       </Button>
       {editierbar && (

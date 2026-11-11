@@ -40,12 +40,16 @@ import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKnoten';
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
+import LernpaketAufgabenGruppe from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
+import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
+import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
+import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 
 const PHASES = [
-  { key: 'Input',     label: 'Erarbeitung', icon: '📚' },
+  { key: 'Input',     label: 'Wissensspeicher', icon: '📚' },
   { key: 'Übung',     label: 'Übung',     icon: '✏️' },
   { key: 'Abschluss', label: 'Abschluss', icon: '🎯' },
 ];
@@ -234,13 +238,13 @@ function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
-  expandedPhases, setExpandedPhases, isEditingActive = false,
+  expandedPhases, setExpandedPhases, isEditingActive = false, aufgaben = [],
 }) {
   const isLernpaketSelected = selectedItem?.type === 'lernpaket' && selectedItem?.lernpaket?.id === lernpaket.id;
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
-  const hasSelectedChild = paketActivities.some(a => {
+  const hasSelectedChild = (selectedItem?.type === 'aufgabe' && selectedItem.lernpaket?.id === lernpaket.id) || paketActivities.some(a => {
     if (selectedItem?.type === 'activity' && selectedItem?.activity?.id === a.id) return true;
     const masters = masterAufgabenByActivityId[a.id] || [];
     return masters.some(m =>
@@ -324,10 +328,14 @@ function SidebarLernpaketFolder({
 
       {isOpen && (
         <div className="ml-5 mt-0.5 border-l border-border pl-2 space-y-0.5 pb-1">
-          {paketActivities.length === 0 ? (
+          {paketActivities.length === 0 && aufgaben.length === 0 ? (
             <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
           ) : (
             PHASES.map(phase => {
+              // Die Aufgaben stehen zwischen Wissensspeicher und Abschluss.
+              if (phase.key === 'Übung' && aufgaben.length > 0) {
+                return <LernpaketAufgabenGruppe key="aufgaben" aufgaben={aufgaben} lernpaket={lernpaket} selectedItem={selectedItem} onSelect={onSelect} />;
+              }
               const phaseConfig = phasenConfig[phase.key] || {};
               if (phaseConfig.disabled) return null;
               const phaseActs = paketActivities
@@ -638,6 +646,13 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
     enabled: !!einheitId,
   });
 
+  // Aufgaben der Einheit — für die Einträge „Aufgabe 1, 2, …" im Menübaum und die Aufgaben-Übersicht.
+  const { data: alleAufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben', einheitId],
+    queryFn: () => getAufgabenByEinheit(einheitId),
+    enabled: !!einheitId,
+  });
+
   const aktivitaetenMap = Object.fromEntries(aktivitaetenKatalog.map(a => [a.id, a.name]));
 
   // MasterAufgaben gruppiert nach activity_id, sortiert nach reihenfolge
@@ -769,6 +784,26 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
       openTreeAndLoadContent(node.activityId);
     }
   };
+
+  // Ansicht „Aufgabe": Übersicht einer Lernpaket-Aufgabe (Desktop und Mobil gleich).
+  const gewaehlteAufgabe = selectedItem?.type === 'aufgabe' ? alleAufgaben.find(a => a.id === selectedItem.aufgabeId) : null;
+  const aufgabePaket = gewaehlteAufgabe
+    ? lernpakete.find(lp => lp.id === selectedItem.lernpaket.id) || selectedItem.lernpaket
+    : null;
+  const aufgabeAnsicht = gewaehlteAufgabe && (
+    <div className="max-w-3xl mx-auto px-6 py-6">
+      <AufgabeUebersicht
+        aufgabe={gewaehlteAufgabe}
+        nummer={aufgabenImLernpaket(alleAufgaben, aufgabePaket.id).findIndex(a => a.id === gewaehlteAufgabe.id) + 1}
+        paket={aufgabePaket}
+        einheit={einheit}
+        themenfelder={themenfelder}
+        katalogNamen={aktivitaetenMap}
+        kannBearbeiten={kannBearbeiten && !isUnitLocked}
+        onZurueck={() => setSelectedItem({ type: 'lernpaket', lernpaket: aufgabePaket })}
+      />
+    </div>
+  );
 
   // Deep-Link: bestimmtes Lernpaket direkt öffnen (z. B. aus Dashboard/Cockpit).
   const appliedInitialPaketRef = useRef(null);
@@ -904,6 +939,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                        setOpenPacketIds(shouldOpen ? new Set([paketId]) : new Set());
                      }}
                      aktivitaetenKatalog={aktivitaetenKatalog}
+                     aufgaben={aufgabenImLernpaket(alleAufgaben, lernpaket.id)}
                      expandedPhases={expandedPhases}
                      setExpandedPhases={setExpandedPhases}
                      isEditingActive={isEditingActive}
@@ -945,6 +981,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
             )}
             <div className="flex-1 overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
+        {aufgabeAnsicht}
 
         {selectedItem?.type === 'themenfeld_platz' && (
           <div className="max-w-3xl mx-auto px-6 py-6">
@@ -959,6 +996,8 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
               <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
               <LernpaketPanel
                 paket={selectedItem.lernpaket}
+                themenfeldTitel={themenfelder.find(tf => tf.id === selectedItem.lernpaket.themenfeld_id)?.titel || ''}
+                onAufgabeOeffnen={(aufgabeId) => setSelectedItem({ type: 'aufgabe', aufgabeId, lernpaket: selectedItem.lernpaket })}
                 lernziele={lernziele}
                 aufgaben={alleKlone}
                 kannBearbeiten={kannBearbeiten && !isUnitLocked}
@@ -1054,6 +1093,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         {!sidebarOpen && (
           <div className="h-full overflow-y-auto min-h-0">
             {!selectedItem && <EmptyState />}
+            {aufgabeAnsicht}
 
             {selectedItem?.type === 'themenfeld_platz' && (
               <div className="max-w-3xl mx-auto px-6 py-6">
@@ -1068,6 +1108,8 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                   <EinheitLockBanner isUnitLocked={isUnitLocked} lockedByEmail={unitLockedByEmail} />
                   <LernpaketPanel
                     paket={selectedItem.lernpaket}
+                themenfeldTitel={themenfelder.find(tf => tf.id === selectedItem.lernpaket.themenfeld_id)?.titel || ''}
+                onAufgabeOeffnen={(aufgabeId) => setSelectedItem({ type: 'aufgabe', aufgabeId, lernpaket: selectedItem.lernpaket })}
                     lernziele={lernziele}
                     aufgaben={alleKlone}
                     kannBearbeiten={kannBearbeiten && !isUnitLocked}

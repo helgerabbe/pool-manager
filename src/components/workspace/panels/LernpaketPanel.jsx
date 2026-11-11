@@ -13,6 +13,7 @@ import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPrevi
 import LernpaketAnbietenButton from '@/components/workspace/integration/LernpaketAnbietenButton';
 import LernpaketAufgabenBereich from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenBereich';
 import LernpaketElementBereich from '@/components/workspace/lernpaketAufgaben/LernpaketElementBereich';
+import LernpaketLernzieleButton from './LernpaketLernzieleButton';
 import AufgabenEinstellungenHilfe from '@/components/workspace/lernpaketAufgaben/AufgabenEinstellungenHilfe';
 
 // Die drei Teile des Lernpakets (2026-11-10). Schlüssel = bisherige Phase.
@@ -48,6 +49,9 @@ export default function LernpaketPanel({
   // Phase 8: optional, für Hierarchie-Sperre. Wenn nicht übergeben, läuft
   // alles wie vorher — die Sperre evaluiert dann „Einheit nicht final".
   einheit = null,
+  themenfeldTitel = '',
+  // Optional: Klick auf eine Aufgabe öffnet ihre Übersichtsseite (aufgabeId) => void.
+  onAufgabeOeffnen = null,
 }) {
   const onNavigate = onNavigateRaw;
   const paketZiele = lernziele.filter(lz => lz.lernpaket_id === paket.id);
@@ -341,6 +345,9 @@ export default function LernpaketPanel({
           der space-y-6-Abstand des Containers sie nicht auseinanderzieht. */}
       <div className="space-y-3">
       <div className="pb-3 border-b">
+        {themenfeldTitel && (
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{themenfeldTitel}</p>
+        )}
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={isReleased ? 'released' : pStatus} />
@@ -386,6 +393,7 @@ export default function LernpaketPanel({
         >
           <Eye className="w-3.5 h-3.5" /> Vorschau
         </Button>
+        <LernpaketLernzieleButton lernziele={paketZiele} />
         {/* Privatbereich: fertiges Lernpaket einer gemeinschaftlichen Einheit anbieten */}
         {einheit?.sichtbarkeit === 'privat' && kannBearbeiten && (
           <LernpaketAnbietenButton paket={paket} einheit={einheit} />
@@ -525,7 +533,7 @@ export default function LernpaketPanel({
               phase={phase.key}
               aktivitaeten={phaseActivities}
               katalog={aktivitaetenKatalog}
-              editierbar={kannBearbeiten && !isReleased && !isLockedByOther}
+              editierbar={canEdit && kannBearbeiten && !isReleased}
               einzeln={phase.key === 'Abschluss'}
               farbe={phase.key === 'Input' ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}
               leerText="Noch kein Informationsmaterial."
@@ -541,7 +549,8 @@ export default function LernpaketPanel({
             <LernpaketAufgabenBereich
               paket={paket}
               einheit={einheit}
-              editierbar={kannBearbeiten && !isReleased && !isLockedByOther}
+              onUebersicht={onAufgabeOeffnen}
+              editierbar={canEdit && kannBearbeiten && !isReleased}
             />
           ) : null;
 
