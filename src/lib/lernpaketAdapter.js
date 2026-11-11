@@ -32,6 +32,8 @@ export function adaptLernpaketToPoolItem(lp) {
     lernpaket_logik: lp.lernpaket_logik || 'standard',
     einheit_id: lp.einheit_id,
     themenfeld_id: lp.themenfeld_id,
+    // Projekt-Lernpaket (Themenfeld „Projektaufgaben"): gehört in den Projektbereich.
+    ist_projekt: lp.ist_projekt === true,
     sync_status: lp.sync_status,
     content_status: lp.content_status,
     released_at: lp.released_at,

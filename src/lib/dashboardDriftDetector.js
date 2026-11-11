@@ -226,6 +226,15 @@ export function detectDashboardDrift({
       }
       for (const lp of lernpakete || []) {
         if (!lp?.id || usedRefIds.has(lp.id) || !lp.themenfeld_id) continue;
+        // Projekt-Lernpakete gehören in den Projektbereich.
+        if (lp.ist_projekt === true) {
+          if (projektTarget) {
+            lerntypReport.missing_items.push({
+              ref_id: lp.id, titel: lp.titel_des_pakets || '(unbenannt)', kind: 'projekte', ...projektTarget,
+            });
+          }
+          continue;
+        }
         const target = targetByKindAndTf.get(`lernpakete::${lp.themenfeld_id}`);
         if (target) {
           lerntypReport.missing_items.push({
@@ -238,7 +247,7 @@ export function detectDashboardDrift({
         if (!a?.id || usedRefIds.has(a.id)) continue;
         const istProjekt = a.anforderungsebene === '3 - Projekt' || a.aufgaben_typ === 'projekt_anker';
         if (istProjekt) {
-          if (projektTarget) {
+          if (projektTarget && !a.lernpaket_id) {
             lerntypReport.missing_items.push({
               ref_id: a.id, titel: a.titel || '(unbenannt)', kind: 'projekte', ...projektTarget,
             });

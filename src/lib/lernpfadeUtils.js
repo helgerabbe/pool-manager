@@ -419,6 +419,8 @@ export function removeAufgabeFromLernTyp(konfig, lernTyp, aufgabeId) {
 export function getAcceptedTypeForAufgabe(aufgabe) {
   if (!aufgabe || typeof aufgabe !== 'object') return null;
   const typ = aufgabe.aufgaben_typ;
+  // Projekt-Lernpaket (Themenfeld „Projektaufgaben") zählt als Projekt.
+  if (aufgabe.ist_projekt === true) return 'projekt';
   if (typ === 'buendel') return 'lernpaket';
   if (typ === 'projekt_anker') return 'projekt';
   if (aufgabe.anforderungsebene === '3 - Projekt') return 'projekt';
@@ -872,8 +874,9 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
  *                          (siehe lernpaketAdapter).
  *   - Aufgaben-Bündel    → AllgemeineAufgabe mit aufgaben_typ ∈ {inhalt, prozess,
  *                          handlung, auswahl_buendel}, gefiltert nach themenfeld_id.
- *   - Projekt-Bündel     → AllgemeineAufgabe mit anforderungsebene='3 - Projekt'
- *                          ODER aufgaben_typ='projekt_anker', themenfeld-unabhängig.
+ *   - Projekt-Bündel     → Lernpakete des Themenfelds „Projektaufgaben"
+ *                          (ist_projekt); dazu als Altbestand Projektaufgaben
+ *                          ohne Lernpaket.
  *
  * Bereits im Lerntyp platzierte Aufgaben werden immer ausgeschlossen
  * (Anti-Duplikat).
@@ -920,14 +923,22 @@ export function getAutoFillCandidates({
   }
 
   if (bundleKind === 'projekte') {
-    return aufgaben
+    // Der Projektbereich füllt sich aus dem Themenfeld „Projektaufgaben":
+    // je Projekt ein Lernpaket (ist_projekt, siehe mitProjektKennzeichen).
+    const pakete = lernpakete
+      .filter((lp) => lp.ist_projekt === true && lp.sync_status !== 'to_delete' && !usedAufgabenIds.has(lp.id))
+      .sort((a, b) => (a.reihenfolge_nummer ?? 9999) - (b.reihenfolge_nummer ?? 9999))
+      .map((lp) => lp.id);
+    // Altbestand: Projektaufgaben, die noch in keinem Lernpaket liegen.
+    const lose = aufgaben
       .filter((a) => {
         const isProjekt =
           a.anforderungsebene === '3 - Projekt' || a.aufgaben_typ === 'projekt_anker';
-        if (!isProjekt) return false;
+        if (!isProjekt || a.lernpaket_id) return false;
         return !usedAufgabenIds.has(a.id);
       })
       .map((a) => a.id);
+    return [...pakete, ...lose];
   }
 
   return [];

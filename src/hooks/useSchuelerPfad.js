@@ -17,6 +17,7 @@ import { useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { normalizeSektor } from '@/lib/lernpfadeUtils';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
+import { mitProjektKennzeichen } from '@/lib/projektThemenfeld';
 import { DASHBOARD_TEMPLATES } from '@/lib/dashboardTemplates';
 import { autoAssembleLerntyp } from '@/lib/dashboardAutoAssembly';
 import * as SchuelerData from '@/services/schueler/SchuelerDataService';
@@ -156,7 +157,7 @@ export function useSchuelerPfad(einheitId, lerntyp) {
     const assembled = autoAssembleLerntyp({}, lerntyp, template, themenfelderQ.data || [], {
       // Aufgaben im Lernpaket sind keine eigenen Bausteine des Plans.
       aufgaben: (aufgaben || []).filter((a) => !a.lernpaket_id),
-      lernpakete,
+      lernpakete: mitProjektKennzeichen(lernpakete, themenfelderQ.data || []),
       systemBausteineById: bausteinById,
     });
     return (assembled[lerntyp] || []).map(normalizeSektor);

@@ -68,6 +68,7 @@ import ResetDashboardConfirmDialog from '@/components/lernpfade/ResetDashboardCo
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { getAmpelStatus } from '@/lib/ampelLogic';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
+import { mitProjektKennzeichen } from '@/lib/projektThemenfeld';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import { ladeOnboardingSnapshots } from '@/lib/onboardingSnapshots';
@@ -362,7 +363,7 @@ export default function LernpfadeCockpit({
     }
   }, [allExpanded, allSektorIds, allBundleIds]);
 
-  const { data: lernpakete = [], isLoading: lernpaketeLoading } = useQuery({
+  const { data: lernpaketeRoh = [], isLoading: lernpaketeLoading } = useQuery({
     queryKey: ['lernpakete-by-einheit', einheit?.id],
     queryFn: () =>
       einheit?.id
@@ -377,6 +378,11 @@ export default function LernpfadeCockpit({
     queryFn: () => (einheit?.id ? getThemenfelderByEinheit(einheit.id) : Promise.resolve([])),
     enabled: !!einheit?.id,
   });
+  // Lernpakete des Themenfelds „Projektaufgaben" gehören in den Projektbereich.
+  const lernpakete = useMemo(
+    () => mitProjektKennzeichen(lernpaketeRoh, themenfelder),
+    [lernpaketeRoh, themenfelder],
+  );
   const themenfeldTitelById = useMemo(() => {
     const map = new Map();
     (themenfelder || []).forEach((tf) => map.set(tf.id, tf.titel));

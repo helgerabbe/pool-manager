@@ -22,6 +22,7 @@ import { getThemenfelderByEinheit } from '@/services/ThemenfeldService';
 import { getAufgabenTyp } from '@/lib/aufgabenTypen';
 import { getArtFarbe } from '@/lib/lernpfadFarben';
 import { adaptLernpaketToPoolItem } from '@/lib/lernpaketAdapter';
+import { mitProjektKennzeichen } from '@/lib/projektThemenfeld';
 import { Loader2, Inbox, CheckCircle2, BookOpen, Sparkles, Folder, Pencil, Rocket } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import MonitorPanel from '@/components/lernpfade/MonitorPanel';
@@ -33,6 +34,7 @@ import SystemBausteinPoolItem from '@/components/lernpfade/SystemBausteinPoolIte
 // (z. B. aufgaben_typ='inhalt' MIT anforderungsebene='3 - Projekt') in den
 // richtigen Tab.
 const isProjekt = (item) =>
+  item.ist_projekt === true ||
   item.aufgaben_typ === 'projekt_anker' ||
   String(item.anforderungsebene || '').includes('Projekt');
 
@@ -43,7 +45,7 @@ const FILTER_GROUPS = [
     icon: Folder,
     color: 'bg-blue-500 text-white border-blue-500',
     inactive: 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50',
-    matches: (item) => item.aufgaben_typ === 'buendel' || item.typ === 'buendel',
+    matches: (item) => (item.aufgaben_typ === 'buendel' || item.typ === 'buendel') && !item.ist_projekt,
   },
   {
     key: 'aufgaben',
@@ -239,7 +241,7 @@ export default function LernpfadeAufgabenPool({
   // Pool: Aufgaben + adaptierte Lernpakete in eine gemeinsame Liste mischen.
   // Tombstones (sync_status === 'to_delete') werden in beiden Quellen gefiltert.
   const poolAufgaben = useMemo(() => {
-    const adaptedLernpakete = (lernpakete || [])
+    const adaptedLernpakete = mitProjektKennzeichen(lernpakete, themenfelder)
       .filter((lp) => lp.sync_status !== 'to_delete')
       .map(adaptLernpaketToPoolItem);
     const aufgabenItems = (alleAufgaben || []).filter(
@@ -253,7 +255,7 @@ export default function LernpfadeAufgabenPool({
         && !(nurBuendel && isProjekt(a))
     );
     return [...adaptedLernpakete, ...aufgabenItems];
-  }, [alleAufgaben, lernpakete, nurBuendel]);
+  }, [alleAufgaben, lernpakete, themenfelder, nurBuendel]);
 
   // Der Filterreiter „Projekte" entfällt im Übungsblock — er wäre dauerhaft
   // leer und würde ein Format anbieten, das es hier nicht gibt.
