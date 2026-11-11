@@ -542,7 +542,8 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
   Object.values(kloneByMasterId).forEach(arr => arr.sort((a, b) => (a.klon_index || 0) - (b.klon_index || 0)));
 
   const paketeFuerEinheit = lernpakete
-    .filter(lp => lp.einheit_id === einheitId)
+    // Ausgeblendete Lernpakete (sync_status 'to_delete') erscheinen im Menü nicht.
+    .filter(lp => lp.einheit_id === einheitId && lp.sync_status !== 'to_delete')
     .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0));
 
   // Selektiertes Objekt bei Daten-Updates synchronisieren – NUR wenn kein Edit-Modus aktiv
