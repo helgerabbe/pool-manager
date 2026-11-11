@@ -29,7 +29,8 @@ export default function LernpaketElementBereich({
   const nameVon = (a) => katalog.find((k) => k.id === a.aktivitaet_id)?.name || 'Unbekanntes Element';
   const auswahl = katalog
     // Kompaktwissen gibt es höchstens einmal; nach dem Löschen lässt es sich wieder hinzufügen.
-    .filter((k) => k.phase === phase && k.is_active !== false
+    // „Bearbeitung bestätigen" ist durch den Standard „Automatisch erledigt" ersetzt.
+    .filter((k) => k.phase === phase && k.is_active !== false && k.name !== 'Bearbeitung bestätigen'
       && (k.name !== 'Kompaktwissen' || !sortiert.some((a) => a.aktivitaet_id === k.id)))
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
 
