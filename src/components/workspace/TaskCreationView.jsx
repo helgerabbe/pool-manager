@@ -42,6 +42,7 @@ import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/Theme
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 import LernpaketAufgabenGruppe from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import ZurueckZumLernpaketButton from '@/components/workspace/lernpaketAufgaben/ZurueckZumLernpaketButton';
+import AbschlussUebersicht from '@/components/workspace/lernpaketAufgaben/AbschlussUebersicht';
 import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
 import { aufgabenImLernpaket, aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
@@ -815,6 +816,59 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
     </div>
   );
 
+  // Aktivität gewählt: Abschluss-Elemente mit Varianten (z. B. Test) zeigen
+  // zuerst ihre Übersichtsseite, alle anderen direkt die Bearbeitungsansicht.
+  const zumLernpaketDerAktivitaet = () => {
+    const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
+    if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
+  };
+  const aktivitaetPanel = selectedActivity && (
+    <ActivityMasterPanel
+      key={selectedActivity.id}
+      activityRecord={selectedActivity}
+      catalogEntry={selectedCatalog}
+      supportsMaster={supportsMaster}
+      kannBearbeiten={kannBearbeiten}
+      userEmail={userEmail}
+      userRole={userRole}
+      einheitId={einheitId}
+      parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
+      onMasterSelected={(masterId) => {
+        const master = alleMaster.find(m => m.id === masterId);
+        if (master) setSelectedItem({ type: 'master', master });
+      }}
+      onKlonSelected={(klonId) => {
+        const klon = alleKlone.find(k => k.id === klonId);
+        if (klon) setSelectedItem({ type: 'klon', klon });
+      }}
+      onEditModeChange={handleEditModeChange}
+      globalEditActive={isEditingActive}
+    />
+  );
+  const aktivitaetAnsicht = selectedActivity && (
+    <div className="max-w-3xl mx-auto px-6 py-6">
+      {selectedActivity.phase === 'Abschluss' && supportsMaster ? (
+        <AbschlussUebersicht
+          key={selectedActivity.id}
+          activity={selectedActivity}
+          name={selectedCatalog?.name || 'Abschluss'}
+          paketTitel={getLernpaketName(selectedActivity.lernpaket_id)}
+          varianten={masterAufgabenByActivityId[selectedActivity.id] || []}
+          kannBearbeiten={kannBearbeiten && !isUnitLocked}
+          onZurueck={zumLernpaketDerAktivitaet}
+          onVarianteOeffnen={(master) => setSelectedItem({ type: 'master', master })}
+        >
+          {aktivitaetPanel}
+        </AbschlussUebersicht>
+      ) : (
+        <>
+          <ZurueckZumLernpaketButton onClick={zumLernpaketDerAktivitaet} />
+          {aktivitaetPanel}
+        </>
+      )}
+    </div>
+  );
+
   // Deep-Link: bestimmtes Lernpaket direkt öffnen (z. B. aus Dashboard/Cockpit).
   const appliedInitialPaketRef = useRef(null);
   useEffect(() => {
@@ -1021,35 +1075,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         )}
 
         {/* Ansicht A: Aktivität gewählt → Übersicht (ActivityMasterPanel) */}
-        {selectedItem?.type === 'activity' && selectedActivity && (
-          <div className="max-w-3xl mx-auto px-6 py-6">
-            <ZurueckZumLernpaketButton onClick={() => {
-              const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
-              if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
-            }} />
-            <ActivityMasterPanel
-              key={selectedActivity.id}
-              activityRecord={selectedActivity}
-              catalogEntry={selectedCatalog}
-              supportsMaster={supportsMaster}
-              kannBearbeiten={kannBearbeiten}
-              userEmail={userEmail}
-              userRole={userRole}
-              einheitId={einheitId}
-              parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
-              onMasterSelected={(masterId) => {
-                const master = alleMaster.find(m => m.id === masterId);
-                if (master) setSelectedItem({ type: 'master', master });
-              }}
-              onKlonSelected={(klonId) => {
-                const klon = alleKlone.find(k => k.id === klonId);
-                if (klon) setSelectedItem({ type: 'klon', klon });
-              }}
-              onEditModeChange={handleEditModeChange}
-              globalEditActive={isEditingActive}
-            />
-          </div>
-        )}
+        {aktivitaetAnsicht}
 
         {/* Ansicht B: Master gewählt → fokussierte Master-Detailansicht */}
         {selectedItem?.type === 'master' && (() => {
@@ -1138,35 +1164,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
             )}
 
             {/* Ansicht A: Aktivität */}
-            {selectedItem?.type === 'activity' && selectedActivity && (
-              <div className="max-w-3xl mx-auto px-6 py-6">
-                <ZurueckZumLernpaketButton onClick={() => {
-              const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
-              if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
-            }} />
-            <ActivityMasterPanel
-                   key={selectedActivity.id}
-                   activityRecord={selectedActivity}
-                   catalogEntry={selectedCatalog}
-                   supportsMaster={supportsMaster}
-                   kannBearbeiten={kannBearbeiten}
-                   userEmail={userEmail}
-                   userRole={userRole}
-                   einheitId={einheitId}
-                   parentLernpaketName={getLernpaketName(selectedActivity.lernpaket_id)}
-                   onMasterSelected={(masterId) => {
-                     const master = alleMaster.find(m => m.id === masterId);
-                     if (master) setSelectedItem({ type: 'master', master });
-                   }}
-                   onKlonSelected={(klonId) => {
-                     const klon = alleKlone.find(k => k.id === klonId);
-                     if (klon) setSelectedItem({ type: 'klon', klon });
-                   }}
-                   onEditModeChange={handleEditModeChange}
-                   globalEditActive={isEditingActive}
-                 />
-              </div>
-            )}
+            {aktivitaetAnsicht}
 
             {/* Ansicht B: Master */}
             {selectedItem?.type === 'master' && (() => {
