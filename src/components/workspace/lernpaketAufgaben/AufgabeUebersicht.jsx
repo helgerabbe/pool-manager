@@ -55,7 +55,7 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
         status={aufgabe.content_status === 'approved' ? 'released' : istVollstaendig(aufgabe) ? 'green' : 'red'}
         badges={<>
           <Badge variant="outline">{aufgabe.niveau || NIVEAU_STANDARD}</Badge>
-          <Badge variant="outline">{aufgabe.pflicht === false ? 'Wahl' : 'Pflicht'}</Badge>
+          <Badge variant="outline">{aufgabe.pflicht === false ? 'Freiwillig' : 'Pflicht'}</Badge>
         </>}
         rechts={kannBearbeiten && (
           <BearbeitenKnopf onClick={bearbeiten} laedt={oeffnet} disabled={!!sperrGrund} title={sperrGrund} />

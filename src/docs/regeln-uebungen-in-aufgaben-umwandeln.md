@@ -27,7 +27,7 @@ Nicht zusammengefasst wird:
 
 Folgen beim Zusammenfassen:
 
-- Niveau und Pflicht oder Wahl gelten für alle Elemente gemeinsam.
+- Niveau und Pflicht oder freiwillig gelten für alle Elemente gemeinsam.
 - Die Zufallsauswahl gilt für die ganze Aufgabe. Hat eine zusammengefasste Übung Varianten, wird nur eine Variante übernommen.
 
 Der Lehrkraft gemeldet, nicht selbst entschieden, werden:

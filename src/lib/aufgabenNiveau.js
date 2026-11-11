@@ -16,6 +16,6 @@ export const NIVEAUS = [
 ];
 
 export const PFLICHT_WAHL = [
-  { value: true, label: 'Pflicht', title: 'Schüler müssen diese Aufgabe bearbeiten' },
-  { value: false, label: 'Wahl', title: 'Freiwillige Aufgabe' },
+  { value: true, label: 'P', title: 'Pflicht: Schüler müssen diese Aufgabe bearbeiten' },
+  { value: false, label: 'F', title: 'Freiwillig: Schüler können diese Aufgabe überspringen' },
 ];

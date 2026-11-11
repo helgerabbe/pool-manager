@@ -20,7 +20,7 @@ import AufgabenEinstellungenHilfe from '@/components/workspace/lernpaketAufgaben
 // Die drei Teile des Lernpakets (2026-11-10). Schlüssel = bisherige Phase.
 const TEILE = {
   'Input': { titel: '1 · Wissensspeicher', hinweis: 'Informationsmaterial für alle Schüler, ohne Aufgaben.' },
-  'Übung': { titel: '2 · Aufgaben', hinweis: 'Jede Aufgabe entsteht in der Werkstatt und bekommt ein Niveau (G, GE, E) sowie Pflicht oder Wahl.' },
+  'Übung': { titel: '2 · Aufgaben', hinweis: 'Jede Aufgabe entsteht in der Werkstatt und bekommt ein Niveau (G, GE, E) sowie Pflicht (P) oder freiwillig (F).' },
   'Abschluss': { titel: '3 · Abschluss', hinweis: 'Der Schlusspunkt des Lernpakets.' },
 };
 

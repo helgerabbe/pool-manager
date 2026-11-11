@@ -11,8 +11,8 @@ export default function AufgabenEinstellungenHilfe({ imLernpaket }) {
         Pragmatiker. GE = für alle. E = erweitertes Niveau, nur für Ehrgeizig und Passioniert.
       </p>
       <p className="mt-1.5">
-        <strong>Pflicht / Wahl:</strong> Pflicht muss bearbeitet werden, wenn die Schüler {ort} bearbeiten. Wahl ist
-        ein freiwilliges Angebot und kann übersprungen werden.
+        <strong>P / F:</strong> P = Pflicht, muss bearbeitet werden, wenn die Schüler {ort} bearbeiten. F = freiwillig,
+        ein Angebot, das übersprungen werden kann.
       </p>
     </InfoHint>
   );
