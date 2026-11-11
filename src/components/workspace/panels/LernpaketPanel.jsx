@@ -501,7 +501,7 @@ export default function LernpaketPanel({
           const teilKopf = (
             <div className="pt-3">
               <div className="flex items-center gap-2">
-                {!istAufgabenTeil && <span className="text-xl">{phase.icon}</span>}
+                <span className="text-xl">{phase.icon}</span>
                 <h3 className="text-xl font-bold text-foreground">{teil.titel}</h3>
                 {istAufgabenTeil && <AufgabenEinstellungenHilfe imLernpaket />}
                 {canEdit && !istAufgabenTeil && (
@@ -528,10 +528,12 @@ export default function LernpaketPanel({
               editierbar={kannBearbeiten && !isReleased && !isLockedByOther}
               einzeln={phase.key === 'Abschluss'}
               farbe={phase.key === 'Input' ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}
-              leerText={phase.key === 'Input' ? 'Noch kein Informationsmaterial.' : 'Kein Abschluss gewählt.'}
-              knopfText={phase.key === 'Input'
-                ? { neu: 'Neues Informationsmaterial' }
-                : { neu: 'Abschluss wählen', aendern: 'Abschluss ändern' }}
+              leerText="Noch kein Informationsmaterial."
+              standardElement={phase.key === 'Abschluss' ? {
+                name: 'Automatisch erledigt',
+                hinweis: 'Das Lernpaket ist erledigt, sobald alle Pflichtaufgaben bearbeitet sind.',
+              } : null}
+              knopfText={phase.key === 'Input' ? 'Neues Informationsmaterial' : 'Abschluss ändern'}
               onOeffnen={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
             />
           );
@@ -576,7 +578,6 @@ export default function LernpaketPanel({
             <div className={cn('rounded-lg border-2 overflow-hidden', phaseBg)}>
               {/* Phase-Header */}
               <div className="flex items-center gap-2 px-3 py-2">
-                <span className="text-base">{phase.icon}</span>
                 <span className="font-semibold text-sm flex-1">{phase.label}</span>
                 <Badge variant="secondary" className="text-xs">{phaseActivities.length}</Badge>
                 {canEdit && (

@@ -4,6 +4,7 @@ import { Plus, Repeat } from 'lucide-react';
 import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -17,7 +18,7 @@ import ReihenfolgePfeile from './ReihenfolgePfeile';
  * Mit `einzeln` gibt es höchstens ein Element; eine neue Wahl ersetzt das alte.
  */
 export default function LernpaketElementBereich({
-  paket, phase, aktivitaeten, katalog, editierbar, einzeln = false, farbe, leerText, knopfText, onOeffnen,
+  paket, phase, aktivitaeten, katalog, editierbar, einzeln = false, farbe, leerText, standardElement = null, knopfText, onOeffnen,
 }) {
   const queryClient = useQueryClient();
   // { ids, name, ersatzId } — ersatzId = nach dem Löschen dieses Format anlegen.
@@ -27,7 +28,9 @@ export default function LernpaketElementBereich({
     || String(a.created_date).localeCompare(String(b.created_date))), [aktivitaeten]);
   const nameVon = (a) => katalog.find((k) => k.id === a.aktivitaet_id)?.name || 'Unbekanntes Element';
   const auswahl = katalog
-    .filter((k) => k.phase === phase && k.is_active !== false && k.name !== 'Kompaktwissen')
+    // Kompaktwissen gibt es höchstens einmal; nach dem Löschen lässt es sich wieder hinzufügen.
+    .filter((k) => k.phase === phase && k.is_active !== false
+      && (k.name !== 'Kompaktwissen' || !sortiert.some((a) => a.aktivitaet_id === k.id)))
     .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'de'));
 
   const neuLaden = () => {
@@ -75,18 +78,21 @@ export default function LernpaketElementBereich({
 
   return (
     <div className="space-y-2">
-      {sortiert.length === 0 && <p className="text-xs text-muted-foreground italic">{leerText}</p>}
+      {sortiert.length === 0 && (standardElement ? (
+        <div className={cn('rounded-md border px-3 py-2', farbe)}>
+          <div className="text-sm font-semibold text-foreground">{standardElement.name}</div>
+          <div className="text-[11px] text-muted-foreground">{standardElement.hinweis}</div>
+        </div>
+      ) : <p className="text-xs text-muted-foreground italic">{leerText}</p>)}
       {sortiert.map((a, i) => {
         const name = nameVon(a);
-        const standard = name === 'Kompaktwissen';
         return (
           <LernpaketElementZeile
             key={a.id}
             activity={a}
             name={name}
             farbe={farbe}
-            standard={standard}
-            loeschbar={editierbar && !standard && a.content_status !== 'approved'}
+            loeschbar={editierbar && !einzeln && a.content_status !== 'approved'}
             pfeile={editierbar && sortiert.length > 1 ? (
               <ReihenfolgePfeile
                 erste={i === 0}
@@ -106,10 +112,17 @@ export default function LernpaketElementBereich({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button type="button" variant="outline" size="sm" className="gap-1.5" disabled={anlegen.isPending}>
-              {aendert ? <Repeat /> : <Plus />} {aendert ? knopfText.aendern : knopfText.neu}
+              {einzeln ? <Repeat /> : <Plus />} {knopfText}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
+            {aendert && standardElement && (
+              <DropdownMenuItem
+                onSelect={() => setZuLoeschen({ ids: sortiert.map((a) => a.id), name: sortiert.map(nameVon).join(', ') })}
+              >
+                {standardElement.name} (Standard)
+              </DropdownMenuItem>
+            )}
             {auswahl.length === 0 && <DropdownMenuItem disabled>Keine Auswahl vorhanden</DropdownMenuItem>}
             {auswahl.map((k) => (
               <DropdownMenuItem key={k.id} onSelect={() => waehlen(k.id)}>{k.name}</DropdownMenuItem>
