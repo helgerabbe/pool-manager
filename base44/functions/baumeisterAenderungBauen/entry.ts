@@ -153,7 +153,8 @@ export default async function (req) {
       if (wechsel) return wechsel;
     }
 
-    if (stelle.art === 'aktivitaet' || stelle.art === 'aufgabe') {
+    const nurText = stelle.art === 'aufgabe' || stelle.art === 'lernziele';
+    if (stelle.art === 'aktivitaet' || nurText) {
       const alt = stelle.roh.field_values;
       const ausgang = basis && typeof basis === 'object' ? basis : alt;
       const felder = (stelle.roh.form_schema || [])
@@ -166,6 +167,8 @@ Die Aufgabe ist ein Objekt aus Feldwerten. Du schreibst sie NICHT neu ab, sonder
 - Felder, die kein reiner Text sind (Listen, Objekte): den vollständigen neuen Wert unter "felder", im selben Datenformat.
 - Nennt der Wunsch keine fertige Formulierung, formuliere selbst schülergerecht.
 - Der Wunsch kann Verwaltungsnotizen enthalten (Daten, Namen, Verweise auf Listen). Setze nur die inhaltliche Änderung um.
+- Die meisten Wünsche sind klein: ein Wort, ein Satz, eine Formulierung. Mach es einfach. Nennt der Wunsch die neue Formulierung (z. B. nach „Neu:"), übernimm sie wörtlich in das Feld, das inhaltlich dazu passt, auch wenn Zählung oder Feldname im Wunsch nicht genau stimmen.
+- Im Zweifel ändern statt ablehnen: Die Lehrkraft sieht deinen Vorschlag vorher und nachher und entscheidet selbst.
 - Verlangt der Wunsch eine ANDERE Aufgabenart, als die Aufgabe jetzt hat, setze andere_aufgabenart=true.
 - Kannst du den Wunsch an dieser Aufgabe nicht umsetzen (Stelle nicht gefunden, Wunsch unklar, betrifft etwas anderes), setze moeglich=false und nenne in "grund" in ein bis zwei Sätzen genau, woran es liegt und was du bräuchtest.`,
         prompt: `AUFGABENART: ${stelle.titel}\nFELDER:\n${felder}\n\nAKTUELLE FELDWERTE:\n${JSON.stringify(ausgang, null, 2)}\n\n${wunschText(hinweis, zusatz)}`,
@@ -220,7 +223,7 @@ Die Aufgabe ist ein Objekt aus Feldwerten. Du schreibst sie NICHT neu ab, sonder
         stelle: stelleOhneRoh(stelle),
         form_schema: stelle.roh.form_schema,
         alt,
-        neu: stelle.art === 'aufgabe'
+        neu: nurText
           ? Object.fromEntries(Object.keys(alt).map((k) => [k, String(neu[k] ?? '')]))
           : neu,
         stellen,

@@ -52,11 +52,41 @@ export async function ladeStellen(base44, einheitId) {
   const katalogById = new Map((katalog || []).map((k) => [k.id, k]));
   const pakete = (lernpakete || []).filter((lp) => lp.sync_status !== 'to_delete');
 
-  const aktListen = await Promise.all(
-    pakete.map((lp) => sr.LernpaketPhaseAktivitaet.filter({ lernpaket_id: lp.id }))
-  );
+  const [aktListen, zielListen] = await Promise.all([
+    Promise.all(pakete.map((lp) => sr.LernpaketPhaseAktivitaet.filter({ lernpaket_id: lp.id }))),
+    Promise.all(pakete.map((lp) => sr.Lernziele.filter({ lernpaket_id: lp.id }))),
+  ]);
 
   const stellen = [];
+  // Lernziele eines Lernpakets: beide Formulierungen je Lernziel als Textfelder.
+  pakete.forEach((lp, i) => {
+    const ziele = [...(zielListen[i] || [])].sort((x, y) => String(x.created_date).localeCompare(String(y.created_date)));
+    if (ziele.length === 0) return;
+    const felder = {};
+    const schema = [];
+    ziele.forEach((z, n) => {
+      felder[`lernziel_${n + 1}_fachsprache`] = z.formulierung_fachsprache || '';
+      felder[`lernziel_${n + 1}_schuelersprache`] = z.schueler_uebersetzung || '';
+      schema.push({ field_name: `lernziel_${n + 1}_fachsprache`, type: 'textarea', label: `${n + 1}. Lernziel (Fachsprache)` });
+      schema.push({ field_name: `lernziel_${n + 1}_schuelersprache`, type: 'textarea', label: `${n + 1}. Lernziel (Schülersprache)` });
+    });
+    stellen.push({
+      ref: `lz:${lp.id}`,
+      art: 'lernziele',
+      ziel_id: lp.id,
+      lernpaket_id: lp.id,
+      lernziel_ids: ziele.map((z) => z.id),
+      freigegeben: istFreigegeben(lp),
+      gesperrt_von: lp.is_locked ? sperreVon(lp.locked_by_email, lp.locked_at) : null,
+      titel: 'Lernziele',
+      ort: [
+        tfTitel.get(lp.themenfeld_id) && `Themenfeld „${tfTitel.get(lp.themenfeld_id)}"`,
+        `Lernpaket „${lp.titel_des_pakets}"`,
+      ].filter(Boolean).join(' · '),
+      text: textAus(felder),
+      roh: { field_values: felder, form_schema: schema },
+    });
+  });
   pakete.forEach((lp, i) => {
     const aktive = (aktListen[i] || [])
       .filter((a) => a.sync_status !== 'to_delete')

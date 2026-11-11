@@ -19,6 +19,7 @@ Regeln:
 - Belege jede Zuordnung mit einem WÖRTLICHEN kurzen Zitat aus dem Text der Stelle.
 - Bist du dir nicht sicher, nenne bis zu 3 Kandidaten (wahrscheinlichster zuerst) und setze "eindeutig": false.
 - Soll ein Schritt einer Aufgabenfolge GELÖSCHT werden (z. B. doppelte Schritte), wähle die Stelle "seq:…" dieser Aufgabe.
+- Geht es um die Formulierung eines LERNZIELS, wähle die Stelle "lz:…" des genannten Lernpakets, nicht eine Aufgabe oder das Kompaktwissen.
 - Soll eine Aufgabe komplett NEU angelegt werden, wähle die Stelle "neu:…".
 - Passt nichts, gib eine leere Kandidatenliste und eine freundliche Rückfrage.
 Antworte NUR mit JSON:

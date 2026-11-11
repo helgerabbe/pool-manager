@@ -58,10 +58,11 @@ export function useBaumeister(einheitId) {
   const pruefeSperre = async () => {
     if (stelle.art === 'neu') return;
     const ich = (await base44.auth.me())?.email;
-    const frisch = stelle.art === 'aktivitaet'
+    const imPaket = stelle.art === 'aktivitaet' || stelle.art === 'lernziele';
+    const frisch = imPaket
       ? await base44.entities.Lernpakete.get(stelle.lernpaket_id)
       : await base44.entities.AllgemeineAufgabe.get(stelle.ziel_id);
-    const wer = stelle.art === 'aktivitaet'
+    const wer = imPaket
       ? (frisch?.is_locked ? frisch.locked_by_email : null)
       : frisch?.locked_by;
     const wann = frisch?.locked_at;
@@ -73,6 +74,24 @@ export function useBaumeister(einheitId) {
 
   const uebernehmen = () => lauf('ausfuehren', async () => {
     await pruefeSperre();
+    if (stelle.art === 'lernziele') {
+      // Nur die Lernziele speichern, deren Formulierung sich geändert hat.
+      const { alt, neu } = vorschlag;
+      await Promise.all(stelle.lernziel_ids.map((id, i) => {
+        const f = `lernziel_${i + 1}_fachsprache`;
+        const s = `lernziel_${i + 1}_schuelersprache`;
+        if (neu[f] === alt[f] && neu[s] === alt[s]) return null;
+        return base44.entities.Lernziele.update(id, {
+          formulierung_fachsprache: neu[f], schueler_uebersetzung: neu[s], sync_status: 'modified',
+        });
+      }));
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] }),
+        queryClient.invalidateQueries({ queryKey: ['lernziele'] }),
+      ]);
+      setPhase('fertig');
+      return;
+    }
     if (stelle.art === 'aufgabe') {
       // Freigabe bleibt bestehen; die Änderung muss aber neu gebaut werden.
       await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, {
