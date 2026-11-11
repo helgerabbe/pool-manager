@@ -339,7 +339,7 @@ export default function AdminSettings() {
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     <li>Alle Einheiten und Themenfelder</li>
                     <li>Alle Lernpakete und Aktivitäten</li>
-                    <li>Alle Aufgabenbausteine und Master-Aufgaben</li>
+                    <li>Alle Aufgabenbausteine und Varianten</li>
                     <li>Alle Einheit-Mitgliedschaften</li>
                   </ul>
                   <p className="pt-2 font-semibold">Benutzerkonten und Systemeinstellungen bleiben erhalten.</p>

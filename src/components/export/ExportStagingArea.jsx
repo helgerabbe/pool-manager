@@ -46,7 +46,7 @@ function TypeBadge({ type }) {
     aktivitaet_new:      { label: 'Neue Aktivität',       color: 'bg-blue-50 text-blue-700 border-blue-200' },
     aktivitaet_modified: { label: 'Geänd. Aktivität',     color: 'bg-amber-50 text-amber-700 border-amber-200' },
     aktivitaet_deleted:  { label: 'Gelöschte Aktivität',  color: 'bg-red-50 text-red-700 border-red-200' },
-    master_new:          { label: 'Neue Masteraufgabe',   color: 'bg-blue-50 text-blue-700 border-blue-200' },
+    master_new:          { label: 'Neue Variante',   color: 'bg-blue-50 text-blue-700 border-blue-200' },
     master_modified:     { label: 'Geänd. Master',        color: 'bg-amber-50 text-amber-700 border-amber-200' },
     klon_new:            { label: 'Neuer Klon',           color: 'bg-blue-50 text-blue-700 border-blue-200' },
     klon_modified:       { label: 'Geänderter Klon',      color: 'bg-amber-50 text-amber-700 border-amber-200' },
@@ -134,7 +134,7 @@ export default function ExportStagingArea({ einheitId, lernpakete = [], aktivita
           entityType: 'MasterAufgabe',
           type: `master_${s === 'to_delete' ? 'modified' : s}`,
           status: s,
-          name: m.titel || 'Masteraufgabe',
+          name: m.titel || 'Variante',
           path: paketMap[m.lernpaket_id] || 'Unbekanntes Paket',
           updatedAt: m.updated_date,
         });

@@ -46,7 +46,7 @@ export default function FreeTextPlaceholder({ formData, setFormData, contextData
 
       <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         <p className="font-semibold mb-1">ℹ️ Hinweis</p>
-        <p>Die KI wird Ihre Masteraufgabe verwenden, um thematisch äquivalente Varianten zu generieren.</p>
+        <p>Die KI wird Ihre Variante verwenden, um thematisch äquivalente weitere Varianten zu generieren.</p>
       </div>
     </div>
   );

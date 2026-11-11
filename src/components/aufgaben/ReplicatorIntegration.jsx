@@ -78,7 +78,7 @@ export function MasterCreateButton({ onClick }) {
       className="gap-2"
     >
       <Plus className="w-4 h-4" />
-      Masteraufgabe erstellen
+      Variante erstellen
     </Button>
   );
 }

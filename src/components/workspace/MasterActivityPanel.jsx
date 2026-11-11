@@ -251,7 +251,7 @@ function MatchTermsWithLock({ activityRecord, kannBearbeiten, userEmail }) {
     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     setSaving(false);
     setEditMode(false); // → Lock wird via useActivityLock freigegeben
-    toast.success('Masteraufgabe gespeichert.');
+    toast.success('Variante gespeichert.');
   };
 
   const handleCancel = () => setEditMode(false); // → Lock freigegeben
@@ -343,7 +343,7 @@ export default function MasterActivityPanel({
     await base44.entities.LernpaketPhaseAktivitaet.update(activityRecord.id, { is_master: true });
     queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
     setPromotingToMaster(false);
-    toast.success('Zur Masteraufgabe gemacht.');
+    toast.success('Als Variante veröffentlicht.');
   };
 
   // ── Fall 1: supports_master === false → normales Formular oder Test-Special ──
@@ -414,9 +414,9 @@ export default function MasterActivityPanel({
         {kannBearbeiten && (
           <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 flex items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-primary">Masteraufgabe aktivieren</p>
+              <p className="text-sm font-medium text-primary">Variante aktivieren</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Wandle diese Aktivität in eine Mastervorlage um und erstelle KI-generierte Klone daraus.
+                Wandle diese Aktivität in eine Variante um und erstelle KI-generierte Klone daraus.
               </p>
             </div>
             <Button
@@ -429,7 +429,7 @@ export default function MasterActivityPanel({
               {promotingToMaster
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Sparkles className="w-3.5 h-3.5" />}
-              Zur Masteraufgabe machen
+              Als Variante veröffentlichen
             </Button>
           </div>
         )}
@@ -445,7 +445,7 @@ export default function MasterActivityPanel({
         <div className="flex items-center gap-2 px-4 py-2.5 bg-primary/5 border-b border-primary/20">
           <Crown className="w-4 h-4 text-primary" />
           <Badge variant="default" className="text-[11px] font-bold tracking-wide">
-            MASTERAUFGABE (VORLAGE)
+            VARIANTE
           </Badge>
           <span className="text-xs text-muted-foreground ml-1">{catalogEntry?.name}</span>
           {activityRecord.lock_status && !isActivityLockedByOther(activityRecord, userEmail) && (

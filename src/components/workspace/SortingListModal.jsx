@@ -167,7 +167,7 @@ export default function SortingListModal({
                 {onConvertToMaster && !deleteConfirm && (
                   <Button variant="outline" size="sm" onClick={onConvertToMaster} disabled={isSaving || isDeleting || isConverting} className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5">
                     {isConverting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Crown className="w-3.5 h-3.5" />}
-                    Zur Masteraufgabe machen
+                    Als Variante veröffentlichen
                   </Button>
                 )}
               </div>

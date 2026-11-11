@@ -1,7 +1,7 @@
 /**
  * MasterTaskModal.jsx
  *
- * Phase 6.7: Dynamisches Modal für Masteraufgaben-Erstellung
+ * Phase 6.7: Dynamisches Modal für Varianten-Erstellung
  * 
  * Unterstützt verschiedene Activity-Types mit platzhalterbasierten Komponenten.
  * Abhängig vom `activity_type` wird die entsprechende Komponente geladen.
@@ -55,14 +55,14 @@ export default function MasterTaskModal({
   const [formData, setFormData] = useState({});
   const queryClient = useQueryClient();
 
-  // Mutation: Masteraufgabe speichern
+  // Mutation: Variante speichern
   const saveMutation = useMutation({
     mutationFn: async (data) => {
       const response = await base44.entities.Aufgabenbausteine.create({
         lernpaket_id: lernpaketId,
         lernziel_id: lernzielId || null,
         baustein_typ: 'Ebene-1-Übung',
-        aufgabentext_inhalt: data.description || 'Masteraufgabe',
+        aufgabentext_inhalt: data.description || 'Variante',
         erwartungshorizont_ki_prompt: data.solution || '',
         is_master: true,
         activity_type: activityType,
@@ -73,7 +73,7 @@ export default function MasterTaskModal({
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['aufgaben', lernpaketId] });
-      toast.success('Masteraufgabe erstellt');
+      toast.success('Variante erstellt');
       onOpenChange(false);
       setFormData({});
       if (onSuccess) onSuccess(data);
@@ -91,7 +91,7 @@ export default function MasterTaskModal({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Masteraufgabe erstellen</DialogTitle>
+            <DialogTitle>Variante erstellen</DialogTitle>
           </DialogHeader>
           <div className="flex items-start gap-3 p-3 rounded-lg border border-red-200 bg-red-50">
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
@@ -117,7 +117,7 @@ export default function MasterTaskModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Masteraufgabe erstellen</DialogTitle>
+          <DialogTitle>Variante erstellen</DialogTitle>
           <DialogDescription>
             Diese Aufgabe wird als Master für KI-Replikation verwendet.
           </DialogDescription>
@@ -149,7 +149,7 @@ export default function MasterTaskModal({
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Masteraufgabe speichern
+                Variante speichern
               </>
             )}
           </Button>

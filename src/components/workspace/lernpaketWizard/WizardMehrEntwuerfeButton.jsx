@@ -2,7 +2,7 @@
  * components/workspace/lernpaketWizard/WizardMehrEntwuerfeButton.jsx
  *
  * Legt für eine masterfähige Aktivität direkt im Lernpaket-Wizard weitere
- * KI-Entwürfe (Master-Aufgaben) an — 1 bis 5 Stück am Stück.
+ * KI-Entwürfe (Varianten) an — 1 bis 5 Stück am Stück.
  */
 import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -54,7 +54,7 @@ export default function WizardMehrEntwuerfeButton({ activity, disabled = false, 
         onClick={erstellen}
         disabled={disabled || laeuft}
         className="inline-flex items-center gap-1 text-primary hover:underline disabled:opacity-50"
-        title="Weitere Master-Aufgaben (KI-Entwürfe) mit anderen Inhalten erstellen"
+        title="Weitere Varianten (KI-Entwürfe) mit anderen Inhalten erstellen"
       >
         {laeuft ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
         {laeuft ? 'Entwürfe werden erstellt …' : 'mehr KI-Entwürfe erstellen'}

@@ -5,7 +5,7 @@
  * Aktivitäten/Aufgaben eines Lernpakets — pro Aktivität: Aufgaben-
  * beschreibung vorhanden? Material vorhanden (+ Upload)? Status
  * leer / bearbeitet / vollständig. Bei masterfähigen Aktivitäten werden
- * alle Master-Aufgaben als eigene Zeilen angezeigt.
+ * alle Varianten als eigene Zeilen angezeigt.
  */
 import React, { useRef, useState } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -206,12 +206,12 @@ export default function AufgabeneditorUebersicht({
                     />
                   )}
 
-                  {/* Master-Aufgaben als eigene Zeilen */}
+                  {/* Varianten als eigene Zeilen */}
                   {istMasterfaehig && masters.map((m) => (
                     <div key={m.id} className="grid grid-cols-[1fr_90px_110px_90px] gap-2 px-3 py-1.5 border-t border-border/60 items-center bg-muted/20">
                       <span className="flex items-center gap-1.5 pl-4 text-muted-foreground min-w-0">
                         <Layers className="w-3 h-3 shrink-0" />
-                        <span className="truncate">{m.titel || 'Master-Aufgabe'}</span>
+                        <span className="truncate">{m.titel || 'Variante'}</span>
                       </span>
                       <span />
                       <span />
@@ -223,7 +223,7 @@ export default function AufgabeneditorUebersicht({
                   )}
                   {istMasterfaehig && masters.length === 0 && (
                     <div className="px-3 py-1.5 border-t border-border/60 bg-muted/20 pl-7 text-muted-foreground flex items-center gap-1.5">
-                      <CircleDashed className="w-3 h-3" /> Noch keine Master-Aufgabe angelegt
+                      <CircleDashed className="w-3 h-3" /> Noch keine Variante angelegt
                     </div>
                   )}
                 </React.Fragment>

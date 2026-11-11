@@ -1,7 +1,7 @@
 /**
  * MasterAufgabeCard.jsx
  *
- * Eine einzelne Masteraufgaben-Karte innerhalb einer Aktivität.
+ * Eine einzelne Varianten-Karte innerhalb einer Aktivität.
  * Enthält: Titel-Editor, MatchTermsForm/ActivityDetailView, KlonGenerator, Löschen-Button.
  */
 
@@ -117,7 +117,7 @@ function MasterApprovalButton({ master, queryClient, catalogName, fieldValues, s
     onSuccess: (_, action) => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
-      toast.success(action === 'approve' ? '✓ Masteraufgabe freigegeben.' : 'Freigabe zurückgezogen.');
+      toast.success(action === 'approve' ? '✓ Variante freigegeben.' : 'Freigabe zurückgezogen.');
       setConfirmDialog(false);
     },
     onError: (err) => {
@@ -357,7 +357,7 @@ export default function MasterAufgabeCard({
         setEditMode(false);
         setCollapsed(true);
       }
-      toast.success('Masteraufgabe gespeichert.');
+      toast.success('Variante gespeichert.');
     },
     onError: (err) => toast.error(err.message || 'Fehler beim Speichern.'),
   });
@@ -385,7 +385,7 @@ export default function MasterAufgabeCard({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben'] });
       queryClient.invalidateQueries({ queryKey: ['klone'] });
-      toast.success('Masteraufgabe gelöscht.');
+      toast.success('Variante gelöscht.');
       onDeleted?.();
       refreshWorkspaceStatusQueries(queryClient);
     },
@@ -614,7 +614,7 @@ export default function MasterAufgabeCard({
               onClick={() => setDeleteConfirmOpen(true)}
               disabled={deleteMutation.isPending}
               className="p-1 text-muted-foreground hover:text-destructive rounded"
-              title="Masteraufgabe löschen"
+              title="Variante löschen"
             >
               {deleteMutation.isPending
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -669,7 +669,7 @@ export default function MasterAufgabeCard({
                 onClick={handleOpenContentEditor}
                 disabled={acquiringLock}
                 className="gap-1.5"
-                title="Inhalt dieser Masteraufgabe bearbeiten"
+                title="Inhalt dieser Variante bearbeiten"
               >
                 {acquiringLock
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Sperren…</>
@@ -1265,9 +1265,9 @@ export default function MasterAufgabeCard({
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Masteraufgabe löschen?</AlertDialogTitle>
+            <AlertDialogTitle>Variante löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Masteraufgabe wird gelöscht, zusammen mit {klone.length} Klon{klone.length !== 1 ? 'en' : ''}.
+              Diese Variante wird gelöscht, zusammen mit {klone.length} Klon{klone.length !== 1 ? 'en' : ''}.
               <br /><br />
               <strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>
             </AlertDialogDescription>
@@ -1288,7 +1288,7 @@ export default function MasterAufgabeCard({
       </AlertDialog>
     </div>
 
-    {/* Klone unterhalb wenn Masteraufgabe zugeklappt */}
+    {/* Klone unterhalb wenn Variante zugeklappt */}
     {showKloneWhenCollapsed && (
       <div className="ml-4 mt-2 space-y-2">
           {klone.map((k) => (

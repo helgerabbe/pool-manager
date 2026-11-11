@@ -135,7 +135,7 @@ function MasterSubItem({ master, index, klone, selectedItem, onSelect, catalogEn
            )}
          >
            <Crown className="w-3 h-3 shrink-0 text-primary/70" />
-           <span className="flex-1 truncate">{master.titel || `Master ${index}`}</span>
+           <span className="flex-1 truncate">{master.titel || `Variante ${index}`}</span>
            {isReleased && (
              <CheckCircle2 className="w-3 h-3 shrink-0 text-green-600" title="Freigegeben" />
            )}

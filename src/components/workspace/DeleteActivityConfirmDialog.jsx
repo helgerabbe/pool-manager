@@ -40,7 +40,7 @@ export default function DeleteActivityConfirmDialog({
               Alle zugehörigen Inhalte werden unwiderruflich entfernt.
             </span>
             <span className="block text-xs text-muted-foreground">
-              Dazu gehören alle Masteraufgaben, KI-generierten Varianten
+              Dazu gehören alle Varianten, Kopien und KI-Klone
               und gespeicherten Eingaben dieser Aktivität.
             </span>
           </AlertDialogDescription>

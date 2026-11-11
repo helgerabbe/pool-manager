@@ -16,7 +16,7 @@ import { FileText, Package, FlaskConical, Wrench } from 'lucide-react';
 const SCOPE_META = {
   aufgabe: { label: 'Aufgabe', Icon: FileText },
   lernpaket: { label: 'Lernpaket', Icon: Package },
-  master_aufgabe: { label: 'Master-Aufgabe', Icon: FlaskConical },
+  master_aufgabe: { label: 'Variante', Icon: FlaskConical },
   structural: { label: 'Strukturbearbeitung', Icon: Wrench },
 };
 

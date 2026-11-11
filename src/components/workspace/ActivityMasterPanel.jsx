@@ -4,7 +4,7 @@
  * Hauptbereich für eine ausgewählte Aktivität in Tab 4.
  * Zeigt:
  *   1. Basisangaben der Aktivität (ActivityDetailView)
- *   2. Sektor "Masteraufgaben-Vorlagen" mit n Karten + "Neue Masteraufgabe"-Button
+ *   2. Sektor "Varianten-Vorlagen" mit n Karten + "Neue Variante"-Button
  *      (nur wenn supports_master === true)
  */
 
@@ -191,7 +191,7 @@ export default function ActivityMasterPanel({
   const isInEditMode = kannBearbeiten && lernpaketLockActive;
 
   // Hierarchie-Sperre: Ist das Parent-Lernpaket freigegeben, darf in seinen
-  // Masteraufgaben nichts mehr verändert werden (kein Freigabe-Toggle, kein
+  // Varianten nichts mehr verändert werden (kein Freigabe-Toggle, kein
   // Bearbeiten, keine Klone/Kopien, kein Löschen). Verhindert Inkonsistenzen
   // zwischen freigegebenem Paket und nachträglich geänderten Inhalten.
   const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
@@ -215,7 +215,7 @@ export default function ActivityMasterPanel({
   const [lehrwerkPreviewOpen, setLehrwerkPreviewOpen] = useState(false);
   // KI-Tutor-Vorschau: Master, dessen Aufgabenstellung gerade angezeigt wird (oder null).
   const [kiTutorPreviewMaster, setKiTutorPreviewMaster] = useState(null);
-  // KI-Tutor-Vorschau für Aktivitäten OHNE Masteraufgaben (Standardfall).
+  // KI-Tutor-Vorschau für Aktivitäten OHNE Varianten (Standardfall).
   const [kiTutorActivityPreviewOpen, setKiTutorActivityPreviewOpen] = useState(false);
   // Kompaktwissen: Schüler-Vorschau.
   const [kompaktwissenPreviewOpen, setKompaktwissenPreviewOpen] = useState(false);
@@ -528,7 +528,7 @@ export default function ActivityMasterPanel({
       // Lock wird NICHT hier freigegeben – MasterAufgabeCard gibt ihn
       // beim Schließen des Modals über onAutoOpenModalDone frei.
       setAutoOpenModalForId(neu.id);
-      toast.success('Neue Masteraufgabe erstellt.');
+      toast.success('Neue Variante erstellt.');
     } catch {
       // Fehlerfall: Lock freigeben
       await releaseLock();
@@ -599,7 +599,7 @@ export default function ActivityMasterPanel({
   const istKiModus = erstellungsModus === 'ki';
   // KI-Modus zeigen wir nur für geeignete masterfähige Aktivitäten.
   // Lückentext, Begriffe zuordnen und Reihenfolge/Sortierung laufen bereits
-  // über die neue Masteraufgaben-Logik; KI-Hilfe gehört dort in den Dialog.
+  // über die neue Varianten-Logik; KI-Hilfe gehört dort in den Dialog.
   // KI-Tutor bleibt ebenfalls außen vor (eigene Spezialform).
   const catalogNameLower = catalogEntry?.name?.toLowerCase() || '';
   const isLueckentext = catalogNameLower.includes('lückentext');
@@ -613,7 +613,7 @@ export default function ActivityMasterPanel({
     ? 'Es sind noch keine Begriffe oder Zuordnungen hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Begriffe zu erfassen.'
     : isReihenfolgeSortierung
     ? 'Es sind noch keine Sortier-Elemente hinterlegt. Klicke auf „Erste Aufgabe erstellen“, um die Reihenfolge-Aufgabe zu erfassen.'
-    : 'Erstelle jetzt die erste Masteraufgabe als Vorlage für KI-generierte Varianten.';
+    : 'Erstelle jetzt die erste Variante. Von ihr kannst du Kopien und KI-Klone ziehen und als weitere Varianten veröffentlichen.';
   const [savingModusBriefing, setSavingModusBriefing] = useState(false);
 
   // Modus-Wechsel: ruft updateActivitySecure mit erstellungsModus + ggf.
@@ -767,7 +767,7 @@ export default function ActivityMasterPanel({
         />
       )}
 
-      {/* ── Read-Only-Ansicht für Aktivitäten ohne Masteraufgaben (z.B. "Text lesen") ── */}
+      {/* ── Read-Only-Ansicht für Aktivitäten ohne Varianten (z.B. "Text lesen") ── */}
       {!supportsMaster && (() => {
         const schema = catalogEntry?.form_schema || [];
         const inhaltTyp = fieldValues?.inhalt_typ;
@@ -1500,7 +1500,7 @@ export default function ActivityMasterPanel({
 
 
 
-      {/* ── Masteraufgaben-Bereich (nur im manuellen Modus) ───────── */}
+      {/* ── Varianten-Bereich (nur im manuellen Modus) ───────── */}
       {supportsMaster && !effectiveIstKiModus && (
         <div className="space-y-4">
 
@@ -1591,7 +1591,7 @@ export default function ActivityMasterPanel({
                 />
               </div>
             ) : (
-              // Standard-Masteraufgaben für andere Typen
+              // Standard-Varianten für andere Typen
               <MasterAufgabeCard
                 key={master.id}
                 master={master}
@@ -1656,7 +1656,7 @@ export default function ActivityMasterPanel({
             phase={activityRecord?.phase}
           />
 
-          {/* Weitere Masteraufgabe hinzufügen */}
+          {/* Weitere Variante hinzufügen */}
           {masterAufgaben.length > 0 && (
             <Button
               variant="default"

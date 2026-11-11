@@ -21,7 +21,7 @@ const CARDS = [
     value: 'manuell',
     title: 'Selbst ausarbeiten',
     description:
-      'Du erstellst die Aufgaben als Mastervorlagen selbst. Die KI kann später Varianten daraus klonen.',
+      'Du erstellst die Varianten selbst. Die KI kann später weitere Varianten daraus erstellen.',
     icon: Pencil,
     accent: 'border-primary/40 bg-primary/5 text-primary',
   },

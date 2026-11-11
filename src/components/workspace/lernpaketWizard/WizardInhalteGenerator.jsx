@@ -27,14 +27,14 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
   const [isRunning, setIsRunning] = useState(false);
   // Auswahl: undefined = ausgewählt (Default: alle), explizit false = abgewählt.
   const [selection, setSelection] = useState({});
-  // Anzahl der KI-Varianten (Master-Aufgaben) je masterfähiger Aktivität.
+  // Anzahl der KI-Varianten (Varianten) je masterfähiger Aktivität.
   const [varianten, setVarianten] = useState({});
 
   const katalogEintragById = new Map(katalog.map((k) => [k.id, k]));
   const katalogById = new Map(katalog.map((k) => [k.id, k.name]));
   const istMasterfaehig = (a) => katalogEintragById.get(a.aktivitaet_id)?.supports_master === true;
   const variantenVon = (a) => varianten[a.id] ?? 1;
-  // Masterfähige Aktivitäten OHNE Master-Aufgabe gelten als leer — auch wenn
+  // Masterfähige Aktivitäten OHNE Variante gelten als leer — auch wenn
   // sie (fälschlich) als vollständig markiert sind.
   const masterAnzahl = (id) =>
     masterAufgaben.filter((m) => m.activity_id === id && m.sync_status !== 'to_delete').length;
@@ -85,7 +85,7 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
           done += 1;
           setStatus(a.id, {
             state: 'done',
-            message: data.varianten > 1 ? `${data.varianten} Varianten als Master-Aufgaben angelegt.` : undefined,
+            message: data.varianten > 1 ? `${data.varianten} Varianten angelegt.` : undefined,
           });
         } else if (data?.skipped) {
           skipped += 1;
@@ -218,7 +218,7 @@ export default function WizardInhalteGenerator({ paket, aktivitaeten = [], katal
         eine Aufgabenbeschreibung (oben in der Übersicht ergänzbar); an der Aktivität hinterlegtes Material wird
         als inhaltliche Grundlage berücksichtigt. Für Video- und Link-Aktivitäten recherchiert die KI passende
         Quellen im Internet (bevorzugt Studyflix) und prüft, ob der Link wirklich existiert. Bei Aufgabenformaten
-        mit Master-Aufgaben (z. B. Miniquiz, Test) legt die KI automatisch Master-Aufgaben an — du bestimmst je
+        mit Varianten (z. B. Miniquiz, Test) legt die KI automatisch Varianten an — du bestimmst je
         Aktivität, wie viele inhaltlich verschiedene Varianten (1–8) erzeugt werden. Nur Aktivitäten mit
         Datei-/Bild-Pflichtfeldern werden übersprungen. Alles bleibt im Entwurfs-Status.
       </p>

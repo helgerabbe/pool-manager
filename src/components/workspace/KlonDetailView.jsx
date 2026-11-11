@@ -117,10 +117,10 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
 
   const lockedByOther = isKlonLockedByOther(klon, userEmail) || lernpaketLockedByOther;
 
-  // Eine Kopie darf zur eigenständigen Masteraufgabe befördert werden,
+  // Eine Kopie darf zur eigenständigen Variante befördert werden,
   // solange das übergeordnete LERNPAKET noch NICHT freigegeben ist. Der
-  // Freigabe-Status einer einzelnen Masteraufgabe spielt dabei keine Rolle –
-  // man darf von einer bereits freigegebenen Masteraufgabe Kopien ziehen und
+  // Freigabe-Status einer einzelnen Variante spielt dabei keine Rolle –
+  // man darf von einer bereits freigegebenen Variante Kopien ziehen und
   // diese zu neuen Mastern machen.
   const lernpaketReleased = lernpaket?.content_status === 'approved' && !!lernpaket?.released_at;
   const canConvertToMaster = kannBearbeiten && !lockedByOther && !lernpaketReleased;
@@ -232,7 +232,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
       queryClient.invalidateQueries({ queryKey: ['klone'] });
       queryClient.invalidateQueries({ queryKey: ['masterAufgaben', 'einheit'] });
       queryClient.invalidateQueries({ queryKey: ['klone', 'einheit'] });
-      toast.success('Klon wurde erfolgreich zur Masteraufgabe umgewandelt.');
+      toast.success('Als neue Variante veröffentlicht.');
       onKlonDeleted?.();
     },
     onError: (err) => toast.error('Fehler bei der Umwandlung: ' + (err.message || 'Unbekannt')),
@@ -268,7 +268,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          {/* "Zur Masteraufgabe machen" – typ-unabhängig, solange das
+          {/* "Als Variante veröffentlichen" – typ-unabhängig, solange das
               Lernpaket noch nicht freigegeben ist. */}
           {canConvertToMaster && (
             <Button
@@ -277,11 +277,11 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onClick={() => setConvertDialogOpen(true)}
               disabled={convertToMasterMutation.isPending}
               className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5"
-              title="Diese Kopie als eigenständige Masteraufgabe anlegen"
+              title="Diese Kopie als neue Variante veröffentlichen"
             >
               {convertToMasterMutation.isPending
                 ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Umwandeln…</>
-                : <><Crown className="w-3.5 h-3.5" /> Zur Masteraufgabe machen</>}
+                : <><Crown className="w-3.5 h-3.5" /> Als Variante veröffentlichen</>}
             </Button>
           )}
           {kannBearbeiten && !lockedByOther && (isLuecke || isSort || isMatch) && (
@@ -344,7 +344,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
                 disabled={convertToMasterMutation.isPending}
                 className="gap-1.5 text-primary border-primary/40 hover:bg-primary/5 text-xs h-7">
                 {convertToMasterMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Crown className="w-3 h-3" />}
-                Zur Masteraufgabe machen
+                Als Variante veröffentlichen
               </Button>
               <Button size="sm" variant="ghost" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}
                 className="gap-1.5 text-destructive hover:bg-red-50 text-xs h-7">
@@ -551,7 +551,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
           <AlertDialogHeader>
             <AlertDialogTitle>Kopie {klon.klon_index} löschen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Diese Kopie wird dauerhaft entfernt. Die Masteraufgabe bleibt bestehen.
+              Diese Kopie wird dauerhaft entfernt. Die Variante bleibt bestehen.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -566,15 +566,14 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Bestätigungsdialog: Klon → Masteraufgabe */}
+      {/* Bestätigungsdialog: Klon → Variante */}
       <AlertDialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Klon zur Masteraufgabe umwandeln?</AlertDialogTitle>
+            <AlertDialogTitle>Als Variante veröffentlichen?</AlertDialogTitle>
             <AlertDialogDescription>
-              Dieser Klon wird als eigenständige Masteraufgabe in der Aktivität angelegt. 
-              Er wird aus dem bisherigen Master-Klon-Verbund herausgelöst und ist danach eine vollständig 
-              unabhängige Masteraufgabe, von der du wieder Klone generieren kannst.
+              Diese Kopie wird als neue, eigenständige Variante gespeichert. Erst damit
+              zählt sie; von ihr kannst du wieder Kopien und KI-Klone erstellen.
               <br /><br />
               <strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong>
             </AlertDialogDescription>
@@ -585,7 +584,7 @@ export default function KlonDetailView({ klon, kannBearbeiten, userEmail, master
               onClick={() => convertToMasterMutation.mutate()}
               className="bg-primary hover:bg-primary/90"
             >
-              Ja, zur Masteraufgabe machen
+              Ja, als Variante veröffentlichen
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

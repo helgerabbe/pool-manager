@@ -324,7 +324,7 @@ export default function MasterDetailView({
   const { acquireLock, releaseLock } = useLernpaketLock(isSupportedType ? master.lernpaket_id : null);
 
   // Parent-Lernpaket laden, um zu prüfen, ob es freigegeben ist. Ist es
-  // freigegeben, dürfen die Masteraufgaben darin nicht mehr bearbeitet werden.
+  // freigegeben, dürfen die Varianten darin nicht mehr bearbeitet werden.
   const { data: parentLernpaket } = useQuery({
     queryKey: ['lernpakete', master?.lernpaket_id],
     queryFn: () => base44.entities.Lernpakete.filter({ id: master.lernpaket_id }),
@@ -430,7 +430,7 @@ export default function MasterDetailView({
       } catch (err) {
         console.warn('[MasterDetailView] syncMasterStatusNow failed:', err?.message);
       }
-      toast.success('Masteraufgabe gespeichert.');
+      toast.success('Variante gespeichert.');
     },
     onError: (err) => toast.error(getFriendlyErrorMessage(err)),
   });
@@ -595,7 +595,7 @@ export default function MasterDetailView({
       refreshWorkspaceStatusQueries(queryClient);
       queryClient.invalidateQueries({ queryKey: ['klone'] });
       queryClient.invalidateQueries({ queryKey: ['aufgabenbausteine'] });
-      toast.success('Masteraufgabe gelöscht.');
+      toast.success('Variante gelöscht.');
       await releaseLock();
       onEditModeChange?.(false);
       onDeleted?.();
@@ -618,7 +618,7 @@ export default function MasterDetailView({
                 {parentLernpaketName}
               </p>
             )}
-            <h2 className="text-base font-bold truncate">{master.titel || `Masteraufgabe ${index}`}</h2>
+            <h2 className="text-base font-bold truncate">{master.titel || `Variante ${index}`}</h2>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <p className="text-xs text-muted-foreground">{catalogName}</p>
               {/* Lebenszyklus-Badge (Neu / Im Export / Synchron / Geändert) –
@@ -1018,7 +1018,7 @@ export default function MasterDetailView({
                   isSaving={isSavingAny}
                   footerExtra={testReleaseFooter}
                   readOnly={masterIsReleased}
-                  lockedMessage="Diese Masteraufgabe ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
+                  lockedMessage="Diese Variante ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
                   onDelete={editingKlonId ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}
@@ -1034,7 +1034,7 @@ export default function MasterDetailView({
                   isSaving={isSavingAny}
                   footerExtra={offeneReleaseFooter}
                   readOnly={masterIsReleased}
-                  lockedMessage="Diese Masteraufgabe ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
+                  lockedMessage="Diese Variante ist freigegeben und kann nicht bearbeitet werden. Hebe die Freigabe unten auf, um Änderungen vorzunehmen."
                   onDelete={editingKlonId || masterIsReleased ? undefined : handleDelete}
                   onSave={handleModalSave}
                   onCancel={handleCloseModal}

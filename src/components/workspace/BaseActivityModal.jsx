@@ -118,7 +118,7 @@ export default function BaseActivityModal({
           <div className="px-6 py-3 bg-green-50 border-b border-green-200 flex items-start gap-3">
             <Lock className="w-5 h-5 text-green-700 shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-green-900">Masteraufgabe freigegeben</p>
+              <p className="text-sm font-semibold text-green-900">Variante freigegeben</p>
               <p className="text-xs text-green-800 mt-0.5">{lockedMessage}</p>
             </div>
           </div>

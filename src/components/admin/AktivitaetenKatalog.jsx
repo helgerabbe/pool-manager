@@ -86,7 +86,7 @@ export default function AktivitaetenKatalog() {
       base44.entities.AktivitaetenKatalog.update(id, { supports_master: supportsMaster }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['aktivitaetenKatalog'] });
-      toast.success('Master-Aufgaben-Einstellung aktualisiert');
+      toast.success('Varianten-Einstellung aktualisiert');
     },
   });
 

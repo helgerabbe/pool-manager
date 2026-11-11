@@ -47,7 +47,7 @@ export default function MatchTermsPlaceholder({ formData, setFormData, contextDa
 
       <div className="rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground">
         <p className="font-semibold mb-1">ℹ️ Hinweis</p>
-        <p>Die KI wird basierend auf dieser Masteraufgabe didaktisch gleichwertige Varianten generieren.</p>
+        <p>Die KI wird basierend auf dieser Variante didaktisch gleichwertige weitere Varianten generieren.</p>
       </div>
     </div>
   );

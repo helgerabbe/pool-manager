@@ -1,10 +1,10 @@
 /**
  * AufgabeWithReplicasCard.jsx
  *
- * Phase 6.7: Hierarchische Darstellung von Masteraufgaben & Replikaten
+ * Phase 6.7: Hierarchische Darstellung von Varianten & Replikaten
  * 
  * Zeigt:
- * - Masteraufgaben mit Badge & farbiger Umrandung
+ * - Varianten mit Badge & farbiger Umrandung
  * - Replikate eingerückt mit Verbindungs-Icon
  */
 
@@ -36,7 +36,7 @@ function AufgabeCardInner({ aufgabe, isMaster, isReplica, children }) {
           </div>
           {isMaster && (
             <Badge variant="default" className="shrink-0">
-              Masteraufgabe
+              Variante
             </Badge>
           )}
         </div>

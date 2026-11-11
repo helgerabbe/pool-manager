@@ -148,7 +148,7 @@ function AktivitaetSubNode({ activity, aktivitaetName, catalogName = '', isSelec
                 ) : (
                   <span className="w-2 h-2 rounded-full shrink-0 mt-px" style={{ background: isComplete ? '#16a34a' : '#f97316' }} />
                 )}
-                <span className="truncate">{master.titel || `Master ${idx + 1}`}</span>
+                <span className="truncate">{master.titel || `Variante ${idx + 1}`}</span>
               </div>
             );
           })}

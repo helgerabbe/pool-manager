@@ -1,7 +1,7 @@
 /**
  * LueckentextEditor.jsx
  *
- * Editor + Renderer für Lückentext-Masteraufgaben.
+ * Editor + Renderer für Lückentext-Varianten.
  * Features:
  *  - Manuelle Eingabe (Lücken mit [Wort])
  *  - Klammer-Validation beim Speichern
@@ -217,7 +217,7 @@ function KIAssistentModal({ open, onOpenChange, onAccept }) {
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Abbrechen</Button>
           <Button onClick={handleAccept} disabled={!preview} className="gap-2">
-            Als Masteraufgabe übernehmen
+            Als Variante übernehmen
           </Button>
         </DialogFooter>
       </DialogContent>
