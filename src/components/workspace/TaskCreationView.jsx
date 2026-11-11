@@ -37,6 +37,9 @@ import KlonDetailView from '@/components/workspace/KlonDetailView';
 import MasterDetailView from '@/components/workspace/MasterDetailView';
 import LernpaketPanel from '@/components/workspace/panels/LernpaketPanel';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
+import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKnoten';
+import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
+import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
@@ -733,6 +736,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
           .map(tf => ({
             label: tf.titel,
+            themenfeld: tf,
             pakete: paketeFuerEinheit.filter(p => p.themenfeld_id === tf.id),
           }))
           .filter(g => g.pakete.length > 0),
@@ -866,7 +870,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           </div>
           <div className="flex-1 overflow-hidden min-h-0 p-2">
           <div className="h-full overflow-y-auto space-y-3 pr-2">
-          {groupedPakete.map(({ label, pakete, isRest }) => (
+          {groupedPakete.map(({ label, pakete, isRest, themenfeld }) => (
             <div key={label || 'all'}>
               {label && (
                 <p className={cn(
@@ -877,6 +881,9 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                 </p>
               )}
               <div className="space-y-0.5">
+                {themenfeld && (
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={setSelectedItem} />
+                )}
                 {pakete.map((lernpaket, idx) => (
                   <SidebarLernpaketFolder
                     key={lernpaket.id}
@@ -902,6 +909,9 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                      isEditingActive={isEditingActive}
                      />
                 ))}
+                {themenfeld && (
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={setSelectedItem} />
+                )}
               </div>
             </div>
           ))}
@@ -935,6 +945,12 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
             )}
             <div className="flex-1 overflow-y-auto min-h-0">
         {!selectedItem && <EmptyState />}
+
+        {selectedItem?.type === 'themenfeld_platz' && (
+          <div className="max-w-3xl mx-auto px-6 py-6">
+            <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked} />
+          </div>
+        )}
 
         {/* Ansicht LP: Lernpaket gewählt → Übersicht (Tab4LernpaketOverview) */}
         {selectedItem?.type === 'lernpaket' && (
@@ -1038,6 +1054,12 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         {!sidebarOpen && (
           <div className="h-full overflow-y-auto min-h-0">
             {!selectedItem && <EmptyState />}
+
+            {selectedItem?.type === 'themenfeld_platz' && (
+              <div className="max-w-3xl mx-auto px-6 py-6">
+                <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked} />
+              </div>
+            )}
 
             {/* Ansicht LP: Lernpaket gewählt */}
             {selectedItem?.type === 'lernpaket' && (
