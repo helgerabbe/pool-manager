@@ -24,7 +24,7 @@
         "blue",
         "purple"
       ],
-      "description": "THEMENFELD-PLATZ (2026-11-11): Fester Platz der Aufgabe im Themenfeld (themenfeld_id), ausserhalb der Lernpakete. 'einstieg' = steht am Anfang des Themenfelds und gibt einen ersten Einblick (z. B. induktive Erstbegegnung, Beispielaufgabe). 'gesamtaufgabe' = steht am Ende und greift auf alle Lernpakete des Themenfelds zurueck. Die Plaetze haben keinen Wissensspeicher, keine eigenen Lernziele und keinen Abschluss. Leer = Aufgabe im Lernpaket (lernpaket_id) oder uebergreifende Aufgabe. Niveau, Pflicht/Wahl und reihenfolge_im_lernpaket gelten wie bei Lernpaket-Aufgaben."
+      "description": "THEMENFELD-PLATZ (2026-11-11): Fester Platz der Aufgabe im Themenfeld (themenfeld_id), ausserhalb der Lernpakete. 'einstieg' = steht am Anfang des Themenfelds und gibt einen ersten Einblick (z. B. induktive Erstbegegnung, Beispielaufgabe). 'gesamtaufgabe' = steht am Ende und greift auf alle Lernpakete des Themenfelds zurueck. Die Plaetze haben keinen Wissensspeicher, keine eigenen Lernziele und keinen Abschluss. Leer = Aufgabe im Lernpaket (lernpaket_id) oder uebergreifende Aufgabe. Niveau, Pflicht/freiwillig und reihenfolge_im_lernpaket gelten wie bei Lernpaket-Aufgaben."
     },
     "niveau": {
       "type": "string",
@@ -44,7 +44,16 @@
     "pflicht": {
       "type": "boolean",
       "default": true,
-      "description": "true = Pflichtaufgabe, false = Wahlaufgabe (freiwillig). Ein Lernpaket ohne Abschluss gilt als erledigt, wenn alle sichtbaren Pflichtaufgaben bearbeitet sind."
+      "description": "true = Pflichtaufgabe (P), false = freiwillige Aufgabe (F). Ein Lernpaket ohne Abschluss gilt als erledigt, wenn alle sichtbaren Pflichtaufgaben bearbeitet sind."
+    },
+    "braucht_nacharbeit": {
+      "type": "boolean",
+      "default": false,
+      "description": "NACHARBEIT (2026-11-11): Selbst gesetzter Merker der Lehrkraft: an dieser Aufgabe will ich spaeter noch einmal nacharbeiten. Rein informativ, blockiert weder Bearbeitung noch Freigabe. Im Menuebaum erscheint ein Warnzeichen. Gleiches Feldpaar wie an LernpaketPhaseAktivitaet."
+    },
+    "nacharbeit_notiz": {
+      "type": "string",
+      "description": "Optionale kurze Notiz, was an dieser Aufgabe noch nachgearbeitet werden soll. Nur relevant, wenn braucht_nacharbeit=true."
     },
     "reihenfolge_im_lernpaket": {
       "type": "number",

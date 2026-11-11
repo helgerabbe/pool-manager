@@ -6,6 +6,7 @@ import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
 import VorschauKnopf from '@/components/workspace/kopf/VorschauKnopf';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
+import NacharbeitToggle from '@/components/release/NacharbeitToggle';
 import { Badge } from '@/components/ui/badge';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
@@ -65,6 +66,9 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
         aktionen={<VorschauKnopf onClick={() => setVorschau(true)} />}
       />
       <AufgabePreviewModal open={vorschau} onOpenChange={setVorschau} aufgabe={aufgabe} />
+      {kannBearbeiten && (
+        <NacharbeitToggle key={aufgabe.id} activity={aufgabe} entity="AllgemeineAufgabe" queryKey="allgemeineAufgaben" />
+      )}
 
       {aufgabe.aufgabenstellung?.trim() && (
         <div className="rounded-md border border-border bg-card px-4 py-3">

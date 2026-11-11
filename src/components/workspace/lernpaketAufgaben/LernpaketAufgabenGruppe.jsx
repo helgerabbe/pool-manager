@@ -2,6 +2,7 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { istSchrittVollstaendig } from '@/lib/schrittTypen';
+import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
 
 /** Grün = vollständig, Orange = unvollständig – wie bei den übrigen Elementen des Menübaums. */
 export function istVollstaendig(aufgabe) {
@@ -30,6 +31,7 @@ export default function LernpaketAufgabenGruppe({ aufgaben, lernpaket, selectedI
               >
                 <span className="shrink-0">✏️</span>
                 <span className="flex-1 truncate">Aufgabe {i + 1}</span>
+                {a.braucht_nacharbeit === true && <NacharbeitZeichen notiz={a.nacharbeit_notiz} gewaehlt={gewaehlt} />}
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">{a.titel?.trim() || 'Ohne Titel'}</TooltipContent>

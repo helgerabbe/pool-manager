@@ -40,6 +40,7 @@ import KlonDetailView from '@/components/workspace/KlonDetailView';
 import MasterDetailView from '@/components/workspace/MasterDetailView';
 import LernpaketPanel from '@/components/workspace/panels/LernpaketPanel';
 import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
+import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
 import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKnoten';
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
@@ -113,6 +114,7 @@ function ActivitySidebarItem({
             />
           )}
           <span className="flex-1 truncate">{aktivitaetName}</span>
+          {activity.braucht_nacharbeit === true && <NacharbeitZeichen notiz={activity.nacharbeit_notiz} gewaehlt={isActivitySelected} />}
           {lockedByOther && !isActivitySelected && (
             <Lock className="w-3 h-3 text-amber-500 shrink-0" title={`Gesperrt von ${activity.locked_by_user}`} />
           )}

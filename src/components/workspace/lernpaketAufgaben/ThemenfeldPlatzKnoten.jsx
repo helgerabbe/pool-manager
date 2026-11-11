@@ -3,6 +3,7 @@ import { Check, Flag, Compass } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
+import NacharbeitZeichen from '@/components/workspace/kopf/NacharbeitZeichen';
 
 const SYMBOL = { einstieg: Compass, gesamtaufgabe: Flag };
 
@@ -30,6 +31,7 @@ export default function ThemenfeldPlatzKnoten({ platz, themenfeld, selectedItem,
       <span className="w-3.5 shrink-0" />
       <Symbol className={cn('w-4 h-4 shrink-0', gewaehlt ? 'text-primary-foreground' : 'text-primary')} />
       <span className="flex-1 truncate">{platz.titel}</span>
+      {aufgaben.some((a) => a.braucht_nacharbeit === true) && <NacharbeitZeichen gewaehlt={gewaehlt} />}
       <div className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pille)}>
         {freigegeben ? <Check className="w-3.5 h-3.5" /> : aufgaben.length}
       </div>

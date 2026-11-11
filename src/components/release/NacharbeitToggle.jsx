@@ -18,16 +18,17 @@ import { Button } from '@/components/ui/button';
 import { PencilRuler, Loader2, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function NacharbeitToggle({ activity, disabled = false }) {
+// `entity` / `queryKey`: derselbe Merker gilt auch für Aufgaben (AllgemeineAufgabe).
+export default function NacharbeitToggle({ activity, disabled = false, entity = 'LernpaketPhaseAktivitaet', queryKey = 'lernpaketPhaseAktivitaeten' }) {
   const queryClient = useQueryClient();
   const aktiv = activity?.braucht_nacharbeit === true;
   const [notizOffen, setNotizOffen] = useState(false);
   const [notiz, setNotiz] = useState(activity?.nacharbeit_notiz || '');
 
   const save = useMutation({
-    mutationFn: (updates) => base44.entities.LernpaketPhaseAktivitaet.update(activity.id, updates),
+    mutationFn: (updates) => base44.entities[entity].update(activity.id, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lernpaketPhaseAktivitaeten'] });
+      queryClient.invalidateQueries({ queryKey: [queryKey] });
     },
     onError: () => toast.error('Konnte nicht gespeichert werden.'),
   });
@@ -59,7 +60,7 @@ export default function NacharbeitToggle({ activity, disabled = false }) {
           </p>
           <p className={cn('text-xs mt-0.5', aktiv ? 'text-amber-800/80' : 'text-muted-foreground')}>
             {aktiv
-              ? 'Diese Aktivität erscheint mit einer Nacharbeit-Markierung — Freigabe bleibt möglich.'
+              ? 'Im Menübaum steht hier jetzt ein Warnzeichen. Die Freigabe bleibt möglich.'
               : 'Merke dir selbst, dass du hier später noch einmal nachschärfen möchtest.'}
           </p>
         </div>
