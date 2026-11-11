@@ -1,6 +1,7 @@
 import React from 'react';
 import { Flag, Compass } from 'lucide-react';
 import LernpaketAufgabenBereich from './LernpaketAufgabenBereich';
+import AufgabenEinstellungenHilfe from './AufgabenEinstellungenHilfe';
 
 const SYMBOL = { einstieg: Compass, gesamtaufgabe: Flag };
 
@@ -12,7 +13,10 @@ export default function ThemenfeldPlatzKarte({ platz, themenfeld, editierbar }) 
       <div className="flex items-start gap-2">
         <Symbol className="w-4 h-4 text-primary shrink-0 mt-0.5" />
         <div>
-          <p className="text-sm font-semibold text-foreground">{platz.titel}</p>
+          <p className="flex items-center gap-1 text-sm font-semibold text-foreground">
+            {platz.titel}
+            <AufgabenEinstellungenHilfe imLernpaket={false} />
+          </p>
           <p className="text-xs text-muted-foreground">{platz.beschreibung}</p>
         </div>
       </div>

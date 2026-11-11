@@ -12,6 +12,8 @@ import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/Lernpak
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
 import LernpaketAnbietenButton from '@/components/workspace/integration/LernpaketAnbietenButton';
 import LernpaketAufgabenBereich from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenBereich';
+import LernpaketElementBereich from '@/components/workspace/lernpaketAufgaben/LernpaketElementBereich';
+import AufgabenEinstellungenHilfe from '@/components/workspace/lernpaketAufgaben/AufgabenEinstellungenHilfe';
 
 // Die drei Teile des Lernpakets (2026-11-10). Schlüssel = bisherige Phase.
 const TEILE = {
@@ -495,11 +497,43 @@ export default function LernpaketPanel({
           const isExpanded = expandedPhase === phase.key;
 
           const teil = TEILE[phase.key];
+          const istAufgabenTeil = phase.key === 'Übung';
           const teilKopf = (
             <div className="pt-3">
-              <h3 className="text-sm font-bold text-foreground">{teil.titel}</h3>
+              <div className="flex items-center gap-2">
+                {!istAufgabenTeil && <span className="text-xl">{phase.icon}</span>}
+                <h3 className="text-xl font-bold text-foreground">{teil.titel}</h3>
+                {istAufgabenTeil && <AufgabenEinstellungenHilfe imLernpaket />}
+                {canEdit && !istAufgabenTeil && (
+                  <div className="ml-auto flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">Aktiv</span>
+                    <Switch
+                      checked={!isDisabled}
+                      onCheckedChange={() => handlePhaseToggle(phase.key)}
+                      disabled={hasReleasedActivity}
+                      title={hasReleasedActivity ? '🔒 Dieser Teil enthält freigegebene Elemente' : ''}
+                    />
+                  </div>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground">{teil.hinweis}</p>
             </div>
+          );
+          const elementBereich = istAufgabenTeil ? null : (
+            <LernpaketElementBereich
+              paket={paket}
+              phase={phase.key}
+              aktivitaeten={phaseActivities}
+              katalog={aktivitaetenKatalog}
+              editierbar={kannBearbeiten && !isReleased && !isLockedByOther}
+              einzeln={phase.key === 'Abschluss'}
+              farbe={phase.key === 'Input' ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50'}
+              leerText={phase.key === 'Input' ? 'Noch kein Informationsmaterial.' : 'Kein Abschluss gewählt.'}
+              knopfText={phase.key === 'Input'
+                ? { neu: 'Neues Informationsmaterial' }
+                : { neu: 'Abschluss wählen', aendern: 'Abschluss ändern' }}
+              onOeffnen={(activityId) => onNavigate({ type: 'goto-task-workshop', activityId })}
+            />
           );
           const aufgabenBereich = phase.key === 'Übung' ? (
             <LernpaketAufgabenBereich
@@ -514,6 +548,17 @@ export default function LernpaketPanel({
               <React.Fragment key={phase.key}>
                 {teilKopf}
                 {aufgabenBereich || <p className="text-xs text-muted-foreground italic">Dieser Teil ist ausgeschaltet.</p>}
+              </React.Fragment>
+            );
+          }
+
+          if (!istAufgabenTeil) {
+            return (
+              <React.Fragment key={phase.key}>
+                {teilKopf}
+                {isDisabled
+                  ? <p className="text-xs text-muted-foreground italic">Dieser Teil ist ausgeschaltet.</p>
+                  : elementBereich}
               </React.Fragment>
             );
           }

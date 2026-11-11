@@ -7,7 +7,7 @@ import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import DeleteAufgabeConfirmDialog from '@/components/allgemeineAufgaben/DeleteAufgabeConfirmDialog';
 import LernpaketAufgabeZeile from './LernpaketAufgabeZeile';
-import AufgabenEinstellungenHilfe from './AufgabenEinstellungenHilfe';
+import ReihenfolgePfeile from './ReihenfolgePfeile';
 import {
   getAufgabenByEinheit, updateAllgemeineAufgabe, deleteAllgemeineAufgabe,
 } from '@/services/AllgemeineAufgabeService';
@@ -65,6 +65,17 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
     onSuccess: neuLaden,
     onError: (err) => toast.error('Änderung konnte nicht gespeichert werden: ' + (err?.message || 'Unbekannter Fehler')),
   });
+  const verschieben = useMutation({
+    mutationFn: ({ index, richtung }) => {
+      const liste = [...aufgaben];
+      [liste[index], liste[index + richtung]] = [liste[index + richtung], liste[index]];
+      return Promise.all(liste.map((a, i) => (a.reihenfolge_im_lernpaket === i + 1
+        ? null
+        : updateAllgemeineAufgabe(a.id, { reihenfolge_im_lernpaket: i + 1 }))));
+    },
+    onSuccess: neuLaden,
+    onError: (err) => toast.error('Reihenfolge konnte nicht gespeichert werden: ' + (err?.message || 'Unbekannter Fehler')),
+  });
   const loeschen = useMutation({
     mutationFn: (id) => deleteAllgemeineAufgabe(id),
     onSuccess: () => { setZuLoeschen(null); neuLaden(); toast.success('Aufgabe gelöscht'); },
@@ -81,13 +92,21 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
         <p className="text-xs text-muted-foreground italic">{platz ? platz.leer : 'Noch keine Aufgabe in diesem Lernpaket.'}</p>
       ) : (
         <>
-        <AufgabenEinstellungenHilfe imLernpaket={!platz} />
         {aufgaben.map((a, i) => (
           <LernpaketAufgabeZeile
             key={a.id}
             aufgabe={a}
             nummer={i + 1}
             editierbar={editierbar}
+            pfeile={editierbar && aufgaben.length > 1 ? (
+              <ReihenfolgePfeile
+                erste={i === 0}
+                letzte={i === aufgaben.length - 1}
+                disabled={verschieben.isPending}
+                onHoch={() => verschieben.mutate({ index: i, richtung: -1 })}
+                onRunter={() => verschieben.mutate({ index: i, richtung: 1 })}
+              />
+            ) : null}
             onAendern={(daten) => aendern.mutate({ id: a.id, daten })}
             onOeffnen={() => setWerkstatt({ aufgabe: a })}
             onLoeschen={() => setZuLoeschen(a)}

@@ -6,10 +6,11 @@ import ZufallsauswahlWahl from './ZufallsauswahlWahl';
 import { NIVEAUS, NIVEAU_STANDARD, PFLICHT_WAHL } from '@/lib/aufgabenNiveau';
 
 /** Eine Aufgabe im Teil „Aufgaben" eines Lernpakets. */
-export default function LernpaketAufgabeZeile({ aufgabe, nummer, editierbar, onAendern, onOeffnen, onLoeschen }) {
+export default function LernpaketAufgabeZeile({ aufgabe, nummer, editierbar, pfeile = null, onAendern, onOeffnen, onLoeschen }) {
   const schritte = Array.isArray(aufgabe.sequenz_schritte) ? aufgabe.sequenz_schritte.length : 0;
   return (
-    <div className="flex items-center gap-2 flex-wrap rounded-md border border-border bg-card px-3 py-2">
+    <div className="flex items-center gap-2 flex-wrap rounded-md border border-rose-200 bg-rose-50 px-3 py-2">
+      {pfeile}
       <button type="button" onClick={onOeffnen} className="flex-1 min-w-[160px] text-left">
         <div className="text-sm font-semibold text-foreground">
           Aufgabe {nummer}
