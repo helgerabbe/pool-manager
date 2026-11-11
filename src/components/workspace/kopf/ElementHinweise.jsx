@@ -46,7 +46,8 @@ export default function ElementHinweise({ einheitId, zielIds, gesperrt = false }
         <div className="space-y-2">
           {gesperrt && (
             <p className="text-xs text-sky-900">
-              🔒 Das Lernpaket ist freigegeben. Zum Überarbeiten zuerst die Freigabe zurücknehmen.
+              🔒 Diese Stelle ist freigegeben. Von Hand überarbeiten geht erst, wenn du die Freigabe zurücknimmst.
+              Der Baumeister kann trotzdem ändern: Er fragt vorher nach, und die Freigabe bleibt bestehen.
             </p>
           )}
           {hinweise.map((b) => (
