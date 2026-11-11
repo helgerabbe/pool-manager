@@ -7,7 +7,7 @@ const SYMBOL = { einstieg: Compass, gesamtaufgabe: Flag };
 /** Eintrag im Menübaum für einen festen Platz des Themenfelds. */
 export default function ThemenfeldPlatzKnoten({ platz, themenfeld, selectedItem, onSelect }) {
   const Symbol = SYMBOL[platz.key];
-  const gewaehlt = selectedItem?.type === 'themenfeld_platz'
+  const gewaehlt = (selectedItem?.type === 'themenfeld_platz' || (selectedItem?.type === 'aufgabe' && !!selectedItem.platz))
     && selectedItem.platz.key === platz.key
     && selectedItem.themenfeld.id === themenfeld.id;
   return (

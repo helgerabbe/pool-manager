@@ -36,6 +36,14 @@ export function aufgabenImLernpaket(aufgaben = [], lernpaketId) {
       || String(a.created_date).localeCompare(String(b.created_date)));
 }
 
+/** Die Aufgaben eines festen Themenfeld-Platzes (Einstieg / Gesamtaufgabe) in ihrer Reihenfolge. */
+export function aufgabenAmPlatz(aufgaben = [], themenfeldId, platzKey) {
+  return (aufgaben || [])
+    .filter((a) => !a.lernpaket_id && a.themenfeld_id === themenfeldId && a.themenfeld_platz === platzKey)
+    .sort((a, b) => (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0)
+      || String(a.created_date).localeCompare(String(b.created_date)));
+}
+
 /** Die Aufgaben eines Lernpakets, wie ein Schüler dieses Lerntyps sie sieht. */
 export function lernpaketAufgabenFuerSchueler(aufgaben = [], lernpaketId, lerntyp, imPlanIds = new Set()) {
   return (aufgaben || [])

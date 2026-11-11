@@ -15,7 +15,8 @@ import { NIVEAU_STANDARD } from '@/lib/aufgabenNiveau';
  * Elemente. Bearbeitet wird erst über „Bearbeiten" – das sperrt das
  * Lernpaket für andere und öffnet die Aufgabenwerkstatt.
  */
-export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = null, themenfelder = [], katalogNamen = {}, kannBearbeiten, onZurueck }) {
+export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = null, themenfelder = [], katalogNamen = {}, kannBearbeiten, onZurueck, ohneSperre = false, zurueckLabel = 'Zum Lernpaket' }) {
+  // `ohneSperre`: Aufgabe an einem Themenfeld-Platz (Einstieg / Gesamtaufgabe) – dort gibt es kein Lernpaket zum Sperren.
   const queryClient = useQueryClient();
   const { canEdit, isLockedByOther, lockedByEmail, acquireLock, releaseLock } = useLernpaketLock(paket.id);
   const [offen, setOffen] = useState(false);
@@ -29,16 +30,18 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
     : isLockedByOther ? `Wird gerade von ${lockedByEmail} bearbeitet.` : '';
 
   const bearbeiten = async () => {
-    setOeffnet(true);
-    const ok = canEdit || await acquireLock();
-    setOeffnet(false);
-    if (!ok) { toast.error('Das Lernpaket konnte nicht für die Bearbeitung gesperrt werden.'); return; }
+    if (!ohneSperre) {
+      setOeffnet(true);
+      const ergebnis = canEdit ? { ok: true } : await acquireLock();
+      setOeffnet(false);
+      if (!ergebnis?.ok) { toast.error(ergebnis?.error || 'Das Lernpaket konnte nicht für die Bearbeitung gesperrt werden.'); return; }
+    }
     setOffen(true);
   };
   const schliessen = async () => {
     setOffen(false);
     queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben'] });
-    await releaseLock();
+    if (!ohneSperre) await releaseLock();
   };
 
   return (
@@ -55,7 +58,7 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <Button variant="ghost" size="sm" className="gap-1.5" onClick={onZurueck}>
-          <ArrowLeft /> Zum Lernpaket
+          <ArrowLeft /> {zurueckLabel}
         </Button>
         {kannBearbeiten && (
           <Button variant="outline" size="sm" onClick={bearbeiten} disabled={oeffnet || !!sperrGrund} title={sperrGrund}

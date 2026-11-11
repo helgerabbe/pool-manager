@@ -42,7 +42,7 @@ import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/Theme
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 import LernpaketAufgabenGruppe from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
-import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
+import { aufgabenImLernpaket, aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
@@ -787,20 +787,29 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
 
   // Ansicht „Aufgabe": Übersicht einer Lernpaket-Aufgabe (Desktop und Mobil gleich).
   const gewaehlteAufgabe = selectedItem?.type === 'aufgabe' ? alleAufgaben.find(a => a.id === selectedItem.aufgabeId) : null;
-  const aufgabePaket = gewaehlteAufgabe
-    ? lernpakete.find(lp => lp.id === selectedItem.lernpaket.id) || selectedItem.lernpaket
-    : null;
+  // Aufgaben am Einstieg / an der Gesamtaufgabe gehören zu einem Themenfeld-Platz statt zu einem Lernpaket.
+  const aufgabePlatz = gewaehlteAufgabe ? selectedItem.platz || null : null;
+  const aufgabePaket = !gewaehlteAufgabe ? null : aufgabePlatz
+    ? { titel_des_pakets: `${selectedItem.themenfeld.titel} · ${aufgabePlatz.titel}`, themenfeld_id: selectedItem.themenfeld.id }
+    : lernpakete.find(lp => lp.id === selectedItem.lernpaket.id) || selectedItem.lernpaket;
+  const aufgabeGeschwister = !gewaehlteAufgabe ? [] : aufgabePlatz
+    ? aufgabenAmPlatz(alleAufgaben, selectedItem.themenfeld.id, aufgabePlatz.key)
+    : aufgabenImLernpaket(alleAufgaben, aufgabePaket.id);
   const aufgabeAnsicht = gewaehlteAufgabe && (
     <div className="max-w-3xl mx-auto px-6 py-6">
       <AufgabeUebersicht
         aufgabe={gewaehlteAufgabe}
-        nummer={aufgabenImLernpaket(alleAufgaben, aufgabePaket.id).findIndex(a => a.id === gewaehlteAufgabe.id) + 1}
+        nummer={aufgabeGeschwister.findIndex(a => a.id === gewaehlteAufgabe.id) + 1}
+        ohneSperre={!!aufgabePlatz}
+        zurueckLabel={aufgabePlatz ? `Zu „${aufgabePlatz.titel}"` : 'Zum Lernpaket'}
         paket={aufgabePaket}
         einheit={einheit}
         themenfelder={themenfelder}
         katalogNamen={aktivitaetenMap}
         kannBearbeiten={kannBearbeiten && !isUnitLocked}
-        onZurueck={() => setSelectedItem({ type: 'lernpaket', lernpaket: aufgabePaket })}
+        onZurueck={() => setSelectedItem(aufgabePlatz
+          ? { type: 'themenfeld_platz', platz: aufgabePlatz, themenfeld: selectedItem.themenfeld }
+          : { type: 'lernpaket', lernpaket: aufgabePaket })}
       />
     </div>
   );
@@ -985,7 +994,8 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
 
         {selectedItem?.type === 'themenfeld_platz' && (
           <div className="max-w-3xl mx-auto px-6 py-6">
-            <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked} />
+            <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked}
+              onAufgabeOeffnen={(aufgabeId) => setSelectedItem({ type: 'aufgabe', aufgabeId, platz: selectedItem.platz, themenfeld: selectedItem.themenfeld })} />
           </div>
         )}
 
@@ -1097,7 +1107,8 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
 
             {selectedItem?.type === 'themenfeld_platz' && (
               <div className="max-w-3xl mx-auto px-6 py-6">
-                <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked} />
+                <ThemenfeldPlatzKarte platz={selectedItem.platz} themenfeld={selectedItem.themenfeld} editierbar={kannBearbeiten && !isUnitLocked}
+              onAufgabeOeffnen={(aufgabeId) => setSelectedItem({ type: 'aufgabe', aufgabeId, platz: selectedItem.platz, themenfeld: selectedItem.themenfeld })} />
               </div>
             )}
 
