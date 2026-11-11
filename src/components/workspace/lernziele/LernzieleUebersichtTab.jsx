@@ -34,23 +34,6 @@ import LernpaketZielSidebar from '@/components/workspace/lernziele/LernpaketZiel
 import LernpaketLebenszyklusBadge from '@/components/workspace/panels/LernpaketLebenszyklusBadge';
 import ThemenfeldLeitfrageKopf from '@/components/workspace/lernziele/ThemenfeldLeitfrageKopf';
 
-const HELP = {
-  title: 'Lernziele der Einheit',
-  description:
-    'Hier pflegst du zentral alle Lernziele – gruppiert nach Themenfeld und Lernpaket. Wähle links ein Lernpaket aus, um rechts seine Lernziele zu bearbeiten. Nutze die KI-Prüfung pro Lernziel für eine saubere Formulierung in Fach- und Schülersprache.',
-  features: [
-    'Links alle Lernpakete der Einheit – klick dich durch',
-    'Pro Lernziel: offizielle Formulierung (Fachsprache) + schülergerechte Übersetzung',
-    'Schülergerechte Formulierungen sind grafisch klar markiert (Schüler-Symbol, kursiv)',
-    'KI-Prüfung pro Lernziel schlägt beide Varianten formuliert vor',
-    'Speichern erfolgt gezielt pro Lernpaket',
-  ],
-  faqs: [
-    { question: 'Was ist der Unterschied zwischen Fachsprache und schülergerecht?', answer: 'Die Fachsprache („Ich kann …") ist die offizielle Formulierung. Die schülergerechte Übersetzung erklärt dasselbe in einfacher Sprache und erscheint später in der Lernlandkarte für die Schüler:innen.' },
-    { question: 'Wie funktioniert die KI-Prüfung?', answer: 'Tippe deine Idee ein und klicke auf „KI prüfen". Die KI schlägt eine präzise Fachsprachen- und eine schülergerechte Formulierung vor, die du übernehmen oder verwerfen kannst.' },
-  ],
-  docsSlug: 'lernpakete-aktivitaeten',
-};
 
 export default function LernzieleUebersichtTab({
   einheit,
@@ -205,7 +188,7 @@ export default function LernzieleUebersichtTab({
         <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b h-11">
           <Target className="w-4 h-4 text-primary shrink-0" />
           <span className="text-sm font-semibold flex-1">Lernziele</span>
-          <HelpDialog {...HELP} />
+          <HelpDialog {...tabHilfe('lernziele')} />
         </div>
         <div className="flex-1 overflow-hidden min-h-0">
           <LernpaketZielSidebar
