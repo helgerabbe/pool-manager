@@ -51,6 +51,10 @@ export default function useAktivitaetenKatalog({ enabled = true } = {}) {
   const auswahlListe = useMemo(() => {
     const beste = {};
     katalogListe.forEach((k) => {
+      // „Aufgabensequenz" ist als Element nicht wählbar (2026-11-11): Eine
+      // Aufgabe besteht selbst schon aus Elementen; eine Sequenz im Element
+      // versteckte ihre Schritte vor Werkstatt und Vorschau.
+      if (k.name === 'Aufgabensequenz') return;
       const vorhanden = beste[k.name];
       if (!vorhanden || (k.phase === 'Übung' && vorhanden.phase !== 'Übung')) {
         beste[k.name] = k;
