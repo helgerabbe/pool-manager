@@ -67,9 +67,9 @@ export default async function (req) {
       if (wahl?.entfernen === true) stelle = seq;
     }
 
-    // Aufgabe ohne eigene Texte: Ihr Inhalt steckt im offenen Schritt, also dort arbeiten.
+    // Aufgabe ohne eigene Texte: Ihr Inhalt steckt im Element, also dort arbeiten.
     if (stelle.art === 'aufgabe' && !Object.values(stelle.roh.field_values).some((v) => String(v || '').trim())) {
-      const offene = alleStellen.filter((s) => s.art === 'offen' && s.ziel_id === stelle.ziel_id);
+      const offene = alleStellen.filter((s) => (s.art === 'offen' || s.art === 'schritt') && s.ziel_id === stelle.ziel_id);
       if (offene.length === 1) stelle = offene[0];
       else {
         return Response.json({
@@ -166,8 +166,8 @@ export default async function (req) {
       if (wechsel) return wechsel;
     }
 
-    const nurText = stelle.art === 'aufgabe' || stelle.art === 'lernziele';
-    if (stelle.art === 'aktivitaet' || nurText) {
+    const nurText = stelle.art === 'aufgabe' || stelle.art === 'lernziele' || (stelle.art === 'schritt' && stelle.block !== 'field_values');
+    if (stelle.art === 'aktivitaet' || stelle.art === 'schritt' || nurText) {
       const alt = stelle.roh.field_values;
       const ausgang = basis && typeof basis === 'object' ? basis : alt;
       const felder = (stelle.roh.form_schema || [])

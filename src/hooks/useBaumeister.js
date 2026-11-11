@@ -92,6 +92,27 @@ export function useBaumeister(einheitId) {
       setPhase('fertig');
       return;
     }
+    if (stelle.art === 'schritt') {
+      // Nur den Inhalt dieses einen Elements ersetzen; alles andere an der Aufgabe bleibt.
+      const aufgabe = await base44.entities.AllgemeineAufgabe.get(stelle.ziel_id);
+      const b = stelle.block;
+      const schritte = (aufgabe.sequenz_schritte || []).map((s) => {
+        if (s.id !== stelle.schritt_id) return s;
+        if (b === 'field_values') return { ...s, field_values: vorschlag.neu };
+        const neuSync = b === 'brian' && s.brian?.sync_status === 'synced' ? { sync_status: 'modified' } : {};
+        return { ...s, [b]: { ...s[b], ...vorschlag.neu, ...neuSync } };
+      });
+      await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, {
+        sequenz_schritte: schritte,
+        ...(stelle.freigegeben ? { sync_status: 'modified' } : {}),
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['workspace-data', einheitId] }),
+        queryClient.invalidateQueries({ queryKey: ['allgemeineAufgaben', einheitId] }),
+      ]);
+      setPhase('fertig');
+      return;
+    }
     if (stelle.art === 'aufgabe') {
       // Freigabe bleibt bestehen; die Änderung muss aber neu gebaut werden.
       await base44.entities.AllgemeineAufgabe.update(stelle.ziel_id, {

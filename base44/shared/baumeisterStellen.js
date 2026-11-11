@@ -142,6 +142,34 @@ export async function ladeStellen(base44, einheitId) {
         });
     });
 
+  // Übrige Elemente einer Aufgabe (KI-Tutor, Katalog-Format, Freitext, Material, Handlung).
+  (aufgaben || [])
+    .filter((a) => a.aufgaben_modus === 'sequenz' && a.sync_status !== 'to_delete')
+    .forEach((a) => {
+      (Array.isArray(a.sequenz_schritte) ? a.sequenz_schritte : []).forEach((s) => {
+        const katalogSchema = s?.typ === 'katalog' ? katalogById.get(s.aktivitaet_id)?.form_schema : null;
+        const schema = katalogSchema || SCHRITT_FELDER[s?.typ];
+        if (!schema?.length) return;
+        const block = katalogSchema ? 'field_values' : s.typ;
+        const werte = s[block] || {};
+        const felder = katalogSchema ? werte : Object.fromEntries(schema.map((f) => [f.field_name, werte[f.field_name] || '']));
+        stellen.push({
+          ref: `sch:${a.id}:${s.id}`,
+          art: 'schritt',
+          block,
+          ziel_id: a.id,
+          schritt_id: s.id,
+          freigegeben: istFreigegeben(a),
+          gesperrt_von: sperreVon(a.locked_by, a.locked_at),
+          titel: s.titel || a.titel || 'Element',
+          projekt: istProjekt(a),
+          ort: [tfTitel.get(a.themenfeld_id), `Aufgabe „${a.titel || 'ohne Titel'}"`, `Element „${s.titel || s.typ}"`].filter(Boolean).join(' · '),
+          text: textAus(felder),
+          roh: { field_values: felder, form_schema: schema },
+        });
+      });
+    });
+
   // Allgemeine Aufgaben und Projektaufgaben: die Textfelder an der Aufgabe selbst.
   (aufgaben || [])
     .filter((a) => a.sync_status !== 'to_delete')
@@ -213,6 +241,22 @@ export function schritteAlsFelder(schritte, ohneId) {
     schritte.filter((s) => s.id !== ohneId).map((s) => [`Schritt ${s.nr}: ${s.titel}`, s.text])
   );
 }
+
+const textFelder = (paare) => paare.map(([field_name, label]) => ({ field_name, type: 'textarea', label }));
+
+/** Bearbeitbare Textfelder der Elemente einer Aufgabe, je Elementart. */
+const SCHRITT_FELDER = {
+  brian: textFelder([
+    ['aufgabenstellung', 'Aufgabenstellung'],
+    ['erwartungshorizont', 'Erwartungshorizont'],
+    ['learner_instruction', 'Tutor: Anweisung für Lernende'],
+    ['system_instruction', 'Tutor: interne Anleitung (Rolle, Aufgabe, Grenzen)'],
+    ['completion_rule', 'Tutor: Abschlussregel'],
+  ]),
+  aufgabe: textFelder([['aufgabenstellung', 'Aufgabenstellung'], ['musterloesung', 'Musterlösung']]),
+  material: textFelder([['inhalt', 'Text / Inhalt'], ['beschreibung', 'Hinweis für Schüler'], ['transkript', 'Transkript']]),
+  handlung: textFelder([['arbeitsauftrag', 'Arbeitsauftrag'], ['material_hinweis', 'Hinweis zum Material'], ['bestaetigungstext', 'Bestätigungstext']]),
+};
 
 /** Bearbeitbare Textfelder einer allgemeinen Aufgabe / Projektaufgabe. */
 export const AUFGABE_FELDER = [
