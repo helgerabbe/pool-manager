@@ -49,6 +49,7 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
+import { variantenVollstaendig } from '@/lib/variantenStatus';
 
 const PHASES = [
   { key: 'Input',     label: 'Wissensspeicher', icon: '📚' },
@@ -183,7 +184,7 @@ function SidebarLernpaketFolder({
              const masters = masterAufgabenByActivityId[activity.id] || [];
              if (activity.content_status === 'approved' || activity.is_complete === true) return true;
              if (actCatalog?.supports_master === true) {
-               return masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
+               return variantenVollstaendig(masters);
              }
              return false;
            };
@@ -232,7 +233,7 @@ function SidebarLernpaketFolder({
                   // Grün, sobald das Element vollständig ist; Freigabe ist dafür nicht nötig.
                   let isComplete = activity.content_status === 'approved' || activity.is_complete === true;
                   if (!isComplete && actCatalog?.supports_master === true) {
-                    isComplete = masters.length > 0 && masters.every(m => m.content_status === 'approved' || m.is_complete === true);
+                    isComplete = variantenVollstaendig(masters);
                   }
                   return (
                     <ActivitySidebarItem

@@ -11,6 +11,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
 import { hasPruefungLeitungAccess } from '../../shared/pruefungAccess.js';
+import { geltendeVarianten } from '../../shared/variantenStatus.js';
 import { speichereBefunde, ladeBefunde } from '../../shared/pruefungBefunde.js';
 import {
   pruefeAktivitaetMechanisch,
@@ -106,7 +107,8 @@ export default async function (req) {
 
         for (const a of aktiv) {
           const k = katalogById.get(a.aktivitaet_id) || null;
-          const varianten = masterByActivity.get(a.id) || [];
+          // Geprüft werden nur die Varianten, die Schüler bekommen (freigegebene).
+          const varianten = geltendeVarianten(masterByActivity.get(a.id) || []);
           // Masterfähige Aktivitäten tragen ihre Inhalte in den Varianten —
           // dann wird die Aktivität selbst nicht auf leere Felder geprüft.
           if (varianten.length === 0) {

@@ -49,6 +49,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { istFreigegeben } from '../../shared/variantenStatus.js';
 
 /**
  * Einheitliche RBAC-Prüfung – identisch zu approveMasterAufgabe und
@@ -218,7 +219,12 @@ Deno.serve(async (req) => {
           base44.asServiceRole.entities.MasterAufgabe.filter({ activity_id: aid })
         )
       );
-      const allMasters = masterListsPerActivity.flat();
+      // Hat ein Element schon eine freigegebene Variante, bleiben seine
+      // übrigen Varianten Entwurf – nur Elemente ganz ohne freigegebene
+      // Variante werden mitgezogen.
+      const allMasters = masterListsPerActivity.flatMap((liste) =>
+        liste.some((m) => m.sync_status !== 'to_delete' && istFreigegeben(m)) ? [] : liste
+      );
       masterUpdates = allMasters
         .filter((m) => m.is_master !== false) // nur echte Master, keine Klone
         .map((m) =>

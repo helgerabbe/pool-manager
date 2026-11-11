@@ -9,6 +9,7 @@
  * dem Client werden überschrieben, Updates/Deletes nur auf eigene Datensätze.
  */
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { geltendeVarianten } from '../../shared/variantenStatus.js';
 
 const norm = (r) => (r ? { ...r, ...(r.data || {}), id: r.id } : null);
 
@@ -172,7 +173,8 @@ Deno.serve(async (req) => {
           });
         result = aktivitaeten
           .map((akt) => {
-            const masterListe = masterByActivity.get(akt.id) || [];
+            // Schüler bekommen nur freigegebene Varianten.
+            const masterListe = geltendeVarianten(masterByActivity.get(akt.id) || []);
             const mitMaster = { ...akt, master_aufgaben: masterListe };
             const eigeneFv = akt.field_values || {};
             if (Object.keys(eigeneFv).length === 0) {

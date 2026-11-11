@@ -15,6 +15,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import { createClient } from 'npm:@supabase/supabase-js@2.45.0';
+import { geltendeVarianten } from '../../shared/variantenStatus.js';
 
 const ERLAUBTE_ROLLEN = ['Administrator', 'Fachschaftsleitung', 'Moodle-Designer'];
 
@@ -82,8 +83,12 @@ Deno.serve(async (req) => {
     ]);
     const aktivitaeten = ohneTombstones(aktivitaetenListen.flat());
     const aktivitaetIds = new Set(aktivitaeten.map((a) => a.id));
-    const masterAufgaben = masterListen.flat()
+    const lebendeMaster = masterListen.flat()
       .filter((m) => m.sync_status !== 'to_delete' && aktivitaetIds.has(m.activity_id));
+    // Je Element reisen nur die freigegebenen Varianten mit.
+    const masterAufgaben = [...aktivitaetIds].flatMap((id) =>
+      geltendeVarianten(lebendeMaster.filter((m) => m.activity_id === id))
+    );
     const lernziele = lernzielListen.flat();
 
     // ── 2) Nach Supabase schreiben ──────────────────────────────────────────

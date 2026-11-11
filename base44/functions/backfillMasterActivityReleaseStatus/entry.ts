@@ -30,6 +30,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { variantenStatus } from '../../shared/variantenStatus.js';
 
 const MAX_BACKFILL_LIMIT = 10000;
 const UPDATE_BATCH_SIZE = 10;
@@ -81,8 +82,7 @@ Deno.serve(async (req) => {
       }
 
       const activityMasters = mastersByActivity[activity.id] || [];
-      const allApproved =
-        activityMasters.length > 0 && activityMasters.every((m) => m.content_status === 'approved');
+      const allApproved = variantenStatus(activityMasters).freigegeben;
 
       const updatePayload = allApproved
         ? {

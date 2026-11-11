@@ -37,9 +37,10 @@ gegen diese Liste abgleichen und Fehlendes ergänzen.
 - Es reisen nur freigegebene Varianten mit. Entwürfe (`entwurf: true`) und leere Varianten
   bleiben im Pool-Manager. Ein Element ist vollständig, sobald eine freigegebene Variante
   Inhalt hat.
-- OFFEN: Bei Abschluss-Elementen (Test, über `MasterAufgabe`) gilt noch die alte Regel
-  "alle Varianten müssen freigegeben sein". Angleichen und dann klären, ob der Export
-  dort nicht freigegebene Varianten weglässt.
+- Abschluss-Elemente (Test, über `MasterAufgabe`) folgen seit 2026-11-11 derselben Regel:
+  freigegeben und vollständig, sobald EINE Variante freigegeben ist. In `master_aufgaben`
+  reisen dann nur noch die freigegebenen Varianten mit (gibt es noch keine, wie bisher alle).
+  Der MBK melden: Die Liste kann kürzer sein als im Pool-Manager angelegt.
 
 ## 4. Abschluss und Erledigt-Regeln
 

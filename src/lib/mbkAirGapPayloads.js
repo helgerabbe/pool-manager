@@ -43,6 +43,7 @@ import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import { mitBrianFeldNamen } from '@/lib/brianKatalogFelder';
 import { GRAFIK_VARIANTE_CONTRACT } from '@/lib/mbkGrafikContract';
 import { nurFreigegebene } from '@/lib/schrittVarianten';
+import { geltendeVarianten } from '@/lib/variantenStatus';
 import {
   aktivesFragment, grafikAktiv, VARIANTE_FUNKTIONAL, VARIANTE_GRAFISCH,
 } from '@/lib/grafikVariante';
@@ -1601,7 +1602,8 @@ export function buildTaskContentItemForLernpaket({
 
   const renderActivity = (pa) => {
     const katalog = katalogById?.get(pa?.aktivitaet_id) || null;
-    const masters = (masterByActivity.get(pa.id) || [])
+    // Es reisen nur freigegebene Varianten mit (siehe lib/variantenStatus.js).
+    const masters = geltendeVarianten(masterByActivity.get(pa.id) || [])
       .slice()
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0))
       .map(renderMaster);
@@ -2256,7 +2258,7 @@ export function buildMicroPayloadBundle({
       phaseAktivitaetenInPaket: phasenByPaket.get(pa.lernpaket_id) || [],
       lernziele: zieleByPaket.get(pa.lernpaket_id) || [],
       katalogById,
-      masterAufgabenForActivity: masterByActivity.get(pa.id) || [],
+      masterAufgabenForActivity: geltendeVarianten(masterByActivity.get(pa.id) || []),
       // Fragment erbt nav-Context von der Hülle (= Lernpaket).
       navigationContext: lp ? navFor(lp.id) : [],
       systemContextHash,

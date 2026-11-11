@@ -43,6 +43,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { variantenStatus } from '../../shared/variantenStatus.js';
 
 Deno.serve(async (req) => {
   try {
@@ -116,10 +117,9 @@ Deno.serve(async (req) => {
           activity_id: entityId,
         });
         const liveMasters = (masters || []).filter(m => m.sync_status !== 'to_delete');
-        // Aktivität vollständig = ≥1 Master AND alle Master vollständig
-        const mastersComplete =
-          liveMasters.length > 0 &&
-          liveMasters.every(m => m.is_complete === true);
+        // Regel (shared/variantenStatus.js): EINE freigegebene Variante genügt;
+        // ohne freigegebene müssen alle Varianten ausgearbeitet sein.
+        const mastersComplete = variantenStatus(liveMasters).vollstaendig;
 
         if (data.erstellungs_modus === 'ki') {
           const briefing = data.ki_briefing;

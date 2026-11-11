@@ -29,6 +29,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { variantenStatus } from '../../shared/variantenStatus.js';
 
 const PAGE_SIZE = 500;
 
@@ -211,8 +212,10 @@ Deno.serve(async (req) => {
           ? { ...m, is_complete: touchedMasterIsComplete }
           : m
       );
-    const allMastersApproved =
-      liveMasters.length > 0 && liveMasters.every((m) => m.content_status === 'approved');
+    // Regel (shared/variantenStatus.js): EINE freigegebene Variante genügt –
+    // eine neue, noch nicht freigegebene Variante setzt das Element nicht zurück.
+    const { freigegeben: allMastersApproved, vollstaendig: computedActivityIsComplete } =
+      variantenStatus(liveMasters);
 
     // Vollständigkeit der Aktivität DIREKT hier berechnen, statt sie
     // pessimistisch auf false zu setzen und auf den asynchronen Guardian zu
@@ -220,8 +223,6 @@ Deno.serve(async (req) => {
     // Stale-Read) nicht griff, blieb die Aktivität fälschlich „unvollständig",
     // obwohl alle Master vollständig waren (z. B. Mini-Quiz mit 1 fertigem
     // Master). is_complete = (≥1 lebender Master AND alle is_complete=true).
-    const computedActivityIsComplete =
-      liveMasters.length > 0 && liveMasters.every((m) => m.is_complete === true);
 
     const releaseUpdate = allMastersApproved
       ? {

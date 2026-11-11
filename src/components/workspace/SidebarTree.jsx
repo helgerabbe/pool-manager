@@ -7,6 +7,7 @@ import {
   isPaketLocked,
 } from '@/lib/statusLogic';
 import { useQuery } from '@tanstack/react-query';
+import { variantenVollstaendig } from '@/lib/variantenStatus';
 import { base44 } from '@/api/base44Client';
 
 const AMPEL = {
@@ -92,7 +93,7 @@ function computeActivityCompleteForTree(activity, catalogName = '', masterAufgab
   if (isKiBriefed && activity.is_complete === true) return true;
 
   if (supportsMaster && masterAufgabenList.length > 0 && activity.erstellungs_modus !== 'ki') {
-    return masterAufgabenList.every(m => computeMasterComplete(m, catalogName));
+    return variantenVollstaendig(masterAufgabenList, m => computeMasterComplete(m, catalogName));
   }
 
   return activity.is_complete === true;

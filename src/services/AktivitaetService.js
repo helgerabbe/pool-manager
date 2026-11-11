@@ -7,6 +7,7 @@
  */
 
 import { base44 } from '@/api/base44Client';
+import { geltendeVarianten } from '@/lib/variantenStatus';
 
 // ── AktivitaetenKatalog (globale Referenzdaten) ───────────────────────────────
 
@@ -60,7 +61,8 @@ export async function getAktivitaetenByLernpaket(lernpaketId) {
     });
 
   const angereichert = aktivitaeten.map((akt) => {
-    const masterListe = masterListeByActivity.get(akt.id) || [];
+    // Schüler bekommen nur freigegebene Varianten (siehe lib/variantenStatus.js).
+    const masterListe = geltendeVarianten(masterListeByActivity.get(akt.id) || []);
     // master_aufgaben IMMER anhängen, damit die Schüleransicht die Master-Modi
     // (einzel/sequenziell/shuffle) korrekt erkennt und den Fortschritt unter dem
     // richtigen Composite-Key speichert/prüft.

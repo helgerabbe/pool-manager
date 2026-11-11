@@ -42,6 +42,7 @@
  */
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { variantenStatus } from '../../shared/variantenStatus.js';
 
 /**
  * Einheitliche RBAC-Prüfung – konsistent zu acquireUnitLockSecure.
@@ -226,11 +227,11 @@ Deno.serve(async (req) => {
       activity_id: aufgabe.activity_id,
     });
 
-    const liveMasters = (allMasters || []).filter((m) => m.sync_status !== 'to_delete');
-    const allApproved = liveMasters.length > 0 && liveMasters.every((m) =>
-      m.id === masterId ? newContentStatus === 'approved' : m.content_status === 'approved'
-    );
-    const allComplete = liveMasters.length > 0 && liveMasters.every((m) => m.is_complete === true);
+    // Regel (shared/variantenStatus.js): EINE freigegebene Variante genügt.
+    const liveMasters = (allMasters || [])
+      .filter((m) => m.sync_status !== 'to_delete')
+      .map((m) => (m.id === masterId ? { ...m, content_status: newContentStatus } : m));
+    const { freigegeben: allApproved, vollstaendig: allComplete } = variantenStatus(liveMasters);
 
     const activityContentStatus = allApproved ? 'approved' : 'draft';
     const activityIsComplete = allComplete;
