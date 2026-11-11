@@ -13,6 +13,7 @@ import { Zeile } from '@/components/workspace/panels/LernpaketKopfDetails';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeElementKarte from './AufgabeElementKarte';
+import ProjektReiter from '@/components/projektaufgaben/ProjektReiter';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { NIVEAU_STANDARD } from '@/lib/aufgabenNiveau';
 
@@ -94,6 +95,10 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
             <AufgabeElementKarte key={s.id || i} schritt={s} nummer={i + 1} aktivitaetName={katalogNamen[s.aktivitaet_id] || ''} />
           ))}
         </div>
+      )}
+
+      {aufgabe.anforderungsebene === '3 - Projekt' && (
+        <ProjektReiter key={`projekt-${aufgabe.id}`} aufgabe={aufgabe} themenfelder={themenfelder} kannBearbeiten={kannBearbeiten && !paketFreigegeben} />
       )}
 
       <AufgabeCreateView
