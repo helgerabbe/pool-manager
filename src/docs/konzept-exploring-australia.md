@@ -159,4 +159,14 @@ Sicherung des alten Stands (Lernpakete des Themenfelds, Lernziele, Wissensspeich
 - **Lernziele:** Die neun Lernziele von „Applying for a Job“ sind neu formuliert und verteilt (Vocabulary 1, Jobs and qualities 2, Writing 3, Interview 3). Neu: „über eigene Stärken und Schwächen sprechen“. Das Lernziel zu Komparativ und Superlativ (c4bfe) liegt unverändert bei „Grammar“.
 - **Ausgeblendet (vorher 'new'):** die Aufgabe „Vocabulary ‚Station 2‘: Learn and practise“ (5d12). Sie zeigte dasselbe PDF wie die Trainingsblätter und hatte eine Frage ohne Antworten.
 - **Unverändert:** Writing A, Writing B, Job Interview Simulation, die Trainingsblätter und Workbook p. 6 sind inhaltlich nicht angefasst, weiter freigegeben und weiter als unvollständig geführt.
-- **Offen:** In den vier Arbeitsplänen steht nur „Writing a job application“; die drei neuen Lernpakete fehlen dort. Die Lernpakete haben keinen Abschluss. Kein Abgleich mit den Buchseiten.
+- **Offen:** In den vier Arbeitsplänen steht nur „Writing a job application“; die drei neuen Lernpakete fehlen dort. Die Lernpakete haben keinen Abschluss.
+
+### Abgleich mit dem Buch (2026-11-11, abends)
+
+Die Lehrkraft hat die Seiten 10–27 erneut hochgeladen. Abgeglichen wurden S. 16–17, S. 19 (Nr. 9) und S. 24–25.
+
+- **Writing a job application:** neue Aufgabe 2 „A job in Melbourne: Does Amy answer the job ad?“ (S. 16, Nr. 1 und 2): Anzeige Waterfront Hotel und Amys E-Mail als abgetippter Text, Checkliste als Zuordnung, Quiz. Die übrigen Aufgaben sind einen Platz nach hinten gerückt (Writing A = 6, Writing B = 7). In „Formal language“ neues Element „Start your sentences“ mit den Satzanfängen von S. 19. In „A CV“ zusätzlich „Personal statement“ und eine Frage zum Culture-Kasten (kein Foto).
+- **Jobs and qualities:** Aufgabe 1 nutzt jetzt die Berufe von S. 17 (carpenter, chef, hairdresser, electrician, nurse, travel agent) und hat ein neues Element mit den Definitionen aus Nr. 3 b, ergänzt um die Berufe aus S. 19, Nr. 9. In Aufgabe 2 zusätzlich die Stärken aus Nr. 4 (pay attention to detail, self-motivated, good communication skills).
+- **The job interview:** Die Speaking skills von S. 25 stehen im Kompaktwissen und als vier weitere Fragen in „Good idea or bad idea?“; dazu die Beispielfrage „Why should we hire you?“.
+- **Nicht umgesetzt:** S. 17, Nr. 5 (Telefonat Hair House, Hörtext liegt nicht vor; ersetzt durch die Mailbox-Nachricht). S. 24, „wombat cuddler“ als Partner-Rollenspiel (Schritte 1 bis 7); das Gespräch läuft über die Interview-Simulation mit City Guides. S. 18–19, Nr. 6 bis 8 gehören zu „Grammar“ und sind dort noch nicht gebaut.
+- **Buchseiten:** liegen als private Chat-Dateien unter `mp/private/69cb7e99726da2a1d81bee50/chat/` (Screenshot2026-11-11 1929 bis 1932, vermutlich in der Reihenfolge S. 10–11 bis S. 26–27).
