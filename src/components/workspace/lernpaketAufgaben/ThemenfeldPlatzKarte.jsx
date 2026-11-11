@@ -7,6 +7,7 @@ import { aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import LernpaketAufgabenBereich from './LernpaketAufgabenBereich';
 import AufgabenEinstellungenHilfe from './AufgabenEinstellungenHilfe';
 import ThemenfeldPlatzAktionen from './ThemenfeldPlatzAktionen';
+import ThemenfeldPlatzDetails from './ThemenfeldPlatzDetails';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
 
 /**
@@ -33,6 +34,7 @@ export default function ThemenfeldPlatzKarte({ platz, themenfeld, editierbar, on
         titel={platz.titel}
         status={status}
         beschreibung={platz.beschreibung}
+        details={<ThemenfeldPlatzDetails aufgaben={aufgaben} freigegeben={freigegeben} />}
         rechts={editierbar && (
           <BearbeitenKnopf aktiv={bearbeitet} onClick={() => setBearbeitet((v) => !v)} disabled={freigegeben}
             title={freigegeben ? '🔒 Freigegeben – zum Bearbeiten erst die Freigabe zurücknehmen.' : ''} />
