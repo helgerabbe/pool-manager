@@ -105,7 +105,8 @@ Aus 40 Übungen werden 36 Aufgaben. Kennungen = letzte fünf Zeichen der Übung.
 Die 64 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Aus 64 Übungen wurden 64 Aufgaben, alle Entwürfe mit „GE" und „Pflicht". Zusammengefasst wurde nichts, weil keine zwei Übungen dasselbe Material nutzen.
 
 - **Offen, leer (10):** Zu diesen offenen Aufgaben gab es keine fertige Fassung. Angelegt als geplantes Element ohne Fragment; der Auftragstext steht als Aufgabenstellung an der Aufgabe und als Kurzbeschreibung am Element. Sie müssen in der Werkstatt gebaut werden.
-- **KI-Tutor (15):** Allen fehlt die Abschlussregel, sie sind deshalb unvollständig. Fehlte der Dialogname, wurde der Titel eingesetzt.
+- **KI-Tutor (15):** Allen fehlte die Abschlussregel. Sie wurde am 2026-11-11 in den neuen Aufgaben ergänzt, abgeleitet aus der Lösung in der internen Anweisung des jeweiligen Gesprächs. Fehlte der Dialogname, wurde der Titel eingesetzt.
+- **261ce, Teil c):** Die hinterlegte Lösung (6 763,72 cm²) passt nicht zu d = 0,5 m (rechnerisch 7 853,98 cm²). Nicht geändert, der Lehrkraft gemeldet.
 - **91e4a:** Der eingebettete Inhalt war schon vorher defekt („???"). Als unvollständig angelegt.
 - **6de22 und 495e6:** „Die Suppendose" kommt doppelt vor, als eigenes Gespräch und als erster Schritt von 495e6.
 - **Varianten:** d22a0 und abf9a haben je zwei freigegebene Varianten (Variante 2 am Element).
