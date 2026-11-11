@@ -20,6 +20,8 @@ import { ShieldCheck } from 'lucide-react';
 import { usePruefbefunde, usePruefungLauf } from '@/hooks/usePruefung';
 import InternePruefungReiter from './InternePruefungReiter';
 import MbkBefundeReiter from './MbkBefundeReiter';
+import HelpDialog from '@/components/ui/HelpDialog';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 
 export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = false }) {
   const einheitId = einheit?.id;
@@ -48,9 +50,12 @@ export default function PruefbereichTab({ einheit, aufgaben = [], kannStarten = 
   return (
     <div className="p-4 sm:p-6 space-y-4 max-w-4xl">
       <div>
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
-        </h2>
+        <div className="flex items-center gap-3 flex-wrap">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-primary" /> Vollständigkeitsprüfung
+          </h2>
+          <HelpDialog label="Was passiert hier?" {...tabHilfe('pruefung')} />
+        </div>
         <p className="text-sm text-muted-foreground mt-1">
           Der Endcheck, bevor die Einheit zu den Schülern geht. Links prüfst du selbst, rechts
           stehen die Hinweise, die das Moodle-Team beim Bauen des Kurses gefunden hat.

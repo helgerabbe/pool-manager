@@ -9,6 +9,8 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import HelpDialog from '@/components/ui/HelpDialog';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, Copy, ChevronDown, ChevronUp, AlertTriangle, ExternalLink } from 'lucide-react';
@@ -283,6 +285,11 @@ export default function BrianExportCockpitView({ einheitId = null, embedded = fa
   return (
     <div className={cn(embedded ? 'p-6' : 'min-h-screen bg-muted/20 p-6')}>
       <div className="max-w-4xl mx-auto space-y-6">
+        {embedded && (
+          <div className="flex justify-end -mb-3">
+            <HelpDialog label="Was passiert hier?" {...tabHilfe('brian')} />
+          </div>
+        )}
 
         {/* Privater Exportbereich: Moodle-Einbindung (nur im Workspace-Tab) */}
         {embedded && (

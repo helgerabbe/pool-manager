@@ -54,6 +54,8 @@ import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import DashboardZustandBadge from '@/components/lernpfade/DashboardZustandBadge';
 import { planVon, NIVEAU } from '@/lib/eNiveauPlan';
+import HelpDialog from '@/components/ui/HelpDialog';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 
 const LERNTYP_META = {
   minimalist: { label: 'Minimalist', icon: Sparkles, activeBg: 'bg-slate-700', activeText: 'text-white', inactiveText: 'text-slate-700' },
@@ -281,6 +283,7 @@ export default function DashboardToolbar({
         )}
 
         <div className="ml-auto flex items-center gap-1.5 flex-wrap">
+          <HelpDialog label="Was passiert hier?" {...tabHilfe('dashboards')} />
           {/* Schüler-Vorschau des aktiven Lerntyp-Dashboards */}
           {!istOnboarding && onOpenPreview && (
             <Button

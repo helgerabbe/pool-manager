@@ -19,6 +19,8 @@ import { toast } from 'sonner';
 import { Target, Inbox, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import HelpDialog from '@/components/ui/HelpDialog';
+import BereichStartseite from '@/components/workspace/BereichStartseite';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 import LernzielWerkstatt from '@/components/workspace/lernziele/LernzielWerkstatt';
 import { getLernpaketStatus } from '@/lib/statusLogic';
 import { StatusBadge } from '@/components/workspace/panels/SharedUI';
@@ -126,16 +128,11 @@ export default function LernzieleUebersichtTab({
     return map;
   }, [zieleProPaket]);
 
-  // Erstes Paket automatisch wählen, sobald Daten da sind / Auswahl ungültig wird.
+  // Nichts vorauswählen: Zuerst erscheint die Startseite des Bereichs. Nur
+  // eine ungültig gewordene Auswahl wird zurückgesetzt.
   useEffect(() => {
     const alleIds = gruppen.flatMap((g) => g.pakete.map((p) => p.id));
-    if (alleIds.length === 0) {
-      if (selectedPaketId !== null) setSelectedPaketId(null);
-      return;
-    }
-    if (!selectedPaketId || !alleIds.includes(selectedPaketId)) {
-      setSelectedPaketId(alleIds[0]);
-    }
+    if (selectedPaketId && !alleIds.includes(selectedPaketId)) setSelectedPaketId(null);
   }, [gruppen, selectedPaketId]);
 
   const selectedPaket = useMemo(
@@ -222,8 +219,11 @@ export default function LernzieleUebersichtTab({
 
       {/* ── Detail: Lernziele des gewählten Pakets ────────────────────── */}
       <main className="flex-1 overflow-y-auto min-h-0">
+        {!selectedPaket && (
+          <BereichStartseite titel="Du bist im Bereich Lernziele" hilfe={tabHilfe('lernziele')} icon={Target} />
+        )}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {selectedPaket ? (
+          {selectedPaket && (
             <>
             <ThemenfeldLeitfrageKopf themenfeld={selectedThemenfeld} />
             <div className="mb-4 pb-3 border-b flex items-center gap-2 flex-wrap">
@@ -276,11 +276,6 @@ export default function LernzieleUebersichtTab({
               autoStartEdit={!!autoEditToken && selectedPaket.id === jumpPaketId}
             />
             </>
-          ) : (
-            <div className="flex flex-col items-center justify-center h-[40vh] gap-2 text-muted-foreground">
-              <Target className="w-10 h-10 opacity-30" />
-              <p className="text-sm">Wähle links ein Lernpaket aus.</p>
-            </div>
           )}
         </div>
       </main>

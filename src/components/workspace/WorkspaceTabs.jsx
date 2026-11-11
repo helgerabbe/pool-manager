@@ -14,7 +14,6 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot, ShieldCheck } from 'lucide-react';
-import HelpDialog from '@/components/ui/HelpDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 
@@ -286,6 +285,13 @@ const TAB_ART_STYLE = {
   },
 };
 
+/**
+ * Direkthilfe eines Bereichs. Sie hängt nicht mehr an den Tabulatoren, sondern
+ * wird in den Bereichen selbst gezeigt (Knopf oder Startseite).
+ */
+export const tabHilfe = (value) =>
+  [...getVisibleTabs(), PRUEFUNG_TAB, BRIAN_TAB].find((t) => t.value === value)?.help;
+
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false, istUebungsblock = false }) {
   const { rolle } = useRBAC();
   let visibleTabs = getVisibleTabs(rolle, isBasismodul);
@@ -345,7 +351,6 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
                   {tab.label}
                 </TooltipContent>
               </Tooltip>
-              {isActive && <div className="absolute -top-1 -right-1"><HelpDialog {...tab.help} /></div>}
             </div>
           );
         })}

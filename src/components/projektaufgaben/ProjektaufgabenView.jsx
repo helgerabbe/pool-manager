@@ -13,7 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
-import { Plus, Star, FileText, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
+import { Plus, Star, Target, ChevronRight, Edit, Trash2, CheckCircle2, PenLine, Lock, Wand2 } from 'lucide-react';
+import BereichStartseite from '@/components/workspace/BereichStartseite';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 import TaskStatusBadge from '@/components/ui/TaskStatusBadge';
 import SyncStatusBadge from '@/components/release/SyncStatusBadge';
 import TaskLockBar from '@/components/ui/TaskLockBar';
@@ -583,13 +585,8 @@ export default function ProjektaufgabenView({
             </Tabs>
           </main>
         ) : (
-          <main className="flex-1 flex items-center justify-center text-center">
-            <div>
-              <FileText className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Wählen Sie eine Aufgabe aus, um Details zu sehen
-              </p>
-            </div>
+          <main className="flex-1 overflow-y-auto min-h-0">
+            <BereichStartseite titel="Du bist im Projektbereich" hilfe={tabHilfe('ebene3')} icon={Target} />
           </main>
         )}
       </div>

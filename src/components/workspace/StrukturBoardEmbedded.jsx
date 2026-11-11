@@ -29,6 +29,8 @@ import { toast } from 'sonner';
 import { base44 } from '@/api/base44Client';
 import EinheitStrukturLebenszyklusBadge from '@/components/workspace/panels/EinheitStrukturLebenszyklusBadge';
 import LernpaketLoeschWarnDialog from '@/components/workspace/struktur/LernpaketLoeschWarnDialog';
+import HelpDialog from '@/components/ui/HelpDialog';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 
 // ── Lernpaket-Dialog ──────────────────────────────────────────────────────────
 // Öffnet sich beim Klick auf eine Paket-Karte oder beim Erstellen eines neuen Pakets.
@@ -980,6 +982,7 @@ export default function StrukturBoardEmbedded({
         {/* Kompakt-Umschalter + Struktur-bearbeiten (grün) / Bearbeitung beenden.
              Aus der Tab-Leiste hierher verschoben. */}
         <div className="ml-auto flex items-center gap-2">
+          <HelpDialog label="Was passiert hier?" {...tabHilfe('struktur')} />
           {onToggleCompact &&
           <button
             onClick={onToggleCompact}

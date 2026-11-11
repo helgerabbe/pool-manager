@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
-import { HelpCircle, BookOpen } from 'lucide-react';
+import React from 'react';
+import { HelpCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import HilfeInhalt from '@/components/ui/HilfeInhalt';
 
 /**
  * HelpDialog – kontextbezogenes Hilfesystem
@@ -14,21 +13,35 @@ import { Link } from 'react-router-dom';
  *   features    – Array<string>: Was man hier tun kann
  *   faqs        – Array<{ question: string, answer: string }>
  *   docsSlug    – Optionaler Slug für Deep-Link in die Dokumentation
+ *   label       – Optional: Beschriftung. Mit Beschriftung erscheint ein
+ *                 Knopf mit Fragezeichen, ohne nur das runde Fragezeichen.
  */
-export default function HelpDialog({ title, description, features = [], faqs = [], docsSlug }) {
+export default function HelpDialog({ title, description, features = [], faqs = [], docsSlug, label }) {
   const [open, setOpen] = React.useState(false);
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 rounded-full text-accent"
-        onClick={() => setOpen(true)}
-        title="Hilfe"
-      >
-        <HelpCircle className="w-4 h-4" />
-      </Button>
+      {label ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 h-7 text-xs px-2.5 bg-card"
+          onClick={() => setOpen(true)}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          {label}
+        </Button>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 rounded-full text-accent"
+          onClick={() => setOpen(true)}
+          title="Hilfe"
+        >
+          <HelpCircle className="w-4 h-4" />
+        </Button>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
@@ -39,55 +52,14 @@ export default function HelpDialog({ title, description, features = [], faqs = [
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-5 py-1 overflow-y-auto flex-1 -mr-2 pr-2">
-            {/* Beschreibung */}
-            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
-
-            {/* Was kann ich hier tun? */}
-            {features.length > 0 && (
-              <div>
-                <p className="text-sm font-semibold mb-2">Was kann ich hier tun?</p>
-                <ul className="space-y-1.5">
-                  {features.map((f, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* FAQs */}
-            {faqs.length > 0 && (
-              <div>
-                <p className="text-sm font-semibold mb-2">Häufige Fragen</p>
-                <Accordion type="single" collapsible className="w-full">
-                  {faqs.map((faq, i) => (
-                    <AccordionItem key={i} value={`faq-${i}`}>
-                      <AccordionTrigger className="text-sm text-left">
-                        {faq.question}
-                      </AccordionTrigger>
-                      <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
-                        {faq.answer}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-            )}
-            {docsSlug && (
-              <div className="pt-3 border-t border-border">
-                <Link
-                  to={`/docs/${docsSlug}`}
-                  onClick={() => setOpen(false)}
-                  className="inline-flex items-center gap-2 text-sm text-primary hover:underline"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Ausführliche Dokumentation lesen
-                </Link>
-              </div>
-            )}
+          <div className="py-1 overflow-y-auto flex-1 -mr-2 pr-2">
+            <HilfeInhalt
+              description={description}
+              features={features}
+              faqs={faqs}
+              docsSlug={docsSlug}
+              onLinkClick={() => setOpen(false)}
+            />
           </div>
         </DialogContent>
       </Dialog>

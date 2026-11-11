@@ -30,7 +30,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { ChevronRight, Package, MousePointerClick, Lock, Check, Menu, X, PenLine } from 'lucide-react';
+import { ChevronRight, Package, Lock, Check, Menu, X, PenLine } from 'lucide-react';
+import BereichStartseite from '@/components/workspace/BereichStartseite';
+import HelpDialog from '@/components/ui/HelpDialog';
+import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 import { Badge } from '@/components/ui/badge';
 import ActivityMasterPanel from '@/components/workspace/ActivityMasterPanel';
 import KlonDetailView from '@/components/workspace/KlonDetailView';
@@ -261,19 +264,7 @@ function SidebarLernpaketFolder({
 // ── Empty State ───────────────────────────────────────────────────────────────
 
 function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center h-full py-24 text-center gap-3">
-      <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center">
-        <MousePointerClick className="w-7 h-7 text-muted-foreground/40" />
-      </div>
-      <div>
-        <p className="font-semibold text-muted-foreground">Aktivität auswählen</p>
-        <p className="text-sm text-muted-foreground/70 mt-1 max-w-xs">
-          Bitte wähle links eine Aktivität aus, um deren Aufgaben zu bearbeiten.
-        </p>
-      </div>
-    </div>
-  );
+  return <BereichStartseite titel="Du bist im Bereich Lernpakete" hilfe={tabHilfe('lernpakete')} icon={Package} />;
 }
 
 // ── Haupt-Komponente ──────────────────────────────────────────────────────────
@@ -793,6 +784,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-border h-11">
           <Package className="w-4 h-4 text-primary shrink-0" />
           <span className="text-sm font-semibold flex-1">Lernpakete</span>
+          <HelpDialog {...tabHilfe('lernpakete')} />
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden p-1 hover:bg-muted rounded transition-colors"
