@@ -100,10 +100,12 @@ Seitdem dazugekommen, der MBK noch NICHT gemeldet:
 
 Mit der MBK zu klären, bevor wieder gebaut wird:
 
-- Doppelte Lieferung: Der Payload legt alle Ebene-3-Aufgaben weiterhin zusätzlich in
-  `projekte-einheit-<einheit_id>.html` (Projekt-Bündel), obwohl sie jetzt über ihr
-  Projekt-Lernpaket im Kurs stehen. Entscheiden: Projekt-Bündel abschaffen oder nur noch für
-  Projektaufgaben ohne Lernpaket bauen. Danach im Payload nachziehen und Version erhöhen.
+- Projekt-Bündel: Seit 2026-11-11 stehen Projektaufgaben mit `lernpaket_id` nicht mehr in
+  `projekte-einheit-<einheit_id>.html`. Sie stehen in `contained_aufgabe_ids` am
+  Mapping-Eintrag ihres Lernpakets (kind `lernpaket`), KI-Aufgaben zusätzlich in dessen
+  `placeholder_activity_ids`. Das Bündel enthält nur noch Projektaufgaben ohne Lernpaket und
+  entfällt sonst. Die Version blieb `airgap-1.25.0`, der Änderungstext dazu ist angepasst.
+  Klären: Ist 1.25.0 der MBK schon angekündigt? Dann neu ankündigen oder Version erhöhen.
 - Wie baut die MBK ein Lernpaket ohne Aktivitäten (nur Aufgaben)? Bisher gab es das nicht.
 - Fortschritt: Schüler, die eine Projektaufgabe im alten Projekt-Bündel schon bearbeitet
   haben, dürfen ihren Stand beim Umbau nicht verlieren.

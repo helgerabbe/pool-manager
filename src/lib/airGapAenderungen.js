@@ -39,9 +39,11 @@ export const AIRGAP_AENDERUNGEN = Object.freeze({
     'Ein Themenfeld „Projektaufgaben" ohne Projekt reist nicht mit. Fehlt in '
     + '`themenfelder` ein Eintrag mit art="projekt", hat die Einheit noch kein '
     + 'Projekt-Lernpaket.',
-    'Unverändert: Die bisherigen Projektaufgaben (Ebene 3) reisen weiter im '
-    + 'Projekt-Bündel `projekte-einheit-<einheit_id>.html`, bis sie in '
-    + 'Projekt-Lernpakete umgezogen sind.',
+    'Projektaufgaben (Ebene 3) mit `lernpaket_id` stehen nicht mehr im '
+    + 'Projekt-Bündel `projekte-einheit-<einheit_id>.html`. Sie gehören zur '
+    + 'Datei ihres Lernpakets: Der Mapping-Eintrag kind="lernpaket" nennt sie '
+    + 'in `contained_aufgabe_ids`. Das Projekt-Bündel enthält nur noch '
+    + 'Projektaufgaben ohne Lernpaket und entfällt, wenn es keine mehr gibt.',
   ]),
   /**
    * Beispiel-Payloads zu den Änderungen dieser Version. Leeres Array = diese

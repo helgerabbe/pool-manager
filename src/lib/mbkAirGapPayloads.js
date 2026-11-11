@@ -1355,14 +1355,26 @@ export function buildStructurePayload({
       .filter((aa) => aa?.erstellungs_modus === 'ki')
       .map((aa) => aa.id);
 
+  const istProjektaufgabe = (aa) =>
+    aa?.anforderungsebene === '3 - Projekt' || aa?.aufgaben_typ === 'projekt_anker';
+
   // 1. Lernpakete (immer, eines pro Paket).
   for (const lp of lernpakete) {
-    const placeholderIds = collectPlaceholderActivityIdsForLernpaket(lp.id);
+    // Projektaufgaben, die in diesem Lernpaket liegen, reisen hier mit und
+    // nicht mehr im Projekt-Bündel.
+    const projektAufgaben = (allgemeineAufgaben || []).filter(
+      (aa) => aa.lernpaket_id === lp.id && istProjektaufgabe(aa)
+    );
+    const placeholderIds = [
+      ...collectPlaceholderActivityIdsForLernpaket(lp.id),
+      ...collectPlaceholderAaIds(projektAufgaben),
+    ];
     scormFileMapping.push({
       kind: 'lernpaket',
       source_id: lp.id,
       filename: fnLernpaket(lp.id),
       titel: nullable(lp.titel_des_pakets),
+      ...(projektAufgaben.length > 0 ? { contained_aufgabe_ids: projektAufgaben.map((aa) => aa.id) } : {}),
       contains_placeholders: placeholderIds.length > 0,
       placeholder_activity_ids: placeholderIds,
       is_hidden_in_moodle: true,
@@ -1426,8 +1438,10 @@ export function buildStructurePayload({
   }
 
   // 3. Projekt-Bündel (Ebene 3 + Projekt-Anker) — eines pro Einheit.
+  //    Nur noch Altbestand: Projektaufgaben mit Lernpaket stehen bei ihrem
+  //    Lernpaket (siehe 1.).
   const ebene3 = (allgemeineAufgaben || []).filter(
-    (aa) => isEbene3(aa) || isProjektAnker(aa)
+    (aa) => (isEbene3(aa) || isProjektAnker(aa)) && !aa.lernpaket_id
   );
   if (ebene3.length > 0 && einheit?.id) {
     const placeholderIds = collectPlaceholderAaIds(ebene3);
@@ -2139,7 +2153,10 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   const istEbene3 = aufgabe.anforderungsebene === '3 - Projekt';
   const istProjektAnker = aufgabe.aufgaben_typ === 'projekt_anker';
   let placeholderTarget = null;
-  if ((istEbene3 || istProjektAnker) && einheit?.id) {
+  if ((istEbene3 || istProjektAnker) && aufgabe.lernpaket_id) {
+    // Projektaufgabe im Lernpaket: wird in die Datei ihres Lernpakets eingewoben.
+    placeholderTarget = fnLernpaket(aufgabe.lernpaket_id);
+  } else if ((istEbene3 || istProjektAnker) && einheit?.id) {
     placeholderTarget = fnProjektBundle(einheit.id);
   } else if (themenfeld?.id) {
     placeholderTarget = fnThemenfeldBundle(themenfeld.id);
