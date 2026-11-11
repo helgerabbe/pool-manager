@@ -28,7 +28,9 @@ const BEWUSST_PLACEHOLDER =
 const WIDERSPRUCH_PLACEHOLDER =
   'Warum trifft der Hinweis nicht zu? Deine Begründung geht an das Moodle-Team, das darauf antwortet.';
 
-export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstSetzen, onEntscheiden }) {
+// `amElement`: Die Karte steht direkt am betroffenen Element – die Stelle ist
+// bekannt, deshalb entfällt „Genaue Stellen finden" und der Baumeister ist immer da.
+export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstSetzen, onEntscheiden, amElement = false }) {
   // null | 'bewusst' | 'widerspruch' — welche begründete Entscheidung gerade
   // geschrieben wird. Beide nutzen dasselbe Textfeld.
   const [kommentarModus, setKommentarModus] = useState(null);
@@ -116,7 +118,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
         </p>
       )}
 
-      {befund.entscheidung === 'offen' && befund.ziel_typ !== 'systembaustein' && (
+      {!amElement && befund.entscheidung === 'offen' && befund.ziel_typ !== 'systembaustein' && (
         <BefundStellen befundId={befund.id} einheitId={einheitId} />
       )}
 
@@ -136,10 +138,10 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
                 onGesichtet={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
               />
             )}
-            {befund.ki_stapel === 'reparieren' && (
+            {(amElement || befund.ki_stapel === 'reparieren') && (
               <BaumeisterButton
                 einheitId={einheitId}
-                label="Mit Baumeister reparieren"
+                label={amElement ? 'Vom Baumeister ändern lassen' : 'Mit Baumeister reparieren'}
                 startRef={befund.ziel_typ === 'allgemeine_aufgabe' ? `auf:${befund.ziel_id}` : befund.ziel_typ === 'aktivitaet' ? `akt:${befund.ziel_id}` : undefined}
                 startHinweis={[
                   befund.fundort || befund.ziel_titel,

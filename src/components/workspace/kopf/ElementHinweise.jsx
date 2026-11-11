@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronRight, MessageSquareWarning } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,14 @@ import PruefbefundKarte from '@/components/pruefung/PruefbefundKarte';
 export default function ElementHinweise({ einheitId, zielIds, gesperrt = false }) {
   const [offen, setOffen] = useState(false);
   const hinweise = useElementHinweise(einheitId)(zielIds);
-  const { entscheiden } = usePruefungLauf(einheitId);
+  const queryClient = useQueryClient();
+  const { entscheiden: speichern } = usePruefungLauf(einheitId);
+  // Nach dem Baumeister hat sich auch das Element selbst geändert – Ansicht nachziehen.
+  const entscheiden = async (eingabe) => {
+    await speichern(eingabe);
+    ['lernpaketPhaseAktivitaeten', 'masterAufgaben', 'allgemeineAufgaben'].forEach((k) =>
+      queryClient.invalidateQueries({ queryKey: [k] }));
+  };
   const { data: me } = useQuery({ queryKey: ['aktuellerNutzer'], queryFn: () => base44.auth.me() });
   if (hinweise.length === 0) return null;
 
@@ -43,7 +50,7 @@ export default function ElementHinweise({ einheitId, zielIds, gesperrt = false }
             </p>
           )}
           {hinweise.map((b) => (
-            <PruefbefundKarte key={b.id} befund={b} einheitId={einheitId}
+            <PruefbefundKarte key={b.id} befund={b} einheitId={einheitId} amElement
               kannBewusstSetzen={me?.role === 'admin'} onEntscheiden={entscheiden} />
           ))}
         </div>
