@@ -1,5 +1,7 @@
 import React from 'react';
 import { Clock, Target } from 'lucide-react';
+import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
+import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 
 /**
  * Themenfeld-Panel im Tab 3 (Aktivitäten).
@@ -18,7 +20,8 @@ import { Clock, Target } from 'lucide-react';
  * Die Datenbank-Felder bleiben vorerst erhalten (Backward Compatibility),
  * werden hier aber nicht mehr angezeigt oder bearbeitet.
  */
-export default function ThemenfeldPanel({ themenfeld, lernpakete, lernziele = [] }) {
+export default function ThemenfeldPanel({ themenfeld, lernpakete, lernziele = [], kannBearbeiten = false }) {
+  const [einstieg, gesamtaufgabe] = THEMENFELD_PLAETZE;
   const paketeFuerThemenfeld = lernpakete.filter(
     (p) => p.themenfeld_id === themenfeld?.id
   );
@@ -32,6 +35,8 @@ export default function ThemenfeldPanel({ themenfeld, lernpakete, lernziele = []
           {paketeFuerThemenfeld.length !== 1 ? 'e' : ''}
         </p>
       </div>
+
+      <ThemenfeldPlatzKarte platz={einstieg} themenfeld={themenfeld} editierbar={kannBearbeiten} />
 
       {paketeFuerThemenfeld.length > 0 && (
         <div className="space-y-3">
@@ -67,6 +72,8 @@ export default function ThemenfeldPanel({ themenfeld, lernpakete, lernziele = []
           })}
         </div>
       )}
+
+      <ThemenfeldPlatzKarte platz={gesamtaufgabe} themenfeld={themenfeld} editierbar={kannBearbeiten} />
     </div>
   );
 }

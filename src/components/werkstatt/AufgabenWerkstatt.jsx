@@ -389,7 +389,8 @@ export default function AufgabenWerkstatt({
                 sie für Sequenzen praktisch nicht zu finden. */}
             {/* Lernpaket-Aufgaben tragen ein Niveau (G/GE/E) statt Sternen —
                 eingestellt in der Aufgabenliste des Lernpakets. */}
-            {!(anlegeFelder?.lernpaket_id || initialData?.lernpaket_id) && (
+            {!(anlegeFelder?.lernpaket_id || initialData?.lernpaket_id
+              || anlegeFelder?.themenfeld_platz || initialData?.themenfeld_platz) && (
               <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1.5">
                 <span className="text-[11px] text-slate-500">Schwierigkeit</span>
                 <SternRating value={schwierigkeit} onChange={setSchwierigkeit} disabled={isReleased} />

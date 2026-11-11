@@ -1223,8 +1223,11 @@ export function buildStructurePayload({
     // genannten Lernpakets. niveau: G = Minimalist/Pragmatiker, GE = alle,
     // E = Ehrgeizig/Passioniert. lernpaket_id null = übergreifende Aufgabe.
     lernpaket_id: aa.lernpaket_id || null,
-    niveau: aa.lernpaket_id ? (aa.niveau || 'GE') : null,
-    pflicht: aa.lernpaket_id ? aa.pflicht !== false : null,
+    // Themenfeld-Platz (2026-11-11): 'einstieg' = am Anfang des Themenfelds,
+    // 'gesamtaufgabe' = am Ende; null = kein fester Platz.
+    themenfeld_platz: aa.themenfeld_platz || null,
+    niveau: (aa.lernpaket_id || aa.themenfeld_platz) ? (aa.niveau || 'GE') : null,
+    pflicht: (aa.lernpaket_id || aa.themenfeld_platz) ? aa.pflicht !== false : null,
     reihenfolge_im_lernpaket: aa.reihenfolge_im_lernpaket ?? null,
     schwierigkeitsgrad: aa.schwierigkeitsgrad ?? null,
     erstellungs_modus: aa.erstellungs_modus || 'manuell',
@@ -1782,8 +1785,9 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     themenfeld_id: aufgabe?.themenfeld_id || null,
     // Aufgabe im Lernpaket (2026-11-10), siehe Strukturpaket.
     lernpaket_id: aufgabe?.lernpaket_id || null,
-    niveau: aufgabe?.lernpaket_id ? (aufgabe.niveau || 'GE') : null,
-    pflicht: aufgabe?.lernpaket_id ? aufgabe.pflicht !== false : null,
+    themenfeld_platz: aufgabe?.themenfeld_platz || null,
+    niveau: (aufgabe?.lernpaket_id || aufgabe?.themenfeld_platz) ? (aufgabe.niveau || 'GE') : null,
+    pflicht: (aufgabe?.lernpaket_id || aufgabe?.themenfeld_platz) ? aufgabe.pflicht !== false : null,
     reihenfolge_im_lernpaket: aufgabe?.reihenfolge_im_lernpaket ?? null,
     erstellungs_modus: istKi ? 'ki' : 'manuell',
 

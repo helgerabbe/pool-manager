@@ -17,7 +17,10 @@ import { NIVEAU_STANDARD } from '@/lib/aufgabenNiveau';
  * Teil „Aufgaben" eines Lernpakets: Aufgabe 1, Aufgabe 2, … Jede Aufgabe
  * entsteht in der Aufgabenwerkstatt und trägt Niveau sowie Pflicht/Wahl.
  */
-export default function LernpaketAufgabenBereich({ paket, einheit = null, editierbar }) {
+export default function LernpaketAufgabenBereich({ paket, einheit = null, editierbar, platz = null }) {
+  // Mit `platz` zeigt der Bereich statt eines Lernpakets einen festen Platz
+  // des Themenfelds (Einstieg / Gesamtaufgabe); `paket` trägt dann nur
+  // einheit_id und themenfeld_id.
   const queryClient = useQueryClient();
   const einheitId = paket.einheit_id;
   // null = Werkstatt zu; { aufgabe: null } = neue Aufgabe; { aufgabe } = bearbeiten
@@ -36,16 +39,20 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
   });
 
   const aufgaben = useMemo(() => alle
-    .filter((a) => a.lernpaket_id === paket.id)
+    .filter((a) => (platz
+      ? !a.lernpaket_id && a.themenfeld_id === paket.themenfeld_id && a.themenfeld_platz === platz.key
+      : a.lernpaket_id === paket.id))
     .sort((a, b) => (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0)
-      || String(a.created_date).localeCompare(String(b.created_date))), [alle, paket.id]);
+      || String(a.created_date).localeCompare(String(b.created_date))), [alle, paket.id, paket.themenfeld_id, platz]);
 
   const anlegeFelder = useMemo(() => ({
-    lernpaket_id: paket.id,
+    ...(platz
+      ? { themenfeld_platz: platz.key, themenfeld_id: paket.themenfeld_id }
+      : { lernpaket_id: paket.id }),
     niveau: NIVEAU_STANDARD,
     pflicht: true,
     reihenfolge_im_lernpaket: aufgaben.length + 1,
-  }), [paket.id, aufgaben.length]);
+  }), [paket.id, paket.themenfeld_id, platz, aufgaben.length]);
 
   const alteEinzelaufgabe = werkstatt?.aufgabe && werkstatt.aufgabe.aufgaben_modus !== 'sequenz'
     ? werkstatt.aufgabe : null;
@@ -70,7 +77,7 @@ export default function LernpaketAufgabenBereich({ paket, einheit = null, editie
           <Loader2 className="w-3.5 h-3.5 animate-spin" /> Aufgaben werden geladen…
         </div>
       ) : aufgaben.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic">Noch keine Aufgabe in diesem Lernpaket.</p>
+        <p className="text-xs text-muted-foreground italic">{platz ? platz.leer : 'Noch keine Aufgabe in diesem Lernpaket.'}</p>
       ) : (
         aufgaben.map((a, i) => (
           <LernpaketAufgabeZeile

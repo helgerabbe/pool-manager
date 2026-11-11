@@ -630,7 +630,7 @@ export default function AllgemeineAufgabenView({
   // Filtere Aufgaben nach der übergebenen Anforderungsebene
   // Aufgaben, die in einem Lernpaket liegen, werden dort gepflegt — hier
   // stehen nur die übergreifenden Aufgaben der Einheit.
-  const allgemeineAufgaben = allAufgaben.filter(a => !a.lernpaket_id).filter(a => 
+  const allgemeineAufgaben = allAufgaben.filter(a => !a.lernpaket_id && !a.themenfeld_platz).filter(a => 
     a.anforderungsebene === anforderungsebene || (!a.anforderungsebene && anforderungsebene === '2 - Transfer')
   );
 

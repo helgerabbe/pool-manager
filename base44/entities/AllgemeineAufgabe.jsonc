@@ -14,6 +14,18 @@
       "type": "string",
       "description": "LERNPAKET-AUFGABE (2026-11-10): FK zum Lernpaket, in dessen Teil 'Aufgaben' diese Aufgabe liegt. Ein Lernpaket besteht aus Wissensspeicher, Aufgaben und Abschluss. Leer = Altbestand ohne Lernpaket (Reiter 'Aufgaben' bzw. Projektaufgabe)."
     },
+    "themenfeld_platz": {
+      "type": "string",
+      "enum": [
+        "einstieg",
+        "gesamtaufgabe"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "description": "THEMENFELD-PLATZ (2026-11-11): Fester Platz der Aufgabe im Themenfeld (themenfeld_id), ausserhalb der Lernpakete. 'einstieg' = steht am Anfang des Themenfelds und gibt einen ersten Einblick (z. B. induktive Erstbegegnung, Beispielaufgabe). 'gesamtaufgabe' = steht am Ende und greift auf alle Lernpakete des Themenfelds zurueck. Die Plaetze haben keinen Wissensspeicher, keine eigenen Lernziele und keinen Abschluss. Leer = Aufgabe im Lernpaket (lernpaket_id) oder uebergreifende Aufgabe. Niveau, Pflicht/Wahl und reihenfolge_im_lernpaket gelten wie bei Lernpaket-Aufgaben."
+    },
     "niveau": {
       "type": "string",
       "enum": [
