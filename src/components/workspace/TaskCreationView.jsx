@@ -43,7 +43,7 @@ import EinheitLockBanner from '@/components/workspace/EinheitLockBanner';
 import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKnoten';
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
-import LernpaketAufgabenGruppe from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
+import LernpaketAufgabenGruppe, { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import ZurueckZumLernpaketButton from '@/components/workspace/lernpaketAufgaben/ZurueckZumLernpaketButton';
 import AbschlussUebersicht from '@/components/workspace/lernpaketAufgaben/AbschlussUebersicht';
 import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
@@ -157,7 +157,7 @@ function SidebarLernpaketFolder({
   const isActiveLocked = isEditingActive && hasSelectedChild;
 
   return (
-    <div className={cn(isActiveLocked ? "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5" : offen && "rounded-lg bg-secondary")}>
+    <div className={cn(isActiveLocked ? "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5" : offen && "rounded-lg bg-muted/40")}>
       <button
          onClick={() => {
            onToggleOpen?.(lernpaket.id, true);
@@ -180,7 +180,8 @@ function SidebarLernpaketFolder({
              grau = leer, grün = alle Aktivitäten vollständig, gelb = teilweise. */}
          {(() => {
            const activePaketActivities = paketActivities.filter(
-             (a) => phasenConfig[a.phase]?.disabled !== true
+             // Gezählt wird, was im Menübaum steht: Sind Aufgaben da, ersetzen sie die Übungen.
+             (a) => phasenConfig[a.phase]?.disabled !== true && !(a.phase === 'Übung' && aufgaben.length > 0)
            );
            const isActivityCompleteForTree = (activity) => {
              const actCatalog = aktivitaetenKatalog.find(c => c.id === activity.aktivitaet_id);
@@ -191,8 +192,9 @@ function SidebarLernpaketFolder({
              }
              return false;
            };
-           const total = activePaketActivities.length;
-           const completeCount = activePaketActivities.filter(isActivityCompleteForTree).length;
+           const total = activePaketActivities.length + aufgaben.length;
+           const completeCount = activePaketActivities.filter(isActivityCompleteForTree).length
+             + aufgaben.filter(istAufgabeVollstaendig).length;
            // Freigegebenes Lernpaket (content_status='approved' UND released_at):
            // grüne Pille mit Häkchen statt Aktivitätszahl — identisch zu Tab 4
            // (SidebarTree.LernpaketNode). Sofort sichtbar, wo noch freigegeben
@@ -202,7 +204,7 @@ function SidebarLernpaketFolder({
              isPaketReleased ? 'bg-green-700 text-white ring-2 ring-green-300'
              : total === 0 ? 'bg-slate-200 text-slate-700'
              : completeCount === total ? 'bg-green-500 text-white'
-             : 'bg-amber-400 text-white';
+             : 'bg-orange-500 text-white';
            return (
              <div
                className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0', pillClass)}
@@ -222,6 +224,7 @@ function SidebarLernpaketFolder({
             <p className="px-2 py-2 text-[11px] text-muted-foreground/50 italic">Keine Aktivitäten zugeordnet</p>
           ) : (
             PHASES.map(phase => {
+              const inhalt = (() => {
               // Die Aufgaben stehen zwischen Wissensspeicher und Abschluss.
               if (phase.key === 'Übung' && aufgaben.length > 0) {
                 return <LernpaketAufgabenGruppe key="aufgaben" aufgaben={aufgaben} lernpaket={lernpaket} selectedItem={selectedItem} onSelect={onSelect} />;
@@ -253,6 +256,14 @@ function SidebarLernpaketFolder({
                     />
                   );
                 });
+              })();
+              if (!inhalt || inhalt.length === 0) return null;
+              // Sanfter Trennstrich zwischen Wissensspeicher, Aufgaben und Abschluss.
+              return (
+                <div key={phase.key} className="space-y-0.5 pt-1 border-t border-border first:border-t-0 first:pt-0">
+                  {inhalt}
+                </div>
+              );
             })
           )}
         </div>

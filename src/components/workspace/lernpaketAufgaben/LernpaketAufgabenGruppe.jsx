@@ -4,7 +4,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { istSchrittVollstaendig } from '@/lib/schrittTypen';
 
 /** Grün = vollständig, Orange = unvollständig – wie bei den übrigen Elementen des Menübaums. */
-function istVollstaendig(aufgabe) {
+export function istVollstaendig(aufgabe) {
   if (aufgabe.content_status === 'approved' || aufgabe.is_complete === true) return true;
   const schritte = aufgabe.sequenz_schritte || [];
   return aufgabe.aufgaben_modus === 'sequenz' && schritte.length > 0 && schritte.every(istSchrittVollstaendig);
