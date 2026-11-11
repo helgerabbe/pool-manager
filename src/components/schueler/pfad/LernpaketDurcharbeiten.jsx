@@ -105,7 +105,8 @@ export default function LernpaketDurcharbeiten({
   );
   // Wissensspeicher: keine Pflicht-Aktivitäten → das Paket gilt sofort als
   // erledigt, der Schüler kann es jederzeit wieder verlassen.
-  const alleErledigt = sortiert.length > 0 && pflicht.every((akt) => erledigtSet.has(akt.id));
+  // Auch ein ganz leeres Lernpaket gilt als erledigt, sonst käme niemand daran vorbei.
+  const alleErledigt = aktivitaeten !== null && pflicht.every((akt) => erledigtSet.has(akt.id));
   const gegated = istLernpaketGegated(lernpaketLogik, alleErledigt);
 
   // Sobald alle Aktivitäten erledigt sind, das Lernpaket-Item selbst als
