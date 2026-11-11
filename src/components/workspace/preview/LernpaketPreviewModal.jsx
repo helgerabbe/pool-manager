@@ -21,6 +21,7 @@ import SortingListBody from '@/components/workspace/preview/bodies/SortingListBo
 import ConfirmationBody from '@/components/workspace/preview/bodies/ConfirmationBody';
 import ImageLabelingBody from '@/components/workspace/preview/bodies/ImageLabelingBody';
 import LehrwerkQuelleBody from '@/components/workspace/preview/bodies/LehrwerkQuelleBody';
+import KompaktwissenSeite from '@/components/schueler/lesen/KompaktwissenSeite';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
@@ -198,6 +199,14 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
   const fv = activity?.field_values || {};
   const selectedMaster = masters[variantIdx] || masters[0] || null;
 
+  // Kompaktwissen: die echte Schüleransicht, wie in der Einzelvorschau.
+  if (name.includes('kompaktwissen')) {
+    return (
+      <div className="bg-background h-full overflow-hidden">
+        <KompaktwissenSeite aktivitaet={{ field_values: fv }} busy={false} onErledigt={() => {}} onBack={() => {}} />
+      </div>
+    );
+  }
   if (name.includes('text lesen')) return <TextLesenBody fv={fv} />;
   if (name.includes('video') || name.includes('audio')) return <VideoAudioBody fv={fv} />;
   if (name.includes('link') || name.includes('url')) return <LinkBody fv={fv} />;
