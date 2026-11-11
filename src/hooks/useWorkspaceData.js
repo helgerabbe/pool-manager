@@ -150,7 +150,11 @@ export function useWorkspaceData(einheitId, isStructuralEditingActive = false, i
     }
   }, [einheitId, isStructuralEditingActive]);
 
-  const themenfelder = detailData?.data?.themenfelder || [];
+  // Ausgeblendete Lernpakete (sync_status 'to_delete') erscheinen im Arbeitsbereich nicht.
+  const themenfelder = (detailData?.data?.themenfelder || []).map((tf) => ({
+    ...tf,
+    lernpakete: (tf.lernpakete || []).filter((lp) => lp.sync_status !== 'to_delete'),
+  }));
   const flatData = flattenWorkspaceTree(themenfelder);
 
   // 🚪 DETAILDATEN-GATE (2026-06-06):
