@@ -94,6 +94,23 @@ export default async function (req) {
           base44.asServiceRole.entities.LernpaketPhaseAktivitaet.filter({ lernpaket_id: lernpaket.id }),
           base44.asServiceRole.entities.MasterAufgabe.filter({ lernpaket_id: lernpaket.id }),
         ]);
+        // Projekt-Lernpaket: hat keine Aktivitäten, es besteht aus seinen Aufgaben.
+        // Die Aufgaben selbst prüft der Schritt „aufgabe"; hier nur: gibt es eine?
+        if (themenfeld?.art === 'projekt') {
+          const projektAufgaben = await base44.asServiceRole.entities.AllgemeineAufgabe.filter({ lernpaket_id: lernpaket.id });
+          if ((projektAufgaben || []).filter((a) => a.sync_status !== 'to_delete').length === 0) {
+            await merken(
+              { ...kontext, ziel_typ: 'lernpaket', ziel_id: lernpaket.id, ziel_titel: lernpaket.titel_des_pakets || 'Projekt ohne Titel' },
+              [{
+                kategorie: 1,
+                schwere: 'blockiert',
+                befund: 'Dieses Projekt enthält noch keine Aufgabe – Schüler finden dort nichts vor.',
+                vorschlag: 'Im Projekt eine Aufgabe anlegen oder das Projekt löschen.',
+              }]
+            );
+          }
+        }
+
         const phasenConf = lernpaket.phasen_konfiguration || {};
         const aktiv = (aktivitaeten || []).filter(
           (a) => a.sync_status !== 'to_delete' && phasenConf?.[a.phase]?.disabled !== true
@@ -168,10 +185,16 @@ export default async function (req) {
         const themenfeld = aufgabe.themenfeld_id
           ? await base44.asServiceRole.entities.Themenfeld.get(aufgabe.themenfeld_id).catch(() => null)
           : null;
+        const lernpaket = aufgabe.lernpaket_id
+          ? await base44.asServiceRole.entities.Lernpakete.get(aufgabe.lernpaket_id).catch(() => null)
+          : null;
         const ziel = {
           ziel_typ: 'allgemeine_aufgabe',
           ziel_id: aufgabe.id,
           ziel_titel: aufgabe.titel || 'Aufgabe ohne Titel',
+          // Aufgaben im Lernpaket (auch Projekte) stehen im Prüfbereich bei ihrem Lernpaket.
+          lernpaket_id: lernpaket?.id || '',
+          lernpaket_titel: lernpaket?.titel_des_pakets || '',
           themenfeld_id: aufgabe.themenfeld_id || '',
           themenfeld_titel: themenfeld?.titel || '',
         };

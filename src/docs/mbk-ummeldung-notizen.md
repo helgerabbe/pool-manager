@@ -1,7 +1,7 @@
 # Merkzettel: Was der MBK gemeldet und im Payload umgebaut werden muss
 
-Stand: 2026-11-11. Laufende Sammelliste. Noch NICHTS davon ist der MBK angekündigt,
-die Formatversion des Payloads ist nicht erhöht.
+Stand: 2026-11-11. Laufende Sammelliste. Bis auf Abschnitt 8 (Felder `art` und
+`ist_projekt`, angekündigt mit `airgap-1.25.0`) ist der MBK noch nichts davon gemeldet.
 
 Diese Liste ist aus den Umbauten heraus mitgeschrieben, nicht gegen den Payload geprüft.
 Vor der großen Meldung: `src/lib/mbkAirGapPayloads.js` (und `pushEinheitToGithub`,
@@ -60,7 +60,8 @@ gegen diese Liste abgleichen und Fehlendes ergänzen.
 ## 6. Im Pool-Manager selbst noch nachzuziehen
 
 - Prüfbereich: Vollständigkeitsprüfung schaut nur auf Variante 1 eines Elements.
-- Prüfbereich, Arbeitsplan und Export müssen Aufgaben im Lernpaket vollständig erkennen.
+- Arbeitsplan und Export müssen Aufgaben im Lernpaket vollständig erkennen. Der Prüfbereich
+  ordnet Befunde zu Aufgaben im Lernpaket seit 2026-11-11 dem Lernpaket zu.
 - Themenfeld-Plätze automatisch im Arbeitsplan positionieren.
 
 ## 7. Beim Abgleich mit dem Payload zusätzlich prüfen
@@ -70,3 +71,41 @@ gegen diese Liste abgleichen und Fehlendes ergänzen.
 - Sektor-Typen (Einführung, Arbeit, Prüfung, Projekt) und Freischaltung.
 - Alle Stellen, an denen der Payload noch `schwierigkeitsgrad`, Phase `Übung` oder
   `zufallsauswahl_anzahl` ausgibt.
+
+## 8. Projektaufgaben sind jetzt Lernpakete (2026-11-11)
+
+Schon gemeldet (`airgap-1.25.0`):
+
+- `art` am Themenfeld (`inhalt` / `projekt`). `projekt` = das feste Themenfeld
+  "Projektaufgaben": höchstens eines je Einheit, immer zuletzt, kein Lernstoff (nicht auf
+  der Lernlandkarte, keine Arbeitsphase). Ohne Projekt reist es nicht mit.
+- `ist_projekt` am Lernpaket. Ein Projekt-Lernpaket hat kein Kompaktwissen, keine eigenen
+  Lernziele, keinen Wissensspeicher und keinen Abschluss. Es besteht nur aus seinen Aufgaben.
+
+Seitdem dazugekommen, der MBK noch NICHT gemeldet:
+
+- Der Umzug ist erledigt: Alle bisherigen Projektaufgaben (Ebene 3) liegen jetzt in je einem
+  eigenen Projekt-Lernpaket (`lernpaket_id` gesetzt, Niveau E). Die Ankündigung zu 1.25.0
+  sagt noch "reisen weiter im Projekt-Bündel, bis sie umgezogen sind".
+- Im Arbeitsplan verweist der Projektbereich (Sektor-Typ `projekte`, Projektbündel) jetzt auf
+  die Lernpaket-ID statt auf die Aufgaben-ID. Betrifft 22 Einträge in 9 Einheiten, nur in den
+  Plänen Ehrgeizig und Passioniert. Die Aufgaben-IDs selbst sind unverändert.
+- Ein Projekt gilt als erledigt, wenn alle sichtbaren Pflichtaufgaben des Projekt-Lernpakets
+  bearbeitet sind (gleiche Regel wie "Automatisch erledigt").
+- Vollständig ist ein Projekt-Lernpaket, wenn es mindestens eine Aufgabe hat und alle
+  Aufgaben vollständig oder freigegeben sind. Ein leeres Projekt meldet der Prüfbereich
+  als "Noch leer" (Kategorie 1, blockiert).
+- Rückmeldungen der MBK zu einer Projektaufgabe bitte weiter mit der Aufgaben-ID melden.
+  Der Pool-Manager zeigt sie am Projekt-Lernpaket.
+
+Mit der MBK zu klären, bevor wieder gebaut wird:
+
+- Doppelte Lieferung: Der Payload legt alle Ebene-3-Aufgaben weiterhin zusätzlich in
+  `projekte-einheit-<einheit_id>.html` (Projekt-Bündel), obwohl sie jetzt über ihr
+  Projekt-Lernpaket im Kurs stehen. Entscheiden: Projekt-Bündel abschaffen oder nur noch für
+  Projektaufgaben ohne Lernpaket bauen. Danach im Payload nachziehen und Version erhöhen.
+- Wie baut die MBK ein Lernpaket ohne Aktivitäten (nur Aufgaben)? Bisher gab es das nicht.
+- Fortschritt: Schüler, die eine Projektaufgabe im alten Projekt-Bündel schon bearbeitet
+  haben, dürfen ihren Stand beim Umbau nicht verlieren.
+- Exploring Australia (Passioniert): Zwei Projekt-Lernpakete liegen in Arbeitsphasen der
+  Themenfelder statt im Projektbereich. Kann die MBK ein Projekt-Lernpaket dort einhängen?

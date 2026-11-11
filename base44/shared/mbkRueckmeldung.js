@@ -350,6 +350,8 @@ export function ordneBefundZu(befund, { lernpakete = [], aufgaben = [], aktivita
   if (aufgabe) {
     zielTyp = 'allgemeine_aufgabe';
     zielId = aufgabe.id;
+    // Aufgabe im Lernpaket (auch Projekt): der Hinweis steht bei ihrem Lernpaket.
+    if (aufgabe.lernpaket_id) lernpaket = lernpakete.find((p) => p.id === aufgabe.lernpaket_id) || null;
   } else if (aktivitaet) {
     zielTyp = 'aktivitaet';
     zielId = aktivitaet.id;
