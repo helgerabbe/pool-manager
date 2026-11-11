@@ -21,6 +21,15 @@ export default async function (req) {
       return Response.json({ error: 'Missing lernpaket_id' }, { status: 400 });
     }
 
+    // Projekt-Lernpakete (im Themenfeld „Projektaufgaben") haben kein Pflicht-Kompaktwissen.
+    const paket = await base44.asServiceRole.entities.Lernpakete.get(lernpaketId).catch(() => null);
+    if (paket?.themenfeld_id) {
+      const tf = await base44.asServiceRole.entities.Themenfeld.get(paket.themenfeld_id).catch(() => null);
+      if (tf?.art === 'projekt') {
+        return Response.json({ success: true, action: 'skipped_projekt' });
+      }
+    }
+
     const katalog = await base44.asServiceRole.entities.AktivitaetenKatalog.filter({
       name: 'Kompaktwissen',
     });

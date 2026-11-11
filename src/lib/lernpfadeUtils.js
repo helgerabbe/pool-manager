@@ -801,7 +801,8 @@ export function applyDashboardTemplate(aktuelleKonfig, lerntyp, templateData, th
   // Themenfelder sortiert (per reihenfolge, dann titel) — bestimmt die
   // Reihenfolge der Arbeitsphase-Sektoren im Lernpfad.
   const sortedTfs = Array.isArray(themenfelder) && themenfelder.length > 0
-    ? [...themenfelder].sort((a, b) => {
+    // Das Projekt-Themenfeld ist kein Lernstoff und bekommt keine Arbeitsphase.
+    ? themenfelder.filter((tf) => tf?.art !== 'projekt').sort((a, b) => {
         const ra = Number.isFinite(a?.reihenfolge) ? a.reihenfolge : 9999;
         const rb = Number.isFinite(b?.reihenfolge) ? b.reihenfolge : 9999;
         if (ra !== rb) return ra - rb;

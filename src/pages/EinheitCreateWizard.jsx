@@ -114,7 +114,7 @@ export default function EinheitCreateWizard() {
       const existingTf = await base44.entities.Themenfeld.filter({ einheit_id: einheitId });
       const existingLp = await base44.entities.Lernpakete.filter({ einheit_id: einheitId });
       await Promise.all([
-        ...existingTf.map(tf => base44.entities.Themenfeld.delete(tf.id)),
+        ...existingTf.filter(tf => tf.art !== 'projekt').map(tf => base44.entities.Themenfeld.delete(tf.id)),
         ...existingLp.map(lp => base44.entities.Lernpakete.delete(lp.id)),
       ]);
 

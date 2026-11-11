@@ -75,7 +75,8 @@ export default function LernzieleUebersichtTab({
   // Pakete nach Themenfeld gruppieren (inkl. „Ohne Themenfeld"-Bucket).
   const gruppen = useMemo(() => {
     const tfMap = new Map(themenfelder.map((tf) => [tf.id, tf]));
-    const sortierteTf = [...themenfelder].sort(
+    // Projekt-Lernpakete haben keine eigenen Lernziele und stehen hier nicht.
+    const sortierteTf = themenfelder.filter((tf) => tf.art !== 'projekt').sort(
       (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
     );
 

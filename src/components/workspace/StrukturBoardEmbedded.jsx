@@ -206,7 +206,7 @@ function PaketKarte({ paket, index, onDelete, onEdit, compact = false, readOnly 
 
 // ── Spalte ────────────────────────────────────────────────────────────────────
 
-function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false, leitfrage = '' }) {
+function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onDeleteSpalte, onTitelChange, isSammelbecken = false, compact = false, collapsed = false, onToggleCollapse, sequenzNummer = null, readOnly = false, istLesemodus = false, onMoveLeft, onMoveRight, canMoveLeft = false, canMoveRight = false, onEditBeschreibung = null, hatBeschreibung = false, leitfrage = '', istProjekt = false }) {
   const [editingTitel, setEditingTitel] = useState(false);
   const [titelDraft, setTitelDraft] = useState(titel);
 
@@ -217,7 +217,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
   // Eingeklappte Ansicht
   if (collapsed) {
     return (
-      <div className={cn('flex flex-col rounded-xl border shrink-0 w-12 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border')}>
+      <div className={cn('flex flex-col rounded-xl border shrink-0 w-12 max-h-full', isSammelbecken ? 'bg-slate-50 border-slate-200' : istProjekt ? 'bg-bundle-soft border-bundle-border' : 'bg-card border-border')}>
         {/* Collapse-Toggle */}
         <button
           onClick={onToggleCollapse}
@@ -265,10 +265,10 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
     <div className={cn(
       'flex flex-col rounded-xl border shrink-0 max-h-full transition-all duration-200',
       compact ? 'w-56' : 'w-72',
-      isSammelbecken ? 'bg-slate-50 border-slate-200' : 'bg-card border-border'
+      isSammelbecken ? 'bg-slate-50 border-slate-200' : istProjekt ? 'bg-bundle-soft border-bundle-border' : 'bg-card border-border'
     )}>
       {/* Header */}
-      <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : 'border-border bg-muted/40')}>
+      <div className={cn('flex items-center gap-2 px-3 py-3 rounded-t-xl border-b shrink-0', isSammelbecken ? 'border-slate-200 bg-slate-100/80' : istProjekt ? 'border-bundle-border bg-bundle-soft' : 'border-border bg-muted/40')}>
         {/* Reorder-Pfeil links (nur Themenfelder, nur im Edit-Modus).
              Volle Pfeile mit Schaft (ArrowLeft) + dezenter Pill-Hintergrund,
              damit sie sich klar vom dünnen Einklappen-Chevron unterscheiden.
@@ -288,7 +288,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         <Layers className="w-4 h-4 text-muted-foreground shrink-0" /> :
         sequenzNummer !== null ?
         <span className="flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shrink-0">{sequenzNummer}</span> :
-        <FolderOpen className="w-4 h-4 text-amber-500 shrink-0" />
+        <FolderOpen className={cn('w-4 h-4 shrink-0', istProjekt ? 'text-bundle' : 'text-amber-500')} />
         }
 
         {editingTitel && !isSammelbecken ?
@@ -301,8 +301,8 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
 
 
         <button
-          className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && 'hover:text-primary')}
-          onClick={() => !isSammelbecken && setEditingTitel(true)}
+          className={cn('flex-1 text-sm font-semibold text-left truncate', !isSammelbecken && !istProjekt && 'hover:text-primary')}
+          onClick={() => !isSammelbecken && !istProjekt && setEditingTitel(true)}
           title={titel}>
           
             {titel}
@@ -353,7 +353,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
         }
 
         {!isSammelbecken && !readOnly && !istLesemodus &&
-        <button onClick={() => !istLesemodus && onDeleteSpalte()} className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors">
+        <button onClick={() => !istLesemodus && onDeleteSpalte()} className={cn('p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors', istProjekt && 'hidden')}>
             <X className="w-3.5 h-3.5" />
           </button>
         }
@@ -361,7 +361,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
 
       {/* Leitfrage: die Frage, die die Schüler auf der Lernlandkarte sehen.
            Fehlt sie, weist eine Pille darauf hin – ein Klick öffnet den Dialog. */}
-      {!isSammelbecken && (
+      {!isSammelbecken && !istProjekt && (
       leitfrage ?
       <div className="px-3 py-2 border-b border-border/60 bg-primary/5 shrink-0">
             <p className="leading-snug text-primary/90 italic text-xs text-center" title={leitfrage}>
@@ -409,7 +409,7 @@ function Spalte({ id, titel, pakete, onAddPaket, onDeletePaket, onEditPaket, onD
           onClick={() => !istLesemodus && onAddPaket(id)}
           className="w-full flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed border-border hover:border-primary/40 hover:bg-primary/5 text-xs text-muted-foreground hover:text-primary transition-all">
           
-            <Plus className="w-3.5 h-3.5" /> Neues Lernpaket
+            <Plus className="w-3.5 h-3.5" /> {istProjekt ? 'Neues Projekt' : 'Neues Lernpaket'}
           </button>
         </div>
       }
@@ -497,11 +497,12 @@ export default function StrukturBoardEmbedded({
     const felder = remoteThemenfelder || [];
 
     const tfSpalten = [...felder].
-    sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)).
+    sort((a, b) => Number(a.art === 'projekt') - Number(b.art === 'projekt') || (a.reihenfolge || 0) - (b.reihenfolge || 0)).
     map((tf) => ({
       id: `tf-${tf.id}`,
       titel: tf.titel,
       themenfeldId: tf.id,
+      istProjekt: tf.art === 'projekt',
       leitfrage: tf.leitfrage || '',
       beschreibung: tf.beschreibung || ''
     }));
@@ -605,7 +606,13 @@ export default function StrukturBoardEmbedded({
     if (istLesemodus) return;
     setIsDirty(true);
     const newId = `tf-new-${Date.now()}`;
-    setSpalten((prev) => [...prev, { id: newId, titel: `Themenfeld ${prev.length + 1}`, themenfeldId: null }]);
+    // Das Projekt-Themenfeld bleibt an letzter Stelle: neue Themenfelder kommen davor.
+    setSpalten((prev) => {
+      const i = prev.findIndex((s) => s.istProjekt);
+      const stelle = i === -1 ? prev.length : i;
+      const neu = { id: newId, titel: `Themenfeld ${stelle + 1}`, themenfeldId: null };
+      return [...prev.slice(0, stelle), neu, ...prev.slice(stelle)];
+    });
     setPaketeMap((prev) => ({ ...prev, [newId]: [] }));
   };
 
@@ -625,7 +632,7 @@ export default function StrukturBoardEmbedded({
       const idx = prev.findIndex((s) => s.id === spalteId);
       if (idx === -1) return prev;
       const targetIdx = direction === 'left' ? idx - 1 : idx + 1;
-      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      if (targetIdx < 0 || targetIdx >= prev.length || prev[targetIdx].istProjekt) return prev;
       const next = [...prev];
       [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
       return next;
@@ -794,7 +801,7 @@ export default function StrukturBoardEmbedded({
           } else {
             console.log(`[StrukturBoard] ✏️ PHASE3[${i}] Update Themenfeld: "${spalte.titel}" (${themenfeldId})...`);
             const originalThemenfeld = remoteThemenfelder.find((tf) => tf.id === themenfeldId);
-            const updateData = { titel: spalte.titel, reihenfolge: i + 1 };
+            const updateData = { titel: spalte.titel, reihenfolge: spalte.istProjekt ? 9999 : i + 1 };
             if (originalThemenfeld && originalThemenfeld.titel !== spalte.titel) {
               console.log(`[StrukturBoard] ✏️ PHASE3[${i}] → Titel geändert: "${originalThemenfeld.titel}" → "${spalte.titel}"`);
             }
@@ -1102,16 +1109,17 @@ export default function StrukturBoardEmbedded({
               compact={compact}
               collapsed={collapsedSpalten.has(spalte.id)}
               onToggleCollapse={() => toggleCollapse(spalte.id)}
-              sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' ? idx + 1 : null}
+              sequenzNummer={einheit?.bearbeitungsmodus === 'sequenziell' && !spalte.istProjekt ? idx + 1 : null}
+              istProjekt={!!spalte.istProjekt}
               readOnly={readOnly || !isStructuralEditingActive}
               istLesemodus={istLesemodus || !isStructuralEditingActive}
-              onMoveLeft={() => moveSpalte(spalte.id, 'left')}
-              onMoveRight={() => moveSpalte(spalte.id, 'right')}
+              onMoveLeft={spalte.istProjekt ? null : () => moveSpalte(spalte.id, 'left')}
+              onMoveRight={spalte.istProjekt ? null : () => moveSpalte(spalte.id, 'right')}
               canMoveLeft={idx > 0}
-              canMoveRight={idx < spalten.length - 1}
+              canMoveRight={idx < spalten.length - 1 && !spalten[idx + 1].istProjekt}
               leitfrage={spalte.leitfrage}
               hatBeschreibung={!!spalte.beschreibung || !!spalte.leitfrage}
-              onEditBeschreibung={spalte.themenfeldId ? () => setBeschreibungDialog(spalte) : null} />
+              onEditBeschreibung={spalte.themenfeldId && !spalte.istProjekt ? () => setBeschreibungDialog(spalte) : null} />
 
             )}
 

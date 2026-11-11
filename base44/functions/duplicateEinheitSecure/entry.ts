@@ -424,6 +424,16 @@ Deno.serve(async (req) => {
       status: 'success',
     });
 
+    // Projekt-Themenfeld: Die Kopie bringt ihres mit. Ein für die neue Einheit
+    // automatisch angelegtes, leeres zweites entfällt.
+    if (themenfelder.some((tf) => tf.art === 'projekt')) {
+      const kopierteTfIds = new Set(newThemenfelder.map((tf) => tf.id));
+      const projektTfs = await e.Themenfeld.filter({ einheit_id: newEinheit.id, art: 'projekt' });
+      for (const tf of projektTfs) {
+        if (!kopierteTfIds.has(tf.id)) await e.Themenfeld.delete(tf.id);
+      }
+    }
+
     return Response.json({
       success: true,
       new_einheit_id: newEinheit.id,

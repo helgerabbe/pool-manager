@@ -56,7 +56,7 @@ export function buildLernlandkarte({
     zieleByPaket.get(z.lernpaket_id).push(z);
   }
 
-  const felder = [...themenfelder].sort(nachZahl('reihenfolge'));
+  const felder = themenfelder.filter((tf) => tf?.art !== 'projekt').sort(nachZahl('reihenfolge'));
   const gruppen = felder.map((tf) => ({
     id: tf.id,
     titel: tf.leitfrage?.trim() || tf.titel,

@@ -10,6 +10,19 @@
       "type": "string",
       "description": "Titel des Themenfelds (z.B. 'Grundrechenarten', 'Textanalyse')"
     },
+    "art": {
+      "type": "string",
+      "enum": [
+        "inhalt",
+        "projekt"
+      ],
+      "enumColors": [
+        "blue",
+        "purple"
+      ],
+      "default": "inhalt",
+      "description": "PROJEKT-THEMENFELD (2026-11-11): 'projekt' = das feste Themenfeld 'Projektaufgaben' einer Einheit. Es gibt genau eines je Einheit (angelegt von ensureProjektThemenfeld), es steht immer an letzter Stelle und l\u00e4sst sich weder l\u00f6schen, umbenennen noch verschieben. Jedes Lernpaket darin ist ein Projekt-Lernpaket: ohne Pflicht-Kompaktwissen, ohne eigene Lernziele, ohne Einstieg/Gesamtaufgabe. Es ist kein Lernstoff und erscheint deshalb weder auf der Lernlandkarte noch als Arbeitsphase im Arbeitsplan. 'inhalt' bzw. fehlend = normales Themenfeld."
+    },
     "beschreibung": {
       "type": "string",
       "description": "Kurzbeschreibung des Themenfelds (optional)"

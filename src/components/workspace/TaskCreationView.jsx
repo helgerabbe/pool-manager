@@ -55,6 +55,7 @@ import { useEinheitLock } from '@/hooks/useLocks';
 import { isActivityLockedByOther, isLockExpired } from '@/hooks/useActivityLock';
 import { cn } from '@/lib/utils';
 import { variantenVollstaendig } from '@/lib/variantenStatus';
+import { istProjektThemenfeld } from '@/lib/projektThemenfeld';
 
 const PHASES = [
   { key: 'Input',     label: 'Wissensspeicher', icon: '📚' },
@@ -133,7 +134,7 @@ function SidebarLernpaketFolder({
   lernpaket, allActivities, aktivitaetenMap,
   masterAufgabenByActivityId, kloneByMasterId,
   selectedItem, onSelect, defaultOpen = false, myEmail, isOpen = false, onToggleOpen, aktivitaetenKatalog,
-  isEditingActive = false, aufgaben = [],
+  isEditingActive = false, aufgaben = [], istProjekt = false,
 }) {
   const isLernpaketSelected = selectedItem?.type === 'lernpaket' && selectedItem?.lernpaket?.id === lernpaket.id;
   const paketHinweise = useElementHinweise(lernpaket.einheit_id)([lernpaket.id]).length;
@@ -179,7 +180,7 @@ function SidebarLernpaketFolder({
          )}
        >
          <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', offen && 'rotate-90')} />
-         <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : isLernpaketSelected ? "text-primary-foreground" : "text-amber-500")} />
+         <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : isLernpaketSelected ? "text-primary-foreground" : istProjekt ? "text-bundle" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
          <HinweisZeichen anzahl={paketHinweise} gewaehlt={isLernpaketSelected && !isActiveLocked} />
          {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
@@ -619,9 +620,10 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           .map(tf => ({
             label: tf.titel,
             themenfeld: tf,
+            istProjekt: istProjektThemenfeld(tf),
             pakete: paketeFuerEinheit.filter(p => p.themenfeld_id === tf.id),
           }))
-          .filter(g => g.pakete.length > 0),
+          .filter(g => g.pakete.length > 0 || g.istProjekt),
         {
           // „Nicht zugeordnet" fängt beides: Pakete ohne Themenfeld UND Pakete,
           // deren Themenfeld gelöscht wurde. Letztere waren vorher in KEINER
@@ -632,7 +634,9 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           ),
           isRest: true,
         },
-      ].filter(g => g.pakete.length > 0)
+      // Das Projekt-Themenfeld steht immer ganz unten – auch ohne Projekt.
+      ].filter(g => g.pakete.length > 0 || g.istProjekt)
+        .sort((a, b) => Number(!!a.istProjekt) - Number(!!b.istProjekt))
     : [{ label: null, pakete: paketeFuerEinheit }];
 
   // Catalog-Entry für Ansicht A (Aktivität direkt gewählt)
@@ -838,19 +842,22 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
           </div>
           <div className="flex-1 overflow-hidden min-h-0 p-2">
           <div className="h-full overflow-y-auto space-y-3 pr-2">
-          {groupedPakete.map(({ label, pakete, isRest, themenfeld }) => (
+          {groupedPakete.map(({ label, pakete, isRest, themenfeld, istProjekt }) => (
             <div key={label || 'all'}>
               {label && (
                 <p className={cn(
                   'text-[10px] font-bold uppercase tracking-wide px-2 py-1',
-                  isRest ? 'text-muted-foreground/40' : 'text-amber-700'
+                  isRest ? 'text-muted-foreground/40' : istProjekt ? 'text-bundle' : 'text-amber-700'
                 )}>
                   {label}
                 </p>
               )}
               <div className="space-y-0.5">
-                {themenfeld && (
+                {themenfeld && !istProjekt && (
                   <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} alleAufgaben={alleAufgaben} />
+                )}
+                {istProjekt && pakete.length === 0 && (
+                  <p className="px-2 py-1 text-[11px] text-muted-foreground italic">Noch kein Projekt – lege eines im Reiter „Struktur" an.</p>
                 )}
                 {pakete.map((lernpaket, idx) => (
                   <SidebarLernpaketFolder
@@ -863,6 +870,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                     selectedItem={selectedItem}
                     onSelect={setSelectedItem}
                     defaultOpen={idx === 0}
+                    istProjekt={!!istProjekt}
                     myEmail={userEmail}
                     isOpen={openPacketIds.has(lernpaket.id)}
                     onToggleOpen={(paketId, shouldOpen) => {
@@ -874,7 +882,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                      isEditingActive={isEditingActive}
                      />
                 ))}
-                {themenfeld && (
+                {themenfeld && !istProjekt && (
                   <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} alleAufgaben={alleAufgaben} />
                 )}
               </div>

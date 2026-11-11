@@ -35,7 +35,7 @@ export async function generateMoodleLandkarteJSON(einheitId) {
 
     // 3. Sortiere Themenfelder und baue Lernpfad
     const themenfeldMitPaketen = themenfelder
-      .filter(tf => lernpakete.some(p => p.themenfeld_id === tf.id))
+      .filter(tf => tf.art !== 'projekt' && lernpakete.some(p => p.themenfeld_id === tf.id))
       .sort((a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0));
 
     const lernpfad = themenfeldMitPaketen.map(themenfeld => {
