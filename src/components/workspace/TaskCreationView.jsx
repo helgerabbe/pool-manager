@@ -136,6 +136,7 @@ function SidebarLernpaketFolder({
   isEditingActive = false, aufgaben = [],
 }) {
   const isLernpaketSelected = selectedItem?.type === 'lernpaket' && selectedItem?.lernpaket?.id === lernpaket.id;
+  const paketHinweise = useElementHinweise(lernpaket.einheit_id)([lernpaket.id]).length;
   const paketActivities = allActivities.filter(a => a.lernpaket_id === lernpaket.id);
   const phasenConfig = lernpaket.phasen_konfiguration || {};
 
@@ -180,6 +181,7 @@ function SidebarLernpaketFolder({
          <ChevronRight className={cn('w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform', offen && 'rotate-90')} />
          <Package className={cn("w-4 h-4 shrink-0", isActiveLocked ? "text-orange-500" : isLernpaketSelected ? "text-primary-foreground" : "text-amber-500")} />
          <span className="flex-1 truncate">{lernpaket.titel_des_pakets}</span>
+         <HinweisZeichen anzahl={paketHinweise} gewaehlt={isLernpaketSelected && !isActiveLocked} />
          {isActiveLocked && <PenLine className="w-3.5 h-3.5 text-orange-500 shrink-0 animate-pulse" />}
          {/* Einheitliches Farbschema (analog Tab 3 SidebarTree):
              grau = leer, grün = alle Aktivitäten vollständig, gelb = teilweise. */}

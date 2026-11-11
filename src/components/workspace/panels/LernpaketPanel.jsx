@@ -6,6 +6,7 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
 import { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import LernpaketKopfDetails from './LernpaketKopfDetails';
+import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
 import { statusFarbe } from '@/components/workspace/kopf/statusFarbe';
 import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
@@ -429,6 +430,11 @@ export default function LernpaketPanel({
         </div>
         {detailsOffen && <LernpaketKopfDetails paket={paket} einheit={einheit} lernziele={paketZiele} />}
       </div>
+
+      {/* Hinweise, die das ganze Lernpaket betreffen (nicht eine einzelne Aufgabe). */}
+      {kannBearbeiten && (
+        <ElementHinweise key={`hinweise-${paket.id}`} einheitId={paket.einheit_id} zielIds={[paket.id]} gesperrt={isReleased} />
+      )}
 
       {/* Aktions-Leiste (unter der Überschrift). Bearbeiten + Mit KI füllen
           + Freigeben. Der Löschen-Button wurde absichtlich entfernt: das
