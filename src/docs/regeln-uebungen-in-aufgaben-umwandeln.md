@@ -245,3 +245,27 @@ Nach Buch S. 97–98. Alle neuen Aufgaben sind Entwürfe. Die Zeichnungen sind n
 - **Nr. 8 b bis d:** Im Buch liegen die Innenkreise nicht in der Mitte. Die Aufgabe nennt nur die Maße und zeigt einen allgemeinen Kreisring.
 - **Weggelassen:** S. 96 ganz (zusammengesetzte Figuren), S. 97 Nr. 6 (Maße nicht sicher lesbar), S. 98 Nr. 1 a (Anzahl der Felder im Buchbild nicht sicher lesbar; das Glücksrad hat hier 10 Felder), Nr. 3 b als Rechenaufgabe (steckt im Miniquiz).
 - **Offen:** Der Sofatutor-Link im Wissensspeicher (nur mit Konto abspielbar) ist im Pool-Manager noch nicht durch die Studyflix-Videos ersetzt; im Kurs hat das Moodle-Team das schon getan.
+
+## Einheit Exploring Australia: Aufgaben in Lernpakete eingeordnet (2026-11-11)
+
+Die elf Aufgaben ohne Lernpaket wurden eingeordnet, Inhalte und Freigaben unverändert. Die alten Übungen der Lernpakete sind in dieser Einheit noch NICHT umgewandelt.
+
+| Aufgabe | Lernpaket | Platz | Niveau |
+|---|---|---|---|
+| f5efb Comment on the School of the Air | Outback and School of the Air | 2 | GE |
+| 7b468 vocabulary training | Applying for a Job | 1 | GE |
+| b7a83 Jobs and qualities | Applying for a Job | 2 | GE |
+| ba90a Writing a job application – A | Applying for a Job | 3 | GE |
+| 2ffb8 Writing a job application – B | Applying for a Job | 4 | E |
+| ab19f Job Interview Simulation | Applying for a Job | 5 | E |
+| 624bf Grammar: Steigerung | Grammar (neu, 29ba6) | 1 | GE |
+| ea006 Grammar: Modal Verbs | Grammar (neu, 29ba6) | 2 | GE |
+| 8a58e An Aboriginal Painting | Aboriginal Art | 1 | GE |
+| a89f9 Discussing respectful behaviour | Discussing respectful behaviour | 1 | GE |
+| 90381 A Survival Guide for Australia | Gesamtaufgabe von „Aboriginal Culture“ | 1 | GE |
+
+- **Niveau E bei 2ffb8 und ab19f:** Beide standen bisher nur in den Plänen Ehrgeizig und Passioniert. So bekommen die G-Pläne sie weiterhin nicht.
+- **Neues Lernpaket „Grammar“:** Themenfeld „Life and Society in Australia“, Platz 4, ohne Wissensspeicher und Lernziele.
+- **Arbeitsplan:** Die sieben Aufgaben aus „Life and Society“ standen als Einzelbausteine im Plan (G: fünf, E: sieben). Sie wurden entfernt, ebenso das dadurch leere Aufgaben-Bündel der Arbeitsphase. „Grammar“ steht in allen vier Plänen direkt hinter „Applying for a Job“ im selben Bündel. Der vorherige Plan liegt als private Datei: `mp/private/69cb7e99726da2a1d81bee50/121c30076_lernpfade_backup_exploring_australia_2026-11-11.json`.
+- **Rückgängig:** `lernpaket_id` bzw. `themenfeld_platz` an den Aufgaben leeren, Lernpaket „Grammar“ löschen, Plan aus der Sicherung zurückspielen.
+- **Offen:** „vocabulary training“ doppelt sich mit der Übung f8923 im selben Lernpaket; „Discussing respectful behaviour“ überschneidet sich mit dem Abschluss des gleichnamigen Lernpakets. Die Gesamtaufgabe „Survival Guide“ steht noch in keinem Arbeitsplan.
