@@ -41,7 +41,7 @@ export default function BaumeisterDialog({ open, onOpenChange, einheitId, startH
     else b.setHinweis(startHinweis);
   }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
   React.useEffect(() => {
-    if (b.phase === 'fertig') onFertig?.();
+    if (b.phase === 'fertig') onFertig?.(b.vorschlag?.aenderung || '');
   }, [b.phase]); // eslint-disable-line react-hooks/exhaustive-deps
   const schliessen = (v) => { if (!v) b.neuStarten(); onOpenChange(v); };
 

@@ -50,7 +50,7 @@ export default async function (req) {
 
     const updated = await base44.asServiceRole.entities.Pruefbefund.update(befundId, {
       entscheidung,
-      kommentar: entscheidung === 'offen' || entscheidung === 'behoben' ? '' : kommentar,
+      kommentar: entscheidung === 'offen' ? '' : kommentar,
       entschieden_von: user.email,
       entschieden_am: new Date().toISOString(),
       // Der Hinweis „war behoben, kam wieder" gilt nach einer neuen

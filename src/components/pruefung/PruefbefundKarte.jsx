@@ -110,6 +110,9 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
       {(befund.entscheidung === 'bewusst' || befund.entscheidung === 'widerspruch') && befund.kommentar && (
         <p className="text-xs text-violet-800">Begründung: {befund.kommentar}</p>
       )}
+      {befund.entscheidung === 'behoben' && befund.kommentar && (
+        <p className="text-xs text-muted-foreground">{befund.kommentar}</p>
+      )}
       {erledigt && befund.quelle === 'mbk' && (
         <p className="text-xs text-muted-foreground">
           {befund.antwort_gesendet_am
@@ -149,7 +152,7 @@ export default function PruefbefundKarte({ befund, ziel, einheitId, kannBewusstS
                   befund.befund,
                   befund.vorschlag && `Vorschlag: ${befund.vorschlag}`,
                 ].filter(Boolean).join('\n')}
-                onFertig={() => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben' })}
+                onFertig={(aenderung) => onEntscheiden({ befundId: befund.id, entscheidung: 'behoben', kommentar: aenderung ? `Baumeister: ${aenderung}` : '' })}
               />
             )}
             {direktErzeugbar && (
