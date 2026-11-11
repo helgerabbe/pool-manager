@@ -45,7 +45,7 @@ Der Lehrkraft gemeldet, nicht selbst entschieden, werden:
 
 ## Einheit Kurzgeschichten (umgewandelt am 2026-11-11)
 
-Die 40 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Die 36 neuen Aufgaben sind Entwürfe. Bei 10 KI-Tutor-Elementen fehlte schon vorher die Abschlussregel: 2f486, 928a1, 8de87, 0fce0, f1d71, 1bcd9, d112c, 61726, 2552f, cc78b.
+Die 40 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Die 36 neuen Aufgaben sind Entwürfe. Bei 10 KI-Tutor-Elementen fehlte schon vorher die Abschlussregel: 2f486, 928a1, 8de87, 0fce0, f1d71, 1bcd9, d112c, 61726, 2552f, cc78b. Sie wurde am 2026-11-11 in den neuen Aufgaben ergänzt, abgeleitet aus dem Abschluss, den die interne Anweisung des jeweiligen Gesprächs schon beschreibt.
 
 Aus 40 Übungen werden 36 Aufgaben. Kennungen = letzte fünf Zeichen der Übung. „(?)" = Titel nur aus dem Textanfang abgeleitet, unsicher.
 
