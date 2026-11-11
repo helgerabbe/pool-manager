@@ -41,6 +41,7 @@ import ThemenfeldPlatzKnoten from '@/components/workspace/lernpaketAufgaben/Them
 import ThemenfeldPlatzKarte from '@/components/workspace/lernpaketAufgaben/ThemenfeldPlatzKarte';
 import { THEMENFELD_PLAETZE } from '@/lib/themenfeldPlaetze';
 import LernpaketAufgabenGruppe from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
+import ZurueckZumLernpaketButton from '@/components/workspace/lernpaketAufgaben/ZurueckZumLernpaketButton';
 import AufgabeUebersicht from '@/components/workspace/lernpaketAufgaben/AufgabeUebersicht';
 import { aufgabenImLernpaket, aufgabenAmPlatz } from '@/lib/lernpaketAufgaben';
 import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
@@ -1022,6 +1023,10 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         {/* Ansicht A: Aktivität gewählt → Übersicht (ActivityMasterPanel) */}
         {selectedItem?.type === 'activity' && selectedActivity && (
           <div className="max-w-3xl mx-auto px-6 py-6">
+            <ZurueckZumLernpaketButton onClick={() => {
+              const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
+              if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
+            }} />
             <ActivityMasterPanel
               key={selectedActivity.id}
               activityRecord={selectedActivity}
@@ -1135,7 +1140,11 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
             {/* Ansicht A: Aktivität */}
             {selectedItem?.type === 'activity' && selectedActivity && (
               <div className="max-w-3xl mx-auto px-6 py-6">
-                <ActivityMasterPanel
+                <ZurueckZumLernpaketButton onClick={() => {
+              const lernpaket = lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id);
+              if (lernpaket) setSelectedItem({ type: 'lernpaket', lernpaket });
+            }} />
+            <ActivityMasterPanel
                    key={selectedActivity.id}
                    activityRecord={selectedActivity}
                    catalogEntry={selectedCatalog}
