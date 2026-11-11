@@ -67,6 +67,19 @@ export default async function (req) {
       if (wahl?.entfernen === true) stelle = seq;
     }
 
+    // Aufgabe ohne eigene Texte: Ihr Inhalt steckt im offenen Schritt, also dort arbeiten.
+    if (stelle.art === 'aufgabe' && !Object.values(stelle.roh.field_values).some((v) => String(v || '').trim())) {
+      const offene = alleStellen.filter((s) => s.art === 'offen' && s.ziel_id === stelle.ziel_id);
+      if (offene.length === 1) stelle = offene[0];
+      else {
+        return Response.json({
+          error: offene.length > 1
+            ? 'Diese Aufgabe besteht aus mehreren Elementen. Bitte nenne im Hinweis, welches Element gemeint ist, und starte über „Stelle suchen".'
+            : 'Der Inhalt dieser Aufgabe steckt in Elementen, die der Baumeister noch nicht ändern kann. Bitte direkt an der Aufgabe bearbeiten.',
+        }, { status: 422 });
+      }
+    }
+
     if (stelle.art === 'sequenz') {
       const schritte = stelle.roh.schritte;
       const antwort = await askAnthropicJson(cfg, {
