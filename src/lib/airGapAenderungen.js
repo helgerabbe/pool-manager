@@ -25,22 +25,23 @@
 /* Bewusst OHNE Import von MBK_AIRGAP_VERSION: mbkPayloadBasis liest diese
    Liste, ein Rückimport wäre ein Ringschluss. Version hier mitpflegen. */
 export const AIRGAP_AENDERUNGEN = Object.freeze({
-  version: 'airgap-1.24.0',
-  vorherige_version: 'airgap-1.23.0',
+  version: 'airgap-1.25.0',
+  vorherige_version: 'airgap-1.24.0',
   stichpunkte: Object.freeze([
-    'Neu: grafik_variante_contract in Payload 1. Eine fertige Aufgabe kann '
-    + 'neben ihrer funktionalen Fassung eine rein grafisch aufbereitete tragen. '
-    + 'Welche gilt, entscheidet die Lehrkraft mit „Diese Variante jetzt '
-    + 'übernehmen" — Inhalt und Bedienung sind in beiden identisch.',
-    'Sequenz-Schritt typ="offen": `fragment` enthält jetzt GENAU die '
-    + 'übernommene Fassung (vorher immer das funktionale Original, sodass eine '
-    + 'übernommene grafische Variante im Kurs nie ankam). Zusätzlich reisen '
-    + '`design_variante` ("funktional"|"grafisch") und `design_meta` mit. '
-    + 'Baue weiterhin einfach `fragment` — nichts umschalten.',
-    'Katalog-Aktivität „Slideshow": `field_values` kann neu '
-    + '`design_variante` und `design_polished` enthalten. Bei "grafisch" '
-    + 'wende das Design-Objekt auf alle Folien an, bei "funktional" ignoriere '
-    + 'es. Die Folieninhalte in `slides` bleiben unverändert.',
+    'Neu: `art` an jedem Themenfeld in Payload 2 ("inhalt" | "projekt"). '
+    + '"projekt" ist das feste Themenfeld „Projektaufgaben": höchstens eines '
+    + 'je Einheit, immer an letzter Stelle. Es ist kein Lernstoff – es steht '
+    + 'nicht auf der Lernlandkarte und ist keine Arbeitsphase im Arbeitsplan.',
+    'Neu: `ist_projekt` an jedem Lernpaket in Payload 2. true = '
+    + 'Projekt-Lernpaket (liegt im Themenfeld „Projektaufgaben"). Es hat kein '
+    + 'Kompaktwissen und keine eigenen Lernziele (`lernziele` ist leer); '
+    + 'baue dafür keinen Wissensspeicher-Pflichtteil.',
+    'Ein Themenfeld „Projektaufgaben" ohne Projekt reist nicht mit. Fehlt in '
+    + '`themenfelder` ein Eintrag mit art="projekt", hat die Einheit noch kein '
+    + 'Projekt-Lernpaket.',
+    'Unverändert: Die bisherigen Projektaufgaben (Ebene 3) reisen weiter im '
+    + 'Projekt-Bündel `projekte-einheit-<einheit_id>.html`, bis sie in '
+    + 'Projekt-Lernpakete umgezogen sind.',
   ]),
   /**
    * Beispiel-Payloads zu den Änderungen dieser Version. Leeres Array = diese
@@ -48,37 +49,26 @@ export const AIRGAP_AENDERUNGEN = Object.freeze({
    */
   beispiele: Object.freeze([
     Object.freeze({
-      was: 'Sequenz-Schritt mit typ="offen" und übernommener grafischer Fassung',
-      wo: 'Payload 3 (mbk_task_content_payload) → items[].sequenz_schritte[]',
+      was: 'Themenfeld „Projektaufgaben" mit einem Projekt-Lernpaket',
+      wo: 'Payload 2 (mbk_structure_payload) → themenfelder[]',
       beispiel: Object.freeze({
-        schritt_id: 'a1b2c3',
-        reihenfolge: 2,
-        typ: 'offen',
-        titel: 'Satzglieder bestimmen',
-        fragment: '<div class="aufgabe"><style>…</style>…<script>…</script></div>',
-        design_variante: 'grafisch',
-        design_meta: Object.freeze({
-          richtung: 'light',
-          erzeugt_am: '2026-09-15T16:40:00.000Z',
-          bilder: Object.freeze([]),
-        }),
-      }),
-    }),
-    Object.freeze({
-      was: 'field_values der Katalog-Aktivität „Slideshow" mit grafischer Fassung',
-      wo: 'Payload 3 (mbk_task_content_payload) → items[].aktivitaeten[].field_values',
-      beispiel: Object.freeze({
-        aufgabentext: 'Schau dir die Folien an und mache dir Notizen.',
-        slides: Object.freeze([]),
-        design_variante: 'grafisch',
-        design_polished: Object.freeze({
-          name: 'Ruhiges Tageslicht',
-          begruendung: 'Klare Flächen, wenig Ablenkung — passend zum Lesetext.',
-          hintergrund: '#f8fafc',
-          textfarbe: '#0f172a',
-          akzentfarbe: '#2563eb',
-          schrift: 'Inter, sans-serif',
-        }),
+        themenfeld_id: 'tf123',
+        art: 'projekt',
+        titel: 'Projektaufgaben',
+        beschreibung: null,
+        leitfrage: null,
+        reihenfolge: 9999,
+        bearbeitungsmodus: 'offen',
+        lernpakete: Object.freeze([
+          Object.freeze({
+            lernpaket_id: 'lp456',
+            titel: 'Eine eigene Kurzgeschichte schreiben',
+            themenfeld_id: 'tf123',
+            ist_projekt: true,
+            lernziele: Object.freeze([]),
+            aktivitaeten: Object.freeze([]),
+          }),
+        ]),
       }),
     }),
   ]),

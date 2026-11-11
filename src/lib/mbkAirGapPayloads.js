@@ -1133,8 +1133,10 @@ export function buildStructurePayload({
   allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !isTombstone(aa));
 
   // Themenfelder + Pakete sortieren.
+  // airgap-1.25.0: Das Projekt-Themenfeld steht immer an letzter Stelle.
+  const istProjektTf = (tf) => tf?.art === 'projekt';
   const themenfelderSorted = [...themenfelder].sort(
-    (a, b) => (a.reihenfolge || 0) - (b.reihenfolge || 0)
+    (a, b) => Number(istProjektTf(a)) - Number(istProjektTf(b)) || (a.reihenfolge || 0) - (b.reihenfolge || 0)
   );
   const themenfelderById = new Map(themenfelderSorted.map((tf) => [tf.id, tf]));
   // System-Bausteine früh indizieren — wird sowohl für die Item-Annotation
@@ -1189,6 +1191,9 @@ export function buildStructurePayload({
 
   const renderLernpaketEntry = (lp) => {
     const sum = summarizeLernpaket(lp, phasenByPaket.get(lp.id) || [], katalogById, zugangFuer(lp.id));
+    // airgap-1.25.0: Projekt-Lernpaket = liegt im Themenfeld „Projektaufgaben".
+    // Es hat kein Kompaktwissen und keine eigenen Lernziele.
+    sum.ist_projekt = istProjektTf(themenfelderById.get(lp.themenfeld_id));
     sum.lernziele = (zieleByPaket.get(lp.id) || []).map((lz) => ({
       lernziel_id: lz.id || null,
       formulierung_fachsprache: nullable(lz.formulierung_fachsprache),
@@ -1199,8 +1204,14 @@ export function buildStructurePayload({
   };
 
   // Themenfelder-Block.
-  const themenfelderOut = themenfelderSorted.map((tf) => ({
+  // airgap-1.25.0: Ein Projekt-Themenfeld ohne Projekt reist nicht mit.
+  const themenfelderOut = themenfelderSorted
+    .filter((tf) => !istProjektTf(tf) || (paketeByTf.get(tf.id) || []).length > 0)
+    .map((tf) => ({
     themenfeld_id: tf.id,
+    // 'projekt' = das feste Themenfeld „Projektaufgaben" (höchstens eines je
+    // Einheit, immer zuletzt); 'inhalt' = normales Themenfeld.
+    art: istProjektTf(tf) ? 'projekt' : 'inhalt',
     titel: nullable(tf.titel),
     beschreibung: nullable(tf.beschreibung),
     // airgap-1.21.0: Leitfrage des Themenfelds — die Beschriftung, die auf der
