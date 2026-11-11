@@ -18,6 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
 import { PFAD_STATUS } from '@/lib/pfadStatus';
+import { partnerVon } from '@/lib/eNiveauPlan';
 import { AMPEL } from '@/lib/ampelLogic';
 import { ITEM_TYPE } from '@/lib/aufgabenTypen';
 import { applyDashboardTemplate } from '@/lib/lernpfadeUtils';
@@ -172,9 +173,9 @@ export function useDashboardRelease({
         lerntyp: activeLernTyp,
         newStatus: PFAD_STATUS.LOCKED,
       });
-      // Gemeinsamer E-Plan: Passioniert wird mit Ehrgeizig zusammen markiert.
-      if (res?.data?.ok && activeLernTyp === 'ehrgeizig') {
-        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: 'passioniert', newStatus: PFAD_STATUS.LOCKED });
+      // Gemeinsamer Plan: die zweite Intensitätsstufe wird mit markiert.
+      if (res?.data?.ok && partnerVon(activeLernTyp)) {
+        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: partnerVon(activeLernTyp), newStatus: PFAD_STATUS.LOCKED });
       }
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" erfolgreich freigegeben und gesperrt.`);
@@ -229,8 +230,8 @@ export function useDashboardRelease({
         lerntyp: activeLernTyp,
         newStatus: PFAD_STATUS.DRAFT,
       });
-      if (res?.data?.ok && activeLernTyp === 'ehrgeizig') {
-        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: 'passioniert', newStatus: PFAD_STATUS.DRAFT });
+      if (res?.data?.ok && partnerVon(activeLernTyp)) {
+        await base44.functions.invoke('setLernpfadStatus', { einheitId, lerntyp: partnerVon(activeLernTyp), newStatus: PFAD_STATUS.DRAFT });
       }
       if (res?.data?.ok) {
         toast.success(`Lernpfad „${label}" entsperrt.`);

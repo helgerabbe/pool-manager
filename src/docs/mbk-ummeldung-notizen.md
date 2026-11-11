@@ -116,3 +116,26 @@ Mit der MBK zu klären, bevor wieder gebaut wird:
   haben, dürfen ihren Stand beim Umbau nicht verlieren.
 - Exploring Australia (Passioniert): Zwei Projekt-Lernpakete liegen in Arbeitsphasen der
   Themenfelder statt im Projektbereich. Kann die MBK ein Projekt-Lernpaket dort einhängen?
+  (Seit 2026-11-11 überholt: Passioniert ist jetzt die Kopie von Ehrgeizig, siehe 9.)
+
+## 9. Ein Arbeitsplan je Niveau (2026-11-11)
+
+Noch nicht an die MBK gemeldet.
+
+- **G-Niveau:** Minimalist und Pragmatiker haben einen gemeinsamen Arbeitsplan. Bearbeitet
+  wird nur der Pragmatiker-Plan. Der Minimalist-Plan ist dieselbe Sektorfolge ohne das, was
+  nur der Pragmatiker hat: die Kompetenzkarte im Einstieg und den Abschlusstest (Online-Test)
+  am Ende. Regel in `src/lib/eNiveauPlan.js` (`minimalistAus`).
+- **E-Niveau:** Passioniert ist die Kopie von Ehrgeizig (wie seit 2026-11-10). Nach der
+  schriftlichen Arbeit folgt der Projektbereich.
+- **Im Export** bleiben alle vier Lerntypen als eigene Pläne enthalten; Minimalist und
+  Pragmatiker bzw. Ehrgeizig und Passioniert haben dabei dieselben Sektor-Kennungen.
+- **Umstellung am 2026-11-11, alle Einheiten mit Arbeitsplan (17):** Der Minimalist-Plan wurde
+  durch den Pragmatiker-Plan ersetzt. Nur gemeinschaftliche Einheiten: fehlender Abschlusstest
+  beim Pragmatiker ergänzt (Berufliche Selbstverwirklichung, Architektur, Grundlagen
+  Musiktheorie und Epochen, Design), fehlender Projektbereich bei Ehrgeizig ergänzt
+  (Architektur, Design, Kreis und Körper; leer, gesperrt bis zur Freigabe), Passioniert an
+  Ehrgeizig angeglichen. Die vorherigen Pläne aller 17 Einheiten liegen als private Datei:
+  `mp/private/69cb7e99726da2a1d81bee50/ded57af8d_lernpfade_backup_2026-11-11.json`.
+- **Offen:** Fortschritt von Schülern im alten Minimalist- oder Passioniert-Plan hängt an
+  Sektoren, die es dort jetzt nicht mehr gibt.

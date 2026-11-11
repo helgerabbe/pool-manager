@@ -34,6 +34,8 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { PLAN_INFO } from '@/lib/eNiveauPlan';
+import PlanErklaerung from '@/components/lernpfade/PlanErklaerung';
 import { BookOpen, Lock, Sparkles, Layers, Trophy, Star, Info, RotateCcw } from 'lucide-react';
 
 // ── Mapping: Lerntyp → Anzeigeinhalte ──────────────────────────────────
@@ -122,14 +124,20 @@ export default function DidaktischerGuidePanel({
             <p className="text-[10px] font-semibold uppercase tracking-wide opacity-70">
               Intensitätsstufe
             </p>
-            <p className="text-sm font-semibold leading-tight">{info.label}</p>
+            <p className="text-sm font-semibold leading-tight">{PLAN_INFO[lerntyp]?.titel || info.label}</p>
           </div>
         </div>
 
-        {/* Erklärungstext (profil-spezifisch) */}
-        <p className="text-sm leading-relaxed text-foreground/80">
-          {info.description}
-        </p>
+        {/* Erklärungstext: bei gemeinsamen Plänen beide Intensitätsstufen */}
+        {PLAN_INFO[lerntyp] ? (
+          <div className="text-sm leading-relaxed text-foreground/80">
+            <PlanErklaerung plan={lerntyp} />
+          </div>
+        ) : (
+          <p className="text-sm leading-relaxed text-foreground/80">
+            {info.description}
+          </p>
+        )}
 
         {/* Doku-Absprung – führt zur ausführlichen Lerntypen-Doku */}
         <Link

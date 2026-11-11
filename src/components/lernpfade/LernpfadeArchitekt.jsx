@@ -14,6 +14,7 @@ import React from 'react';
 import { Sparkles, Layers, Trophy, Star, Plus, ChevronDown } from 'lucide-react';
 import EPlanHinweis from '@/components/lernpfade/EPlanHinweis';
 import AbschnittTrenner from '@/components/lernpfade/AbschnittTrenner';
+import { PLAN_INFO, istNurPragmatiker } from '@/lib/eNiveauPlan';
 import { Button } from '@/components/ui/button';
 import LernpfadeSektor from '@/components/lernpfade/LernpfadeSektor';
 import InfoHint from '@/components/lernpfade/InfoHint';
@@ -166,7 +167,10 @@ export default function LernpfadeArchitekt({
 }) {
   const sektoren = konfiguration?.[activeLernTyp] || [];
   const ePlan = activeLernTyp === 'ehrgeizig';
-  const aktivLabel = ePlan ? 'Ehrgeizig & Passioniert' : LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
+  const gPlan = activeLernTyp === 'pragmatiker';
+  const aktivLabel = PLAN_INFO[activeLernTyp]?.titel || LERN_TYPEN.find((t) => t.key === activeLernTyp)?.label;
+  // G-Plan: erster Abschlusstest-Sektor → davor der Hinweis „Nur Pragmatiker".
+  const testStart = gPlan ? sektoren.findIndex(istNurPragmatiker) : -1;
   // Erster Sektor des Projektbereichs → davor der Abschnittsübergang.
   const projektStart = ePlan
     ? sektoren.findIndex((s) => s.sektor_typ === SEKTOR_TYP.PROJEKTE || s.freischalt_bedingung?.modus === 'nach_freigabe')
@@ -180,7 +184,7 @@ export default function LernpfadeArchitekt({
 
       {/* Canvas */}
       <div ref={canvasScrollRef} className="flex-1 overflow-y-auto p-4 bg-muted/20 min-h-0">
-        {ePlan && <EPlanHinweis />}
+        {(ePlan || gPlan) && <EPlanHinweis plan={activeLernTyp} />}
         {einheitId && activeLernTyp && (
           <LernplanDauerFeld
             einheitId={einheitId}
@@ -211,6 +215,7 @@ export default function LernpfadeArchitekt({
             {sektoren.map((sektor, idx) => (
               <React.Fragment key={sektor.sektor_id || idx}>
               {idx === projektStart && <AbschnittTrenner />}
+              {idx === testStart && <AbschnittTrenner nurPragmatiker />}
               <LernpfadeSektor
                 sektor={sektor}
                 index={idx}

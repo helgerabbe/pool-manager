@@ -54,6 +54,7 @@ import DashboardDriftPill from '@/components/lernpfade/DashboardDriftPill';
 import InfoHint from '@/components/lernpfade/InfoHint';
 import DashboardZustandBadge from '@/components/lernpfade/DashboardZustandBadge';
 import { planVon, NIVEAU } from '@/lib/eNiveauPlan';
+import PlanErklaerung from '@/components/lernpfade/PlanErklaerung';
 import HelpDialog from '@/components/ui/HelpDialog';
 import { tabHilfe } from '@/components/workspace/WorkspaceTabs';
 
@@ -76,8 +77,9 @@ function LerntypPill({ typKey, active, locked, zustand, syncStatus, onClick, onO
   const Icon = meta.icon;
 
   const tooltip = (
-    <div className="max-w-[240px] space-y-1 text-xs leading-snug">
+    <div className="max-w-[300px] space-y-1 text-xs leading-snug">
       <p className="font-semibold">{meta.label}</p>
+      <PlanErklaerung plan={typKey} />
       <p>
       <span className="font-medium">Prüfung:</span> {locked ? 'Als geprüft markiert ✓' : 'Entwurf – noch in Bearbeitung'}
       </p>
@@ -214,11 +216,14 @@ export default function DashboardToolbar({
   // Privat-Modus: nur die angebotenen Lerntypen als Reiter zeigen. Bei genau
   // EINEM angebotenen Lerntyp entfällt die Lerntyp-Wahl → Onboarding-Pill weg.
   // Ehrgeizig + Passioniert teilen einen Plan → ein gemeinsamer Reiter (unter 'ehrgeizig').
-  const sichtbareLerntypen = LERNTYPEN.filter((lt) => lt !== 'passioniert' && aktiveLerntypen.map(planVon).includes(lt));
+  // Minimalist + Pragmatiker ebenso (unter 'pragmatiker').
+  const sichtbareLerntypen = LERNTYPEN.filter((lt) => planVon(lt) === lt && aktiveLerntypen.map(planVon).includes(lt));
   const pillLabel = (lt) =>
     lt === 'ehrgeizig'
       ? `${lerntypNamen.ehrgeizig || 'Ehrgeizig'} & ${lerntypNamen.passioniert || 'Passioniert'}`
-      : lerntypNamen[lt];
+      : lt === 'pragmatiker'
+        ? `${lerntypNamen.minimalist || 'Minimalist'} & ${lerntypNamen.pragmatiker || 'Pragmatiker'}`
+        : lerntypNamen[lt];
   const zeigeOnboardingPill = !(zeigeLerntypenSchalter && aktiveLerntypen.length === 1);
 
   return (
