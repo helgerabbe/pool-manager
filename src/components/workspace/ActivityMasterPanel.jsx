@@ -1184,14 +1184,14 @@ export default function ActivityMasterPanel({
                 {/* Bilder zum Text — nur in der „Text direkt eingeben"-Variante.
                     Werden direkt im Inhaltsbereich gezeigt, damit die Lehrkraft sieht,
                     was die Schüler:innen sehen werden. */}
-                {(!inhaltTyp || inhaltTyp === 'text') && Array.isArray(fieldValues.bilder) && fieldValues.bilder.length > 0 && (
+                {Array.isArray(fieldValues.bilder) && fieldValues.bilder.length > 0 && (
                   <div className={`grid gap-3 ${fieldValues.bilder.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
                     {fieldValues.bilder.map((bild, idx) => (
                       <figure key={`${bild?.url}-${idx}`} className="rounded-lg border border-border overflow-hidden bg-muted/30">
                         <img
                           src={bild?.url}
                           alt={bild?.caption || `Bild ${idx + 1}`}
-                          className="w-full h-auto object-contain max-h-72"
+                          className="w-full h-auto object-contain"
                         />
                         {bild?.caption && (
                           <figcaption className="px-3 py-1.5 text-xs text-muted-foreground border-t border-border bg-background">

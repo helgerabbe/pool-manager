@@ -22,6 +22,7 @@ import ConfirmationBody from '@/components/workspace/preview/bodies/Confirmation
 import ImageLabelingBody from '@/components/workspace/preview/bodies/ImageLabelingBody';
 import LehrwerkQuelleBody from '@/components/workspace/preview/bodies/LehrwerkQuelleBody';
 import KompaktwissenSeite from '@/components/schueler/lesen/KompaktwissenSeite';
+import TextLesenSeite from '@/components/schueler/lesen/TextLesenSeite';
 
 const SLIDE_W = 960;
 const SLIDE_H = 600;
@@ -43,36 +44,6 @@ function PhaseBar({ phase }) {
 }
 
 // ─── Aktivitäts-Renderer (vereinfacht, read-only) ──────────────────────
-
-function TextLesenBody({ fv }) {
-  const inhaltTyp = fv?.inhalt_typ;
-  return (
-    <div className="px-6 py-4 space-y-3">
-      {fv?.aufgabentext && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2.5 text-[14px] text-blue-900">{fv.aufgabentext}</div>
-      )}
-      {fv?.titel && <h1 className="text-lg font-bold text-slate-900">{fv.titel}</h1>}
-      {(!inhaltTyp || inhaltTyp === 'text') && fv?.inhalt && (
-        <p className="text-[14px] text-slate-800 whitespace-pre-wrap leading-relaxed">{fv.inhalt}</p>
-      )}
-      {Array.isArray(fv?.bilder) && fv.bilder.length > 0 && (
-        <div className={`grid gap-3 ${fv.bilder.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-          {fv.bilder.map((b, i) => (
-            <figure key={i} className="rounded-lg border overflow-hidden bg-slate-50">
-              <img src={b?.url} alt={b?.caption || ''} className="w-full h-auto max-h-60 object-contain" />
-              {b?.caption && <figcaption className="px-2 py-1 text-xs text-slate-500 border-t bg-white">{b.caption}</figcaption>}
-            </figure>
-          ))}
-        </div>
-      )}
-      {inhaltTyp === 'datei' && fv?.dokument_url && (
-        <a href={fv.dokument_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 text-blue-600 underline text-sm">
-          <ExternalLink className="w-4 h-4" /> Dokument öffnen
-        </a>
-      )}
-    </div>
-  );
-}
 
 function VideoAudioBody({ fv }) {
   const url = fv?.url || '';
@@ -207,7 +178,14 @@ function renderActivityBody(activity, katalogName, masters, variantIdx) {
       </div>
     );
   }
-  if (name.includes('text lesen')) return <TextLesenBody fv={fv} />;
+  // Text lesen: ebenfalls die echte Schüleransicht (Bilder in voller Breite).
+  if (name.includes('text lesen')) {
+    return (
+      <div className="bg-background h-full overflow-hidden">
+        <TextLesenSeite aktivitaet={{ field_values: fv }} kat={{ name: katalogName }} busy={false} onErledigt={() => {}} onBack={() => {}} />
+      </div>
+    );
+  }
   if (name.includes('video') || name.includes('audio')) return <VideoAudioBody fv={fv} />;
   if (name.includes('link') || name.includes('url')) return <LinkBody fv={fv} />;
 

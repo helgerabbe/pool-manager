@@ -91,7 +91,7 @@ export default function TextLesenSeite({ aktivitaet, kat, busy, onErledigt, onBa
             <div className={`grid gap-3 ${bilder.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
               {bilder.map((bild, idx) => (
                 <figure key={`${bild?.url}-${idx}`} className="relative rounded-xl border border-border overflow-hidden bg-muted/30">
-                  <img src={bild?.url} alt={bild?.caption || `Bild ${idx + 1}`} className="w-full h-auto object-contain max-h-80" />
+                  <img src={bild?.url} alt={bild?.caption || `Bild ${idx + 1}`} className="w-full h-auto object-contain" />
                   <button
                     type="button"
                     onClick={() => setLightbox({ url: bild?.url, caption: bild?.caption })}
