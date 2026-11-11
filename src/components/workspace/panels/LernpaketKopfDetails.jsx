@@ -27,6 +27,9 @@ export default function LernpaketKopfDetails({ paket, einheit, lernziele }) {
         <LernpaketLernzieleButton lernziele={lernziele} />
         <LernpaketLebenszyklusBadge syncStatus={paket.sync_status} />
       </div>
+      <Zeile label="Lernpaket freigegeben seit">
+        {paket.content_status === 'approved' && paket.released_at ? zeit(paket.released_at) : 'noch nicht freigegeben'}
+      </Zeile>
       <Zeile label="Zuletzt nach Moodle übertragen">
         {zeit(paket.last_synced_at) || 'für dieses Lernpaket nicht erfasst'}
       </Zeile>
