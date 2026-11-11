@@ -35,7 +35,17 @@ Der Lehrkraft gemeldet, nicht selbst entschieden, werden:
 - Texte, die auf eine frühere Übung verweisen („vorhin hast du …"), wenn diese im Lernpaket fehlt.
 - Übungen, die eher Material zu einer anderen Übung sind als eine eigene Aufgabe.
 
-## Plan für die Einheit Kurzgeschichten (noch nicht umgewandelt)
+## Technische Zuordnung (so umgesetzt bei Kurzgeschichten)
+
+- Offene Aufgabe → Element „offen" mit dem freigegebenen Fragment. Der Auftragstext (description) bleibt nur an der ausgeblendeten Übung.
+- KI-Tutor → Element „brian": instruction → Anweisung für Lernende, system_prompt → interne Anweisung. Fehlt der Dialogname, wird der Aufgabentitel eingesetzt.
+- Alle anderen Formate → Element „katalog" mit derselben Aktivität. Der Inhalt liegt oft nicht an der Übung, sondern an ihren Varianten (MasterAufgabe).
+- Ausblenden = sync_status 'to_delete' an der Übung. Die Varianten bleiben unverändert. Rückgängig: sync_status wieder auf den alten Wert setzen und die neue Aufgabe löschen.
+- Zusatzfelder an Elementen (z. B. ein Verweis auf die alte Übung) werden beim Speichern verworfen. Die Zuordnung alt → neu steht deshalb nur in diesem Dokument.
+
+## Einheit Kurzgeschichten (umgewandelt am 2026-11-11)
+
+Die 40 Übungen (Kennungen unten) sind ausgeblendet, vorher sync_status 'new'. Die 36 neuen Aufgaben sind Entwürfe. Bei 10 KI-Tutor-Elementen fehlte schon vorher die Abschlussregel: 2f486, 928a1, 8de87, 0fce0, f1d71, 1bcd9, d112c, 61726, 2552f, cc78b.
 
 Aus 40 Übungen werden 36 Aufgaben. Kennungen = letzte fünf Zeichen der Übung. „(?)" = Titel nur aus dem Textanfang abgeleitet, unsicher.
 
