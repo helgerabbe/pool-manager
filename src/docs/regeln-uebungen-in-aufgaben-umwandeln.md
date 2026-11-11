@@ -204,4 +204,10 @@ Nach Buch S. 94–95, mit der Lehrkraft abgestimmt. Alle neuen Aufgaben sind Ent
 - **Nr. 9:** Die Buchseite nennt keine Fragen. Formuliert wurden a) Anzahl der Pflanzen (294, abrunden), b) Rasenfläche (1467,82 m²), c) Rasensamen (etwa 44 kg bei 3 kg je 100 m²).
 - **Ausgeblendet (sync_status 'to_delete', vorher 'new'):** 4e369 Herleitung erklären, 9b846 Flächeninhalt Kreis berechnen (war freigegeben), 4e36a Quiz, 4e36b Kreisflächen berechnen (Nr. 5–8), 4e36c Blechplatte.
 - **Lernziele umgehängt (vorher alle an „Kreisfläche berechnen“):** d216c (Kreisring) und ba57d (Kreisausschnitt) nach „Kreisring, Kreisausschnitt und Kreisbogen“; dc146 (Umfang) und 56638 (Pi als Verhältnis) nach „Kreisumfang und Kreiszahl Pi“.
-- **Offen:** Das Umstellen nach Radius oder Durchmesser steht im Lernziel, wird aber von keiner Aufgabe geübt. In den anderen Kreis-Lernpaketen hängen weitere Lernziele am falschen Paket (nicht geändert).
+- **Offen:** Das Umstellen nach Radius oder Durchmesser steht im Lernziel, wird aber von keiner Aufgabe geübt.
+- **Lernziele der anderen drei Kreis-Pakete umgehängt (2026-11-11, nichts gelöscht):**
+  - von „Kreisumfang und Kreiszahl Pi“: 6d767 (Kreisbogen, Kreisausschnitt) und c0da1 (Kreisring) nach „Kreisring, Kreisausschnitt und Kreisbogen“; 749f3 (A = π · r²) nach „Kreisfläche berechnen“.
+  - von „Kreisring, Kreisausschnitt und Kreisbogen“: 3bdc2 (Pi als Verhältnis) nach „Kreisumfang und Kreiszahl Pi“; b421e (Umfang und Flächeninhalt berechnen) nach „Kreisfläche berechnen“.
+  - von „Anwendungsaufgaben zu Kreis und Kreisformen“: 9698d (Kreisring) und 73156 (Kreisbogen, Kreisausschnitt) nach „Kreisring, Kreisausschnitt und Kreisbogen“; 313a1 (Pi experimentell herleiten) nach „Kreisumfang und Kreiszahl Pi“.
+  - Nicht verschoben: ca206 (Rundungsregeln und Einheiten) bleibt bei „Kreisring, Kreisausschnitt und Kreisbogen“, weil es zu allen Kreis-Paketen passt.
+  - Stand danach: Umfang 6, Kreisfläche 3, Kreisring 8, Anwendungsaufgaben 1. Durch das Umhängen stehen inhaltlich fast gleiche Lernziele nebeneinander (Kreisring: 9698d, d216c, c0da1; Kreisausschnitt/Kreisbogen: 73156, ba57d, 6d767, 2ac68; Pi als Verhältnis: 3bdc2, 56638; Formel A = π · r²: 749f3, ac2f0). Zusammenlegen entscheidet die Lehrkraft.
