@@ -157,7 +157,7 @@ function SidebarLernpaketFolder({
   const isActiveLocked = isEditingActive && hasSelectedChild;
 
   return (
-    <div className={cn(isActiveLocked ? "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5" : offen && "rounded-lg bg-muted/40")}>
+    <div className={cn(isActiveLocked ? "rounded-lg ring-2 ring-orange-400 bg-orange-50/50 ml-1 mr-0.5" : offen && "rounded-lg bg-muted")}>
       <button
          onClick={() => {
            onToggleOpen?.(lernpaket.id, true);
