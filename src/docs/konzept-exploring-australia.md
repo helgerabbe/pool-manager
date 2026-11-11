@@ -137,3 +137,26 @@ Aus acht Lernpaketen wurden vier. Alle vier sind wieder Entwürfe (vorher freige
 - **Fakten aus der Recherche:** Rückgabe an die Anangu 1985, Beschluss November 2017, Sperrung des Aufstiegs am 26.10.2019, Höhe etwa 348 m, mindestens 37 Tote beim Aufstieg, Punktmalerei auf Leinwand seit 1971 in Papunya.
 - **Bewusst nicht gemacht:** keine KI-erzeugten Bilder im Stil der Aboriginal-Kunst; die Symbole werden in Worten beschrieben.
 - **Offen:** „Writing: Describe an Aboriginal painting“ hat nur Kriterien als Musterlösung (Nacharbeit markiert). In den Arbeitsplänen steht nur „Respectful behaviour“; die anderen drei Lernpakete fehlen dort. Der Cartoon (S. 13, Nr. 5) ist nicht umgesetzt. Kein Studyflix-Video in diesem Themenfeld gesucht.
+- **Menü (2026-11-11):** Ausgeblendete Lernpakete (sync_status 'to_delete') erscheinen im Arbeitsbereich nicht mehr (`useWorkspaceData`). An den vier ausgeblendeten Lernpaketen hängen noch 27 offene Hinweise des Moodle-Teams.
+
+## Umgesetzt: Bewerbung in „Life and Society in Australia“ (2026-11-11)
+
+Sicherung des alten Stands (Lernpakete des Themenfelds, Lernziele, Wissensspeicher, Aufgaben, Arbeitspläne): `mp/private/69cb7e99726da2a1d81bee50/97087ae82_backup_life_and_society_bewerbung_2026-11-11.json`.
+
+„Applying for a Job“ wurde in vier Lernpakete geteilt. Das bisherige Lernpaket (46fdd) heißt jetzt „Writing a job application“ und ist wieder Entwurf; die drei anderen sind neu.
+
+| Nr. | Lernpaket (Kennung) | Aufgaben |
+|---|---|---|
+| 3 | Vocabulary: Jobs and applications (ed92c) | 1 Vokabeltrainer Jobs und Bewerbung (Bestand, 47 Wörter) · 2 Vokabeltrainer Stärken und Schwächen (18 Wörter) · 3 Words in context (Lückentext) · 4 Vocabulary training sheets, PDF (Bestand, jetzt freiwillig) |
+| 4 | Jobs and qualities (228fa) | 1 Who does what? (Zuordnen, Rätselquiz) · 2 Qualities (Zuordnen, Lückentext, Strength or weakness) · 3 Speaking: Stärken und Schwächen (Aufnahme) · 4 Workbook p. 6 und Arbeitsblatt (Bestand) |
+| 5 | Writing a job application (46fdd) | 1 Stellenanzeige lesen (eigener Text, Quiz, Zuordnen) · 2 Teile des Bewerbungsschreibens (Musterbrief, Sortierung, Zuordnen) · 3 Formale Sprache (Quiz, Lückentext) · 4 CV (Zuordnen, Quiz) · 5 Writing A (Bestand) · 6 Writing B (Bestand, E) |
+| 6 | The job interview (2ac70) | 1 Listening: Nachricht von City Guides (eigener Hörtext, Quiz) · 2 Dos and don'ts (Quiz, Zuordnen) · 3 Be the interviewer (Quiz, Text, Rückmeldung mit KI) · 4 Speaking: drei Fragen (Aufnahme) · 5 Job Interview Simulation (Bestand, E) |
+
+„Grammar“ steht jetzt an Platz 7.
+
+- **Grundlage:** Die Buchseiten 16–19 und 24–25 lagen beim Bau nicht mehr vor. Verwendet wurden die Materialien der Einheit: Skill File S. 152 (Musterbrief Hanna Fischer), Arbeitsblatt „Useful phrases“, Arbeitsblatt „Strengths and weaknesses“, die Anzeigen aus dem Workbook (City Guides, Coffee Time). Die Anzeige „Byron Surf School“ und alle Übungen sind selbst geschrieben.
+- **Hörtext:** „A message from City Guides“ ist selbst geschrieben und vertont (`470ac6701_speech.mp3`), eine Mailbox-Nachricht statt eines Telefongesprächs, weil nur eine Stimme möglich ist. Das Transkript liegt am Element.
+- **Lernziele:** Die neun Lernziele von „Applying for a Job“ sind neu formuliert und verteilt (Vocabulary 1, Jobs and qualities 2, Writing 3, Interview 3). Neu: „über eigene Stärken und Schwächen sprechen“. Das Lernziel zu Komparativ und Superlativ (c4bfe) liegt unverändert bei „Grammar“.
+- **Ausgeblendet (vorher 'new'):** die Aufgabe „Vocabulary ‚Station 2‘: Learn and practise“ (5d12). Sie zeigte dasselbe PDF wie die Trainingsblätter und hatte eine Frage ohne Antworten.
+- **Unverändert:** Writing A, Writing B, Job Interview Simulation, die Trainingsblätter und Workbook p. 6 sind inhaltlich nicht angefasst, weiter freigegeben und weiter als unvollständig geführt.
+- **Offen:** In den vier Arbeitsplänen steht nur „Writing a job application“; die drei neuen Lernpakete fehlen dort. Die Lernpakete haben keinen Abschluss. Kein Abgleich mit den Buchseiten.
