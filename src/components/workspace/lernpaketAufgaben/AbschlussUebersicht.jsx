@@ -5,6 +5,8 @@ import ElementDetails from '@/components/workspace/kopf/ElementDetails';
 import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
 import { variantenVollstaendig } from '@/lib/variantenStatus';
 import { Badge } from '@/components/ui/badge';
+import NacharbeitToggle from '@/components/release/NacharbeitToggle';
+import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
 
 /**
  * Übersicht eines Abschluss-Elements mit Varianten (z. B. Test) im
@@ -14,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
  */
 export default function AbschlussUebersicht({ activity = null, paket = null, name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
   const [bearbeitet, setBearbeitet] = useState(false);
+  const paketFreigegeben = paket?.content_status === 'approved' && !!paket?.released_at;
 
   return (
     <div className="space-y-4">
@@ -29,6 +32,13 @@ export default function AbschlussUebersicht({ activity = null, paket = null, nam
 
       {bearbeitet ? children : (
         <div className="space-y-2">
+          {kannBearbeiten && activity && (
+            <>
+              <NacharbeitToggle activity={activity} disabled={paketFreigegeben} />
+              <ElementHinweise einheitId={paket?.einheit_id} gesperrt={paketFreigegeben}
+                zielIds={[activity.id, ...varianten.map((v) => v.id)]} />
+            </>
+          )}
           {varianten.length >= 2 && (
             <p className="text-xs text-muted-foreground">Jeder Schüler bekommt zufällig eine der {varianten.length} Varianten.</p>
           )}

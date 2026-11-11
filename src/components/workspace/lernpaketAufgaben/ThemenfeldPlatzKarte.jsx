@@ -9,6 +9,8 @@ import AufgabenEinstellungenHilfe from './AufgabenEinstellungenHilfe';
 import ThemenfeldPlatzAktionen from './ThemenfeldPlatzAktionen';
 import ThemenfeldPlatzDetails from './ThemenfeldPlatzDetails';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
+import NacharbeitToggle from '@/components/release/NacharbeitToggle';
+import ElementHinweise from '@/components/workspace/kopf/ElementHinweise';
 
 /**
  * Ein fester Platz im Themenfeld („Einstieg" oder „Gesamtaufgabe") im Aufbau
@@ -42,6 +44,21 @@ export default function ThemenfeldPlatzKarte({ platz, themenfeld, editierbar, on
         aktionen={<ThemenfeldPlatzAktionen aufgaben={aufgaben} vollstaendig={vollstaendig} freigegeben={freigegeben}
           editierbar={editierbar} bearbeitet={bearbeitet} />}
       />
+
+      {/* Merker und Hinweise der Aufgaben dieses Platzes – wie am Lernpaket-Element. */}
+      {editierbar && aufgaben.length > 0 && (
+        <div className="space-y-2">
+          {aufgaben.map((a, i) => (
+            <div key={a.id} className="space-y-1">
+              {aufgaben.length > 1 && (
+                <p className="text-xs font-semibold text-muted-foreground">Aufgabe {i + 1}: {a.titel}</p>
+              )}
+              <NacharbeitToggle activity={a} entity="AllgemeineAufgabe" queryKey="allgemeineAufgaben" />
+            </div>
+          ))}
+          <ElementHinweise einheitId={themenfeld.einheit_id} zielIds={aufgaben.map((a) => a.id)} gesperrt={freigegeben} />
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="flex items-center gap-2">
