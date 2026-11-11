@@ -277,3 +277,14 @@ Sicherung des alten Stands (alle vier Arbeitspläne, Niveau und Pflicht aller Au
 - **Entfernt:** der Einzelbaustein „School of the Air – Video-viewing“ im E-Plan; die Aufgabe steht im Lernpaket.
 - **Reihenfolge** in den Arbeitsphasen wie im Themenfeld. Alle vier Pläne stehen auf „bearbeitet“ (vorher „auto“).
 - **Nicht geändert:** Lernziele (im G-Plan gibt es Lernziele ohne passende Aufgabe, z. B. zu Word families und zur Stellungnahme), Abschlüsse der Lernpakete (gelten für beide Niveaus, auch der KI-Check zum Riff mit Zeilenangaben), Kompetenzkarte und Online-Test. Die Gesamtaufgabe steht weiter in keinem Plan. Nichts in der Schüleransicht angesehen.
+
+## Lernziele und Abschlüsse nach G und E (2026-11-11, 23:20 Uhr)
+
+Sicherung des alten Stands (neun Lernziele, drei Abschluss-Elemente): `mp/private/69cb7e99726da2a1d81bee50/8bfd032dd_backup_lernziele_abschluesse_niveau_2026-11-11.json`.
+
+- **Grenze der App:** Lernziele und Abschluss-Elemente haben kein Niveau-Feld. Sie gehören zum Lernpaket und erscheinen bei allen Lerntypen. Getrennt wurde deshalb über den Wortlaut, nicht über das Ausblenden.
+- **Lernziele:** Neun Lernziele in gemeinsamen Lernpaketen, zu denen nur der E-Kurs eine Aufgabe hat, beginnen jetzt mit „E course:“ (Fachsprache und Schülersprache): 25430 (Just a rock?), ccaa3 (Great Barrier Reef in danger), e6495 (Geography and Climate), cca99 und 71f4e (Australian Wildlife), 25638 (Outback), cca9c (Features of Australian English), 92458 (Respectful behaviour), 7fd50 (The job interview). Die Lernziele der drei E-Lernpakete sind unverändert; auf der Lernlandkarte sehen auch G-Schüler sie.
+- **Abschluss „Just a rock?“:** Der Hinweis verwies auf den Meinungstext aus Aufgabe 4, die jetzt nur E ist. Neu: G zeigt die Zusammenfassung aus Aufgabe 3, E den Meinungstext aus Aufgabe 4.
+- **Abschluss „Great Barrier Reef in danger“ (KI-Check):** G beantwortet die Fragen 1 bis 5 ohne Zeilenangaben (bestanden ab vier richtigen), E alle sechs mit Zeilenangaben (bestanden ab fünf richtigen). Die Schüler nennen ihren Kurs am Anfang; fehlt er, entscheidet die KI nach der Zahl der Antworten.
+- **Abschluss „Exploring Australia“ (Would you visit Australia?):** Die Schüler wählen oben ihren Kurs. G: 80 bis 120 Wörter, zwei Linking Words, erledigt ab 60 Wörtern. E wie bisher: 150 bis 200 Wörter, drei Linking Words, erledigt ab 120. Ohne Kurswahl gilt die Aufgabe nicht als erledigt. Die Kurswahl prüft niemand nach. Das Skript ist auf Syntaxfehler geprüft, im Browser nicht ausprobiert.
+- **Unverändert, passen für beide Kurse:** die Abschlüsse von Outback, Fire at the sheep station, Respectful behaviour, Geography and Climate (E-Mail, 50 bis 150 Wörter), Vocabulary: Aboriginal culture, Features of Australian English.
