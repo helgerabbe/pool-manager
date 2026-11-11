@@ -28,6 +28,7 @@ const LERNTYP_LABEL = {
 };
 
 import ExternesThemeStyle from '@/components/schueler/ExternesThemeStyle';
+import { PLAN_INFO } from '@/lib/eNiveauPlan';
 
 export default function ThemenfeldEinfuehrungPreviewModal({
   open, onOpenChange, einheitId, einheitTitel, fach, context,
@@ -117,7 +118,7 @@ export default function ThemenfeldEinfuehrungPreviewModal({
             Vorschau: Einführung in den Sektor
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            {LERNTYP_LABEL[lerntyp] || lerntyp}
+            {PLAN_INFO[lerntyp]?.titel || LERNTYP_LABEL[lerntyp] || lerntyp}
             {context?.sektorTitel ? ` · ${context.sektorTitel}` : ''} — so sieht die KI-Einführung für die Schüler aus.
           </p>
         </DialogHeader>
