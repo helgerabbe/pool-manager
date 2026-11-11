@@ -7,7 +7,8 @@ import VorschauKnopf from '@/components/workspace/kopf/VorschauKnopf';
 import AufgabePreviewModal from '@/components/allgemeineAufgaben/AufgabePreviewModal';
 import { istVollstaendig } from './LernpaketAufgabenGruppe';
 import NacharbeitToggle from '@/components/release/NacharbeitToggle';
-import { Badge } from '@/components/ui/badge';
+import ElementDetails from '@/components/workspace/kopf/ElementDetails';
+import { Zeile } from '@/components/workspace/panels/LernpaketKopfDetails';
 import AufgabenWerkstatt from '@/components/werkstatt/AufgabenWerkstatt';
 import AufgabeCreateView from '@/components/allgemeineAufgaben/AufgabeCreateView';
 import AufgabeElementKarte from './AufgabeElementKarte';
@@ -54,10 +55,12 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
         overline={paket.titel_des_pakets}
         titel={`Aufgabe ${nummer}${aufgabe.titel?.trim() ? `: ${aufgabe.titel}` : ''}`}
         status={aufgabe.content_status === 'approved' ? 'released' : istVollstaendig(aufgabe) ? 'green' : 'red'}
-        badges={<>
-          <Badge variant="outline">{aufgabe.niveau || NIVEAU_STANDARD}</Badge>
-          <Badge variant="outline">{aufgabe.pflicht === false ? 'Freiwillig' : 'Pflicht'}</Badge>
-        </>}
+        details={
+          <ElementDetails record={aufgabe} resourceType="AllgemeineAufgabe" paket={paket}>
+            <Zeile label="Niveau">{aufgabe.niveau || NIVEAU_STANDARD}</Zeile>
+            <Zeile label="Pflicht oder freiwillig">{aufgabe.pflicht === false ? 'Freiwillig' : 'Pflicht'}</Zeile>
+          </ElementDetails>
+        }
         rechts={kannBearbeiten && (
           <BearbeitenKnopf onClick={bearbeiten} laedt={oeffnet} disabled={!!sperrGrund} title={sperrGrund} />
         )}

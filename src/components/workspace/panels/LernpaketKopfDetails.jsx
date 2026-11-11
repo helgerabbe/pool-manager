@@ -4,13 +4,13 @@ import LernpaketLebenszyklusBadge from './LernpaketLebenszyklusBadge';
 import LernpaketLernzieleButton from './LernpaketLernzieleButton';
 
 // Zeitstempel ohne Zeitzone sind UTC.
-const zeit = (wert) => {
+export const zeit = (wert) => {
   if (!wert) return null;
   const d = new Date(/Z|[+-]\d\d:\d\d$/.test(wert) ? wert : `${wert}Z`);
   return isNaN(d) ? null : `${format(d, 'dd.MM.yyyy, HH:mm')} Uhr`;
 };
 
-function Zeile({ label, children }) {
+export function Zeile({ label, children }) {
   return (
     <div className="flex items-baseline gap-2 text-xs">
       <span className="w-56 shrink-0 text-muted-foreground">{label}</span>

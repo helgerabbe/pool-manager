@@ -67,7 +67,16 @@ export async function updateAllgemeineAufgabe(id, data) {
     data.brian_sync_status = 'modified';
   }
 
-  return base44.entities.AllgemeineAufgabe.update(id, data);
+  const ergebnis = await base44.entities.AllgemeineAufgabe.update(id, data);
+  // Änderungsprotokoll: wer die Aufgabe zuletzt geändert hat (Anzeige im aufklappbaren Kopf).
+  // Ein Fehler hier darf das Speichern der Aufgabe nicht scheitern lassen.
+  base44.auth.me()
+    .then((user) => base44.entities.AuditLog.create({
+      user_email: user.email, action: 'UPDATE', resource_type: 'AllgemeineAufgabe', resource_id: id,
+      changes: { felder: Object.keys(data) }, status: 'success',
+    }))
+    .catch(() => {});
+  return ergebnis;
 }
 
 /**

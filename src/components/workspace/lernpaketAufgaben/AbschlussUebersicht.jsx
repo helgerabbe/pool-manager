@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import ElementKopf from '@/components/workspace/kopf/ElementKopf';
+import ElementDetails from '@/components/workspace/kopf/ElementDetails';
 import BearbeitenKnopf from '@/components/workspace/kopf/BearbeitenKnopf';
 import { variantenVollstaendig } from '@/lib/variantenStatus';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +12,7 @@ import { Badge } from '@/components/ui/badge';
  * zufällig eine davon. Geändert wird erst über „Bearbeiten" – dann erscheint
  * die Bearbeitungsansicht (`children`).
  */
-export default function AbschlussUebersicht({ activity = null, name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
+export default function AbschlussUebersicht({ activity = null, paket = null, name, paketTitel, varianten = [], kannBearbeiten, onZurueck, onVarianteOeffnen, children }) {
   const [bearbeitet, setBearbeitet] = useState(false);
 
   return (
@@ -20,6 +21,7 @@ export default function AbschlussUebersicht({ activity = null, name, paketTitel,
         overline={paketTitel}
         titel={`Abschluss: ${name}`}
         status={activity?.content_status === 'approved' || activity?.is_complete === true || variantenVollstaendig(varianten) ? 'green' : 'red'}
+        details={activity && <ElementDetails record={activity} resourceType="LernpaketPhaseAktivitaet" paket={paket} />}
         badges={<Badge variant="outline">{varianten.length} {varianten.length === 1 ? 'Variante' : 'Varianten'}</Badge>}
         rechts={kannBearbeiten && <BearbeitenKnopf aktiv={bearbeitet} onClick={() => setBearbeitet((v) => !v)} />}
         onZurueck={onZurueck}

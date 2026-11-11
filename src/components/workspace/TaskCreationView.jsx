@@ -710,6 +710,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
         <AbschlussUebersicht
           key={selectedActivity.id}
           activity={selectedActivity}
+          paket={lernpakete.find(lp => lp.id === selectedActivity.lernpaket_id) || null}
           name={selectedCatalog?.name || 'Abschluss'}
           paketTitel={getLernpaketName(selectedActivity.lernpaket_id)}
           varianten={masterAufgabenByActivityId[selectedActivity.id] || []}

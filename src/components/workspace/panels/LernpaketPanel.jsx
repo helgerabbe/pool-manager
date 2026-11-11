@@ -6,9 +6,10 @@ import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
 import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
 import { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
 import LernpaketKopfDetails from './LernpaketKopfDetails';
+import { statusFarbe } from '@/components/workspace/kopf/statusFarbe';
 import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
-import { StatusBadge, kategorieColors } from './SharedUI';
+import { kategorieColors } from './SharedUI';
 import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
@@ -376,8 +377,8 @@ export default function LernpaketPanel({
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{themenfeldTitel}</p>
         )}
         <div className="flex items-center gap-2 flex-wrap">
-          <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
-          <StatusBadge status={isReleased ? 'released' : pStatus} />
+          <h2 className={cn('text-lg font-bold', statusFarbe(isReleased ? 'released' : pStatus).klasse)}
+            title={statusFarbe(isReleased ? 'released' : pStatus).hinweis}>{paket.titel_des_pakets}</h2>
           {isLockedByOther && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
               <Lock className="w-3 h-3" />
