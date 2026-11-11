@@ -212,9 +212,10 @@ export function istSchrittVollstaendig(schritt) {
       // kann die MBK die Aktivität nicht bauen. Der Vorschlag des Assistenten
       // trägt die Vorlage schon, den Text muss die Lehrkraft ergänzen.
       if (fv.galerie_id) return !!String(fv.inhalt || '').trim();
-      // Jede weitere Variante muss ebenfalls Inhalt haben.
-      if ((schritt.varianten || []).some((v) => Object.keys(v?.field_values || {}).length === 0)) return false;
-      return Object.keys(fv).length > 0;
+      // Vollständig, sobald EINE freigegebene Variante Inhalt hat. Weitere
+      // Varianten sind freiwillig; Entwürfe und leere Varianten zählen nicht.
+      const gefuellt = (v) => Object.keys(v?.field_values || {}).length > 0;
+      return gefuellt(schritt) || (schritt.varianten || []).some((v) => !v?.entwurf && gefuellt(v));
     }
     case SCHRITT_TYPEN.OFFEN:
       return !!(schritt.offen?.fragment?.trim() || schritt.offen?.snapshot_html?.trim());

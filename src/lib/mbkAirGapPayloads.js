@@ -42,6 +42,7 @@ import {
 import { resolveLernpaketZugang } from '@/lib/lernpaketZugang';
 import { mitBrianFeldNamen } from '@/lib/brianKatalogFelder';
 import { GRAFIK_VARIANTE_CONTRACT } from '@/lib/mbkGrafikContract';
+import { nurFreigegebene } from '@/lib/schrittVarianten';
 import {
   aktivesFragment, grafikAktiv, VARIANTE_FUNKTIONAL, VARIANTE_GRAFISCH,
 } from '@/lib/grafikVariante';
@@ -1721,11 +1722,12 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false, katalog
             // airgap-1.20.0: Ohne den Namen der Aufgabenart konnte die MBK aus
             // den field_values nicht ableiten, WELCHE Mechanik gebaut werden soll.
             aktivitaet_name: nullable(katalogById?.get?.(s?.aktivitaet_id)?.name),
-            field_values: s?.field_values || {},
+            field_values: nurFreigegebene(s).field_values || {},
             // Varianten des Elements (2026-11-11): field_values ist Variante 1,
             // hier stehen die weiteren. Mit Varianten bekommt jeder Schüler
             // zufällig genau eine; leer = das Element hat nur field_values.
-            varianten: (Array.isArray(s?.varianten) ? s.varianten : []).map((v) => ({
+            // Es reisen nur freigegebene Varianten mit, keine Entwürfe.
+            varianten: nurFreigegebene(s).varianten.map((v) => ({
               variante_id: nullable(v?.id),
               field_values: v?.field_values || {},
             })),

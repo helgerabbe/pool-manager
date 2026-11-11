@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { freigegebeneVarianten } from '@/lib/schrittVarianten';
 import { getSchrittTyp, istSchrittVollstaendig, schrittBeschriftung, schrittZusammenfassung } from '@/lib/schrittTypen';
 
 /** Ein Element einer Aufgabe in der Aufgaben-Übersicht: Art, Titel, Kurzinhalt und Zustand. */
@@ -7,6 +8,8 @@ export default function AufgabeElementKarte({ schritt, nummer, aktivitaetName = 
   const typ = getSchrittTyp(schritt.typ);
   const fertig = istSchrittVollstaendig(schritt);
   const inhalt = schrittZusammenfassung(schritt);
+  const freigegeben = freigegebeneVarianten(schritt).length;
+  const entwuerfe = (schritt.varianten || []).filter((v) => v.entwurf).length;
   return (
     <div className="flex items-start gap-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2.5">
       <span className="flex items-center justify-center w-6 h-6 rounded-full bg-card border border-rose-200 text-xs font-bold text-foreground shrink-0">
@@ -18,9 +21,14 @@ export default function AufgabeElementKarte({ schritt, nummer, aktivitaetName = 
             {schrittBeschriftung(schritt, typ, aktivitaetName)}
           </span>
           <span className="text-sm font-semibold text-foreground">{schritt.titel?.trim() || `Element ${nummer}`}</span>
-          {schritt.varianten?.length > 0 && (
+          {freigegeben > 1 && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-muted-foreground">
-              {schritt.varianten.length + 1} Varianten – jeder Schüler bekommt eine
+              {freigegeben} Varianten – jeder Schüler bekommt eine
+            </span>
+          )}
+          {entwuerfe > 0 && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-muted-foreground">
+              {entwuerfe} {entwuerfe === 1 ? 'Variante' : 'Varianten'} im Entwurf
             </span>
           )}
         </div>

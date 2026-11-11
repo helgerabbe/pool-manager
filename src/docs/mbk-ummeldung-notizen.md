@@ -34,6 +34,12 @@ gegen diese Liste abgleichen und Fehlendes ergänzen.
 - Fortschritt hängt an der id des Schritts, nicht an der Variante.
 - `zufallsauswahl_anzahl` an der Aufgabe ist Altbestand, bleibt 0, wird nicht mehr ausgewertet.
 - Solange die MBK das Feld nicht kennt, baut sie nur Variante 1.
+- Es reisen nur freigegebene Varianten mit. Entwürfe (`entwurf: true`) und leere Varianten
+  bleiben im Pool-Manager. Ein Element ist vollständig, sobald eine freigegebene Variante
+  Inhalt hat.
+- OFFEN: Bei Abschluss-Elementen (Test, über `MasterAufgabe`) gilt noch die alte Regel
+  "alle Varianten müssen freigegeben sein". Angleichen und dann klären, ob der Export
+  dort nicht freigegebene Varianten weglässt.
 
 ## 4. Abschluss und Erledigt-Regeln
 
