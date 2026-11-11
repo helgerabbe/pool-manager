@@ -18,6 +18,11 @@ export default function AufgabeElementKarte({ schritt, nummer, aktivitaetName = 
             {schrittBeschriftung(schritt, typ, aktivitaetName)}
           </span>
           <span className="text-sm font-semibold text-foreground">{schritt.titel?.trim() || `Element ${nummer}`}</span>
+          {schritt.varianten?.length > 0 && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full border border-border bg-card text-muted-foreground">
+              {schritt.varianten.length + 1} Varianten – jeder Schüler bekommt eine
+            </span>
+          )}
         </div>
         {inhalt && <p className="mt-1 text-xs text-muted-foreground line-clamp-3">{inhalt}</p>}
       </div>

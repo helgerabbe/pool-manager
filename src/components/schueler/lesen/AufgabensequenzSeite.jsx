@@ -10,7 +10,7 @@ import { getAktivitaetSeite } from '@/lib/aktivitaetSeitenMap';
 import { fragmentZuDokument, AUFGABE_ZIELFLAECHE } from '@/lib/aufgabeFragment';
 import { grafikAktiv, aktivesFragment } from '@/lib/grafikVariante';
 import { schritteAusAufgabe, getSchrittTyp, SCHRITT_TYPEN } from '@/lib/schrittTypen';
-import { zufallsAuswahl } from '@/lib/zufallsauswahl';
+import { variantenZiehen } from '@/lib/schrittVarianten';
 import { abgabeSatz } from '@/lib/abgabeFormate';
 import useSnapshotHtml from '@/hooks/useSnapshotHtml';
 import useAktivitaetenKatalog from '@/hooks/useAktivitaetenKatalog';
@@ -286,7 +286,7 @@ export default function AufgabensequenzSeite({
   zeigeAufgabenstellung = true,
 }) {
   const fv = aktivitaet?.field_values || {};
-  const schritte = useMemo(() => zufallsAuswahl(schritteAusAufgabe(aktivitaet), aktivitaet), [aktivitaet]);
+  const schritte = useMemo(() => variantenZiehen(schritteAusAufgabe(aktivitaet), aktivitaet?.id), [aktivitaet]);
   const [currentStep, setCurrentStep] = useState(0);
   const [antworten, setAntworten] = useState({});
   const [loesungSichtbar, setLoesungSichtbar] = useState({}); // pro schritt.id → boolean

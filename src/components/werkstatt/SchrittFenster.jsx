@@ -82,8 +82,10 @@ export default function SchrittFenster({
     }
     // Das Übernehmen ist die bewusste Bestätigung der Lehrkraft — erst hier
     // wird aus 'geplant' ein fertiger Schritt.
+    // `_variante` ist nur der Zeiger des Editors und wird nicht gespeichert.
+    const { _variante, ...ohneZeiger } = entwurf;
     onUebernehmen({
-      ...entwurf,
+      ...ohneZeiger,
       status: vollstaendig ? SCHRITT_STATUS.UEBERNOMMEN : SCHRITT_STATUS.GEBAUT,
     });
   };

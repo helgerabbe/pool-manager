@@ -25,7 +25,6 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
   const paketFreigegeben = paket.content_status === 'approved' && !!paket.released_at;
   const istFolge = aufgabe.aufgaben_modus === 'sequenz';
   const schritte = [...(aufgabe.sequenz_schritte || [])].sort((a, b) => (a.reihenfolge ?? 0) - (b.reihenfolge ?? 0));
-  const zufall = aufgabe.zufallsauswahl_anzahl || 0;
   const sperrGrund = paketFreigegeben ? 'Das Lernpaket ist freigegeben.'
     : isLockedByOther ? `Wird gerade von ${lockedByEmail} bearbeitet.` : '';
 
@@ -52,7 +51,6 @@ export default function AufgabeUebersicht({ aufgabe, nummer, paket, einheit = nu
           <h2 className="text-lg font-bold">Aufgabe {nummer}{aufgabe.titel?.trim() ? `: ${aufgabe.titel}` : ''}</h2>
           <Badge variant="outline">{aufgabe.niveau || NIVEAU_STANDARD}</Badge>
           <Badge variant="outline">{aufgabe.pflicht === false ? 'Wahl' : 'Pflicht'}</Badge>
-          {zufall > 0 && <Badge variant="outline">{zufall} von {schritte.length} zufällig</Badge>}
         </div>
       </div>
 

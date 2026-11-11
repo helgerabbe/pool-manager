@@ -1722,6 +1722,13 @@ export function buildSequenzSchritteFuerExport(aufgabe, { istKi = false, katalog
             // den field_values nicht ableiten, WELCHE Mechanik gebaut werden soll.
             aktivitaet_name: nullable(katalogById?.get?.(s?.aktivitaet_id)?.name),
             field_values: s?.field_values || {},
+            // Varianten des Elements (2026-11-11): field_values ist Variante 1,
+            // hier stehen die weiteren. Mit Varianten bekommt jeder Schüler
+            // zufällig genau eine; leer = das Element hat nur field_values.
+            varianten: (Array.isArray(s?.varianten) ? s.varianten : []).map((v) => ({
+              variante_id: nullable(v?.id),
+              field_values: v?.field_values || {},
+            })),
           };
         case 'offen':
           // airgap-1.24.0: Es geht GENAU die Fassung hinaus, die die Lehrkraft

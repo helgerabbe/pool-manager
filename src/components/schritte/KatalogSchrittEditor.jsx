@@ -8,6 +8,8 @@ import AktivitaetInhaltEditor from '@/components/schritte/AktivitaetInhaltEditor
 import { hatEigenenEditor } from '@/lib/aktivitaetEditorMap';
 import StudyflixSucheField from '@/components/workspace/StudyflixSucheField';
 import { standardAufgabentext } from '@/lib/aufgabentextStandard';
+import VariantenLeiste from '@/components/schritte/VariantenLeiste';
+import { variantenListe, setzeVarianteWerte } from '@/lib/schrittVarianten';
 
 /**
  * KatalogSchrittEditor
@@ -39,7 +41,11 @@ export default function KatalogSchrittEditor({ schritt, onChange, einheit = null
 
   const aktivitaet = schritt.aktivitaet_id ? katalogMap[schritt.aktivitaet_id] : null;
   const formSchema = useMemo(() => aktivitaet?.form_schema || [], [aktivitaet]);
-  const werte = schritt.field_values || {};
+  // Varianten: bearbeitet wird immer genau eine, die übrigen bleiben unberührt.
+  const varianten = variantenListe(schritt);
+  const aktiv = Math.min(schritt._variante || 0, varianten.length - 1);
+  const werte = varianten[aktiv].field_values || {};
+  const setWerte = (fv) => onChange(setzeVarianteWerte(schritt, aktiv, fv));
 
   const setAktivitaet = (id) => {
     // Formatwechsel verwirft die alten Feldwerte — sie gehören zu einem
@@ -48,12 +54,14 @@ export default function KatalogSchrittEditor({ schritt, onChange, einheit = null
       ...schritt,
       aktivitaet_id: id,
       field_values: {},
+      varianten: [],
+      _variante: 0,
       herkunft: { ...(schritt.herkunft || {}), quelle: 'katalog' },
     });
   };
 
   const setWert = (feld, wert) => {
-    onChange({ ...schritt, field_values: { ...werte, [feld]: wert } });
+    setWerte({ ...werte, [feld]: wert });
   };
 
   if (isLoading) {
@@ -101,11 +109,16 @@ export default function KatalogSchrittEditor({ schritt, onChange, einheit = null
           gleichen, den auch Lernpaket und Regieblatt benutzen. Formate ohne
           eigenen Editor zeigen ihre Felder direkt: für drei Textfelder lohnt
           kein zusätzliches Fenster. */}
+      {aktivitaet?.supports_master && (
+        <VariantenLeiste schritt={schritt} aktiv={aktiv} onChange={onChange} />
+      )}
+
       {aktivitaet && hatEigenenEditor(aktivitaet.name) && (
         <AktivitaetInhaltEditor
+          key={varianten[aktiv].id || aktiv}
           katalogEntry={aktivitaet}
           fieldValues={werte}
-          onChange={(fv) => onChange({ ...schritt, field_values: fv })}
+          onChange={setWerte}
           kontext={schritt?.plan?.kurzbeschreibung || ''}
         />
       )}
