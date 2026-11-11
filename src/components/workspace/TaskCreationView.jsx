@@ -755,6 +755,12 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
     };
   }, [isEditingActive]);
 
+  // Einstieg / Gesamtaufgabe gewählt: das zuvor offene Lernpaket klappt zu.
+  const platzWaehlen = (item) => {
+    setOpenPacketIds(new Set());
+    setSelectedItem(item);
+  };
+
   return (
     <div className="flex flex-row flex-1 overflow-hidden">
 
@@ -839,7 +845,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
               )}
               <div className="space-y-0.5">
                 {themenfeld && (
-                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={setSelectedItem} />
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[0]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} />
                 )}
                 {pakete.map((lernpaket, idx) => (
                   <SidebarLernpaketFolder
@@ -864,7 +870,7 @@ export default function TaskCreationView({ einheitId, einheit = null, kannBearbe
                      />
                 ))}
                 {themenfeld && (
-                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={setSelectedItem} />
+                  <ThemenfeldPlatzKnoten platz={THEMENFELD_PLAETZE[1]} themenfeld={themenfeld} selectedItem={selectedItem} onSelect={platzWaehlen} />
                 )}
               </div>
             </div>

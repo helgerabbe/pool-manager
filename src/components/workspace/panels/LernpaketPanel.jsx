@@ -2,18 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { toast } from 'sonner';
-import { getLernpaketStatus } from '@/lib/statusLogic';
+import { getAufgabenByEinheit } from '@/services/AllgemeineAufgabeService';
+import { aufgabenImLernpaket } from '@/lib/lernpaketAufgaben';
+import { istVollstaendig as istAufgabeVollstaendig } from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenGruppe';
+import LernpaketKopfDetails from './LernpaketKopfDetails';
 import { cn } from '@/lib/utils';
 import { useLernpaketLock } from '@/hooks/useLocks';
 import { StatusBadge, kategorieColors } from './SharedUI';
-import LernpaketLebenszyklusBadge from './LernpaketLebenszyklusBadge';
 import PhaseContent from './PhaseContent';
 import LernpaketWizardModal from '@/components/workspace/lernpaketWizard/LernpaketWizardModal';
 import LernpaketPreviewModal from '@/components/workspace/preview/LernpaketPreviewModal';
 import LernpaketAnbietenButton from '@/components/workspace/integration/LernpaketAnbietenButton';
 import LernpaketAufgabenBereich from '@/components/workspace/lernpaketAufgaben/LernpaketAufgabenBereich';
 import LernpaketElementBereich from '@/components/workspace/lernpaketAufgaben/LernpaketElementBereich';
-import LernpaketLernzieleButton from './LernpaketLernzieleButton';
 import AufgabenEinstellungenHilfe from '@/components/workspace/lernpaketAufgaben/AufgabenEinstellungenHilfe';
 
 // Die drei Teile des Lernpakets (2026-11-10). Schlüssel = bisherige Phase.
@@ -65,6 +66,7 @@ export default function LernpaketPanel({
   const [wizardOpen, setWizardOpen] = useState(false);
   // Schüler-Vorschau des gesamten Pakets (aus Tab 5 hierher gewandert).
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [detailsOffen, setDetailsOffen] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: lernpaketAktivitaeten = [], isFetched: aktivitaetenFetched } = useQuery({
@@ -104,7 +106,23 @@ export default function LernpaketPanel({
     activeAktivitaetenForRelease.every(a => a.is_complete === true);
   // Status-Badge: mit Aktivitäten berechnen, damit inhaltliche
   // Unvollständigkeit (is_complete=false) das Paket ehrlich rot zeigt.
-  const pStatus = getLernpaketStatus(paket, paketZiele, aufgaben, userEmail, [], lernpaketAktivitaeten);
+  // Gleiche Regel wie im Menübaum: Sind alle Elemente (Wissensspeicher,
+  // Aufgaben, Abschluss) vollständig, ist das Lernpaket vollständig.
+  const { data: alleAufgaben = [] } = useQuery({
+    queryKey: ['allgemeineAufgaben', paket.einheit_id],
+    queryFn: () => getAufgabenByEinheit(paket.einheit_id),
+    enabled: !!paket.einheit_id,
+  });
+  const paketAufgaben = aufgabenImLernpaket(alleAufgaben, paket.id);
+  const statusElemente = activeAktivitaetenForRelease.filter(
+    a => !(a.phase === 'Übung' && paketAufgaben.length > 0)
+  );
+  const pStatus = statusElemente.length + paketAufgaben.length === 0
+    ? 'new'
+    : statusElemente.every(a => a.content_status === 'approved' || a.is_complete === true) &&
+      paketAufgaben.every(istAufgabeVollstaendig)
+      ? 'green'
+      : 'red';
   const releaseReadiness = useLernpaketReleaseReadiness(paket, paketAktivitaetenForRelease);
   const canToggleRelease = useCanToggleLernpaketRelease(paket, einheit);
   // Entkopplung (2026-08-11): Die Freigabe eines Arbeitsplans/Dashboards
@@ -345,23 +363,25 @@ export default function LernpaketPanel({
           der space-y-6-Abstand des Containers sie nicht auseinanderzieht. */}
       <div className="space-y-3">
       <div className="pb-3 border-b">
+        <div className="flex items-start gap-3">
+        <button
+          type="button"
+          onClick={() => setDetailsOffen(v => !v)}
+          className="flex-1 min-w-0 flex items-start gap-2 text-left"
+          title="Weitere Informationen ein- oder ausblenden"
+        >
+          <ChevronRight className={cn('w-4 h-4 mt-1 shrink-0 text-muted-foreground transition-transform', detailsOffen && 'rotate-90')} />
+          <div className="min-w-0">
         {themenfeldTitel && (
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">{themenfeldTitel}</p>
         )}
         <div className="flex items-center gap-2 flex-wrap">
           <h2 className="text-lg font-bold">{paket.titel_des_pakets}</h2>
           <StatusBadge status={isReleased ? 'released' : pStatus} />
-          <LernpaketLebenszyklusBadge syncStatus={paket.sync_status} />
           {isLockedByOther && (
             <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-100 border border-amber-200 text-amber-800 text-xs font-medium">
               <Lock className="w-3 h-3" />
               Gesperrt von {paket.locked_by_email}
-            </div>
-          )}
-          {canEdit && (
-            <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 border border-blue-200 text-blue-700 text-xs font-medium">
-              <PenLine className="w-3 h-3" />
-              In Bearbeitung
             </div>
           )}
           {(() => {
@@ -376,6 +396,37 @@ export default function LernpaketPanel({
             ) : null;
           })()}
         </div>
+          </div>
+        </button>
+        {/* Bearbeiten steht oben rechts; im Bearbeitungsmodus steht dort Speichern. */}
+        {kannBearbeiten && (canEdit ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" onClick={handleCancelEditDialog} disabled={isSavingDialog}>
+              Abbrechen
+            </Button>
+            <Button size="sm" onClick={handleSaveEditDialog} disabled={isSavingDialog} className="gap-2">
+              {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              Speichern
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenEditDialog}
+            disabled={isAcquiringLock || isLockedByOther || isReleased}
+            title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
+            className="gap-2 shrink-0 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
+          >
+            {isAcquiringLock ? (
+              <><Loader2 className="w-3.5 h-3.5 animate-spin" />Öffne...</>
+            ) : (
+              <><PenLine className="w-3.5 h-3.5" />Bearbeiten</>
+            )}
+          </Button>
+        ))}
+        </div>
+        {detailsOffen && <LernpaketKopfDetails paket={paket} einheit={einheit} lernziele={paketZiele} />}
       </div>
 
       {/* Aktions-Leiste (unter der Überschrift). Bearbeiten + Mit KI füllen
@@ -393,51 +444,12 @@ export default function LernpaketPanel({
         >
           <Eye className="w-3.5 h-3.5" /> Vorschau
         </Button>
-        <LernpaketLernzieleButton lernziele={paketZiele} />
         {/* Privatbereich: fertiges Lernpaket einer gemeinschaftlichen Einheit anbieten */}
         {einheit?.sichtbarkeit === 'privat' && kannBearbeiten && (
           <LernpaketAnbietenButton paket={paket} einheit={einheit} />
         )}
         {kannBearbeiten && (
           <>
-          {canEdit ? (
-            /* Im Bearbeitungsmodus: Button zum Speichern & Beenden */
-            <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelEditDialog}
-                disabled={isSavingDialog}
-                className="gap-2"
-              >
-                Abbrechen
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleSaveEditDialog}
-                disabled={isSavingDialog}
-                className="gap-2"
-              >
-                {isSavingDialog ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                Speichern
-              </Button>
-            </>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenEditDialog}
-              disabled={isAcquiringLock || isLockedByOther || isReleased}
-              title={isReleased ? releasedLockTitle : isLockedByOther ? `🔒 Wird gerade von ${paket.locked_by_email} bearbeitet` : ''}
-              className="gap-2 bg-green-50 border-green-200 text-green-800 hover:bg-green-100 hover:text-green-900"
-            >
-              {isAcquiringLock ? (
-                <><Loader2 className="w-3.5 h-3.5 animate-spin" />Öffne...</>
-              ) : (
-                <><PenLine className="w-3.5 h-3.5" />Bearbeiten</>
-              )}
-            </Button>
-          )}
           <Button
             variant="outline"
             size="sm"
@@ -499,7 +511,8 @@ export default function LernpaketPanel({
 
         {PHASES.map(phase => {
           const phaseConfig = (canEdit ? localPhasenConfig : (paket.phasen_konfiguration || {}))[phase.key] || {};
-          const isDisabled = phaseConfig.disabled === true;
+          // Wissensspeicher und Abschluss lassen sich nicht mehr ausschalten; nur die bisherigen Übungen.
+          const isDisabled = phase.key === 'Übung' && phaseConfig.disabled === true;
           const phaseActivities = lernpaketAktivitaeten.filter(a => a.lernpaket_id === paket.id && a.phase === phase.key);
           const hasReleasedActivity = phaseActivities.some(a => a.content_status === 'approved');
           const isExpanded = expandedPhase === phase.key;
@@ -512,17 +525,6 @@ export default function LernpaketPanel({
                 <span className="text-xl">{phase.icon}</span>
                 <h3 className="text-xl font-bold text-foreground">{teil.titel}</h3>
                 {istAufgabenTeil && <AufgabenEinstellungenHilfe imLernpaket />}
-                {canEdit && !istAufgabenTeil && (
-                  <div className="ml-auto flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">Aktiv</span>
-                    <Switch
-                      checked={!isDisabled}
-                      onCheckedChange={() => handlePhaseToggle(phase.key)}
-                      disabled={hasReleasedActivity}
-                      title={hasReleasedActivity ? '🔒 Dieser Teil enthält freigegebene Elemente' : ''}
-                    />
-                  </div>
-                )}
               </div>
               <p className="text-xs text-muted-foreground">{teil.hinweis}</p>
             </div>
