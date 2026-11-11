@@ -224,3 +224,24 @@ Nach Buch S. 94–95, mit der Lehrkraft abgestimmt. Alle neuen Aufgaben sind Ent
 | 73156 | Kreisring, Kreisausschnitt und Kreisbogen | Fähigkeit/Fertigkeit | Ich kann Kreisbogen und Kreisausschnitt in Abhängigkeit vom Mittelpunktswinkel berechnen. | Ich kann ausrechnen, wie lang ein Bogenstück ist oder wie groß ein Pizzastück (Sektor) bei einem bestimmten Winkel ist. |
 | ba57d | Kreisring, Kreisausschnitt und Kreisbogen | Fähigkeit/Fertigkeit | Ich kann den Flächeninhalt von Kreisausschnitten berechnen. | Ich kann berechnen, wie groß ein 'Tortenstück' eines Kreises ist. |
 | 2ac68 | Kreisring, Kreisausschnitt und Kreisbogen | Fachwissen | Ich kann Teilflächen und Teilstrecken am Kreis unter Berücksichtigung des Mittelpunktswinkels Alpha präzise berechnen und formal darstellen. | Ich kann den Umfang und die Fläche von 'Tortenstücken' oder Ringen bestimmen. |
+
+## Lernpaket „Kreisring, Kreisausschnitt und Kreisbogen“ neu aufgebaut (2026-11-11)
+
+Nach Buch S. 97–98. Alle neuen Aufgaben sind Entwürfe. Die Zeichnungen sind nachgezeichnet, keine Bildausschnitte aus dem Buch.
+
+| Nr. | Aufgabe | Niveau | Elemente |
+|---|---|---|---|
+| 1 | Herleitung Kreisring (Bestand 79f24) | wie bisher | Handlung, unverändert |
+| 2 | Die Formel für den Kreisring anwenden (S. 97, Nr. 8, 9) | GE, Pflicht | Merkkasten und Musterbeispiel (Text); offen: Tabelle Nr. 9 a–e; offen: vier Kreisringe Nr. 8 |
+| 3 | Kreisringe im Alltag: Blechstück und Sitzbank (Nr. 10, 11) | GE, Pflicht | zwei offene Aufgaben mit geführten Rechenschritten |
+| 4 | Wo liegt das Loch? Der Kettenanhänger (Nr. 7) | GE, freiwillig | Miniquiz; Freitextfrage mit KI (nur die Begründung) |
+| 5 | Vom Umfang zum Kreisring (Nr. 12) | E, Pflicht | offen: geführte Rechenschritte |
+| 6 | Kreisausschnitt und Kreisbogen: Winkel und Formeln verstehen (S. 98, Nr. 1, 2, 4) | GE, Pflicht | offen: Glücksräder; Merkkasten (Text); Sortierung; Miniquiz |
+| 7 | Kreisausschnitt und Kreisbogen berechnen (S. 98, Nr. 3 a, 5, 6) | GE, Pflicht | offen: vier Kreise; offen: zwei Kreisausschnitte; offen: Baukran |
+
+- **Ausgeblendet (sync_status 'to_delete', vorher 'new'):** 18839 Kreisring berechnen (war freigegeben), e4178 Kreisausschnitt, Kreisbogen (war freigegeben, hat ein Gespräch in Brian), 4e368 Kreisring, Kreisausschnitt und Kreisbogen berechnen (PDF-Arbeitsblatt, Entwurf).
+- **Hinweise des Moodle-Teams:** „KI verzählt sich bei zu vielen Teilaufgaben“ (18839) und „Auftrag ohne Material“ (e4178) sind inhaltlich erledigt, weil die neuen Aufgaben sich selbst prüfen und Formeln und Maße enthalten. Die beiden Hinweise stehen im Prüfbereich noch auf „offen“.
+- **Lösungen nachgerechnet:** Nr. 8 a) 69,27, b) 164,75, c) 106,91, d) 32,99 cm². Nr. 9 a) 24,10 cm², b) 12,72 cm², c) 0,47 m², d) 43,83 m², e) 149 539,81 cm². Nr. 10: 33,37 cm². Nr. 11: 2,01 m² und 2,61 m². Nr. 12: 5,45 m² (mit gerundeten Radien bis 5,53 m², beides gilt). S. 98 Nr. 3 a: 180°, 120°, 60°, 22,5°. Nr. 5: 160,85 cm² / 20,11 cm und 1847,26 cm² / 87,96 cm. Nr. 6: 13,44 m.
+- **Nr. 8 b bis d:** Im Buch liegen die Innenkreise nicht in der Mitte. Die Aufgabe nennt nur die Maße und zeigt einen allgemeinen Kreisring.
+- **Weggelassen:** S. 96 ganz (zusammengesetzte Figuren), S. 97 Nr. 6 (Maße nicht sicher lesbar), S. 98 Nr. 1 a (Anzahl der Felder im Buchbild nicht sicher lesbar; das Glücksrad hat hier 10 Felder), Nr. 3 b als Rechenaufgabe (steckt im Miniquiz).
+- **Offen:** Der Sofatutor-Link im Wissensspeicher (nur mit Konto abspielbar) ist im Pool-Manager noch nicht durch die Studyflix-Videos ersetzt; im Kurs hat das Moodle-Team das schon getan.
