@@ -258,7 +258,8 @@ export function buildAirGapBulkPlan({
     const sourceMaxTs = tsFor(TYPES.TASK, aa.id);
     const isOoS = isOoSFor(existing, sourceMaxTs);
     const { status, skipReason } = classify({ existing, blockReason, isOutOfSync: isOoS });
-    const ebeneLabel = aa.anforderungsebene === '3 - Projekt' ? 'Ebene 3' : 'Ebene 2';
+    const ebeneLabel = aa.anforderungsebene === '3 - Projekt' ? 'Ebene 3'
+      : aa.lernpaket_id ? 'Aufgabe im Lernpaket' : 'Ebene 2';
     items.push({
       key: `mbk-task-aa::${aa.id}`,
       label: `🎯 ${ebeneLabel}: ${aa.titel || '(ohne Titel)'}`,

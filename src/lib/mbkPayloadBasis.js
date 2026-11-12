@@ -22,7 +22,7 @@
 
 import { AIRGAP_AENDERUNGEN } from '@/lib/airGapAenderungen';
 
-export const MBK_AIRGAP_VERSION = 'airgap-1.25.0';
+export const MBK_AIRGAP_VERSION = 'airgap-1.26.0';
 
 export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioniert'];
 
@@ -35,6 +35,17 @@ export const LERNTYP_KEYS = ['minimalist', 'pragmatiker', 'ehrgeizig', 'passioni
  */
 export function isTombstone(record) {
   return record?.sync_status === 'to_delete';
+}
+
+/**
+ * Welche allgemeinen Aufgaben mit Inhalt in Payload 3 reisen (airgap-1.26.0):
+ * jede Aufgabe in einem Lernpaket oder an einem Themenfeld-Platz – gleich
+ * welcher Ebene – und wie bisher alle Aufgaben der Ebenen 2 und 3. Vorher
+ * fehlten Lernpaket-Aufgaben der Ebene 1, also fast alle.
+ */
+export function istExportAufgabe(a) {
+  return !!a?.lernpaket_id || !!a?.themenfeld_platz
+    || a?.anforderungsebene === '2 - Transfer' || a?.anforderungsebene === '3 - Projekt';
 }
 
 /**

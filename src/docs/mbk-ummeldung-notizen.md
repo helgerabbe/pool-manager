@@ -1,7 +1,42 @@
 # Merkzettel: Was der MBK gemeldet und im Payload umgebaut werden muss
 
-Stand: 2026-11-11. Laufende Sammelliste. Bis auf Abschnitt 8 (Felder `art` und
-`ist_projekt`, angekündigt mit `airgap-1.25.0`) ist der MBK noch nichts davon gemeldet.
+Stand: 2026-11-12. Die Abschnitte 1 bis 5, 8 und 9 sind der MBK mit `airgap-1.26.0`
+gemeldet (Ticket #166, https://github.com/IGS-Seevetal/Poolzeit/issues/166). Die Texte
+darunter sind der Stand vor der Meldung; „noch nicht gemeldet“ gilt dort nicht mehr.
+
+## Gemeldet und im Payload umgebaut: airgap-1.26.0 (2026-11-12)
+
+Wortlaut der Meldung: `src/lib/airGapAenderungen.js` (15 Punkte, drei Beispiele). Sie reist
+auch in jedem Payload unter `meta.aenderungen` mit.
+
+Am Payload geändert (`src/lib/mbkAirGapPayloads.js`, `src/lib/mbkPayloadBasis.js`):
+
+- **Fehler behoben:** Aufgaben im Lernpaket mit Ebene 1 fehlten in Payload 3 ganz, weil die
+  Export-Wege nur Ebene 2 und 3 durchließen. Bei Exploring Australia waren das 85 von 99
+  Aufgaben. Jetzt reist jede Aufgabe in einem Lernpaket oder an einem Themenfeld-Platz mit
+  (`istExportAufgabe`).
+- Ausgeblendete Lernpakete (`to_delete`) reisen in keinem Payload mehr mit, samt Lernzielen,
+  Aktivitäten und Aufgaben. Verweise darauf im Arbeitsplan entfallen.
+- Payload 2: `aufgaben` am Lernpaket, `plaetze` am Themenfeld. Datei-Zuordnung: alle Aufgaben
+  eines Lernpakets stehen in `contained_aufgabe_ids` seiner Datei, nicht mehr im
+  Themenfeld-Bündel.
+- Payload 3: `aufgabe_ids` am Lernpaket, `braucht_nacharbeit` an der Aufgabe. Aufgaben im
+  Lernpaket erben das Zurück-Ziel ihres Lernpakets.
+- Payload 4: KI-Aufgaben im Lernpaket zielen auf die Datei des Lernpakets.
+- `zufallsauswahl_anzahl` wird immer als 0 ausgegeben.
+
+Geprüft: Payloads 2 bis 4 für Exploring Australia, Kurzgeschichten und Kreis und Körper aus
+den echten Daten erzeugt. Jede sichtbare Aufgabe steht genau einmal in Payload 2, Payload 3
+und der Datei-Zuordnung; kein Verweis im Arbeitsplan zeigt auf ein fehlendes Lernpaket.
+Nicht geprüft: die Oberfläche des Export-Centers und der Weg nach GitHub.
+
+Weiter offen:
+
+- Antwort der MBK: Wie räumt sie Ausgeblendetes im Kurs ab, ohne dass Fortschritt verloren geht?
+- `master_anzeige_modus` reist weiter mit, obwohl die Wahl aus der Oberfläche entfernt ist.
+- Kurzgeschichten: Im Arbeitsplan steht ein Eintrag, dessen Art der Export nicht erkennt
+  (`item_kind` leer). Bestand schon vorher.
+- Abschnitt 6 und 7 unten.
 
 Diese Liste ist aus den Umbauten heraus mitgeschrieben, nicht gegen den Payload geprüft.
 Vor der großen Meldung: `src/lib/mbkAirGapPayloads.js` (und `pushEinheitToGithub`,

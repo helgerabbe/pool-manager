@@ -34,6 +34,7 @@ import {
   buildSystembausteinPayloadBundle,
   extractNavigationContextByRefId,
 } from '@/lib/mbkAirGapPayloads';
+import { istExportAufgabe } from '@/lib/mbkPayloadBasis';
 import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
 import { downloadZip, slugify } from '@/lib/airGapClipboard';
 import { collectMediaEntries, buildMediaManifest } from '@/lib/airGapMediaManifest';
@@ -118,9 +119,7 @@ export default function AirGapPayloadDownloadCard({ einheitId }) {
   });
 
   const allgemeineAufgabenEbene23 = useMemo(
-    () => allgemeineAufgaben.filter(
-      (a) => a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt'
-    ),
+    () => allgemeineAufgaben.filter(istExportAufgabe),
     [allgemeineAufgaben]
   );
 

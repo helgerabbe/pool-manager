@@ -47,6 +47,7 @@ import {
   isMicroBriefingActivity,
   makeSystembausteinReferenceId,
 } from '@/lib/mbkAirGapPayloads';
+import { istExportAufgabe } from '@/lib/mbkPayloadBasis';
 import { computeSystemContextHash, computeUiConfigHash } from '@/lib/systemContextHash';
 import {
   copyAsMarkdownFence,
@@ -228,9 +229,7 @@ export default function MBKAirGapTabsPanel({ einheitId }) {
 
   const allgemeineAufgabenEbene23 = useMemo(
     () =>
-      allgemeineAufgaben.filter(
-        (a) => a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt'
-      ),
+      allgemeineAufgaben.filter(istExportAufgabe),
     [allgemeineAufgaben]
   );
 

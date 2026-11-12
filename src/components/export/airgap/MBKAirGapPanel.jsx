@@ -39,6 +39,7 @@ import {
   buildMicroPayloadForActivity,
   buildMicroPayloadForAllgemeineAufgabe,
 } from '@/lib/mbkAirGapPayloads';
+import { istExportAufgabe } from '@/lib/mbkPayloadBasis';
 import { computeSystemContextHash } from '@/lib/systemContextHash';
 import {
   copyAsMarkdownFence,
@@ -194,9 +195,7 @@ export default function MBKAirGapPanel({ einheitId }) {
   // (TDZ-Falle, sonst „Cannot access before initialization").
   const allgemeineAufgabenEbene23 = useMemo(
     () =>
-      allgemeineAufgaben.filter(
-        (a) => a.anforderungsebene === '2 - Transfer' || a.anforderungsebene === '3 - Projekt'
-      ),
+      allgemeineAufgaben.filter(istExportAufgabe),
     [allgemeineAufgaben]
   );
 

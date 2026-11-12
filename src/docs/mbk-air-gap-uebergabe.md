@@ -410,6 +410,7 @@ Secrets. Alles client-seitig + DB-seitig.
 | 1.0.0 | 2026-05-08 | Initiale Spezifikation der Air-Gap-Auslieferung (4 Payloads, JSON+Markdown-Fence, Datei-Download, Hash-Anzeige, Persistenz in `ExportPrompts`, UI-Reihenfolge ohne Hard-Lock) |
 | 1.1.0 | 2026-05-09 | Ticket 2 (Air-Gap 2.0): SCORM-Modularitäts-Vertrag in Payload 1 + `scorm_file_mapping` in Payload 2. `MBK_AIRGAP_VERSION` → `airgap-1.1.0`. |
 | 1.2.0 | 2026-05-09 | **Bündel-Modell + Platzhalter-Vertrag.** SCORM-Auslieferung wechselt von `task-<reference_id>.html` pro Aufgabe auf vier Bündel-Typen: Lernpaket-Monolith, Themenfeld-Bündel, Projekt-Bündel, deduplizierte System-Bausteine. KI-Aktivitäten werden NICHT mehr als eigenständige Tasks ausgegeben, sondern als HTML-Fragmente (`fragment-<activity_id>.html`) mit UUID-Marker und `system-context-hash`. Operator-Skript (Stufe 2) merged Fragmente in Hüllen. `MBK_AIRGAP_VERSION` → `airgap-1.2.0`, `META_SYSTEM_PROMPT_VERSION` → `2.2`. |
+| airgap-1.26.0 | 2026-11-12 | **Lernpaket = Wissensspeicher, Aufgaben, Abschluss.** Aufgaben mit `lernpaket_id` gehören zur Datei ihres Lernpakets (`contained_aufgabe_ids`), nicht mehr ins Themenfeld-Bündel, und reisen unabhängig von der Ebene in Payload 3. Neu: `aufgaben` am Lernpaket und `plaetze` am Themenfeld (Payload 2), `aufgabe_ids` am Lernpaket (Payload 3). Ausgeblendete Lernpakete reisen nicht mit. Vollständige Liste: `src/lib/airGapAenderungen.js`. Die Versionen 1.3.0 bis 1.25.0 stehen im Kopf von `src/lib/mbkAirGapPayloads.js`. |
 
 ---
 

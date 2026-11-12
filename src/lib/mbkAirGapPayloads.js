@@ -217,10 +217,14 @@ const SCORM_DELIVERY_CONTRACT = {
     'dashboard-passioniert.html',
   ],
   description:
-    'Bündel-Vertrag: Pro Lernpaket genau eine Monolith-HTML. Allgemeine '
-    + 'Aufgaben Ebene 2 werden pro Themenfeld in einer HTML gebündelt; '
-    + 'Aufgaben ohne Themenfeld landen in der Orphan-Datei. Allgemeine '
-    + 'Aufgaben Ebene 3 (Projekte) werden pro Einheit in einer einzigen '
+    'Bündel-Vertrag: Pro Lernpaket genau eine Monolith-HTML. Ein Lernpaket '
+    + 'besteht aus Wissensspeicher, Aufgaben und Abschluss; seine Aufgaben '
+    + '(Aufgaben mit `lernpaket_id`, im Mapping unter `contained_aufgabe_ids`) '
+    + 'gehören in diese Datei, in der Reihenfolge `reihenfolge_im_lernpaket`. '
+    + 'Aufgaben ohne Lernpaket (Ebene 2, auch Einstieg und Gesamtaufgabe eines '
+    + 'Themenfelds) werden pro Themenfeld in einer HTML gebündelt; '
+    + 'Aufgaben ohne Themenfeld landen in der Orphan-Datei. Projektaufgaben '
+    + '(Ebene 3) ohne Lernpaket werden pro Einheit in einer einzigen '
     + 'HTML zusammengefasst. System-Bausteine werden ab airgap-1.6.0 PRO '
     + 'LERNTYP-PFAD individuell generiert (Pattern '
     + '`system-<lerntyp>-<baustein_id>.html`); ein Briefing in Payload 5 '
@@ -985,13 +989,28 @@ function summarizeLernpaket(lp, phasenDesPakets, katalogById, zugangJeLerntyp = 
  * portierbare Struktur um. Items werden hierarchisch (parent/children)
  * gerendert, damit Bündel-Verschachtelungen klar bleiben.
  */
+/**
+ * airgap-1.26.0: IDs der ausgeblendeten Lernpakete (sync_status='to_delete').
+ * Sie reisen in keinem Payload mit – samt Lernzielen, Aktivitäten und Aufgaben.
+ */
+function ausgeblendeteLernpaketIds(lernpakete) {
+  return new Set((lernpakete || []).filter(isTombstone).map((lp) => lp.id));
+}
+
+const nachReihenfolgeImLernpaket = (a, b) =>
+  (a.reihenfolge_im_lernpaket ?? 0) - (b.reihenfolge_im_lernpaket ?? 0);
+
 function summarizeSektor(sektor, themenfelderById, bausteinById = new Map(), refIndex = {}, lerntyp = null) {
   // Platzhalter-Bausteine bleiben in der DB-Konfiguration als Arbeitshilfe
   // für Tab 7 erhalten, fließen aber NICHT in den Export. Wir filtern sie
   // hier ein einziges Mal raus — alles weiter unten arbeitet auf der
   // bereinigten Liste.
   const allItems = Array.isArray(sektor?.items) ? sektor.items : [];
-  const items = allItems.filter((it) => !isPlatzhalterItem(it));
+  // airgap-1.26.0: Verweise auf Ausgeblendetes (Lernpaket oder Aufgabe mit
+  // sync_status='to_delete') entfallen ebenfalls.
+  const items = allItems.filter(
+    (it) => !isPlatzhalterItem(it) && !refIndex?.nichtImExport?.has?.(it?.ref_id)
+  );
   const rootItems = items.filter((it) => !it?.parent_instance_id);
   const childrenByParent = new Map();
   for (const it of items) {
@@ -1128,9 +1147,36 @@ export function buildStructurePayload({
     nowIso,
   });
 
+  // airgap-1.26.0: Ausgeblendete Lernpakete reisen nicht mit – samt
+  // Lernzielen, Aktivitäten und Aufgaben darin.
+  const ausgeblendetLp = ausgeblendeteLernpaketIds(lernpakete);
+  const nichtImExport = new Set([
+    ...ausgeblendetLp,
+    ...(allgemeineAufgaben || [])
+      .filter((aa) => isTombstone(aa) || ausgeblendetLp.has(aa.lernpaket_id))
+      .map((aa) => aa.id),
+  ]);
+  lernpakete = (lernpakete || []).filter((lp) => !ausgeblendetLp.has(lp.id));
+  lernziele = (lernziele || []).filter((lz) => !ausgeblendetLp.has(lz.lernpaket_id));
   // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
-  phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
-  allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !isTombstone(aa));
+  phaseAktivitaeten = (phaseAktivitaeten || []).filter(
+    (pa) => !isTombstone(pa) && !ausgeblendetLp.has(pa.lernpaket_id)
+  );
+  allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !nichtImExport.has(aa.id));
+
+  // airgap-1.26.0: Aufgaben je Lernpaket (Teil „Aufgaben") und je
+  // Themenfeld-Platz (Einstieg / Gesamtaufgabe), jeweils in Reihenfolge.
+  const exportLpIds = new Set(lernpakete.map((lp) => lp.id));
+  const aufgabenByPaket = new Map();
+  for (const aa of [...allgemeineAufgaben].sort(nachReihenfolgeImLernpaket)) {
+    if (!exportLpIds.has(aa.lernpaket_id)) continue;
+    if (!aufgabenByPaket.has(aa.lernpaket_id)) aufgabenByPaket.set(aa.lernpaket_id, []);
+    aufgabenByPaket.get(aa.lernpaket_id).push(aa);
+  }
+  const platzIds = (tfId, platz) => [...allgemeineAufgaben]
+    .filter((aa) => !aa.lernpaket_id && aa.themenfeld_id === tfId && aa.themenfeld_platz === platz)
+    .sort(nachReihenfolgeImLernpaket)
+    .map((aa) => aa.id);
 
   // Themenfelder + Pakete sortieren.
   // airgap-1.25.0: Das Projekt-Themenfeld steht immer an letzter Stelle.
@@ -1200,6 +1246,15 @@ export function buildStructurePayload({
       kategorie: nullable(lz.kategorie),
       schueler_uebersetzung: nullable(lz.schueler_uebersetzung),
     }));
+    // airgap-1.26.0: Teil „Aufgaben" des Lernpakets, in Reihenfolge. Die
+    // Inhalte stehen in Payload 3 unter derselben aufgabe_id.
+    sum.aufgaben = (aufgabenByPaket.get(lp.id) || []).map((aa, i) => ({
+      aufgabe_id: aa.id,
+      titel: nullable(aa.titel),
+      nummer: i + 1,
+      niveau: aa.niveau || 'GE',
+      pflicht: aa.pflicht !== false,
+    }));
     return sum;
   };
 
@@ -1219,6 +1274,12 @@ export function buildStructurePayload({
     leitfrage: nullable(tf.leitfrage),
     reihenfolge: tf.reihenfolge ?? null,
     bearbeitungsmodus: nullable(tf.bearbeitungsmodus),
+    // airgap-1.26.0: Feste Plätze außerhalb der Lernpakete. 'einstieg' steht
+    // vor dem ersten, 'gesamtaufgabe' nach dem letzten Lernpaket.
+    plaetze: {
+      einstieg: platzIds(tf.id, 'einstieg'),
+      gesamtaufgabe: platzIds(tf.id, 'gesamtaufgabe'),
+    },
     lernpakete: (paketeByTf.get(tf.id) || [])
       .sort((a, b) => (a.reihenfolge_nummer || 0) - (b.reihenfolge_nummer || 0))
       .map(renderLernpaketEntry),
@@ -1242,6 +1303,7 @@ export function buildStructurePayload({
     niveau: (aa.lernpaket_id || aa.themenfeld_platz) ? (aa.niveau || 'GE') : null,
     pflicht: (aa.lernpaket_id || aa.themenfeld_platz) ? aa.pflicht !== false : null,
     reihenfolge_im_lernpaket: aa.reihenfolge_im_lernpaket ?? null,
+    // Altbestand (Sterne): bei Aufgaben im Lernpaket gilt `niveau`.
     schwierigkeitsgrad: aa.schwierigkeitsgrad ?? null,
     erstellungs_modus: aa.erstellungs_modus || 'manuell',
     // airgap-1.21.0: Verhalten von Bündel-/Auswahl-Aufgaben. Ohne diese Felder
@@ -1249,9 +1311,10 @@ export function buildStructurePayload({
     // in welcher Reihenfolge sie zu bearbeiten sind und mit welchem Zugang die
     // verlinkten Lernpakete geöffnet werden.
     aufgaben_modus: aa.aufgaben_modus || 'einzeln',
-    // Zufallsauswahl (2026-11-10): 0 = alle Elemente; X = pro Schüler
-    // zufällig X der Elemente (sequenz_schritte) ziehen.
-    zufallsauswahl_anzahl: aa.zufallsauswahl_anzahl || 0,
+    // Altbestand (airgap-1.26.0): wird nicht mehr ausgewertet, immer 0.
+    // Schüler bearbeiten alle Elemente; Auswahl gibt es nur noch als
+    // Varianten am Element (Payload 3: sequenz_schritte[i].varianten).
+    zufallsauswahl_anzahl: 0,
     lernpaket_logik: aa.lernpaket_logik || 'standard',
     erforderliche_anzahl: aa.erforderliche_anzahl ?? 0,
     interne_reihenfolge: aa.interne_reihenfolge || 'frei',
@@ -1265,6 +1328,7 @@ export function buildStructurePayload({
   const itemRefIndex = {
     lernpaketById: new Map((lernpakete || []).map((lp) => [lp.id, lp])),
     aufgabeById: new Map((allgemeineAufgaben || []).map((aa) => [aa.id, aa])),
+    nichtImExport,
   };
 
   // Lernpfade pro Lerntyp (Sektoren + Items).
@@ -1286,7 +1350,7 @@ export function buildStructurePayload({
     for (const sektor of sektoren) {
       for (const item of sektor?.items || []) {
         // Platzhalter werden niemals im Export verlinkt → kein nav-Context.
-        if (isPlatzhalterItem(item)) continue;
+        if (isPlatzhalterItem(item) || nichtImExport.has(item?.ref_id)) continue;
         if (item?.ref_id) addNavContext(item.ref_id, dashboardFile);
       }
     }
@@ -1355,16 +1419,11 @@ export function buildStructurePayload({
       .filter((aa) => aa?.erstellungs_modus === 'ki')
       .map((aa) => aa.id);
 
-  const istProjektaufgabe = (aa) =>
-    aa?.anforderungsebene === '3 - Projekt' || aa?.aufgaben_typ === 'projekt_anker';
-
   // 1. Lernpakete (immer, eines pro Paket).
   for (const lp of lernpakete) {
-    // Projektaufgaben, die in diesem Lernpaket liegen, reisen hier mit und
-    // nicht mehr im Projekt-Bündel.
-    const projektAufgaben = (allgemeineAufgaben || []).filter(
-      (aa) => aa.lernpaket_id === lp.id && istProjektaufgabe(aa)
-    );
+    // airgap-1.26.0: ALLE Aufgaben dieses Lernpakets reisen in seiner Datei
+    // mit – nicht mehr im Themenfeld- bzw. Projekt-Bündel.
+    const projektAufgaben = aufgabenByPaket.get(lp.id) || [];
     const placeholderIds = [
       ...collectPlaceholderActivityIdsForLernpaket(lp.id),
       ...collectPlaceholderAaIds(projektAufgaben),
@@ -1393,7 +1452,8 @@ export function buildStructurePayload({
   const ebene2ByTf = new Map();
   const orphanEbene2 = [];
   for (const aa of allgemeineAufgaben || []) {
-    if (!isEbene2(aa)) continue;
+    // Aufgaben im Lernpaket stehen in der Datei ihres Lernpakets (siehe 1.).
+    if (!isEbene2(aa) || exportLpIds.has(aa.lernpaket_id)) continue;
     if (aa.themenfeld_id && themenfelderById.has(aa.themenfeld_id)) {
       if (!ebene2ByTf.has(aa.themenfeld_id)) ebene2ByTf.set(aa.themenfeld_id, []);
       ebene2ByTf.get(aa.themenfeld_id).push(aa);
@@ -1441,7 +1501,7 @@ export function buildStructurePayload({
   //    Nur noch Altbestand: Projektaufgaben mit Lernpaket stehen bei ihrem
   //    Lernpaket (siehe 1.).
   const ebene3 = (allgemeineAufgaben || []).filter(
-    (aa) => (isEbene3(aa) || isProjektAnker(aa)) && !aa.lernpaket_id
+    (aa) => (isEbene3(aa) || isProjektAnker(aa)) && !exportLpIds.has(aa.lernpaket_id)
   );
   if (ebene3.length > 0 && einheit?.id) {
     const placeholderIds = collectPlaceholderAaIds(ebene3);
@@ -1601,6 +1661,7 @@ export function buildTaskContentItemForLernpaket({
   katalogById = new Map(),
   masterAufgaben = [],
   navigationContext = [],
+  aufgaben = [],
 }) {
   // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
   phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
@@ -1695,6 +1756,13 @@ export function buildTaskContentItemForLernpaket({
       schueler_uebersetzung: nullable(lz.schueler_uebersetzung),
     })),
     aktivitaeten: phasenSorted.map(renderActivity),
+    // airgap-1.26.0: Teil „Aufgaben" des Lernpakets, in Reihenfolge. Jede ID
+    // hat in diesem Payload ein eigenes Item (item_type 'allgemeine_aufgabe').
+    // Im Kurs stehen sie zwischen Wissensspeicher und Abschluss.
+    aufgabe_ids: [...(aufgaben || [])]
+      .filter((aa) => !isTombstone(aa))
+      .sort(nachReihenfolgeImLernpaket)
+      .map((aa) => aa.id),
     placeholder_activity_ids: placeholderActivityIds,
     // airgap-1.4.0: Reine Metadaten, die MBK kombiniert sie mit
     // ui_default_header_html aus Payload 1 zu Header/Footer.
@@ -1825,6 +1893,9 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     niveau: (aufgabe?.lernpaket_id || aufgabe?.themenfeld_platz) ? (aufgabe.niveau || 'GE') : null,
     pflicht: (aufgabe?.lernpaket_id || aufgabe?.themenfeld_platz) ? aufgabe.pflicht !== false : null,
     reihenfolge_im_lernpaket: aufgabe?.reihenfolge_im_lernpaket ?? null,
+    // true = Merker der Lehrkraft: hieran wird noch nachgearbeitet. Rein
+    // informativ, kein Grund, die Aufgabe nicht zu bauen.
+    braucht_nacharbeit: aufgabe?.braucht_nacharbeit === true,
     erstellungs_modus: istKi ? 'ki' : 'manuell',
 
     // Manueller Modus: alle Inhalte. KI-Modus: null (kommt aus Payload 4).
@@ -1863,7 +1934,8 @@ export function buildTaskContentItemForAllgemeineAufgabe({ aufgabe, navigationCo
     aufgaben_modus: aufgabe?.aufgaben_modus || 'einzeln',
     sequenz_schritte: buildSequenzSchritteFuerExport(aufgabe, { istKi, katalogById }),
     // Zufallsauswahl: 0 = alle Schritte; X = pro Schüler zufällig X ziehen.
-    zufallsauswahl_anzahl: aufgabe?.zufallsauswahl_anzahl || 0,
+    // Altbestand (airgap-1.26.0): immer 0, siehe sequenz_schritte[i].varianten.
+    zufallsauswahl_anzahl: 0,
 
     // airgap-1.21.0: Bündel-/Auswahl-Verhalten und die verlinkten Elemente.
     // Bei aufgaben_typ='buendel'/'auswahl_buendel' ist das der ganze Inhalt
@@ -1907,6 +1979,19 @@ export function buildTaskContentBundle({
   uiConfigHash = null,
   nowIso = null,
 }) {
+  // airgap-1.26.0: Ausgeblendete Lernpakete reisen nicht mit – samt Aufgaben.
+  const ausgeblendetLp = ausgeblendeteLernpaketIds(lernpakete);
+  lernpakete = (lernpakete || []).filter((lp) => !ausgeblendetLp.has(lp.id));
+  allgemeineAufgabenEbene23 = (allgemeineAufgabenEbene23 || []).filter(
+    (aa) => !isTombstone(aa) && !ausgeblendetLp.has(aa.lernpaket_id)
+  );
+  const aufgabenByPaket = new Map();
+  for (const aa of allgemeineAufgabenEbene23) {
+    if (!aa.lernpaket_id) continue;
+    if (!aufgabenByPaket.has(aa.lernpaket_id)) aufgabenByPaket.set(aa.lernpaket_id, []);
+    aufgabenByPaket.get(aa.lernpaket_id).push(aa);
+  }
+
   // Nach Lernpaket gruppieren.
   const zieleByPaket = new Map();
   for (const lz of lernziele) {
@@ -1942,15 +2027,17 @@ export function buildTaskContentBundle({
         katalogById,
         masterAufgaben: masterByPaket.get(lp.id) || [],
         navigationContext: navFor(lp.id),
+        aufgaben: aufgabenByPaket.get(lp.id) || [],
       })
     );
 
   const aufgabeItems = (allgemeineAufgabenEbene23 || [])
-    .filter((aa) => !isTombstone(aa))
     .map((aa) =>
       buildTaskContentItemForAllgemeineAufgabe({
         aufgabe: aa,
-        navigationContext: navFor(aa.id),
+        // Aufgaben im Lernpaket stehen nicht selbst im Arbeitsplan: Sie
+        // erben das Zurück-Ziel ihres Lernpakets.
+        navigationContext: navFor(aa.id).length ? navFor(aa.id) : navFor(aa.lernpaket_id),
         katalogById,
       })
     )
@@ -2153,8 +2240,8 @@ export function buildMicroPayloadForAllgemeineAufgabe({
   const istEbene3 = aufgabe.anforderungsebene === '3 - Projekt';
   const istProjektAnker = aufgabe.aufgaben_typ === 'projekt_anker';
   let placeholderTarget = null;
-  if ((istEbene3 || istProjektAnker) && aufgabe.lernpaket_id) {
-    // Projektaufgabe im Lernpaket: wird in die Datei ihres Lernpakets eingewoben.
+  if (aufgabe.lernpaket_id) {
+    // Aufgabe im Lernpaket: wird in die Datei ihres Lernpakets eingewoben.
     placeholderTarget = fnLernpaket(aufgabe.lernpaket_id);
   } else if ((istEbene3 || istProjektAnker) && einheit?.id) {
     placeholderTarget = fnProjektBundle(einheit.id);
@@ -2239,8 +2326,15 @@ export function buildMicroPayloadBundle({
   nowIso = null,
 }) {
   // airgap-1.16.0: Tombstones (gelöschte Datensätze) niemals exportieren.
-  phaseAktivitaeten = (phaseAktivitaeten || []).filter((pa) => !isTombstone(pa));
-  allgemeineAufgaben = (allgemeineAufgaben || []).filter((aa) => !isTombstone(aa));
+  // airgap-1.26.0: ebenso alles, was in einem ausgeblendeten Lernpaket liegt.
+  const ausgeblendetLp = ausgeblendeteLernpaketIds(lernpakete);
+  lernpakete = (lernpakete || []).filter((lp) => !ausgeblendetLp.has(lp.id));
+  phaseAktivitaeten = (phaseAktivitaeten || []).filter(
+    (pa) => !isTombstone(pa) && !ausgeblendetLp.has(pa.lernpaket_id)
+  );
+  allgemeineAufgaben = (allgemeineAufgaben || []).filter(
+    (aa) => !isTombstone(aa) && !ausgeblendetLp.has(aa.lernpaket_id)
+  );
   masterAufgaben = (masterAufgaben || []).filter((m) => !isTombstone(m));
   const themenfeldById = new Map((themenfelder || []).map((tf) => [tf.id, tf]));
   const lernpaketById = new Map((lernpakete || []).map((lp) => [lp.id, lp]));
