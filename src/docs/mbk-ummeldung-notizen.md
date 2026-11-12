@@ -32,7 +32,14 @@ Nicht geprüft: die Oberfläche des Export-Centers und der Weg nach GitHub.
 
 Weiter offen:
 
-- Antwort der MBK: Wie räumt sie Ausgeblendetes im Kurs ab, ohne dass Fortschritt verloren geht?
+- Beantwortet (MBK, 2026-11-12): Die alten Kurse werden nur noch aus ihrem letzten alten
+  Export gebaut; dort gehen keine Übungen und kein Fortschritt verloren. Der neue Export ist
+  nur noch die Quelle für die Kurse 2.0. Wer will, wechselt über die Weiche. Im alten Kurs
+  wird also nichts abgeräumt.
+- Die Exporte vom 2026-11-12, 15:16 und 15:17 Uhr (Englisch, Mathe) kamen noch mit Schema
+  1.24 an, weil die veröffentlichte App auf dem Stand vom 2026-10-25 war. Die Lehrkraft hat
+  am Abend veröffentlicht und neu exportiert. Ob die neuen Dateien `airgap-1.26.0` tragen,
+  ist hier nicht geprüft.
 - `master_anzeige_modus` reist weiter mit, obwohl die Wahl aus der Oberfläche entfernt ist.
 - Kurzgeschichten: Im Arbeitsplan steht ein Eintrag, dessen Art der Export nicht erkennt
   (`item_kind` leer). Bestand schon vorher.
