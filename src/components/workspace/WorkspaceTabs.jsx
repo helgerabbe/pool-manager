@@ -13,7 +13,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot, ShieldCheck } from 'lucide-react';
+import { BookOpen, LayoutGrid, Package, ClipboardList, Target, Compass, ListChecks, Bot, ShieldCheck, FileCheck2 } from 'lucide-react';
 import { useRBAC } from '@/hooks/useRBAC';
 import { ROLLEN } from '@/lib/rbac';
 
@@ -192,8 +192,27 @@ const getVisibleTabs = (rolle, isBasismodul = false) => {
 // Prüfbereich — NUR für gemeinschaftliche Poolzeit-Einheiten. Hier läuft die
 // Vorprüfung auf die fünf MBK-Fehlerkategorien, deren Befunde als Taskliste
 // abgearbeitet werden.
+// Tests und Klausuren — NUR für gemeinschaftliche Poolzeit-Einheiten, zwischen
+// Arbeitsplänen und Vollständigkeitsprüfung. Vorerst nur die Startseite.
+const TESTS_TAB = {
+  value: 'tests', label: 'Tests und Klausuren', icon: FileCheck2, step: 8,
+  help: {
+    title: 'Tests und Klausuren',
+    description: 'Hier entstehen bald die Vorlagen für die Leistungsüberprüfungen dieser Einheit: Welche Klausur schreiben die Schüler am Ende, und welchen Test schreiben die Pragmatiker? Der Bereich ist noch im Aufbau. Im Moment kannst du hier noch nichts anlegen.',
+    features: [
+      'Vorlagen für Klausuren zu dieser Einheit anlegen',
+      'Vorlagen für die Tests der Pragmatiker anlegen',
+      'Auf einen Blick sehen, welche Klausuren und Tests zu dieser Einheit gehören',
+    ],
+    faqs: [
+      { question: 'Kann ich hier schon etwas anlegen?', answer: 'Noch nicht. Der Bereich ist vorbereitet, die Vorlagen folgen.' },
+      { question: 'Was ist der Unterschied zwischen Klausur und Test?', answer: 'Die Klausur ist die schriftliche Arbeit am Ende der Einheit. Der Test ist der Abschlusstest, den die Pragmatiker in ihrem Arbeitsplan schreiben.' },
+    ],
+  },
+};
+
 const PRUEFUNG_TAB = {
-  value: 'pruefung', label: 'Vollständigkeitsprüfung', icon: ShieldCheck, step: 8,
+  value: 'pruefung', label: 'Vollständigkeitsprüfung', icon: ShieldCheck, step: 9,
   help: {
     title: 'Vollständigkeitsprüfung',
     description: 'Der Endcheck, bevor deine Einheit zu den Schülern geht. Du drückst auf „Prüfung starten" und der Pool-Manager schaut jedes Lernpaket und jede Aufgabe durch: Ist irgendwo noch ein Platzhalter stehen geblieben? Fehlt ein Arbeitsblatt? Ist eine Aufgabenstellung so knapp, dass ein Schüler sie nicht versteht? Alles, was auffällt, landet hier als Aufgabenliste — jeder Punkt mit einem Knopf, der dich direkt an die richtige Stelle bringt.',
@@ -290,7 +309,7 @@ const TAB_ART_STYLE = {
  * wird in den Bereichen selbst gezeigt (Knopf oder Startseite).
  */
 export const tabHilfe = (value) =>
-  [...getVisibleTabs(), PRUEFUNG_TAB, BRIAN_TAB].find((t) => t.value === value)?.help;
+  [...getVisibleTabs(), TESTS_TAB, PRUEFUNG_TAB, BRIAN_TAB].find((t) => t.value === value)?.help;
 
 export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = false, istPrivat = false, istUebungsblock = false }) {
   const { rolle } = useRBAC();
@@ -301,8 +320,9 @@ export default function WorkspaceTabs({ activeTab, onTabChange, isBasismodul = f
   if (istPrivat) {
     visibleTabs = [...visibleTabs, BRIAN_TAB];
   } else if (!isBasismodul) {
-    // Gemeinschaftliche Poolzeit-Einheiten: Prüfbereich als Reiter 8.
-    visibleTabs = [...visibleTabs, PRUEFUNG_TAB];
+    // Gemeinschaftliche Poolzeit-Einheiten: Tests und Klausuren als Reiter 8,
+    // Prüfbereich als Reiter 9.
+    visibleTabs = [...visibleTabs, TESTS_TAB, PRUEFUNG_TAB];
   }
 
   if (istUebungsblock) {

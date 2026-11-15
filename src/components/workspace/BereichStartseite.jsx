@@ -6,7 +6,7 @@ import HilfeInhalt from '@/components/ui/HilfeInhalt';
  * Inhaltsfenster, solange im Menübaum noch nichts ausgewählt ist, und zeigt
  * die Direkthilfe des Bereichs.
  */
-export default function BereichStartseite({ titel, hilfe, icon: Icon }) {
+export default function BereichStartseite({ titel, hilfe, icon: Icon, hinweis = 'Wähle links im Menü aus, woran du arbeiten möchtest.' }) {
   return (
     <div className="max-w-3xl mx-auto px-6 py-10">
       <div className="flex items-center gap-3 mb-6">
@@ -17,7 +17,7 @@ export default function BereichStartseite({ titel, hilfe, icon: Icon }) {
         )}
         <div>
           <h2 className="text-2xl font-bold font-display text-foreground">{titel}</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Wähle links im Menü aus, woran du arbeiten möchtest.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">{hinweis}</p>
         </div>
       </div>
       <div className="rounded-xl border border-border bg-card p-6">

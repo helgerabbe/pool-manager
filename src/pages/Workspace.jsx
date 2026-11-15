@@ -10,12 +10,13 @@ import { usePresence } from '@/hooks/usePresence';
 import { isStructurallyLocked } from '@/hooks/useStructuralLock';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
-import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, Eye } from 'lucide-react';
+import { BookOpen, Lock, ArrowRight, PenLine, Unlock, Loader2, Eye, FileCheck2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import StrukturBoardEmbedded from '@/components/workspace/StrukturBoardEmbedded';
-import WorkspaceTabs from '@/components/workspace/WorkspaceTabs';
+import WorkspaceTabs, { tabHilfe } from '@/components/workspace/WorkspaceTabs';
+import BereichStartseite from '@/components/workspace/BereichStartseite';
 import ZurueckZurUebersichtTab from '@/components/workspace/ZurueckZurUebersichtTab';
 import TaskCreationView from '@/components/workspace/TaskCreationView.jsx';
 import EinheitUebersichtTab from '@/components/workspace/EinheitUebersichtTab';
@@ -56,7 +57,7 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
   // jetzt zentral im eigenständigen Export-Center (Hauptmenü).
   const VALID_TABS = isBasismodul
     ? ['einheit', 'struktur', 'lernziele', 'lernpakete']
-    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'brian', 'pruefung'];
+    : ['einheit', 'struktur', 'lernziele', 'lernpakete', 'ebene2', 'ebene3', 'dashboards', 'brian', 'tests', 'pruefung'];
   // Tab-Verschmelzung (2026-07-27): Die früheren Tabs 'aktivitaeten' (4) und
   // 'aufgaben' (5) sind zum Tab 'lernpakete' vereint. Alte Deep-Links werden
   // transparent auf den neuen Tab abgebildet.
@@ -1100,7 +1101,21 @@ export default function Workspace({ initialEinheitId: initialEinheitIdProp = nul
               </TabsContent>
             )}
 
-            {/* ── Tab 8: Vollständigkeitsprüfung (nur gemeinschaftliche Einheiten) ── */}
+            {/* ── Tab 8: Tests und Klausuren (nur gemeinschaftliche Einheiten) ── */}
+            {einheit?.sichtbarkeit !== 'privat' && !isBasismodul && (
+              <TabsContent value="tests" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
+                <div className="flex-1 overflow-y-auto">
+                  <BereichStartseite
+                    titel="Du bist im Bereich Tests und Klausuren"
+                    hilfe={tabHilfe('tests')}
+                    icon={FileCheck2}
+                    hinweis="Dieser Bereich ist noch im Aufbau."
+                  />
+                </div>
+              </TabsContent>
+            )}
+
+            {/* ── Tab 9: Vollständigkeitsprüfung (nur gemeinschaftliche Einheiten) ── */}
             {einheit?.sichtbarkeit !== 'privat' && !isBasismodul && (
               <TabsContent value="pruefung" className="data-[state=active]:flex data-[state=inactive]:hidden flex-col flex-1 overflow-hidden m-0 p-0">
                 <div className="flex-1 overflow-y-auto">
